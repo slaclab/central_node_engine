@@ -399,7 +399,7 @@ namespace YAML {
 	digitalFaultState->faultId = (*it)["fault_id"].as<int>();
 	digitalFaultState->name = (*it)["name"].as<std::string>();
 
-	rhs->at(digitalFaultState->id) = DbDigitalFaultStatePtr(digitalFaultState);
+	rhs->at(digitalFaultState->faultId) = DbDigitalFaultStatePtr(digitalFaultState);
       }
 
       return true;
@@ -512,6 +512,73 @@ namespace YAML {
     }
   };
 
+
+  /**
+   * AnalogDeviceType:
+   * - id: '1'
+   *   name: PIC
+   *   threshold_value_map_id: '1'
+   *   units: counts
+   */
+  template<>
+    struct convert<DbAnalogDeviceTypeListPtr> {
+    static bool decode(const Node &node, DbAnalogDeviceTypeListPtr &rhs) {
+      size_t elements = node["AnalogDeviceType"].size();
+
+      DbAnalogDeviceTypeList *analogDeviceTypes = new DbAnalogDeviceTypeList(elements + 1);
+      rhs = DbAnalogDeviceTypeListPtr(analogDeviceTypes);
+
+      DbAnalogDeviceType *analogDeviceType = new DbAnalogDeviceType();
+      rhs->at(0) = DbAnalogDeviceTypePtr(analogDeviceType);
+
+      for (YAML::Node::const_iterator it = node["AnalogDeviceType"].begin();
+	   it != node["AnalogDeviceType"].end(); ++it) {
+	analogDeviceType = new DbAnalogDeviceType();
+	
+	analogDeviceType->id = (*it)["id"].as<int>();
+	analogDeviceType->name = (*it)["name"].as<std::string>();
+	analogDeviceType->units = (*it)["units"].as<std::string>();
+	analogDeviceType->thresholdValueMapId = (*it)["threshold_value_map_id"].as<int>();
+
+	rhs->at(analogDeviceType->id) = DbAnalogDeviceTypePtr(analogDeviceType);
+      }
+
+      return true;
+    }
+  };
+  
+  /**
+   * AnalogDevice:
+   * - analog_device_type_id: '1'
+   *   channel_id: '1'
+   *   id: '3'
+   */
+  template<>
+    struct convert<DbAnalogDeviceListPtr> {
+    static bool decode(const Node &node, DbAnalogDeviceListPtr &rhs) {
+      size_t elements = node["AnalogDevice"].size();
+
+      DbAnalogDeviceList *analogDevices = new DbAnalogDeviceList(elements + 1);
+      rhs = DbAnalogDeviceListPtr(analogDevices);
+
+      DbAnalogDevice *analogDevice = new DbAnalogDevice();
+      rhs->at(0) = DbAnalogDevicePtr(analogDevice);
+
+      for (YAML::Node::const_iterator it = node["AnalogDevice"].begin();
+	   it != node["AnalogDevice"].end(); ++it) {
+	analogDevice = new DbAnalogDevice();
+	
+	analogDevice->id = (*it)["id"].as<int>();
+	analogDevice->analogDeviceTypeId = (*it)["analog_device_type_id"].as<int>();
+	analogDevice->channelId = (*it)["channel_id"].as<int>();
+
+	rhs->at(analogDevice->id) = DbAnalogDevicePtr(analogDevice);
+      }
+
+      return true;
+    }
+  };
+
   /**
    * ThresholdFaultState:
    * - id: '8'
@@ -535,9 +602,7 @@ namespace YAML {
 	thresFaultState->id = (*it)["id"].as<int>();
 	thresFaultState->thresholdFaultId = (*it)["threshold_fault_id"].as<int>();
 
-	std::cout << "ID: " << thresFaultState->id << std::endl;
-
-	rhs->at(thresFaultState->id) = DbThresholdFaultStatePtr(thresFaultState);
+	rhs->at(thresFaultState->thresholdFaultId) = DbThresholdFaultStatePtr(thresFaultState);
       }
 
       return true;

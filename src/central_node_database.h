@@ -1,11 +1,13 @@
 #ifndef CENTRAL_NODE_DATABASE_H
 #define CENTRAL_NODE_DATABASE_H
 
+#include <vector>
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
 
-struct DbEntry {
+class DbEntry {
+ public:
   int id;
 
   DbEntry() : id(-1) {
@@ -24,7 +26,8 @@ struct DbEntry {
  *   number: '1'
  *   shelf_number: '1'
  */
-struct DbCrate : DbEntry {
+class DbCrate : public DbEntry {
+ public:
   int number;
   int numSlots;
   int shelfNumber;
@@ -55,7 +58,8 @@ typedef shared_ptr<DbCrateList> DbCrateListPtr;
  *   name: Mixed Mode Link Node
  *   number: '0'
  */
-struct DbApplicationType : DbEntry {
+class DbApplicationType : public DbEntry {
+ public:
   int number;
   int analogChannelCount;
   int analogChannelSize;
@@ -94,7 +98,8 @@ typedef shared_ptr<DbApplicationTypeList> DbApplicationTypeListPtr;
  *   slot_number: '2'
  *   type_id: '1'
  */
-struct DbApplicationCard : DbEntry {
+class DbApplicationCard : public DbEntry {
+ public:
   int number;
   int slotNumber;
   int crateId;
@@ -111,7 +116,7 @@ struct DbApplicationCard : DbEntry {
        << "number[" << appCard->number << "]; "
        << "crateId[" << appCard->crateId << "]; "
        << "slotNumber[" << appCard->slotNumber << "]; "
-       << "applicationTypeId[" << appCard->applicationTypeId << "]; ";
+       << "applicationTypeId[" << appCard->applicationTypeId << "];";
     return os;
   }
 };
@@ -131,7 +136,8 @@ typedef shared_ptr<DbApplicationCardList> DbApplicationCardListPtr;
  *   id: '1'
  *   number: '0'
  */
-struct DbChannel : DbEntry {
+class DbChannel : public DbEntry {
+ public:
   int number;
   int cardId;
   
@@ -141,7 +147,7 @@ struct DbChannel : DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbChannel * const channel) {
     os << "id[" << channel->id << "]; " 
        << "number[" << channel->number << "]; "
-       << "cardId[" << channel->cardId << "]; ";
+       << "cardId[" << channel->cardId << "];";
     return os;
   }
 };
@@ -155,7 +161,8 @@ typedef shared_ptr<DbChannelList> DbChannelListPtr;
  * - id: '1'
  *   name: Insertion Device
  */
-struct DbDeviceType : DbEntry {
+class DbDeviceType : public DbEntry {
+ public:
   std::string name;
   
  DbDeviceType() : DbEntry(), name("") {
@@ -163,7 +170,7 @@ struct DbDeviceType : DbEntry {
 
   friend std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType) {
     os << "id[" << devType->id << "]; "
-       << "name[" << devType->name << "]; ";
+       << "name[" << devType->name << "];";
     return os;
   }
 };
@@ -179,7 +186,8 @@ typedef shared_ptr<DbDeviceTypeList> DbDeviceTypeListPtr;
  *   name: Out
  *   value: '1'
  */
-struct DbDeviceState : DbEntry {
+class DbDeviceState : public DbEntry {
+ public:  
   int deviceTypeId;
   int value;
   std::string name;
@@ -191,7 +199,7 @@ struct DbDeviceState : DbEntry {
     os << "id[" << devState->id << "]; "
        << "deviceTypeId[" << devState->deviceTypeId << "]; "
        << "value[" << devState->value << "]; "
-       << "name[" << devState->name << "]; ";
+       << "name[" << devState->name << "]";
     return os;
   }
 };
@@ -207,20 +215,28 @@ typedef shared_ptr<DbDeviceStateList> DbDeviceStateListPtr;
  *   digital_device_id: '1'
  *   id: '1'
  */
-struct DbDeviceInput : DbEntry {
+class DbDeviceInput : public DbEntry {
+ public:
   int bitPosition;
   int channelId;
   int digitalDeviceId;
+  int value; // Value read from firmware
 
  DbDeviceInput() : DbEntry(), 
     bitPosition(-1), channelId(-1), digitalDeviceId(-1) {
+  }
+
+  // This should update the value from the data read from the central node firmware
+  void update(int v) {
+    value = v;
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
     os << "id[" << deviceInput->id << "]; " 
        << "bitPosition[" << deviceInput->bitPosition << "]; "
        << "channelId[" << deviceInput->channelId << "]; "
-       << "digitalDeviceId[" << deviceInput->digitalDeviceId << "]; ";
+       << "digitalDeviceId[" << deviceInput->digitalDeviceId << "]; "
+       << "value[" << deviceInput->value << "]";
     return os;
   }
 };
@@ -234,15 +250,22 @@ typedef shared_ptr<DbDeviceInputList> DbDeviceInputListPtr;
  * - device_type_id: '1'
  *   id: '1'
  */
-struct DbDigitalDevice : DbEntry {
+class DbDigitalDevice : public DbEntry {
+ public:
   int deviceTypeId;
-  
+  int value; // calculated from the DeviceInputs for this device
+  DbDeviceInputListPtr inputDevices; // list built after the config is loaded
+
  DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
+  }
+
+  void update(int v) {
+    value = v;
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevice) {
     os << "id[" << digitalDevice->id << "]; "
-       << "deviceTypeId[" << digitalDevice->deviceTypeId << "]; ";
+       << "deviceTypeId[" << digitalDevice->deviceTypeId << "];";
     return os;
   }
 };
@@ -251,28 +274,6 @@ typedef shared_ptr<DbDigitalDevice> DbDigitalDevicePtr;
 typedef std::vector<DbDigitalDevicePtr> DbDigitalDeviceList;
 typedef shared_ptr<DbDigitalDeviceList> DbDigitalDeviceListPtr;
 
-/** 
- * Fault: - description: None id: '1' name: OTR Fault
- */
-struct DbFault : DbEntry {
-  std::string name;
-  std::string description;
-  
- DbFault() : DbEntry(), name(""), description("") {
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
-    os << "id[" << fault->id << "]; "
-       << "name[" << fault->name << "]; "
-       << "description[" << fault->description << "]; ";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbFault> DbFaultPtr;
-typedef std::vector<DbFaultPtr> DbFaultList;
-typedef shared_ptr<DbFaultList> DbFaultListPtr;
-
 /**
  * FaultInput:
  * - bit_position: '0'
@@ -280,12 +281,22 @@ typedef shared_ptr<DbFaultList> DbFaultListPtr;
  *   fault_id: '1'
  *   id: '1'
  */
-struct DbFaultInput : DbEntry {
+class DbFaultInput : public DbEntry {
+ public:
+  // Values loaded from YAML file
   int faultId;
   int deviceId;
   int bitPosition;
+
+  // Values calculated at run time
+  int value; // Fault value calculated from the DeviceInputs
   
  DbFaultInput() : DbEntry(), faultId(-1), deviceId(-1), bitPosition(-1) {
+  }
+
+  // Update the value from the DeviceInputs
+  void update() {
+    value = 1;
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
@@ -300,7 +311,22 @@ struct DbFaultInput : DbEntry {
 typedef shared_ptr<DbFaultInput> DbFaultInputPtr;
 typedef std::vector<DbFaultInputPtr> DbFaultInputList;
 typedef shared_ptr<DbFaultInputList> DbFaultInputListPtr;
+/*
+enum DbFaultStateType {
+  DB_FAULT_STATE_DIGITAL,
+  DB_FAULT_STATE_THRESHOLD
+};
 
+class DbFaultState : public DbEntry {
+ public:
+  DbFaultStateType type;
+  int faultId; // Index of digital or threshold fault state
+};
+
+typedef shared_ptr<DbFaultState> DbFaultStatePtr;
+typedef std::vector<DbFaultStatePtr> DbFaultStateList;
+typedef shared_ptr<DbFaultStateList> DbFaultStateListPtr;
+*/
 /**
  * DigitalFaultState:
  * - fault_id: '1'
@@ -308,7 +334,8 @@ typedef shared_ptr<DbFaultInputList> DbFaultInputListPtr;
  *   name: Out
  *   value: '1'
  */
-struct DbDigitalFaultState : DbEntry {
+class DbDigitalFaultState : public DbEntry {
+ public:
   int faultId;
   int value;
   std::string name;
@@ -320,7 +347,7 @@ struct DbDigitalFaultState : DbEntry {
     os << "id[" << digitalFault->id << "]; "
        << "faultId[" << digitalFault->faultId << "]; "
        << "value[" << digitalFault->value << "]; "
-       << "name[" << digitalFault->name << "]; ";
+       << "name[" << digitalFault->name << "]";
     return os;
   }
 };
@@ -329,12 +356,48 @@ typedef shared_ptr<DbDigitalFaultState> DbDigitalFaultStatePtr;
 typedef std::vector<DbDigitalFaultStatePtr> DbDigitalFaultStateList;
 typedef shared_ptr<DbDigitalFaultStateList> DbDigitalFaultStateListPtr;
 
+/** 
+ * Fault: (these are digital faults)
+ *  - description: None
+ *    id: '1'
+ *    name: OTR Fault
+ */
+class DbFault : public DbEntry {
+ public:
+  std::string name;
+  std::string description;
+
+  // Configured after loading the YAML file
+  DbFaultInputListPtr faultInputs; // A fault may be built by several devices
+  int value; // Calculated from the list of faultInputs
+  //  DbDigitalFaultStateListPtr digitalFaultStates; // List of fault states for this fault
+
+ DbFault() : DbEntry(), name(""), description("") {
+  }
+
+  void update(int v) {
+    value = v;
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
+    os << "id[" << fault->id << "]; "
+       << "name[" << fault->name << "]; "
+       << "description[" << fault->description << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbFault> DbFaultPtr;
+typedef std::vector<DbFaultPtr> DbFaultList;
+typedef shared_ptr<DbFaultList> DbFaultListPtr;
+
 /**
  * ThresholdValueMap:
  * - description: Map for generic PICs.
  *   id: '1'
  */
-struct DbThresholdValueMap : DbEntry {
+class DbThresholdValueMap : public DbEntry {
+ public:
   std::string description;
   
  DbThresholdValueMap() : DbEntry(), description("") {
@@ -342,7 +405,7 @@ struct DbThresholdValueMap : DbEntry {
 
   friend std::ostream & operator<<(std::ostream &os, DbThresholdValueMap * const thresValueMap) {
     os << "id[" << thresValueMap->id << "]; "
-       << "description[" << thresValueMap->description << "]; ";
+       << "description[" << thresValueMap->description << "]";
     return os;
   }
 };
@@ -358,7 +421,8 @@ typedef shared_ptr<DbThresholdValueMapList> DbThresholdValueMapListPtr;
  *   threshold_value_map_id: '1'
  *   value: '0.0'
  */
-struct DbThresholdValue : DbEntry {
+class DbThresholdValue : public DbEntry {
+ public:
   int threshold;
   int thresholdValueMapId;
   float value;
@@ -370,7 +434,7 @@ struct DbThresholdValue : DbEntry {
     os << "id[" << thresValue->id << "]; "
        << "threshold[" << thresValue->threshold << "]; "
        << "thresholdValueMapId[" << thresValue->thresholdValueMapId << "]; "
-       << "value[" << thresValue->value << "]; ";
+       << "value[" << thresValue->value << "]";
 
     return os;
   }
@@ -388,7 +452,8 @@ typedef shared_ptr<DbThresholdValueList> DbThresholdValueListPtr;
  *   name: PIC Loss > 1.0
  *   threshold: '1.0'
  */
-struct DbThresholdFault : DbEntry {
+class DbThresholdFault : public DbEntry {
+ public:
   std::string name;
   float threshold;
   bool greaterThan;
@@ -402,7 +467,7 @@ struct DbThresholdFault : DbEntry {
        << "threshold[" << thresFault->threshold << "]; "
        << "greaterThan[" << thresFault->greaterThan << "]; "
        << "analogDeviceId[" << thresFault->analogDeviceId << "]; "
-       << "name[" << thresFault->name << "]; ";
+       << "name[" << thresFault->name << "]";
     return os;
   }
 };
@@ -411,13 +476,68 @@ typedef shared_ptr<DbThresholdFault> DbThresholdFaultPtr;
 typedef std::vector<DbThresholdFaultPtr> DbThresholdFaultList;
 typedef shared_ptr<DbThresholdFaultList> DbThresholdFaultListPtr;
 
+/**
+ * AnalogDeviceType:
+ * - id: '1'
+ *   name: PIC
+ *   threshold_value_map_id: '1'
+ *   units: counts
+ */
+class DbAnalogDeviceType : public DbEntry {
+ public:
+  std::string name;
+  int thresholdValueMapId;
+  std::string units;
+  
+ DbAnalogDeviceType() : DbEntry(), name(""), thresholdValueMapId(-1), units("") {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbAnalogDeviceType * const analogDeviceType) {
+    os << "id[" << analogDeviceType->id << "]; "
+       << "thresholdValueMapId[" << analogDeviceType->thresholdValueMapId << "]; "
+       << "name[" << analogDeviceType->name << "]; "
+       << "units[" << analogDeviceType->units << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbAnalogDeviceType> DbAnalogDeviceTypePtr;
+typedef std::vector<DbAnalogDeviceTypePtr> DbAnalogDeviceTypeList;
+typedef shared_ptr<DbAnalogDeviceTypeList> DbAnalogDeviceTypeListPtr;
+
+/**
+ * AnalogDevice:
+ * - analog_device_type_id: '1'
+ *   channel_id: '1'
+ *   id: '3'
+ */
+class DbAnalogDevice : public DbEntry {
+ public:
+  int analogDeviceTypeId;
+  int channelId;
+  
+ DbAnalogDevice() : DbEntry(), analogDeviceTypeId(-1), channelId(-1) {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice) {
+    os << "id[" << analogDevice->id << "]; "
+       << "analogDeviceTypeId[" << analogDevice->analogDeviceTypeId << "]; "
+       << "channelId[" << analogDevice->channelId << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
+typedef std::vector<DbAnalogDevicePtr> DbAnalogDeviceList;
+typedef shared_ptr<DbAnalogDeviceList> DbAnalogDeviceListPtr;
 
 /**
  * ThresholdFaultState:
  * - id: '8'
  *   threshold_fault_id: '1'
  */
-struct DbThresholdFaultState : DbEntry {
+class DbThresholdFaultState : public DbEntry {
+ public:
   int thresholdFaultId;
   
  DbThresholdFaultState() : DbEntry(), thresholdFaultId(-1) {
@@ -425,7 +545,7 @@ struct DbThresholdFaultState : DbEntry {
 
   friend std::ostream & operator<<(std::ostream &os, DbThresholdFaultState * const thresFaultState) {
     os << "id[" << thresFaultState->id << "]; "
-       << "thresholdFaultId[" << thresFaultState->thresholdFaultId << "]; ";
+       << "thresholdFaultId[" << thresFaultState->thresholdFaultId << "]";
     return os;
   }
 };
@@ -440,7 +560,8 @@ typedef shared_ptr<DbThresholdFaultStateList> DbThresholdFaultStateListPtr;
  * - id: '1'
  *   name: Gun
  */
-struct DbMitigationDevice : DbEntry {
+class DbMitigationDevice : public DbEntry {
+ public:
   std::string name;
   
  DbMitigationDevice() : DbEntry(), name("") {
@@ -448,7 +569,7 @@ struct DbMitigationDevice : DbEntry {
 
   friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
     os << "id[" << mitigationDevice->id << "]; "
-       << "name[" << mitigationDevice->name << "]; ";
+       << "name[" << mitigationDevice->name << "]";
     return os;
   }
 };
@@ -464,7 +585,8 @@ typedef shared_ptr<DbMitigationDeviceList> DbMitigationDeviceListPtr;
  *   name: Class 1
  *   number: '1'
  */
-struct DbBeamClass : DbEntry {
+class DbBeamClass : public DbEntry {
+ public:
   int number;
   std::string name;
   
@@ -474,7 +596,7 @@ struct DbBeamClass : DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
     os << "id[" << beamClass->id << "]; "
        << "number[" << beamClass->number << "]; "
-       << "name[" << beamClass->name << "]; ";
+       << "name[" << beamClass->name << "]";
     return os;
   }
 };
@@ -491,9 +613,10 @@ typedef shared_ptr<DbBeamClassList> DbBeamClassListPtr;
  *   id: '1'
  *   mitigation_device_id: '1'
  */
-struct DbAllowedClass : DbEntry {
+class DbAllowedClass : public DbEntry {
+ public:
   int beamClassId;
-  int faultStateId;
+  int faultStateId; // This can be a DigitalFaultState or a ThresholdFaultState
   int mitigationDeviceId;
   
  DbAllowedClass() : DbEntry(), beamClassId(-1), faultStateId(-1), mitigationDeviceId(-1) {
@@ -503,7 +626,7 @@ struct DbAllowedClass : DbEntry {
     os << "id[" << allowedClass->id << "]; "
        << "beamClassId[" << allowedClass->beamClassId << "]; "
        << "faultStateId[" << allowedClass->faultStateId << "]; "
-       << "mitigationDeviceId[" << allowedClass->mitigationDeviceId << "]; ";
+       << "mitigationDeviceId[" << allowedClass->mitigationDeviceId << "]";
     return os;
   }
 };
@@ -513,10 +636,11 @@ typedef std::vector<DbAllowedClassPtr> DbAllowedClassList;
 typedef shared_ptr<DbAllowedClassList> DbAllowedClassListPtr;
 
 
-/*****************************/
-
-
-typedef struct MpsDb {
+/**
+ * Class containing all YAML MPS configuration
+ */
+class MpsDb {
+ public:
   DbCrateListPtr crates;
   DbApplicationTypeListPtr applicationTypes;
   DbApplicationCardListPtr applicationCards;
@@ -531,12 +655,23 @@ typedef struct MpsDb {
   DbDigitalFaultStateListPtr digitalFaultStates;
   DbThresholdValueMapListPtr thresholdValueMaps;
   DbThresholdValueListPtr thresholdValues;
+  DbAnalogDeviceTypeListPtr analogDeviceTypes;
+  DbAnalogDeviceListPtr analogDevices;
   DbThresholdFaultListPtr thresholdFaults;
   DbThresholdFaultStateListPtr thresholdFaultStates;
   DbMitigationDeviceListPtr mitigationDevices;
   DbBeamClassListPtr beamClasses;
   DbAllowedClassListPtr allowedClasses;
 
+  // This is initialized by the configure() method, after loading the YAML file
+  //  DbFaultStateListPtr faultStates; 
+
+  int load(std::string yamlFile);
+  int configure();
+
+  /**
+   * Print contents of all entities
+   */
   friend std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
     os << "Crates: " << std::endl;
     for (DbCrateList::iterator it = mpsDb->crates->begin(); 
@@ -616,6 +751,18 @@ typedef struct MpsDb {
       os << "  " <<  (*it) << std::endl;
     }
 
+    os << "AnalogDeviceTypes: " << std::endl;
+    for (DbAnalogDeviceTypeList::iterator it = mpsDb->analogDeviceTypes->begin(); 
+	 it != mpsDb->analogDeviceTypes->end(); ++it) {
+      os << "  " <<  (*it) << std::endl;
+    }
+
+    os << "AnalogDevices: " << std::endl;
+    for (DbAnalogDeviceList::iterator it = mpsDb->analogDevices->begin(); 
+	 it != mpsDb->analogDevices->end(); ++it) {
+      os << "  " <<  (*it) << std::endl;
+    }
+
     os << "ThresholdValues: " << std::endl;
     for (DbThresholdValueList::iterator it = mpsDb->thresholdValues->begin(); 
 	 it != mpsDb->thresholdValues->end(); ++it) {
@@ -655,6 +802,6 @@ typedef struct MpsDb {
 
     return os;
   }
-} MpsDb;
+};
 
 #endif
