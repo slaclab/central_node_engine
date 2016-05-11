@@ -2,6 +2,7 @@
 #define CENTRAL_NODE_DATABASE_H
 
 #include <vector>
+#include <map>
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
@@ -45,8 +46,8 @@ class DbCrate : public DbEntry {
 };
 
 typedef shared_ptr<DbCrate> DbCratePtr;
-typedef std::vector<DbCratePtr> DbCrateList;
-typedef shared_ptr<DbCrateList> DbCrateListPtr;
+typedef std::map<int, DbCratePtr> DbCrateMap;
+typedef shared_ptr<DbCrateMap> DbCrateMapPtr;
 
 /**
  * ApplicationType:
@@ -86,8 +87,8 @@ class DbApplicationType : public DbEntry {
 };
 
 typedef shared_ptr<DbApplicationType> DbApplicationTypePtr;
-typedef std::vector<DbApplicationTypePtr> DbApplicationTypeList;
-typedef shared_ptr<DbApplicationTypeList> DbApplicationTypeListPtr;
+typedef std::map<int, DbApplicationTypePtr> DbApplicationTypeMap;
+typedef shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
 
 
 /**
@@ -122,8 +123,8 @@ class DbApplicationCard : public DbEntry {
 };
 
 typedef shared_ptr<DbApplicationCard> DbApplicationCardPtr;
-typedef std::vector<DbApplicationCardPtr> DbApplicationCardList;
-typedef shared_ptr<DbApplicationCardList> DbApplicationCardListPtr;
+typedef std::map<int, DbApplicationCardPtr> DbApplicationCardMap;
+typedef shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 
 /**
  * DigitalChannel:
@@ -153,8 +154,8 @@ class DbChannel : public DbEntry {
 };
 
 typedef shared_ptr<DbChannel> DbChannelPtr;
-typedef std::vector<DbChannelPtr> DbChannelList;
-typedef shared_ptr<DbChannelList> DbChannelListPtr;
+typedef std::map<int, DbChannelPtr> DbChannelMap;
+typedef shared_ptr<DbChannelMap> DbChannelMapPtr;
 
 /**
  * DeviceType:
@@ -176,8 +177,8 @@ class DbDeviceType : public DbEntry {
 };
 
 typedef shared_ptr<DbDeviceType> DbDeviceTypePtr;
-typedef std::vector<DbDeviceTypePtr> DbDeviceTypeList;
-typedef shared_ptr<DbDeviceTypeList> DbDeviceTypeListPtr;
+typedef std::map<int, DbDeviceTypePtr> DbDeviceTypeMap;
+typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
 
 /**
  * DeviceState:
@@ -205,8 +206,8 @@ class DbDeviceState : public DbEntry {
 };
 
 typedef shared_ptr<DbDeviceState> DbDeviceStatePtr;
-typedef std::vector<DbDeviceStatePtr> DbDeviceStateList;
-typedef shared_ptr<DbDeviceStateList> DbDeviceStateListPtr;
+typedef std::map<int, DbDeviceStatePtr> DbDeviceStateMap;
+typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
 
 /**
  * DeviceInput:
@@ -242,8 +243,8 @@ class DbDeviceInput : public DbEntry {
 };
 
 typedef shared_ptr<DbDeviceInput> DbDeviceInputPtr;
-typedef std::vector<DbDeviceInputPtr> DbDeviceInputList;
-typedef shared_ptr<DbDeviceInputList> DbDeviceInputListPtr;
+typedef std::map<int, DbDeviceInputPtr> DbDeviceInputMap;
+typedef shared_ptr<DbDeviceInputMap> DbDeviceInputMapPtr;
 
 /**
  * DigitalDevice:
@@ -254,7 +255,7 @@ class DbDigitalDevice : public DbEntry {
  public:
   int deviceTypeId;
   int value; // calculated from the DeviceInputs for this device
-  DbDeviceInputListPtr inputDevices; // list built after the config is loaded
+  DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
  DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
   }
@@ -271,8 +272,8 @@ class DbDigitalDevice : public DbEntry {
 };
 
 typedef shared_ptr<DbDigitalDevice> DbDigitalDevicePtr;
-typedef std::vector<DbDigitalDevicePtr> DbDigitalDeviceList;
-typedef shared_ptr<DbDigitalDeviceList> DbDigitalDeviceListPtr;
+typedef std::map<int, DbDigitalDevicePtr> DbDigitalDeviceMap;
+typedef shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
 
 /**
  * FaultInput:
@@ -309,8 +310,8 @@ class DbFaultInput : public DbEntry {
 };
 
 typedef shared_ptr<DbFaultInput> DbFaultInputPtr;
-typedef std::vector<DbFaultInputPtr> DbFaultInputList;
-typedef shared_ptr<DbFaultInputList> DbFaultInputListPtr;
+typedef std::map<int, DbFaultInputPtr> DbFaultInputMap;
+typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
 /*
 enum DbFaultStateType {
   DB_FAULT_STATE_DIGITAL,
@@ -324,8 +325,8 @@ class DbFaultState : public DbEntry {
 };
 
 typedef shared_ptr<DbFaultState> DbFaultStatePtr;
-typedef std::vector<DbFaultStatePtr> DbFaultStateList;
-typedef shared_ptr<DbFaultStateList> DbFaultStateListPtr;
+typedef std::map<int, DbFaultStatePtr> DbFaultStateMap;
+typedef shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
 */
 /**
  * DigitalFaultState:
@@ -353,8 +354,8 @@ class DbDigitalFaultState : public DbEntry {
 };
 
 typedef shared_ptr<DbDigitalFaultState> DbDigitalFaultStatePtr;
-typedef std::vector<DbDigitalFaultStatePtr> DbDigitalFaultStateList;
-typedef shared_ptr<DbDigitalFaultStateList> DbDigitalFaultStateListPtr;
+typedef std::map<int, DbDigitalFaultStatePtr> DbDigitalFaultStateMap;
+typedef shared_ptr<DbDigitalFaultStateMap> DbDigitalFaultStateMapPtr;
 
 /** 
  * Fault: (these are digital faults)
@@ -368,9 +369,9 @@ class DbFault : public DbEntry {
   std::string description;
 
   // Configured after loading the YAML file
-  DbFaultInputListPtr faultInputs; // A fault may be built by several devices
+  DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   int value; // Calculated from the list of faultInputs
-  //  DbDigitalFaultStateListPtr digitalFaultStates; // List of fault states for this fault
+  //  DbDigitalFaultStateMapPtr digitalFaultStates; // Map of fault states for this fault
 
  DbFault() : DbEntry(), name(""), description("") {
   }
@@ -388,31 +389,31 @@ class DbFault : public DbEntry {
 };
 
 typedef shared_ptr<DbFault> DbFaultPtr;
-typedef std::vector<DbFaultPtr> DbFaultList;
-typedef shared_ptr<DbFaultList> DbFaultListPtr;
+typedef std::map<int, DbFaultPtr> DbFaultMap;
+typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
 
 /**
  * ThresholdValueMap:
  * - description: Map for generic PICs.
  *   id: '1'
  */
-class DbThresholdValueMap : public DbEntry {
+class DbThresholdValueMapEntry : public DbEntry {
  public:
   std::string description;
   
- DbThresholdValueMap() : DbEntry(), description("") {
+ DbThresholdValueMapEntry() : DbEntry(), description("") {
   }
 
-  friend std::ostream & operator<<(std::ostream &os, DbThresholdValueMap * const thresValueMap) {
-    os << "id[" << thresValueMap->id << "]; "
-       << "description[" << thresValueMap->description << "]";
+  friend std::ostream & operator<<(std::ostream &os, DbThresholdValueMapEntry * const thresValueMapEntry) {
+    os << "id[" << thresValueMapEntry->id << "]; "
+       << "description[" << thresValueMapEntry->description << "]";
     return os;
   }
 };
 
-typedef shared_ptr<DbThresholdValueMap> DbThresholdValueMapPtr;
-typedef std::vector<DbThresholdValueMapPtr> DbThresholdValueMapList;
-typedef shared_ptr<DbThresholdValueMapList> DbThresholdValueMapListPtr;
+typedef shared_ptr<DbThresholdValueMapEntry> DbThresholdValueMapEntryPtr;
+typedef std::map<int, DbThresholdValueMapEntryPtr> DbThresholdValueMapEntryMap;
+typedef shared_ptr<DbThresholdValueMapEntryMap> DbThresholdValueMapEntryMapPtr;
 
 /**
  * ThresholdValue:
@@ -441,8 +442,8 @@ class DbThresholdValue : public DbEntry {
 };
 
 typedef shared_ptr<DbThresholdValue> DbThresholdValuePtr;
-typedef std::vector<DbThresholdValuePtr> DbThresholdValueList;
-typedef shared_ptr<DbThresholdValueList> DbThresholdValueListPtr;
+typedef std::map<int, DbThresholdValuePtr> DbThresholdValueMap;
+typedef shared_ptr<DbThresholdValueMap> DbThresholdValueMapPtr;
 
 /**
  * ThresholdFault:
@@ -473,8 +474,8 @@ class DbThresholdFault : public DbEntry {
 };
 
 typedef shared_ptr<DbThresholdFault> DbThresholdFaultPtr;
-typedef std::vector<DbThresholdFaultPtr> DbThresholdFaultList;
-typedef shared_ptr<DbThresholdFaultList> DbThresholdFaultListPtr;
+typedef std::map<int, DbThresholdFaultPtr> DbThresholdFaultMap;
+typedef shared_ptr<DbThresholdFaultMap> DbThresholdFaultMapPtr;
 
 /**
  * AnalogDeviceType:
@@ -502,8 +503,8 @@ class DbAnalogDeviceType : public DbEntry {
 };
 
 typedef shared_ptr<DbAnalogDeviceType> DbAnalogDeviceTypePtr;
-typedef std::vector<DbAnalogDeviceTypePtr> DbAnalogDeviceTypeList;
-typedef shared_ptr<DbAnalogDeviceTypeList> DbAnalogDeviceTypeListPtr;
+typedef std::map<int, DbAnalogDeviceTypePtr> DbAnalogDeviceTypeMap;
+typedef shared_ptr<DbAnalogDeviceTypeMap> DbAnalogDeviceTypeMapPtr;
 
 /**
  * AnalogDevice:
@@ -528,8 +529,8 @@ class DbAnalogDevice : public DbEntry {
 };
 
 typedef shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
-typedef std::vector<DbAnalogDevicePtr> DbAnalogDeviceList;
-typedef shared_ptr<DbAnalogDeviceList> DbAnalogDeviceListPtr;
+typedef std::map<int, DbAnalogDevicePtr> DbAnalogDeviceMap;
+typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
 
 /**
  * ThresholdFaultState:
@@ -551,8 +552,8 @@ class DbThresholdFaultState : public DbEntry {
 };
 
 typedef shared_ptr<DbThresholdFaultState> DbThresholdFaultStatePtr;
-typedef std::vector<DbThresholdFaultStatePtr> DbThresholdFaultStateList;
-typedef shared_ptr<DbThresholdFaultStateList> DbThresholdFaultStateListPtr;
+typedef std::map<int, DbThresholdFaultStatePtr> DbThresholdFaultStateMap;
+typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
 
 
 /**
@@ -575,8 +576,8 @@ class DbMitigationDevice : public DbEntry {
 };
 
 typedef shared_ptr<DbMitigationDevice> DbMitigationDevicePtr;
-typedef std::vector<DbMitigationDevicePtr> DbMitigationDeviceList;
-typedef shared_ptr<DbMitigationDeviceList> DbMitigationDeviceListPtr;
+typedef std::map<int, DbMitigationDevicePtr> DbMitigationDeviceMap;
+typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
 
 
 /**
@@ -602,8 +603,8 @@ class DbBeamClass : public DbEntry {
 };
 
 typedef shared_ptr<DbBeamClass> DbBeamClassPtr;
-typedef std::vector<DbBeamClassPtr> DbBeamClassList;
-typedef shared_ptr<DbBeamClassList> DbBeamClassListPtr;
+typedef std::map<int, DbBeamClassPtr> DbBeamClassMap;
+typedef shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
 
 
 /**
@@ -632,8 +633,8 @@ class DbAllowedClass : public DbEntry {
 };
 
 typedef shared_ptr<DbAllowedClass> DbAllowedClassPtr;
-typedef std::vector<DbAllowedClassPtr> DbAllowedClassList;
-typedef shared_ptr<DbAllowedClassList> DbAllowedClassListPtr;
+typedef std::map<int, DbAllowedClassPtr> DbAllowedClassMap;
+typedef shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
 
 
 /**
@@ -641,30 +642,30 @@ typedef shared_ptr<DbAllowedClassList> DbAllowedClassListPtr;
  */
 class MpsDb {
  public:
-  DbCrateListPtr crates;
-  DbApplicationTypeListPtr applicationTypes;
-  DbApplicationCardListPtr applicationCards;
-  DbChannelListPtr digitalChannels;
-  DbChannelListPtr analogChannels;
-  DbDeviceTypeListPtr deviceTypes;
-  DbDeviceStateListPtr deviceStates;
-  DbDigitalDeviceListPtr digitalDevices;
-  DbDeviceInputListPtr deviceInputs;
-  DbFaultListPtr faults;
-  DbFaultInputListPtr faultInputs;
-  DbDigitalFaultStateListPtr digitalFaultStates;
-  DbThresholdValueMapListPtr thresholdValueMaps;
-  DbThresholdValueListPtr thresholdValues;
-  DbAnalogDeviceTypeListPtr analogDeviceTypes;
-  DbAnalogDeviceListPtr analogDevices;
-  DbThresholdFaultListPtr thresholdFaults;
-  DbThresholdFaultStateListPtr thresholdFaultStates;
-  DbMitigationDeviceListPtr mitigationDevices;
-  DbBeamClassListPtr beamClasses;
-  DbAllowedClassListPtr allowedClasses;
+  DbCrateMapPtr crates;
+  DbApplicationTypeMapPtr applicationTypes;
+  DbApplicationCardMapPtr applicationCards;
+  DbChannelMapPtr digitalChannels;
+  DbChannelMapPtr analogChannels;
+  DbDeviceTypeMapPtr deviceTypes;
+  DbDeviceStateMapPtr deviceStates;
+  DbDigitalDeviceMapPtr digitalDevices;
+  DbDeviceInputMapPtr deviceInputs;
+  DbFaultMapPtr faults;
+  DbFaultInputMapPtr faultInputs;
+  DbDigitalFaultStateMapPtr digitalFaultStates;
+  DbThresholdValueMapEntryMapPtr thresholdValueMaps;
+  DbThresholdValueMapPtr thresholdValues;
+  DbAnalogDeviceTypeMapPtr analogDeviceTypes;
+  DbAnalogDeviceMapPtr analogDevices;
+  DbThresholdFaultMapPtr thresholdFaults;
+  DbThresholdFaultStateMapPtr thresholdFaultStates;
+  DbMitigationDeviceMapPtr mitigationDevices;
+  DbBeamClassMapPtr beamClasses;
+  DbAllowedClassMapPtr allowedClasses;
 
   // This is initialized by the configure() method, after loading the YAML file
-  //  DbFaultStateListPtr faultStates; 
+  //  DbFaultStateMapPtr faultStates; 
 
   int load(std::string yamlFile);
   int configure();
@@ -674,129 +675,129 @@ class MpsDb {
    */
   friend std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
     os << "Crates: " << std::endl;
-    for (DbCrateList::iterator it = mpsDb->crates->begin(); 
+    for (DbCrateMap::iterator it = mpsDb->crates->begin(); 
 	 it != mpsDb->crates->end(); ++it) {
-      os << "  " << (*it) << std::endl;
+      os << "  " << (*it).second << std::endl;
     }
 
     os << "ApplicationTypes: " << std::endl;
-    for (DbApplicationTypeList::iterator it = mpsDb->applicationTypes->begin(); 
+    for (DbApplicationTypeMap::iterator it = mpsDb->applicationTypes->begin(); 
 	 it != mpsDb->applicationTypes->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "ApplicationCards: " << std::endl;
-    for (DbApplicationCardList::iterator it = mpsDb->applicationCards->begin(); 
+    for (DbApplicationCardMap::iterator it = mpsDb->applicationCards->begin(); 
 	 it != mpsDb->applicationCards->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "DigitalChannels: " << std::endl;
-    for (DbChannelList::iterator it = mpsDb->digitalChannels->begin(); 
+    for (DbChannelMap::iterator it = mpsDb->digitalChannels->begin(); 
 	 it != mpsDb->digitalChannels->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "AnalogChannels: " << std::endl;
-    for (DbChannelList::iterator it = mpsDb->analogChannels->begin(); 
+    for (DbChannelMap::iterator it = mpsDb->analogChannels->begin(); 
 	 it != mpsDb->analogChannels->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "DeviceTypes: " << std::endl;
-    for (DbDeviceTypeList::iterator it = mpsDb->deviceTypes->begin(); 
+    for (DbDeviceTypeMap::iterator it = mpsDb->deviceTypes->begin(); 
 	 it != mpsDb->deviceTypes->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "DeviceStates: " << std::endl;
-    for (DbDeviceStateList::iterator it = mpsDb->deviceStates->begin(); 
+    for (DbDeviceStateMap::iterator it = mpsDb->deviceStates->begin(); 
 	 it != mpsDb->deviceStates->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "DigitalDevices: " << std::endl;
-    for (DbDigitalDeviceList::iterator it = mpsDb->digitalDevices->begin(); 
+    for (DbDigitalDeviceMap::iterator it = mpsDb->digitalDevices->begin(); 
 	 it != mpsDb->digitalDevices->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "DeviceInputs: " << std::endl;
-    for (DbDeviceInputList::iterator it = mpsDb->deviceInputs->begin(); 
+    for (DbDeviceInputMap::iterator it = mpsDb->deviceInputs->begin(); 
 	 it != mpsDb->deviceInputs->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "Faults: " << std::endl;
-    for (DbFaultList::iterator it = mpsDb->faults->begin(); 
+    for (DbFaultMap::iterator it = mpsDb->faults->begin(); 
 	 it != mpsDb->faults->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "FaultInputs: " << std::endl;
-    for (DbFaultInputList::iterator it = mpsDb->faultInputs->begin(); 
+    for (DbFaultInputMap::iterator it = mpsDb->faultInputs->begin(); 
 	 it != mpsDb->faultInputs->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "DigitalFaultStates: " << std::endl;
-    for (DbDigitalFaultStateList::iterator it = mpsDb->digitalFaultStates->begin(); 
+    for (DbDigitalFaultStateMap::iterator it = mpsDb->digitalFaultStates->begin(); 
 	 it != mpsDb->digitalFaultStates->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "ThresholdValueMaps: " << std::endl;
-    for (DbThresholdValueMapList::iterator it = mpsDb->thresholdValueMaps->begin(); 
+    for (DbThresholdValueMapEntryMap::iterator it = mpsDb->thresholdValueMaps->begin(); 
 	 it != mpsDb->thresholdValueMaps->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "AnalogDeviceTypes: " << std::endl;
-    for (DbAnalogDeviceTypeList::iterator it = mpsDb->analogDeviceTypes->begin(); 
+    for (DbAnalogDeviceTypeMap::iterator it = mpsDb->analogDeviceTypes->begin(); 
 	 it != mpsDb->analogDeviceTypes->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "AnalogDevices: " << std::endl;
-    for (DbAnalogDeviceList::iterator it = mpsDb->analogDevices->begin(); 
+    for (DbAnalogDeviceMap::iterator it = mpsDb->analogDevices->begin(); 
 	 it != mpsDb->analogDevices->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "ThresholdValues: " << std::endl;
-    for (DbThresholdValueList::iterator it = mpsDb->thresholdValues->begin(); 
+    for (DbThresholdValueMap::iterator it = mpsDb->thresholdValues->begin(); 
 	 it != mpsDb->thresholdValues->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "ThresholdFaults: " << std::endl;
-    for (DbThresholdFaultList::iterator it = mpsDb->thresholdFaults->begin(); 
+    for (DbThresholdFaultMap::iterator it = mpsDb->thresholdFaults->begin(); 
 	 it != mpsDb->thresholdFaults->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "ThresholdFaultStates: " << std::endl;
-    for (DbThresholdFaultStateList::iterator it = mpsDb->thresholdFaultStates->begin(); 
+    for (DbThresholdFaultStateMap::iterator it = mpsDb->thresholdFaultStates->begin(); 
 	 it != mpsDb->thresholdFaultStates->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "MitigationDevices: " << std::endl;
-    for (DbMitigationDeviceList::iterator it = mpsDb->mitigationDevices->begin(); 
+    for (DbMitigationDeviceMap::iterator it = mpsDb->mitigationDevices->begin(); 
 	 it != mpsDb->mitigationDevices->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "BeamClasss: " << std::endl;
-    for (DbBeamClassList::iterator it = mpsDb->beamClasses->begin(); 
+    for (DbBeamClassMap::iterator it = mpsDb->beamClasses->begin(); 
 	 it != mpsDb->beamClasses->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
     os << "AllowedClasss: " << std::endl;
-    for (DbAllowedClassList::iterator it = mpsDb->allowedClasses->begin(); 
+    for (DbAllowedClassMap::iterator it = mpsDb->allowedClasses->begin(); 
 	 it != mpsDb->allowedClasses->end(); ++it) {
-      os << "  " <<  (*it) << std::endl;
+      os << "  " <<  (*it).second << std::endl;
     }
 
 

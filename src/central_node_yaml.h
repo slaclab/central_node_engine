@@ -22,26 +22,21 @@ namespace YAML {
    *   shelf_number: '1'
    */
   template<>
-    struct convert<DbCrateListPtr> {
-    static bool decode(const Node &node, DbCrateListPtr &rhs) {
-      size_t elements = node["Crate"].size();
-
-      DbCrateList *crates = new DbCrateList(elements + 1);
-      rhs = DbCrateListPtr(crates);
-
-      DbCrate *crate = new DbCrate();
-      rhs->at(0) = DbCratePtr(crate);
+    struct convert<DbCrateMapPtr> {
+    static bool decode(const Node &node, DbCrateMapPtr &rhs) {
+      DbCrateMap *crates = new DbCrateMap();
+      rhs = DbCrateMapPtr(crates);
 
       for (YAML::Node::const_iterator it = node["Crate"].begin();
 	   it != node["Crate"].end(); ++it) {
-	crate = new DbCrate();
+	DbCrate *crate = new DbCrate();
 	
 	crate->id = (*it)["id"].as<int>();
 	crate->number = (*it)["number"].as<int>();
 	crate->numSlots = (*it)["num_slots"].as<int>();
 	crate->shelfNumber = (*it)["shelf_number"].as<int>();
 
-	rhs->at(crate->id) = DbCratePtr(crate);
+	rhs->insert(std::pair<int, DbCratePtr>(crate->id, DbCratePtr(crate)));
       }
 
       return true;
@@ -59,19 +54,14 @@ namespace YAML {
    *   number: '0'
    */
   template<>
-    struct convert<DbApplicationTypeListPtr> {
-    static bool decode(const Node &node, DbApplicationTypeListPtr &rhs) {
-      size_t elements = node["ApplicationType"].size();
-
-      DbApplicationTypeList *appTypes = new DbApplicationTypeList(elements + 1);
-      rhs = DbApplicationTypeListPtr(appTypes);
-
-      DbApplicationType *appType = new DbApplicationType();
-      rhs->at(0) = DbApplicationTypePtr(appType);
+    struct convert<DbApplicationTypeMapPtr> {
+    static bool decode(const Node &node, DbApplicationTypeMapPtr &rhs) {
+      DbApplicationTypeMap *appTypes = new DbApplicationTypeMap();
+      rhs = DbApplicationTypeMapPtr(appTypes);
 
       for (YAML::Node::const_iterator it = node["ApplicationType"].begin();
 	   it != node["ApplicationType"].end(); ++it) {
-	appType = new DbApplicationType();
+	DbApplicationType *appType = new DbApplicationType();
 	
 	appType->id = (*it)["id"].as<int>();
 	appType->number = (*it)["number"].as<int>();
@@ -81,7 +71,8 @@ namespace YAML {
 	appType->digitalChannelSize = (*it)["digital_channel_size"].as<int>();
 	appType->description = (*it)["name"].as<std::string>();
 
-	rhs->at(appType->id) = DbApplicationTypePtr(appType);
+	rhs->insert(std::pair<int, DbApplicationTypePtr>(appType->id,
+							 DbApplicationTypePtr(appType)));
       }
 
       return true;
@@ -97,15 +88,10 @@ namespace YAML {
    *   type_id: '1'
    */
   template<>
-    struct convert<DbApplicationCardListPtr> {
-    static bool decode(const Node &node, DbApplicationCardListPtr &rhs) {
-      size_t elements = node["ApplicationCard"].size();
-
-      DbApplicationCardList *appCards = new DbApplicationCardList(elements + 1);
-      rhs = DbApplicationCardListPtr(appCards);
-
-      DbApplicationCard *appCard = new DbApplicationCard();
-      rhs->at(0) = DbApplicationCardPtr(appCard);
+    struct convert<DbApplicationCardMapPtr> {
+    static bool decode(const Node &node, DbApplicationCardMapPtr &rhs) {
+      DbApplicationCardMap *appCards = new DbApplicationCardMap();
+      rhs = DbApplicationCardMapPtr(appCards);
 
       for (YAML::Node::const_iterator it = node["ApplicationCard"].begin();
 	   it != node["ApplicationCard"].end(); ++it) {
@@ -117,7 +103,8 @@ namespace YAML {
 	appCard->slotNumber = (*it)["slot_number"].as<int>();
 	appCard->applicationTypeId = (*it)["type_id"].as<int>();
 
-	rhs->at(appCard->id) = DbApplicationCardPtr(appCard);
+	rhs->insert(std::pair<int, DbApplicationCardPtr>(appCard->id,
+							 DbApplicationCardPtr(appCard)));
       }
 
       return true;
@@ -136,14 +123,12 @@ namespace YAML {
    *   number: '0'
    */
   template<>
-    struct convert<DbChannelListPtr> {
-    static bool decode(const Node &node, DbChannelListPtr &rhs) {
-      size_t elements = -1;
+    struct convert<DbChannelMapPtr> {
+    static bool decode(const Node &node, DbChannelMapPtr &rhs) {
       std::string key = "";
 
       try {
 	key = "DigitalChannel";
-	elements = node[key].size();
       } catch (InvalidNode &e) {
 	key = "";
       }
@@ -151,17 +136,13 @@ namespace YAML {
       if (key == "") {
 	try {
 	  key = "AnalogChannel";
-	  elements = node[key].size();
 	} catch (InvalidNode &e) {
 	  throw e;
 	}
       }
 
-      DbChannelList *channels = new DbChannelList(elements + 1);
-      rhs = DbChannelListPtr(channels);
-
-      DbChannel *channel = new DbChannel();
-      rhs->at(0) = DbChannelPtr(channel);
+      DbChannelMap *channels = new DbChannelMap();
+      rhs = DbChannelMapPtr(channels);
 
       for (YAML::Node::const_iterator it = node[key].begin();
 	   it != node[key].end(); ++it) {
@@ -171,7 +152,7 @@ namespace YAML {
 	channel->number = (*it)["number"].as<int>();
 	channel->cardId = (*it)["card_id"].as<int>();
 
-	rhs->at(channel->id) = DbChannelPtr(channel);
+	rhs->insert(std::pair<int, DbChannelPtr>(channel->id, DbChannelPtr(channel)));
       }
 
       return true;
@@ -184,24 +165,20 @@ namespace YAML {
    *   name: Insertion Device
    */
   template<>
-    struct convert<DbDeviceTypeListPtr> {
-    static bool decode(const Node &node, DbDeviceTypeListPtr &rhs) {
-      size_t elements = node["DeviceType"].size();
-
-      DbDeviceTypeList *deviceTypes = new DbDeviceTypeList(elements + 1);
-      rhs = DbDeviceTypeListPtr(deviceTypes);
-
-      DbDeviceType *deviceType = new DbDeviceType();
-      rhs->at(0) = DbDeviceTypePtr(deviceType);
+    struct convert<DbDeviceTypeMapPtr> {
+    static bool decode(const Node &node, DbDeviceTypeMapPtr &rhs) {
+      DbDeviceTypeMap *deviceTypes = new DbDeviceTypeMap();
+      rhs = DbDeviceTypeMapPtr(deviceTypes);
 
       for (YAML::Node::const_iterator it = node["DeviceType"].begin();
 	   it != node["DeviceType"].end(); ++it) {
-	deviceType = new DbDeviceType();
+	DbDeviceType *deviceType = new DbDeviceType();
 	
 	deviceType->id = (*it)["id"].as<int>();
 	deviceType->name = (*it)["name"].as<std::string>();
 
-	rhs->at(deviceType->id) = DbDeviceTypePtr(deviceType);
+	rhs->insert(std::pair<int, DbDeviceTypePtr>(deviceType->id,
+						    DbDeviceTypePtr(deviceType)));
       }
 
       return true;
@@ -216,26 +193,22 @@ namespace YAML {
    *   value: '1'
    */
   template<>
-    struct convert<DbDeviceStateListPtr> {
-    static bool decode(const Node &node, DbDeviceStateListPtr &rhs) {
-      size_t elements = node["DeviceState"].size();
-
-      DbDeviceStateList *deviceStates = new DbDeviceStateList(elements + 1);
-      rhs = DbDeviceStateListPtr(deviceStates);
-
-      DbDeviceState *deviceState = new DbDeviceState();
-      rhs->at(0) = DbDeviceStatePtr(deviceState);
+    struct convert<DbDeviceStateMapPtr> {
+    static bool decode(const Node &node, DbDeviceStateMapPtr &rhs) {
+      DbDeviceStateMap *deviceStates = new DbDeviceStateMap();
+      rhs = DbDeviceStateMapPtr(deviceStates);
 
       for (YAML::Node::const_iterator it = node["DeviceState"].begin();
 	   it != node["DeviceState"].end(); ++it) {
-	deviceState = new DbDeviceState();
+	DbDeviceState *	deviceState = new DbDeviceState();
 	
 	deviceState->id = (*it)["id"].as<int>();
 	deviceState->value = (*it)["value"].as<int>();
 	deviceState->deviceTypeId = (*it)["device_type_id"].as<int>();
 	deviceState->name = (*it)["name"].as<std::string>();
 
-	rhs->at(deviceState->id) = DbDeviceStatePtr(deviceState);
+	rhs->insert(std::pair<int, DbDeviceStatePtr>(deviceState->id,
+						     DbDeviceStatePtr(deviceState)));
       }
 
       return true;
@@ -248,24 +221,20 @@ namespace YAML {
    *   id: '1'
    */
   template<>
-    struct convert<DbDigitalDeviceListPtr> {
-    static bool decode(const Node &node, DbDigitalDeviceListPtr &rhs) {
-      size_t elements = node["DigitalDevice"].size();
-
-      DbDigitalDeviceList *digitalDevices = new DbDigitalDeviceList(elements + 1);
-      rhs = DbDigitalDeviceListPtr(digitalDevices);
-
-      DbDigitalDevice *digitalDevice = new DbDigitalDevice();
-      rhs->at(0) = DbDigitalDevicePtr(digitalDevice);
+    struct convert<DbDigitalDeviceMapPtr> {
+    static bool decode(const Node &node, DbDigitalDeviceMapPtr &rhs) {
+      DbDigitalDeviceMap *digitalDevices = new DbDigitalDeviceMap();
+      rhs = DbDigitalDeviceMapPtr(digitalDevices);
 
       for (YAML::Node::const_iterator it = node["DigitalDevice"].begin();
 	   it != node["DigitalDevice"].end(); ++it) {
-	digitalDevice = new DbDigitalDevice();
+	DbDigitalDevice *digitalDevice = new DbDigitalDevice();
 	
 	digitalDevice->id = (*it)["id"].as<int>();
 	digitalDevice->deviceTypeId = (*it)["device_type_id"].as<int>();
 
-	rhs->at(digitalDevice->id) = DbDigitalDevicePtr(digitalDevice);
+	rhs->insert(std::pair<int, DbDigitalDevicePtr>(digitalDevice->id,
+						       DbDigitalDevicePtr(digitalDevice)));
       }
 
       return true;
@@ -280,26 +249,22 @@ namespace YAML {
    *   id: '1'
    */
   template<>
-    struct convert<DbDeviceInputListPtr> {
-    static bool decode(const Node &node, DbDeviceInputListPtr &rhs) {
-      size_t elements = node["DeviceInput"].size();
-
-      DbDeviceInputList *deviceInputs = new DbDeviceInputList(elements + 1);
-      rhs = DbDeviceInputListPtr(deviceInputs);
-
-      DbDeviceInput *deviceInput = new DbDeviceInput();
-      rhs->at(0) = DbDeviceInputPtr(deviceInput);
+    struct convert<DbDeviceInputMapPtr> {
+    static bool decode(const Node &node, DbDeviceInputMapPtr &rhs) {
+      DbDeviceInputMap *deviceInputs = new DbDeviceInputMap();
+      rhs = DbDeviceInputMapPtr(deviceInputs);
 
       for (YAML::Node::const_iterator it = node["DeviceInput"].begin();
 	   it != node["DeviceInput"].end(); ++it) {
-	deviceInput = new DbDeviceInput();
+	DbDeviceInput *deviceInput = new DbDeviceInput();
 	
 	deviceInput->id = (*it)["id"].as<int>();
 	deviceInput->bitPosition = (*it)["bit_position"].as<int>();
 	deviceInput->digitalDeviceId = (*it)["digital_device_id"].as<int>();
 	deviceInput->channelId = (*it)["channel_id"].as<int>();
 
-	rhs->at(deviceInput->id) = DbDeviceInputPtr(deviceInput);
+	rhs->insert(std::pair<int, DbDeviceInputPtr>(deviceInput->id,
+						     DbDeviceInputPtr(deviceInput)));
       }
 
       return true;
@@ -313,25 +278,20 @@ namespace YAML {
    *   name: OTR Fault
    */
   template<>
-    struct convert<DbFaultListPtr> {
-    static bool decode(const Node &node, DbFaultListPtr &rhs) {
-      size_t elements = node["Fault"].size();
-
-      DbFaultList *faults = new DbFaultList(elements + 1);
-      rhs = DbFaultListPtr(faults);
-
-      DbFault *fault = new DbFault();
-      rhs->at(0) = DbFaultPtr(fault);
+    struct convert<DbFaultMapPtr> {
+    static bool decode(const Node &node, DbFaultMapPtr &rhs) {
+      DbFaultMap *faults = new DbFaultMap();
+      rhs = DbFaultMapPtr(faults);
 
       for (YAML::Node::const_iterator it = node["Fault"].begin();
 	   it != node["Fault"].end(); ++it) {
-	fault = new DbFault();
+	DbFault *fault = new DbFault();
 	
 	fault->id = (*it)["id"].as<int>();
 	fault->name = (*it)["name"].as<std::string>();
 	fault->description = (*it)["description"].as<std::string>();
 
-	rhs->at(fault->id) = DbFaultPtr(fault);
+	rhs->insert(std::pair<int, DbFaultPtr>(fault->id, DbFaultPtr(fault)));
       }
 
       return true;
@@ -346,26 +306,22 @@ namespace YAML {
    *   id: '1'
    */
   template<>
-    struct convert<DbFaultInputListPtr> {
-    static bool decode(const Node &node, DbFaultInputListPtr &rhs) {
-      size_t elements = node["FaultInput"].size();
-
-      DbFaultInputList *faultInputs = new DbFaultInputList(elements + 1);
-      rhs = DbFaultInputListPtr(faultInputs);
-
-      DbFaultInput *faultInput = new DbFaultInput();
-      rhs->at(0) = DbFaultInputPtr(faultInput);
+    struct convert<DbFaultInputMapPtr> {
+    static bool decode(const Node &node, DbFaultInputMapPtr &rhs) {
+      DbFaultInputMap *faultInputs = new DbFaultInputMap();
+      rhs = DbFaultInputMapPtr(faultInputs);
 
       for (YAML::Node::const_iterator it = node["FaultInput"].begin();
 	   it != node["FaultInput"].end(); ++it) {
-	faultInput = new DbFaultInput();
+	DbFaultInput *faultInput = new DbFaultInput();
 	
 	faultInput->id = (*it)["id"].as<int>();
 	faultInput->bitPosition = (*it)["bit_position"].as<int>();
 	faultInput->deviceId = (*it)["device_id"].as<int>();
 	faultInput->faultId = (*it)["fault_id"].as<int>();
 
-	rhs->at(faultInput->id) = DbFaultInputPtr(faultInput);
+	rhs->insert(std::pair<int, DbFaultInputPtr>(faultInput->id,
+						    DbFaultInputPtr(faultInput)));
       }
 
       return true;
@@ -380,26 +336,22 @@ namespace YAML {
    *   value: '1'
    */
   template<>
-    struct convert<DbDigitalFaultStateListPtr> {
-    static bool decode(const Node &node, DbDigitalFaultStateListPtr &rhs) {
-      size_t elements = node["DigitalFaultState"].size();
-
-      DbDigitalFaultStateList *digitalFaultStates = new DbDigitalFaultStateList(elements + 1);
-      rhs = DbDigitalFaultStateListPtr(digitalFaultStates);
-
-      DbDigitalFaultState *digitalFaultState = new DbDigitalFaultState();
-      rhs->at(0) = DbDigitalFaultStatePtr(digitalFaultState);
+    struct convert<DbDigitalFaultStateMapPtr> {
+    static bool decode(const Node &node, DbDigitalFaultStateMapPtr &rhs) {
+      DbDigitalFaultStateMap *digitalFaultStates = new DbDigitalFaultStateMap();
+      rhs = DbDigitalFaultStateMapPtr(digitalFaultStates);
 
       for (YAML::Node::const_iterator it = node["DigitalFaultState"].begin();
 	   it != node["DigitalFaultState"].end(); ++it) {
-	digitalFaultState = new DbDigitalFaultState();
+	DbDigitalFaultState *digitalFaultState = new DbDigitalFaultState();
 	
 	digitalFaultState->id = (*it)["id"].as<int>();
 	digitalFaultState->value = (*it)["value"].as<int>();
 	digitalFaultState->faultId = (*it)["fault_id"].as<int>();
 	digitalFaultState->name = (*it)["name"].as<std::string>();
 
-	rhs->at(digitalFaultState->faultId) = DbDigitalFaultStatePtr(digitalFaultState);
+	rhs->insert(std::pair<int, DbDigitalFaultStatePtr>(digitalFaultState->faultId,
+							   DbDigitalFaultStatePtr(digitalFaultState)));
       }
 
       return true;
@@ -412,24 +364,20 @@ namespace YAML {
    *   id: '1'
    */
   template<>
-    struct convert<DbThresholdValueMapListPtr> {
-    static bool decode(const Node &node, DbThresholdValueMapListPtr &rhs) {
-      size_t elements = node["ThresholdValueMap"].size();
-
-      DbThresholdValueMapList *thresValueMaps = new DbThresholdValueMapList(elements + 1);
-      rhs = DbThresholdValueMapListPtr(thresValueMaps);
-
-      DbThresholdValueMap *thresValueMap = new DbThresholdValueMap();
-      rhs->at(0) = DbThresholdValueMapPtr(thresValueMap);
+    struct convert<DbThresholdValueMapEntryMapPtr> {
+    static bool decode(const Node &node, DbThresholdValueMapEntryMapPtr &rhs) {
+      DbThresholdValueMapEntryMap *thresValueMaps = new DbThresholdValueMapEntryMap();
+      rhs = DbThresholdValueMapEntryMapPtr(thresValueMaps);
 
       for (YAML::Node::const_iterator it = node["ThresholdValueMap"].begin();
 	   it != node["ThresholdValueMap"].end(); ++it) {
-	thresValueMap = new DbThresholdValueMap();
+	DbThresholdValueMapEntry *thresValueMap = new DbThresholdValueMapEntry();
 	
 	thresValueMap->id = (*it)["id"].as<int>();
 	thresValueMap->description = (*it)["description"].as<std::string>();
 
-	rhs->at(thresValueMap->id) = DbThresholdValueMapPtr(thresValueMap);
+	rhs->insert(std::pair<int, DbThresholdValueMapEntryPtr>(thresValueMap->id,
+								DbThresholdValueMapEntryPtr(thresValueMap)));
       }
 
       return true;
@@ -444,26 +392,22 @@ namespace YAML {
    *   value: '0.0'
    */
   template<>
-    struct convert<DbThresholdValueListPtr> {
-    static bool decode(const Node &node, DbThresholdValueListPtr &rhs) {
-      size_t elements = node["ThresholdValue"].size();
-
-      DbThresholdValueList *thresValues = new DbThresholdValueList(elements + 1);
-      rhs = DbThresholdValueListPtr(thresValues);
-
-      DbThresholdValue *thresValue = new DbThresholdValue();
-      rhs->at(0) = DbThresholdValuePtr(thresValue);
+    struct convert<DbThresholdValueMapPtr> {
+    static bool decode(const Node &node, DbThresholdValueMapPtr &rhs) {
+      DbThresholdValueMap *thresValues = new DbThresholdValueMap();
+      rhs = DbThresholdValueMapPtr(thresValues);
 
       for (YAML::Node::const_iterator it = node["ThresholdValue"].begin();
 	   it != node["ThresholdValue"].end(); ++it) {
-	thresValue = new DbThresholdValue();
+	DbThresholdValue *thresValue = new DbThresholdValue();
 	
 	thresValue->id = (*it)["id"].as<int>();
 	thresValue->threshold = (*it)["threshold"].as<int>();
 	thresValue->thresholdValueMapId = (*it)["threshold_value_map_id"].as<int>();
 	thresValue->value = (*it)["value"].as<float>();
 
-	rhs->at(thresValue->id) = DbThresholdValuePtr(thresValue);
+	rhs->insert(std::pair<int, DbThresholdValuePtr>(thresValue->id, 
+							DbThresholdValuePtr(thresValue)));
       }
 
       return true;
@@ -479,19 +423,14 @@ namespace YAML {
    *   threshold: '1.0'
    */
   template<>
-    struct convert<DbThresholdFaultListPtr> {
-    static bool decode(const Node &node, DbThresholdFaultListPtr &rhs) {
-      size_t elements = node["ThresholdFault"].size();
-
-      DbThresholdFaultList *thresFaults = new DbThresholdFaultList(elements + 1);
-      rhs = DbThresholdFaultListPtr(thresFaults);
-
-      DbThresholdFault *thresFault = new DbThresholdFault();
-      rhs->at(0) = DbThresholdFaultPtr(thresFault);
+    struct convert<DbThresholdFaultMapPtr> {
+    static bool decode(const Node &node, DbThresholdFaultMapPtr &rhs) {
+      DbThresholdFaultMap *thresFaults = new DbThresholdFaultMap();
+      rhs = DbThresholdFaultMapPtr(thresFaults);
 
       for (YAML::Node::const_iterator it = node["ThresholdFault"].begin();
 	   it != node["ThresholdFault"].end(); ++it) {
-	thresFault = new DbThresholdFault();
+	DbThresholdFault *thresFault = new DbThresholdFault();
 	
 	thresFault->id = (*it)["id"].as<int>();
 	thresFault->analogDeviceId = (*it)["analog_device_id"].as<int>();
@@ -505,7 +444,8 @@ namespace YAML {
 	  thresFault->greaterThan = false;
 	}
 
-	rhs->at(thresFault->id) = DbThresholdFaultPtr(thresFault);
+	rhs->insert(std::pair<int, DbThresholdFaultPtr>(thresFault->id,
+							DbThresholdFaultPtr(thresFault)));
       }
 
       return true;
@@ -521,26 +461,22 @@ namespace YAML {
    *   units: counts
    */
   template<>
-    struct convert<DbAnalogDeviceTypeListPtr> {
-    static bool decode(const Node &node, DbAnalogDeviceTypeListPtr &rhs) {
-      size_t elements = node["AnalogDeviceType"].size();
-
-      DbAnalogDeviceTypeList *analogDeviceTypes = new DbAnalogDeviceTypeList(elements + 1);
-      rhs = DbAnalogDeviceTypeListPtr(analogDeviceTypes);
-
-      DbAnalogDeviceType *analogDeviceType = new DbAnalogDeviceType();
-      rhs->at(0) = DbAnalogDeviceTypePtr(analogDeviceType);
+    struct convert<DbAnalogDeviceTypeMapPtr> {
+    static bool decode(const Node &node, DbAnalogDeviceTypeMapPtr &rhs) {
+      DbAnalogDeviceTypeMap *analogDeviceTypes = new DbAnalogDeviceTypeMap();
+      rhs = DbAnalogDeviceTypeMapPtr(analogDeviceTypes);
 
       for (YAML::Node::const_iterator it = node["AnalogDeviceType"].begin();
 	   it != node["AnalogDeviceType"].end(); ++it) {
-	analogDeviceType = new DbAnalogDeviceType();
+	DbAnalogDeviceType *analogDeviceType = new DbAnalogDeviceType();
 	
 	analogDeviceType->id = (*it)["id"].as<int>();
 	analogDeviceType->name = (*it)["name"].as<std::string>();
 	analogDeviceType->units = (*it)["units"].as<std::string>();
 	analogDeviceType->thresholdValueMapId = (*it)["threshold_value_map_id"].as<int>();
 
-	rhs->at(analogDeviceType->id) = DbAnalogDeviceTypePtr(analogDeviceType);
+	rhs->insert(std::pair<int, DbAnalogDeviceTypePtr>(analogDeviceType->id,
+							  DbAnalogDeviceTypePtr(analogDeviceType)));
       }
 
       return true;
@@ -554,25 +490,21 @@ namespace YAML {
    *   id: '3'
    */
   template<>
-    struct convert<DbAnalogDeviceListPtr> {
-    static bool decode(const Node &node, DbAnalogDeviceListPtr &rhs) {
-      size_t elements = node["AnalogDevice"].size();
-
-      DbAnalogDeviceList *analogDevices = new DbAnalogDeviceList(elements + 1);
-      rhs = DbAnalogDeviceListPtr(analogDevices);
-
-      DbAnalogDevice *analogDevice = new DbAnalogDevice();
-      rhs->at(0) = DbAnalogDevicePtr(analogDevice);
+    struct convert<DbAnalogDeviceMapPtr> {
+    static bool decode(const Node &node, DbAnalogDeviceMapPtr &rhs) {
+      DbAnalogDeviceMap *analogDevices = new DbAnalogDeviceMap();
+      rhs = DbAnalogDeviceMapPtr(analogDevices);
 
       for (YAML::Node::const_iterator it = node["AnalogDevice"].begin();
 	   it != node["AnalogDevice"].end(); ++it) {
-	analogDevice = new DbAnalogDevice();
+	DbAnalogDevice *analogDevice = new DbAnalogDevice();
 	
 	analogDevice->id = (*it)["id"].as<int>();
 	analogDevice->analogDeviceTypeId = (*it)["analog_device_type_id"].as<int>();
 	analogDevice->channelId = (*it)["channel_id"].as<int>();
 
-	rhs->at(analogDevice->id) = DbAnalogDevicePtr(analogDevice);
+	rhs->insert(std::pair<int, DbAnalogDevicePtr>(analogDevice->id,
+						      DbAnalogDevicePtr(analogDevice)));
       }
 
       return true;
@@ -585,24 +517,20 @@ namespace YAML {
    *   threshold_fault_id: '1'
    */
   template<>
-    struct convert<DbThresholdFaultStateListPtr> {
-    static bool decode(const Node &node, DbThresholdFaultStateListPtr &rhs) {
-      size_t elements = node["ThresholdFaultState"].size();
-
-      DbThresholdFaultStateList *thresFaultStates = new DbThresholdFaultStateList(elements + 1);
-      rhs = DbThresholdFaultStateListPtr(thresFaultStates);
-
-      DbThresholdFaultState *thresFaultState = new DbThresholdFaultState();
-      rhs->at(0) = DbThresholdFaultStatePtr(thresFaultState);
+    struct convert<DbThresholdFaultStateMapPtr> {
+    static bool decode(const Node &node, DbThresholdFaultStateMapPtr &rhs) {
+      DbThresholdFaultStateMap *thresFaultStates = new DbThresholdFaultStateMap();
+      rhs = DbThresholdFaultStateMapPtr(thresFaultStates);
 
       for (YAML::Node::const_iterator it = node["ThresholdFaultState"].begin();
 	   it != node["ThresholdFaultState"].end(); ++it) {
-	thresFaultState = new DbThresholdFaultState();
+	DbThresholdFaultState *thresFaultState = new DbThresholdFaultState();
 	
 	thresFaultState->id = (*it)["id"].as<int>();
 	thresFaultState->thresholdFaultId = (*it)["threshold_fault_id"].as<int>();
 
-	rhs->at(thresFaultState->thresholdFaultId) = DbThresholdFaultStatePtr(thresFaultState);
+	rhs->insert(std::pair<int, DbThresholdFaultStatePtr>(thresFaultState->thresholdFaultId,
+							     DbThresholdFaultStatePtr(thresFaultState)));
       }
 
       return true;
@@ -615,24 +543,20 @@ namespace YAML {
    *   name: Gun
    */
   template<>
-    struct convert<DbMitigationDeviceListPtr> {
-    static bool decode(const Node &node, DbMitigationDeviceListPtr &rhs) {
-      size_t elements = node["MitigationDevice"].size();
-
-      DbMitigationDeviceList *mitigationDevices = new DbMitigationDeviceList(elements + 1);
-      rhs = DbMitigationDeviceListPtr(mitigationDevices);
-
-      DbMitigationDevice *mitigationDevice = new DbMitigationDevice();
-      rhs->at(0) = DbMitigationDevicePtr(mitigationDevice);
+    struct convert<DbMitigationDeviceMapPtr> {
+    static bool decode(const Node &node, DbMitigationDeviceMapPtr &rhs) {
+      DbMitigationDeviceMap *mitigationDevices = new DbMitigationDeviceMap();
+      rhs = DbMitigationDeviceMapPtr(mitigationDevices);
 
       for (YAML::Node::const_iterator it = node["MitigationDevice"].begin();
 	   it != node["MitigationDevice"].end(); ++it) {
-	mitigationDevice = new DbMitigationDevice();
+	DbMitigationDevice *mitigationDevice = new DbMitigationDevice();
 	
 	mitigationDevice->id = (*it)["id"].as<int>();
 	mitigationDevice->name = (*it)["name"].as<std::string>();
 
-	rhs->at(mitigationDevice->id) = DbMitigationDevicePtr(mitigationDevice);
+	rhs->insert(std::pair<int, DbMitigationDevicePtr>(mitigationDevice->id, 
+							  DbMitigationDevicePtr(mitigationDevice)));
       }
 
       return true;
@@ -646,25 +570,20 @@ namespace YAML {
    *   number: '1'
    */
   template<>
-    struct convert<DbBeamClassListPtr> {
-    static bool decode(const Node &node, DbBeamClassListPtr &rhs) {
-      size_t elements = node["BeamClass"].size();
-
-      DbBeamClassList *beamClasses = new DbBeamClassList(elements + 1);
-      rhs = DbBeamClassListPtr(beamClasses);
-
-      DbBeamClass *beamClass = new DbBeamClass();
-      rhs->at(0) = DbBeamClassPtr(beamClass);
+    struct convert<DbBeamClassMapPtr> {
+    static bool decode(const Node &node, DbBeamClassMapPtr &rhs) {
+      DbBeamClassMap *beamClasses = new DbBeamClassMap();
+      rhs = DbBeamClassMapPtr(beamClasses);
 
       for (YAML::Node::const_iterator it = node["BeamClass"].begin();
 	   it != node["BeamClass"].end(); ++it) {
-	beamClass = new DbBeamClass();
+	DbBeamClass *beamClass = new DbBeamClass();
 	
 	beamClass->id = (*it)["id"].as<int>();
 	beamClass->name = (*it)["name"].as<std::string>();
 	beamClass->number = (*it)["number"].as<int>();
 
-	rhs->at(beamClass->id) = DbBeamClassPtr(beamClass);
+	rhs->insert(std::pair<int, DbBeamClassPtr>(beamClass->id, DbBeamClassPtr(beamClass)));
       }
 
       return true;
@@ -679,26 +598,22 @@ namespace YAML {
    *   mitigation_device_id: '1'
    */
   template<>
-    struct convert<DbAllowedClassListPtr> {
-    static bool decode(const Node &node, DbAllowedClassListPtr &rhs) {
-      size_t elements = node["AllowedClass"].size();
-
-      DbAllowedClassList *allowedClasses = new DbAllowedClassList(elements + 1);
-      rhs = DbAllowedClassListPtr(allowedClasses);
-
-      DbAllowedClass *allowedClass = new DbAllowedClass();
-      rhs->at(0) = DbAllowedClassPtr(allowedClass);
+    struct convert<DbAllowedClassMapPtr> {
+    static bool decode(const Node &node, DbAllowedClassMapPtr &rhs) {
+      DbAllowedClassMap *allowedClasses = new DbAllowedClassMap();
+      rhs = DbAllowedClassMapPtr(allowedClasses);
 
       for (YAML::Node::const_iterator it = node["AllowedClass"].begin();
 	   it != node["AllowedClass"].end(); ++it) {
-	allowedClass = new DbAllowedClass();
+	DbAllowedClass *allowedClass = new DbAllowedClass();
 	
 	allowedClass->id = (*it)["id"].as<int>();
 	allowedClass->beamClassId = (*it)["beam_class_id"].as<int>();
 	allowedClass->faultStateId = (*it)["fault_state_id"].as<int>();
 	allowedClass->mitigationDeviceId = (*it)["mitigation_device_id"].as<int>();
 
-	rhs->at(allowedClass->id) = DbAllowedClassPtr(allowedClass);
+	rhs->insert(std::pair<int, DbAllowedClassPtr>(allowedClass->id,
+						      DbAllowedClassPtr(allowedClass)));
       }
 
       return true;
