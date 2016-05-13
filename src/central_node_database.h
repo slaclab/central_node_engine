@@ -312,85 +312,6 @@ class DbFaultInput : public DbEntry {
 typedef shared_ptr<DbFaultInput> DbFaultInputPtr;
 typedef std::map<int, DbFaultInputPtr> DbFaultInputMap;
 typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
-/*
-enum DbFaultStateType {
-  DB_FAULT_STATE_DIGITAL,
-  DB_FAULT_STATE_THRESHOLD
-};
-
-class DbFaultState : public DbEntry {
- public:
-  DbFaultStateType type;
-  int faultId; // Index of digital or threshold fault state
-};
-
-typedef shared_ptr<DbFaultState> DbFaultStatePtr;
-typedef std::map<int, DbFaultStatePtr> DbFaultStateMap;
-typedef shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
-*/
-/**
- * DigitalFaultState:
- * - fault_id: '1'
- *   id: '1'
- *   name: Out
- *   value: '1'
- */
-class DbDigitalFaultState : public DbEntry {
- public:
-  int faultId;
-  int value;
-  std::string name;
-  
- DbDigitalFaultState() : DbEntry(), faultId(-1), value(-1), name("") {
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbDigitalFaultState * const digitalFault) {
-    os << "id[" << digitalFault->id << "]; "
-       << "faultId[" << digitalFault->faultId << "]; "
-       << "value[" << digitalFault->value << "]; "
-       << "name[" << digitalFault->name << "]";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbDigitalFaultState> DbDigitalFaultStatePtr;
-typedef std::map<int, DbDigitalFaultStatePtr> DbDigitalFaultStateMap;
-typedef shared_ptr<DbDigitalFaultStateMap> DbDigitalFaultStateMapPtr;
-
-/** 
- * Fault: (these are digital faults)
- *  - description: None
- *    id: '1'
- *    name: OTR Fault
- */
-class DbFault : public DbEntry {
- public:
-  std::string name;
-  std::string description;
-
-  // Configured after loading the YAML file
-  DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
-  int value; // Calculated from the list of faultInputs
-  //  DbDigitalFaultStateMapPtr digitalFaultStates; // Map of fault states for this fault
-
- DbFault() : DbEntry(), name(""), description("") {
-  }
-
-  void update(int v) {
-    value = v;
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
-    os << "id[" << fault->id << "]; "
-       << "name[" << fault->name << "]; "
-       << "description[" << fault->description << "]";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbFault> DbFaultPtr;
-typedef std::map<int, DbFaultPtr> DbFaultMap;
-typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
 
 /**
  * ThresholdValueMap:
@@ -533,54 +454,6 @@ typedef std::map<int, DbAnalogDevicePtr> DbAnalogDeviceMap;
 typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
 
 /**
- * ThresholdFaultState:
- * - id: '8'
- *   threshold_fault_id: '1'
- */
-class DbThresholdFaultState : public DbEntry {
- public:
-  int thresholdFaultId;
-  
- DbThresholdFaultState() : DbEntry(), thresholdFaultId(-1) {
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbThresholdFaultState * const thresFaultState) {
-    os << "id[" << thresFaultState->id << "]; "
-       << "thresholdFaultId[" << thresFaultState->thresholdFaultId << "]";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbThresholdFaultState> DbThresholdFaultStatePtr;
-typedef std::map<int, DbThresholdFaultStatePtr> DbThresholdFaultStateMap;
-typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
-
-
-/**
- * MitigationDevice:
- * - id: '1'
- *   name: Gun
- */
-class DbMitigationDevice : public DbEntry {
- public:
-  std::string name;
-  
- DbMitigationDevice() : DbEntry(), name("") {
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
-    os << "id[" << mitigationDevice->id << "]; "
-       << "name[" << mitigationDevice->name << "]";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbMitigationDevice> DbMitigationDevicePtr;
-typedef std::map<int, DbMitigationDevicePtr> DbMitigationDeviceMap;
-typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
-
-
-/**
  * BeamClass:
  * - id: '1'
  *   name: Class 1
@@ -608,6 +481,33 @@ typedef shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
 
 
 /**
+ * MitigationDevice:
+ * - id: '1'
+ *   name: Gun
+ */
+class DbMitigationDevice : public DbEntry {
+ public:
+  std::string name;
+
+  // Used after loading the YAML file
+  DbBeamClassPtr allowedBeamClass; // allowed beam class after evaluating faults
+  DbBeamClassPtr tentativeBeamClass; // used while faults are being evaluated
+  
+ DbMitigationDevice() : DbEntry(), name("") {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
+    os << "id[" << mitigationDevice->id << "]; "
+       << "name[" << mitigationDevice->name << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbMitigationDevice> DbMitigationDevicePtr;
+typedef std::map<int, DbMitigationDevicePtr> DbMitigationDeviceMap;
+typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
+
+/**
  * AllowedClass:
  * - beam_class_id: '1'
  *   fault_state_id: '1'
@@ -619,6 +519,10 @@ class DbAllowedClass : public DbEntry {
   int beamClassId;
   int faultStateId; // This can be a DigitalFaultState or a ThresholdFaultState
   int mitigationDeviceId;
+
+  // Configured after loading the YAML file
+  DbBeamClassPtr beamClass;
+  DbMitigationDevicePtr mitigationDevice;
   
  DbAllowedClass() : DbEntry(), beamClassId(-1), faultStateId(-1), mitigationDeviceId(-1) {
   }
@@ -635,6 +539,103 @@ class DbAllowedClass : public DbEntry {
 typedef shared_ptr<DbAllowedClass> DbAllowedClassPtr;
 typedef std::map<int, DbAllowedClassPtr> DbAllowedClassMap;
 typedef shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
+
+/**
+ * DigitalFaultState:
+ * - fault_id: '1'
+ *   id: '1'
+ *   name: Out
+ *   value: '1'
+ */
+class DbDigitalFaultState : public DbEntry {
+ public:
+  int faultId;
+  int value;
+  std::string name;
+
+  // Configured/Used after loading the YAML file
+  bool faulted;
+  DbAllowedClassPtr allowedClass;
+  DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each mitigation device) for this fault states
+
+ DbDigitalFaultState() : DbEntry(), faultId(-1), value(-1), name(""), faulted(false) {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbDigitalFaultState * const digitalFault) {
+    os << "id[" << digitalFault->id << "]; "
+       << "faultId[" << digitalFault->faultId << "]; "
+       << "value[" << digitalFault->value << "]; "
+       << "name[" << digitalFault->name << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbDigitalFaultState> DbDigitalFaultStatePtr;
+typedef std::map<int, DbDigitalFaultStatePtr> DbDigitalFaultStateMap;
+typedef shared_ptr<DbDigitalFaultStateMap> DbDigitalFaultStateMapPtr;
+
+/**
+ * ThresholdFaultState:
+ * - id: '8'
+ *   threshold_fault_id: '1'
+ */
+class DbThresholdFaultState : public DbEntry {
+ public:
+  int thresholdFaultId;
+  
+  // Configured/Used after loading the YAML file
+  bool faulted;
+  DbAllowedClassPtr allowedClass;
+
+ DbThresholdFaultState() : DbEntry(), thresholdFaultId(-1), faulted(false) {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbThresholdFaultState * const thresFaultState) {
+    os << "id[" << thresFaultState->id << "]; "
+       << "thresholdFaultId[" << thresFaultState->thresholdFaultId << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbThresholdFaultState> DbThresholdFaultStatePtr;
+typedef std::map<int, DbThresholdFaultStatePtr> DbThresholdFaultStateMap;
+typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
+
+
+/** 
+ * Fault: (these are digital faults)
+ *  - description: None
+ *    id: '1'
+ *    name: OTR Fault
+ */
+class DbFault : public DbEntry {
+ public:
+  std::string name;
+  std::string description;
+
+  // Configured after loading the YAML file
+  DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
+  int value; // Calculated from the list of faultInputs
+  DbDigitalFaultStateMapPtr digitalFaultStates; // Map of fault states for this fault
+
+ DbFault() : DbEntry(), name(""), description("") {
+  }
+
+  void update(int v) {
+    value = v;
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
+    os << "id[" << fault->id << "]; "
+       << "name[" << fault->name << "]; "
+       << "description[" << fault->description << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbFault> DbFaultPtr;
+typedef std::map<int, DbFaultPtr> DbFaultMap;
+typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
 
 
 /**
@@ -669,7 +670,7 @@ class MpsDb {
 
   int load(std::string yamlFile);
   int configure();
-
+  
   /**
    * Print contents of all entities
    */

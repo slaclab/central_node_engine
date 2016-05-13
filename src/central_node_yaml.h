@@ -350,7 +350,7 @@ namespace YAML {
 	digitalFaultState->faultId = (*it)["fault_id"].as<int>();
 	digitalFaultState->name = (*it)["name"].as<std::string>();
 
-	rhs->insert(std::pair<int, DbDigitalFaultStatePtr>(digitalFaultState->faultId,
+	rhs->insert(std::pair<int, DbDigitalFaultStatePtr>(digitalFaultState->id,
 							   DbDigitalFaultStatePtr(digitalFaultState)));
       }
 
@@ -529,7 +529,7 @@ namespace YAML {
 	thresFaultState->id = (*it)["id"].as<int>();
 	thresFaultState->thresholdFaultId = (*it)["threshold_fault_id"].as<int>();
 
-	rhs->insert(std::pair<int, DbThresholdFaultStatePtr>(thresFaultState->thresholdFaultId,
+	rhs->insert(std::pair<int, DbThresholdFaultStatePtr>(thresFaultState->id,
 							     DbThresholdFaultStatePtr(thresFaultState)));
       }
 

@@ -8,33 +8,27 @@
 #include <iostream>
 
 int MpsDb::configure() {
-  // The AllowedClasses point to either digital or threshold fault states
-  /*
+  // Assign BeamClass and MitigationDevice to AllowedClass
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
        it != allowedClasses->end(); ++it) {
-    int faultId = (*it)->faultStateId;
+    int id = (*it).second->beamClassId;
+    DbBeamClassMap::iterator beamIt = beamClasses->find(id);
+    if (beamIt == beamClasses->end()) {
+      std::cerr << "ERROR: Failed to configure database, invalid ID found for BeamClass ("
+		 << id << ")" << std::endl;
+      return -1;
+    }
+    (*it).second->beamClass = (*beamIt).second;
 
-    // Is this faultId in the list of digitalFaultStates?
-    bool found = false;
-    int actualId = -1;
-    for (DbDigitalFaultStateMap::iterator digitalIt = digitalFaultStates->begin();
-	 digitalIt != digitalFaultStates->end(); ++it) {
-      if ((*digitalIt)->id == faultId) {
-	found = true;
-	actualId = (*digitalIt)->id;
-      }
+    id = (*it).second->mitigationDeviceId;
+    DbMitigationDeviceMap::iterator mitigationIt = mitigationDevices->find(id);
+    if (mitigationIt == mitigationDevices->end()) {
+      std::cerr << "ERROR: Failed to configure database, invalid ID found for MitigationDevices ("
+		 << id << ")" << std::endl;
+      return -1;
     }
-    if (found) {
-      DbFaultState faultState = new DbFaultState();
-      faultState->id = (*digitalIt)->id;
-      faultState->faultId = faultId;
-      faultState->type = DB_FAULT_STATE_DIGITAL;
-      faultStates->at(faultId) = DbFaultStatePtr(faultState);
-    }
-    else {
-    }
+    (*it).second->mitigationDevice = (*mitigationIt).second;
   }
-  */
 
   // Assign DeviceInputs to it's DigitalDevices
   for (DbDeviceInputMap::iterator it = deviceInputs->begin(); 
@@ -78,27 +72,59 @@ int MpsDb::configure() {
 									   (*it).second));
   }
 
-  // Assign fault states to faults
-  /*
+  // Assign all DigitalFaultStates to a Fault
   for (DbDigitalFaultStateMap::iterator it = digitalFaultStates->begin();
        it != digitalFaultStates->end(); ++it) {
-    int size = faults->size() + 1;
-    int id = (*it)->faultId;
-    if (id > size) {
+    int id = (*it).second->faultId;
+
+    DbFaultMap::iterator faultIt = faults->find(id);
+    if (faultIt == faults->end()) {
       std::cerr << "ERROR: Failed to configure database, invalid ID found for Fault ("
 		<< id << ")" << std::endl;
       return -1;
     }
-    if (id > 0) { // Ignore if Id is zero
-      // Create a vector to hold digitalFaultStates for the fault
-      if (!faults->at(id)->digitalFaultStates) {
-	DbDigitalFaultStateMap *digitalFaultStates = new DbDigitalFaultStateMap();
-	faults->at(id)->digitalFaultStates = DbDigitalFaultStateMapPtr(digitalFaultStates);
+
+    // Create a map to hold faultInputs for the fault
+    if (!(*faultIt).second->digitalFaultStates) {
+      DbDigitalFaultStateMap *digFaultStates = new DbDigitalFaultStateMap();
+      (*faultIt).second->digitalFaultStates = DbDigitalFaultStateMapPtr(digFaultStates);
+    }
+    (*faultIt).second->digitalFaultStates->insert(std::pair<int, DbDigitalFaultStatePtr>((*it).second->id,
+											 (*it).second));
+  }
+
+  // Assign AllowedClasses to DigitalFaultState or ThresholdFaultState
+  // There are multiple AllowedClasses for each Fault, one per MitigationDevice
+  for (DbAllowedClassMap::iterator it = allowedClasses->begin();
+       it != allowedClasses->end(); ++it) {
+    int id = (*it).second->faultStateId;
+
+    DbDigitalFaultStateMap::iterator digFaultIt = digitalFaultStates->find(id);
+    if (digFaultIt != digitalFaultStates->end()) {
+      (*digFaultIt).second->allowedClass = (*it).second;
+      std::cout << (*digFaultIt).second->allowedClass << std::endl;
+
+      // Create a map to hold deviceInput for the digitalDevice
+      if (!(*digFaultIt).second->allowedClasses) {
+	DbAllowedClassMap *faultAllowedClasses = new DbAllowedClassMap();
+	(*digFaultIt).second->allowedClasses = DbAllowedClassMapPtr(faultAllowedClasses);
       }
-      faults->at(id)->digitalFaultStates->push_back(*it);
+      (*digFaultIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*it).second->id,
+										     (*it).second));
+      
+    }
+    else {
+      DbThresholdFaultStateMap::iterator thresFaultIt = thresholdFaultStates->find(id);
+      if (thresFaultIt != thresholdFaultStates->end()) {
+	(*thresFaultIt).second->allowedClass = (*it).second;
+      }
+      else {
+	std::cerr << "ERROR: Failed to configure database, invalid ID found of FaultState "
+		  << id << " for AllowedClass " <<  (*it).second->id << std::endl;
+	return -1;
+      }
     }
   }
-  */
 
   return 0;
 }

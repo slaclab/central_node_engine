@@ -67,6 +67,7 @@ class EngineTest {
     int deviceId;
     int deviceValue;
 
+    std::cout << "=== Testing cycle " << testCycle << " ===" << std::endl;
     for (int i = 0; i < testInputCount; ++i) {
       testInputFile >> deviceId;
       testInputFile >> deviceValue;
