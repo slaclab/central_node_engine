@@ -2,7 +2,8 @@
  * central_node_yaml.h
  *
  * Template specializations to convert MPS YAML database into
- * c++ objects.
+ * C++ objects. The C++ classes are described in the file
+ * central_node_database.h.
  */
 
 #ifndef CENTRAL_NODE_YAML_H

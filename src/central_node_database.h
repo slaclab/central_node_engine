@@ -555,7 +555,6 @@ class DbDigitalFaultState : public DbEntry {
 
   // Configured/Used after loading the YAML file
   bool faulted;
-  DbAllowedClassPtr allowedClass;
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each mitigation device) for this fault states
 
  DbDigitalFaultState() : DbEntry(), faultId(-1), value(-1), name(""), faulted(false) {
@@ -585,7 +584,7 @@ class DbThresholdFaultState : public DbEntry {
   
   // Configured/Used after loading the YAML file
   bool faulted;
-  DbAllowedClassPtr allowedClass;
+  DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each mitigation device) for this fault states
 
  DbThresholdFaultState() : DbEntry(), thresholdFaultId(-1), faulted(false) {
   }

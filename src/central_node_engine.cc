@@ -83,7 +83,7 @@ int Engine::checkFaults() {
 	std::cout << "  *** FAULT " << (*fault).second->name << ": " 
 		  << (*state).second->name << std::endl;
 	(*state).second->faulted = true;
-	if ((*state).second->allowedClass) {
+	if ((*state).second->allowedClasses) {
 	  for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
 	       allowed != (*state).second->allowedClasses->end(); ++allowed) {
 	    // Update the allowedBeamClass for the MitigationDevices associated with this fault

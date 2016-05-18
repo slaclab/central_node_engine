@@ -7,6 +7,12 @@
 
 #include <iostream>
 
+/**
+ * Iterates over the database entries assigning cross references, e.g.
+ * every AllowedClass entry has a foreign key to a MitigationDevice.
+ * The configuration finds the pointer to the MitigationDevice and
+ * stores it along with the AllowedClass entry.
+ */
 int MpsDb::configure() {
   // Assign BeamClass and MitigationDevice to AllowedClass
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
@@ -101,22 +107,24 @@ int MpsDb::configure() {
 
     DbDigitalFaultStateMap::iterator digFaultIt = digitalFaultStates->find(id);
     if (digFaultIt != digitalFaultStates->end()) {
-      (*digFaultIt).second->allowedClass = (*it).second;
-      std::cout << (*digFaultIt).second->allowedClass << std::endl;
-
       // Create a map to hold deviceInput for the digitalDevice
       if (!(*digFaultIt).second->allowedClasses) {
 	DbAllowedClassMap *faultAllowedClasses = new DbAllowedClassMap();
 	(*digFaultIt).second->allowedClasses = DbAllowedClassMapPtr(faultAllowedClasses);
       }
       (*digFaultIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*it).second->id,
-										     (*it).second));
-      
+										     (*it).second));      
     }
     else {
       DbThresholdFaultStateMap::iterator thresFaultIt = thresholdFaultStates->find(id);
       if (thresFaultIt != thresholdFaultStates->end()) {
-	(*thresFaultIt).second->allowedClass = (*it).second;
+	// Create a map to hold deviceInput for the digitalDevice
+	if (!(*thresFaultIt).second->allowedClasses) {
+	  DbAllowedClassMap *faultAllowedClasses = new DbAllowedClassMap();
+	  (*thresFaultIt).second->allowedClasses = DbAllowedClassMapPtr(faultAllowedClasses);
+	}
+	(*thresFaultIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*it).second->id,
+											 (*it).second));
       }
       else {
 	std::cerr << "ERROR: Failed to configure database, invalid ID found of FaultState "
@@ -129,6 +137,11 @@ int MpsDb::configure() {
   return 0;
 }
 
+/**
+ * The MPS database YAML file is composed of several "tables"/"set of entries".
+ * This method opens each table as a YAML::Node and loads all entry contents
+ * into the MpsDb maps. Each maps uses the MPS database id as key.
+ */
 int MpsDb::load(std::string yamlFileName) {
   YAML::Node doc;
   std::vector<YAML::Node> nodes;
