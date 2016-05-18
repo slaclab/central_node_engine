@@ -3,9 +3,24 @@
 
 #include <vector>
 #include <map>
+#include <exception>
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
+
+class DbException: public std::exception {
+ public:
+  explicit DbException(const char* message) : msg(message) {}
+  explicit DbException(const std::string& message) : msg(message) {}
+  virtual ~DbException() throw () {}
+  virtual const char* what() const throw () {
+    return msg.c_str();
+  }
+
+ protected:
+  // Error message
+  std::string msg;
+};
 
 class DbEntry {
  public:

@@ -31,6 +31,9 @@ class Engine {
   int updateInputs();
 
   shared_ptr<MpsDb> mpsDb;
+
+  DbBeamClassPtr highestBeamClass;
+  DbBeamClassPtr lowestBeamClass;
 };
 
 typedef shared_ptr<Engine> EnginePtr;

@@ -6,6 +6,7 @@
 #include <central_node_database.h>
 
 #include <iostream>
+#include <sstream>
 
 /**
  * Iterates over the database entries assigning cross references, e.g.
@@ -14,24 +15,25 @@
  * stores it along with the AllowedClass entry.
  */
 int MpsDb::configure() {
+  std::stringstream errorStream;
   // Assign BeamClass and MitigationDevice to AllowedClass
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
        it != allowedClasses->end(); ++it) {
     int id = (*it).second->beamClassId;
     DbBeamClassMap::iterator beamIt = beamClasses->find(id);
     if (beamIt == beamClasses->end()) {
-      std::cerr << "ERROR: Failed to configure database, invalid ID found for BeamClass ("
-		 << id << ")" << std::endl;
-      return -1;
+      errorStream <<  "ERROR: Failed to configure database, invalid ID found for BeamClass ("
+		  << id << ") for AllowedClass (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
     }
     (*it).second->beamClass = (*beamIt).second;
 
     id = (*it).second->mitigationDeviceId;
     DbMitigationDeviceMap::iterator mitigationIt = mitigationDevices->find(id);
     if (mitigationIt == mitigationDevices->end()) {
-      std::cerr << "ERROR: Failed to configure database, invalid ID found for MitigationDevices ("
-		 << id << ")" << std::endl;
-      return -1;
+      errorStream << "ERROR: Failed to configure database, invalid ID found for MitigationDevices ("
+		  << id << ") for AllowedClass (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
     }
     (*it).second->mitigationDevice = (*mitigationIt).second;
   }
@@ -43,9 +45,9 @@ int MpsDb::configure() {
 
     DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
     if (deviceIt == digitalDevices->end()) {
-      std::cerr << "ERROR: Failed to configure database, invalid ID found for DigitalDevice ("
-		<< id << ")" << std::endl;
-      return -1;
+      errorStream << "ERROR: Failed to configure database, invalid ID found for DigitalDevice ("
+		  << id << ") for DeviceInput (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
     }
 
     // Create a map to hold deviceInput for the digitalDevice
@@ -64,9 +66,9 @@ int MpsDb::configure() {
 
     DbFaultMap::iterator faultIt = faults->find(id);
     if (faultIt == faults->end()) {
-      std::cerr << "ERROR: Failed to configure database, invalid ID found for Fault ("
-		<< id << ")" << std::endl;
-      return -1;
+      errorStream <<  "ERROR: Failed to configure database, invalid ID found for Fault ("
+		  << id << ") for FaultInput (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
     }
 
     // Create a map to hold faultInputs for the fault
@@ -85,9 +87,9 @@ int MpsDb::configure() {
 
     DbFaultMap::iterator faultIt = faults->find(id);
     if (faultIt == faults->end()) {
-      std::cerr << "ERROR: Failed to configure database, invalid ID found for Fault ("
-		<< id << ")" << std::endl;
-      return -1;
+      errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
+		  << id << ") for DigitalFaultState (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
     }
 
     // Create a map to hold faultInputs for the fault
@@ -127,9 +129,9 @@ int MpsDb::configure() {
 											 (*it).second));
       }
       else {
-	std::cerr << "ERROR: Failed to configure database, invalid ID found of FaultState "
-		  << id << " for AllowedClass " <<  (*it).second->id << std::endl;
-	return -1;
+	errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
+		    << id << ") for AllowedClass (" <<  (*it).second->id << ")";
+	throw(DbException(errorStream.str()));
       }
     }
   }

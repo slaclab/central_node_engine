@@ -48,7 +48,12 @@ int main(int argc, char **argv) {
   shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb());
 
   if (loaded && dump) {
-    mpsDb->load(fileName);
+    try {
+      mpsDb->load(fileName);
+    } catch (DbException e) {
+      std::cerr << e.what() << std::endl;
+      return -1;
+    }
 
     std::cout << mpsDb << std::endl;
   }

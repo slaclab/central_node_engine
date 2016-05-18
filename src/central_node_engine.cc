@@ -4,7 +4,8 @@ Engine::Engine() {
 }
 
 int Engine::loadConfig(std::string yamlFileName) {
-  mpsDb = shared_ptr<MpsDb>(new MpsDb());
+  MpsDb *db = new MpsDb();
+  mpsDb = shared_ptr<MpsDb>(db);
 
   if (mpsDb->load(yamlFileName) != 0) {
     std::cerr << "ERROR: Failed to load yaml database" << std::endl;
@@ -12,7 +13,21 @@ int Engine::loadConfig(std::string yamlFileName) {
   }
 
   if (mpsDb->configure() != 0) {
+    delete db;
     return 1;
+  }
+
+  // Find the lowest/highest BeamClasses - used when checking faults
+  int num = -1;
+  int lowNum = 100;
+  for (DbBeamClassMap::iterator beamClass = mpsDb->beamClasses->begin();
+       beamClass != mpsDb->beamClasses->end(); ++beamClass) {
+    if ((*beamClass).second->number > num) {
+      highestBeamClass = (*beamClass).second;
+    }
+    if ((*beamClass).second->number < lowNum) {
+      lowestBeamClass = (*beamClass).second;
+    }
   }
 
   return 0;
@@ -36,22 +51,7 @@ int Engine::checkFaults() {
     }
     (*device).second->update(deviceValue);
   }
-
-  // This finds the highest beam class - should be moved to initialization
-  DbBeamClassPtr highestBeamClass;
-  DbBeamClassPtr lowestBeamClass;
-  int num = -1;
-  int lowNum = 100;
-  for (DbBeamClassMap::iterator beamClass = mpsDb->beamClasses->begin();
-       beamClass != mpsDb->beamClasses->end(); ++beamClass) {
-    if ((*beamClass).second->number > num) {
-      highestBeamClass = (*beamClass).second;
-    }
-    if ((*beamClass).second->number < lowNum) {
-      lowestBeamClass = (*beamClass).second;
-    }
-  }
-
+  
   // Assigns highestBeamClass as tentativeBeamClass for all MitigationDevices
   for (DbMitigationDeviceMap::iterator device = mpsDb->mitigationDevices->begin();
        device != mpsDb->mitigationDevices->end(); ++device) {

@@ -31,7 +31,7 @@ class EngineTest {
     testInputFile.open(testFileName.c_str(), std::ifstream::in);
     if (!testInputFile.is_open()) {
       std::cerr << "ERROR: Failed to open test file \"" << testFileName
-		<< "\" for reading" << std::endl;
+      		<< "\" for reading" << std::endl;
       return 1;
     }
 
@@ -123,9 +123,15 @@ int main(int argc, char **argv) {
   }
 
   Engine *e = new Engine();
-  if (e->loadConfig(mpsFileName) != 0) {
-    std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
-    return 1;
+  try {
+    if (e->loadConfig(mpsFileName) != 0) {
+      std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
+      return 1;
+    }
+  } catch (DbException ex) {
+    std::cerr << ex.what() << std::endl;
+    delete e;
+    return -1;
   }
 
   EngineTest *t = new EngineTest(EnginePtr(e));
