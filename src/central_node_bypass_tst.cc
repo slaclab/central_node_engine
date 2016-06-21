@@ -49,6 +49,9 @@ class BypassTest {
 				     0 /* bypass value */, 110 /* until */, true);
     engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
 				     1 /* bypass value */, 110 /* until*/, true);
+
+    // PIC
+    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 1, 0, 115, true);
   }
 
   void showFaults() {

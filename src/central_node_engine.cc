@@ -63,6 +63,7 @@ int Engine::checkFaults() {
     for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin(); 
 	 input != (*device).second->inputDevices->end(); ++input) {
       int inputValue = 0;
+      // Check if the input has a valid bypass value
       if ((*input).second->bypass->status == BYPASS_VALID) {
 	inputValue = (*input).second->bypass->value;
       }
@@ -139,21 +140,23 @@ int Engine::checkFaults() {
        faultState != mpsDb->thresholdFaultStates->end(); ++faultState) {
     float deviceValue = (*faultState).second->thresholdFault->analogDevice->value;
 
-    // Check if the device value exceeds threshold 
-    if (deviceValue > (*faultState).second->thresholdFault->threshold) {
-      (*faultState).second->faulted = true;
-      // Update allowedClass for the ThresholdFaultState
-      for (DbAllowedClassMap::iterator allowed = (*faultState).second->allowedClasses->begin();
-	   allowed != (*faultState).second->allowedClasses->end(); ++allowed) {
-	if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
-	    (*allowed).second->beamClass->number) {
-	  (*allowed).second->mitigationDevice->tentativeBeamClass =
-	    (*allowed).second->beamClass;
+    // If there is no active bypass then check if the device value exceeds threshold 
+    if ((*faultState).second->thresholdFault->analogDevice->bypass->status != BYPASS_VALID) {
+      if (deviceValue > (*faultState).second->thresholdFault->threshold) {
+	(*faultState).second->faulted = true;
+	// Update allowedClass for the ThresholdFaultState
+	for (DbAllowedClassMap::iterator allowed = (*faultState).second->allowedClasses->begin();
+	     allowed != (*faultState).second->allowedClasses->end(); ++allowed) {
+	  if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
+	      (*allowed).second->beamClass->number) {
+	    (*allowed).second->mitigationDevice->tentativeBeamClass =
+	      (*allowed).second->beamClass;
+	  }
 	}
       }
-    }
-    else {
-      (*faultState).second->faulted = false;
+      else {
+	(*faultState).second->faulted = false;
+      }
     }
   }
 
