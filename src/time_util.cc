@@ -147,7 +147,6 @@ _started(false),
 _falseStartCount(0),
 _sampleCount(0),
 _endFailedCount(0),
-_aboveAverageCount(0),
 _full(false) {
     _buffer = new long [samples];
     for (int i = 0; i < samples; ++i) {
@@ -212,13 +211,6 @@ void TimeAverage::update() {
     _sum += _buffer[_head];
 
     _sampleCount++;
-
-    if (_full) {
-      long average = getAverage();
-      if (_elapsedTime > 5 * average) {
-	_aboveAverageCount++;
-      }
-    }
 }
 
 long TimeAverage::getMax() {
@@ -258,10 +250,9 @@ long TimeAverage::getRate() {
 void TimeAverage::show(std::string leadingSpaces) {
     std::cout << leadingSpaces << "--- " << _name << " ---" << std::endl;
     std::cout << leadingSpaces << "  average: " << getAverage() << " usec (samples="
-            << _size << ", samples=" << _sampleCount << ", fs="
+            << _size << ", total count=" << _sampleCount << ", fs="
 	      << _falseStartCount << ", end fail=" << _endFailedCount << ")" << std::endl;
-    std::cout << leadingSpaces << "  max:     " << _maxTime << " usec (above average: "
-	      << _aboveAverageCount << ")" << std::endl;
+    std::cout << leadingSpaces << "  max:     " << _maxTime << " usec" << std::endl;
     std::cout << leadingSpaces << "  min:     " << _minTime << " usec" << std::endl;
 }
 

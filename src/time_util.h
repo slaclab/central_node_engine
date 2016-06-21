@@ -110,12 +110,6 @@ private:
     /** Count how many times end() was called without start() first */
     long _endFailedCount;
 
-    /**
-     * Count how many measurements are 3x above the average. This starts to
-     * be counted after the buffer gets full
-     */
-    unsigned long _aboveAverageCount;
-
     bool _full;
 };
 

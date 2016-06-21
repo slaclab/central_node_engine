@@ -11,40 +11,40 @@
  * is shared by the loaded configs.
  */
 void BypassManager::createBypassMap(MpsDbPtr db) {
-  FaultInputBypassMap *map = new FaultInputBypassMap();
-  bypassMap = FaultInputBypassMapPtr(map);
+  InputBypassMap *map = new InputBypassMap();
+  bypassMap = InputBypassMapPtr(map);
 
   int bypassId = 0;
-  for (DbFaultInputMap::iterator input = db->faultInputs->begin();
-       input != db->faultInputs->end(); ++input) {
-    FaultInputBypass *bypass = new FaultInputBypass();
+  for (DbDeviceInputMap::iterator input = db->deviceInputs->begin();
+       input != db->deviceInputs->end(); ++input) {
+    InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
-    bypass->faultInputId = (*input).second->id;
+    bypass->deviceId = (*input).second->id;
     bypass->type = BYPASS_DIGITAL;
-    bypass->validUntil = 0; // time is seconds since 1970, this gets set later
+    bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
-    bypass->valid = false;  
+    bypass->status = BYPASS_EXPIRED;
 
     bypassId++;
     
-    FaultInputBypassPtr bypassPtr = FaultInputBypassPtr(bypass);
-    bypassMap->insert(std::pair<int, FaultInputBypassPtr>(bypassId, bypassPtr));
+    InputBypassPtr bypassPtr = InputBypassPtr(bypass);
+    bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
   }
 
   for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
        analogInput != db->analogDevices->end(); ++analogInput) {
-    FaultInputBypass *bypass = new FaultInputBypass();
+    InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
-    bypass->faultInputId = (*analogInput).second->id;
+    bypass->deviceId = (*analogInput).second->id;
     bypass->type = BYPASS_ANALOG;
-    bypass->validUntil = 0; // time is seconds since 1970, this gets set later
+    bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
-    bypass->valid = false;  
+    bypass->status = BYPASS_EXPIRED;
 
     bypassId++;
     
-    FaultInputBypassPtr bypassPtr = FaultInputBypassPtr(bypass);
-    bypassMap->insert(std::pair<int, FaultInputBypassPtr>(bypassId, bypassPtr));
+    InputBypassPtr bypassPtr = InputBypassPtr(bypass);
+    bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
   }
 }
 
@@ -59,12 +59,12 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
 void BypassManager::assignBypass(MpsDbPtr db) {
   std::stringstream errorStream;
 
-  for (FaultInputBypassMap::iterator bypass = bypassMap->begin();
+  for (InputBypassMap::iterator bypass = bypassMap->begin();
        bypass != bypassMap->end(); ++bypass) {
-    int inputId = (*bypass).second->faultInputId;
+    int inputId = (*bypass).second->deviceId;
     if ((*bypass).second->type == BYPASS_DIGITAL) {
-      DbFaultInputMap::iterator digitalInput = db->faultInputs->find(inputId);
-      if (digitalInput == db->faultInputs->end()) {
+      DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(inputId);
+      if (digitalInput == db->deviceInputs->end()) {
 	errorStream << "ERROR: Failed to find FaultInput ("
 		    << inputId << ") when assigning bypass";
 	throw(CentralNodeException(errorStream.str()));
@@ -90,8 +90,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   errorStream << "ERROR: Failed to find bypass for FaultInputs [";
   bool error = false;
   bool first = true;
-  for (DbFaultInputMap::iterator digitalInput = db->faultInputs->begin();
-       digitalInput != db->faultInputs->end(); ++digitalInput) {
+  for (DbDeviceInputMap::iterator digitalInput = db->deviceInputs->begin();
+       digitalInput != db->deviceInputs->end(); ++digitalInput) {
     if (!(*digitalInput).second->bypass) {
       if (!first) {
 	errorStream << ", ";
@@ -118,5 +118,138 @@ void BypassManager::assignBypass(MpsDbPtr db) {
 
   if (error) {
     throw(CentralNodeException(errorStream.str()));
+  }
+}
+
+/**
+ * Check if there are expired bypasses in the priority queue.
+ * If expired the bypass is removed from the queue and 
+ * marked BYPASS_EXPIRED.
+ */
+void BypassManager::checkBypassQueue(time_t testTime) {
+  time_t now;
+
+  // Use specified test time if non-zero
+  if (testTime == 0) {
+    time(&now);
+  }
+  else {
+    now = testTime;
+  }
+
+  bool expired = true;
+  while (expired) {
+    expired = checkBypassQueueTop(now);
+  }
+}
+ 
+/**
+ * Check if the top element in queue is expired. If so
+ * remove it from the queue, mark as expired and return
+ * true (expired). Otherwise return false (bypass still valid).
+ */ 
+bool BypassManager::checkBypassQueueTop(time_t now) {
+  BypassQueueEntry top;
+  if (!bypassQueue.empty()) {
+    top = bypassQueue.top();
+    if (top.first <= now) {
+      bypassQueue.pop();
+      // Check if bypass expiration time is different than top.first
+      // If top.second->until is greater than top.first then the bypass
+      // was extended. In this case the bypass status is kept BYPASS_VALID
+      // If top.second->until is smaller than top.first then the bypass
+      // was shortened. In this case the bypass is set to BYPASS_EXPIRED
+      // If they are the same then the bypass is also set to BYPASS_EXPIRED
+      if (top.second->until >= top.first) {
+	top.second->status = BYPASS_EXPIRED;
+      }
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+  else {
+    return false;
+  }
+}
+
+/**
+ * Add a new bypass to the bypassQueue. Possible scenarios are:
+ * 
+ * 1) New bypass: the device has no bypass in the queue, add a new one
+ * with the specified until time
+ *
+ * 2) Change bypass: there is already a bypass in the queue, the
+ * new expiration time may be earlier or later than the previous.
+ * - If later: change until in the deviceBypass and keep
+ *   the status BYPASS_VALID. When the first timer expires the 
+ *   checkBypassQueue verifies if the time from the queue is the
+ *   same as the one saved in the bypass. The expiration time in
+ *   the bypass is later, so the status is kept at BYPASS_VALID.
+ *
+ * - If earlier: change the until in the deviceBypass and
+ *   keep the status set to BYPASS_VALID. The new timer will expire
+ *   earlier, and when that happens the status should be changed
+ *   to BYPASS_EXPIRED. When the later timer expires the status
+ *   of the bypass will already be BYPASS_EXPIRED.
+ *
+ * 3) Cancel bypass: by specifying a until ZERO. The until
+ *    in the bypass is set to ZERO and status changed to BYPASS_EXPIRED
+ *    No new element is added to the priority queue.
+ *
+ * Multiple bypass to the same device can be added, the last one 
+ * to be added will be the the one that controls when the bypass
+ * expires.
+ */
+void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
+			      int deviceId, int value, time_t bypassUntil,
+			      bool test) {
+  InputBypassPtr bypass;
+  std::stringstream errorStream;
+
+  // Find the device and its bypass
+  if (bypassType == BYPASS_DIGITAL) {
+    DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(deviceId);
+    if (digitalInput == db->deviceInputs->end()) {
+      errorStream << "ERROR: Failed to find DeviceInput[" << deviceId
+		  << "] while setting bypass";
+      throw(CentralNodeException(errorStream.str()));
+    }
+    bypass = (*digitalInput).second->bypass;
+  }
+  else {
+    DbAnalogDeviceMap::iterator analogInput = db->analogDevices->find(deviceId);
+    if (analogInput == db->analogDevices->end()) {
+      errorStream << "ERROR: Failed to find AnalogDevice[" << deviceId
+		  << "] while setting bypass";
+      throw(CentralNodeException(errorStream.str()));
+    }
+    bypass = (*analogInput).second->bypass;
+  }
+
+  BypassQueueEntry newEntry;
+  newEntry.first = bypassUntil;
+  newEntry.second = bypass;
+  
+  if (bypassUntil == 0) {
+    bypass->status = BYPASS_EXPIRED;
+    bypass->until = 0;
+  }
+  else {
+    time_t now;
+    if (test) {
+      now = bypassUntil - 1;
+    }
+    else {
+      time(&now);
+    }
+    
+    if (bypassUntil > now) {
+      bypass->until = bypassUntil;
+      bypass->status = BYPASS_VALID;
+      bypass->value = value;
+      bypassQueue.push(newEntry);
+    }
   }
 }

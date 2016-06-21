@@ -2,12 +2,23 @@
 #define CENTRAL_NODE_ENGINE_H
 
 #include <iostream>
-
 #include <boost/shared_ptr.hpp>
+
+#include <central_node_exception.h>
 #include <central_node_yaml.h>
 #include <central_node_database.h>
+#include <central_node_bypass.h>
+#include <central_node_bypass_manager.h>
+#include <time_util.h>
 
 using boost::shared_ptr;
+
+class EngineException: public CentralNodeException {
+ public:
+  explicit EngineException(const char* message) : CentralNodeException(message) {}
+  explicit EngineException(const std::string& message) : CentralNodeException(message) {}
+  virtual ~EngineException() throw () {}
+};
 
 /**
  * Evaluation Cycle:
@@ -26,14 +37,27 @@ class Engine {
   int checkFaults();
 
   friend class EngineTest;
+  friend class BypassTest;
+  
+  void showFaults();
+  void showStats();
+  void showMitigationDevices();
 
  protected:
   int updateInputs();
+  //  void createBypassMap();
+  //  void assignBypass(shared_ptr<MpsDb> db);
 
-  shared_ptr<MpsDb> mpsDb;
+  MpsDbPtr mpsDb;
+  //  shared_ptr<MpsDb> mpsDb;
+  //  FaultInputBypassMapPtr bypassMap;
+  //  BypassPriorityQueue bypassQueue;
+  BypassManagerPtr bypassManager;
 
   DbBeamClassPtr highestBeamClass;
   DbBeamClassPtr lowestBeamClass;
+
+  TimeAverage checkFaultTime;
 };
 
 typedef shared_ptr<Engine> EnginePtr;

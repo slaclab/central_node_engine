@@ -80,6 +80,20 @@ int MpsDb::configure() {
 									   (*it).second));
   }
 
+  // Assign AnalogDevice to each ThresholdFault
+  for (DbThresholdFaultMap::iterator it = thresholdFaults->begin();
+       it != thresholdFaults->end(); ++it) {
+    int id = (*it).second->analogDeviceId;
+    DbAnalogDeviceMap::iterator analogIt = analogDevices->find(id);
+    if (analogIt == analogDevices->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid AnalogDevice ("
+		  << id << ") for ThresholdFault (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+
+    (*it).second->analogDevice = (*analogIt).second;
+  }
+
   // Assign all DigitalFaultStates to a Fault
   for (DbDigitalFaultStateMap::iterator it = digitalFaultStates->begin();
        it != digitalFaultStates->end(); ++it) {
@@ -136,7 +150,83 @@ int MpsDb::configure() {
     }
   }
 
+  // Assign list of ThresholdValues to each ThresholdValueMap
+  for (DbThresholdValueMap::iterator it = thresholdValues->begin();
+       it != thresholdValues->end(); ++it) {
+    int thresholdMapId = (*it).second->thresholdValueMapId;
+
+    DbThresholdValueMapEntryMap::iterator thresholdValueMapEntry =
+      thresholdValueMaps->find(thresholdMapId);
+    if (thresholdValueMapEntry != thresholdValueMaps->end()) {
+      // Create a map to hold ThresholdValues for the ThresholdMap
+      if (!(*thresholdValueMapEntry).second->thresholdValues) {
+	DbThresholdValueMap *thresholdValueMap = new DbThresholdValueMap();
+	(*thresholdValueMapEntry).second->thresholdValues = DbThresholdValueMapPtr(thresholdValueMap);
+      }
+      (*thresholdValueMapEntry).second->thresholdValues->
+	insert(std::pair<int, DbThresholdValuePtr>((*it).second->id, (*it).second));      
+    }
+    else {
+      errorStream << "ERROR: Failed to configure database, invalid thresholdValueMapId ("
+		  << thresholdMapId << ") for thresholdValue (" <<  (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+  }
+
+  // Assign the ThresholdValueMap to each AnalogDeviceType
+  for (DbAnalogDeviceTypeMap::iterator it = analogDeviceTypes->begin();
+       it != analogDeviceTypes->end(); ++it) {
+    int thresholdMapId = (*it).second->thresholdValueMapId;
+
+    DbThresholdValueMapEntryMap::iterator thresholdValueMapEntry =
+      thresholdValueMaps->find(thresholdMapId);
+    if (thresholdValueMapEntry != thresholdValueMaps->end()) {
+      (*it).second->thresholdMapEntry = (*thresholdValueMapEntry).second;
+    }
+    else {
+      errorStream << "ERROR: Failed to configure database, invalid thresholdValueMapId ("
+		  << thresholdMapId << ") for AnalogDeviceType (" <<  (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+  }
+
+  // Assign the AnalogDeviceType to each AnalogDevice
+  for (DbAnalogDeviceMap::iterator it = analogDevices->begin();
+       it != analogDevices->end(); ++it) {
+    int typeId = (*it).second->analogDeviceTypeId;
+
+    DbAnalogDeviceTypeMap::iterator analogDeviceType = analogDeviceTypes->find(typeId);
+    if (analogDeviceType != analogDeviceTypes->end()) {
+      (*it).second->analogDeviceType = (*analogDeviceType).second;
+    }
+    else {
+      errorStream << "ERROR: Failed to configure database, invalid analogDeviceTypeId ("
+		  << typeId << ") for AnalogDevice (" <<  (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+  }
+
+  // Assign ThresholdFault to ThresholdFaultStates
+  for (DbThresholdFaultStateMap::iterator it = thresholdFaultStates->begin();
+       it != thresholdFaultStates->end(); ++it) {
+    int thresholdFaultId = (*it).second->thresholdFaultId;
+
+    DbThresholdFaultMap::iterator thresholdFault = thresholdFaults->find(thresholdFaultId);
+    if (thresholdFault != thresholdFaults->end()) {
+      (*it).second->thresholdFault = (*thresholdFault).second;
+    }
+    else {
+      errorStream << "ERROR: Failed to configure database, invalid thresholdFaultId ("
+		  << thresholdFaultId << ") for ThresholdFaultState (" <<  (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+  }
+
   return 0;
+}
+
+void MpsDb::setName(std::string yamlFileName) {
+  name = yamlFileName;
 }
 
 /**
@@ -145,15 +235,16 @@ int MpsDb::configure() {
  * into the MpsDb maps. Each maps uses the MPS database id as key.
  */
 int MpsDb::load(std::string yamlFileName) {
+  std::stringstream errorStream;
   YAML::Node doc;
   std::vector<YAML::Node> nodes;
 
   try {
     nodes = YAML::LoadAllFromFile(yamlFileName);
   } catch (...) {
-    std::cerr << "ERROR: Failed to load YAML file ("
-	      << yamlFileName << ")" << std::endl;
-    return 1;
+    errorStream << "ERROR: Failed to load YAML file ("
+		<< yamlFileName << ")";
+    throw(DbException(errorStream.str()));
   }
 
   for (std::vector<YAML::Node>::iterator node = nodes.begin();
@@ -161,9 +252,9 @@ int MpsDb::load(std::string yamlFileName) {
     std::string s = YAML::Dump(*node);
     size_t found = s.find(":");
     if (found == std::string::npos) {
-      std::cerr << "ERROR: Can't find Node name in YAML file ("
-		<< yamlFileName << ")" << std::endl;
-      return 1;
+      errorStream << "ERROR: Can't find Node name in YAML file ("
+		  << yamlFileName << ")";
+      throw(DbException(errorStream.str()));
     }
     std::string nodeName = s.substr(0, found);
 
@@ -210,11 +301,101 @@ int MpsDb::load(std::string yamlFileName) {
     } else if (nodeName == "AllowedClass") {
       allowedClasses = (*node).as<DbAllowedClassMapPtr>();
     } else {
-      std::cerr << "ERROR: Unknown YAML node name ("
-		<< nodeName << ")" << std::endl;
-      return 1;
+      errorStream << "ERROR: Unknown YAML node name ("
+		  << nodeName << ")";
+      throw(DbException(errorStream.str()));
     }
   }
+
+  setName(yamlFileName);
+
   return 0;
 }
 
+/**
+ * Print out the digital/analog inputs (DbFaultInput and DbAnalogDevices)
+ */
+void MpsDb::showFaults() {
+  std::cout << "+-------------------------------------------------------" << std::endl;
+  std::cout << "| Digital Faults: " << std::endl;
+  std::cout << "+-------------------------------------------------------" << std::endl;
+  for (DbFaultMap::iterator fault = faults->begin(); 
+       fault != faults->end(); ++fault) {
+    showFault((*fault).second);
+  }
+
+  std::cout << "+-------------------------------------------------------" << std::endl;
+  std::cout << "| Analog Faults: " << std::endl;
+  std::cout << "+-------------------------------------------------------" << std::endl;
+  for (DbThresholdFaultMap::iterator fault = thresholdFaults->begin(); 
+       fault != thresholdFaults->end(); ++fault) {
+    showThresholdFault((*fault).second);
+  }
+  std::cout << "+-------------------------------------------------------" << std::endl;
+}
+
+void MpsDb::showFault(DbFaultPtr fault) {
+  std::cout << "| " << fault->name << std::endl;
+  if (!fault->faultInputs) {
+    std::cout << "| - WARNING: No inputs to this fault" << std::endl;
+  }
+  else {
+    for (DbFaultInputMap::iterator input = fault->faultInputs->begin();
+	 input != fault->faultInputs->end(); ++input) {
+      int digitalDeviceId = (*input).second->deviceId;
+      DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->find(digitalDeviceId);
+      if (digitalDevice == digitalDevices->end()) {
+	std::cout << "| - WARNING: No digital devices for this fault!";
+      }
+      else {
+	for (DbDeviceInputMap::iterator devInput =
+	       (*digitalDevice).second->inputDevices->begin();
+	     devInput != (*digitalDevice).second->inputDevices->end(); ++devInput) {
+	  std::cout << "| - Input[" << (*devInput).second->id
+		    << "], Position[" << (*devInput).second->bitPosition
+		    << "], Value[" << (*devInput).second->value
+		    << "], Bypass[";
+      
+	  if (!(*devInput).second->bypass) {
+	    std::cout << "WARNING: NO BYPASS INFO]";
+	  }
+	  else {
+	    if ((*devInput).second->bypass->status == BYPASS_VALID) {
+	      std::cout << "VALID]";
+	    }
+	    else {
+	      std::cout << "EXPIRED]";
+	    }
+	  }
+	  std::cout << std::endl;
+	}
+      }
+    }
+  }
+}
+
+void MpsDb::showThresholdFault(DbThresholdFaultPtr fault) {
+  std::cout << "| " << fault->name << std::endl;
+  if (!fault->analogDevice) {
+    std::cout << "| - WARNING: No inputs to this fault!" << std::endl;
+  }
+  else {
+    std::cout << "| - Input[" << fault->analogDevice->id
+	      << "], Value[" << fault->analogDevice->value
+	      << "], Type[" << fault->analogDevice->analogDeviceType->name
+	      << "], Bypass[";
+    
+    if (!fault->analogDevice->bypass) {
+      std::cout << "WARNING: NO BYPASS INFO]";
+    }
+    else {
+      if (fault->analogDevice->bypass->status == BYPASS_VALID) {
+	std::cout << "VALID]";
+      }
+      else {
+	std::cout << "EXPIRED]";
+      }
+    }
+    std::cout << std::endl;
+  }
+}

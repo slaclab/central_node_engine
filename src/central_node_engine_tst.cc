@@ -14,75 +14,135 @@ class TestFailed {};
 static void usage(const char *nm) {
   std::cerr << "Usage: " << nm << " -f <file> -i <file>" << std::endl;
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
-  std::cerr << "       -i <file>   :  input test file" << std::endl;
+  std::cerr << "       -i <file>   :  digital input test file" << std::endl;
+  std::cerr << "       -a <file>   :  analog input test file" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
 
 class EngineTest {
  public:
-  EngineTest(EnginePtr e) : engine(e) {};
+  EngineTest(EnginePtr e) : engine(e), digital(false), analog(false) {};
 
   EnginePtr engine;
   int testInputCount;
+  int analogInputCount;
   std::ifstream testInputFile;
+  std::ifstream analogInputFile;
+  bool digital;
+  bool analog;
 
-  int loadInputTestFile(std::string testFileName) {
-    testInputFile.open(testFileName.c_str(), std::ifstream::in);
-    if (!testInputFile.is_open()) {
-      std::cerr << "ERROR: Failed to open test file \"" << testFileName
-      		<< "\" for reading" << std::endl;
-      return 1;
+  // type==0 -> digital
+  // type!=0 -> analog
+  int loadInputTestFile(std::string testFileName, int type = 0) {
+    if (type == 0) {
+      testInputFile.open(testFileName.c_str(), std::ifstream::in);
+      if (!testInputFile.is_open()) {
+	std::cerr << "ERROR: Failed to open test file \"" << testFileName
+		  << "\" for reading" << std::endl;
+	return 1;
+      }
+      digital = true;
     }
-
-    //    testInputFile >> testInputCount; // read number of inputs
-    //    std::cout << "Inputs: " << testInputCount << std::endl;
+    else {
+      analogInputFile.open(testFileName.c_str(), std::ifstream::in);
+      if (!analogInputFile.is_open()) {
+	std::cerr << "ERROR: Failed to open analog file \"" << testFileName
+		  << "\" for reading" << std::endl;
+	return 1;
+      }
+      analog = true;
+    }
 
     return 0;
   }
 
   int updateInputsFromTestFile() {
-    if (!testInputFile.is_open()) {
+    if (!testInputFile.is_open() && digital) {
       std::cerr << "ERROR: Input test file not opened, can't update inputs."
+		<< std::endl;
+      return 1;
+    }
+
+    if (!analogInputFile.is_open() && analog) {
+      std::cerr << "ERROR: Analog test file not opened, can't update inputs."
 		<< std::endl;
       return 1;
     }
 
     std::string s;
     int testCycle;
-    testInputFile >> s;
-    testInputFile >> testInputCount;
-    testInputFile >> testCycle;
+    int analogCycle;
 
     // If eof reached, start from beginning
-    if (testInputFile.eof()) {
-      testInputFile.clear();
-      testInputFile.seekg(0, std::ios::beg);
+    int deviceId;
+    int deviceValue;
+    float analogValue;
 
+    if (digital) {
       testInputFile >> s;
       testInputFile >> testInputCount;
       testInputFile >> testCycle;
-    }
 
-    int deviceId;
-    int deviceValue;
-
-    std::cout << "=== Testing cycle " << testCycle << " ===" << std::endl;
-    for (int i = 0; i < testInputCount; ++i) {
-      testInputFile >> deviceId;
-      testInputFile >> deviceValue;
-
-      //      std::cout << deviceId << ": " << deviceValue << std::endl;
-
-      int size = engine->mpsDb->deviceInputs->size() + 1;
-      if (deviceId > size) {
-	std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		  << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
-		  << std::endl;
-	return 1;
+      if (testInputFile.eof()) {
+	testInputFile.clear();
+	testInputFile.seekg(0, std::ios::beg);
+	
+	testInputFile >> s;
+	testInputFile >> testInputCount;
+	testInputFile >> testCycle;
       }
-      engine->mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+
+      std::cout << "=== Testing digital cycle " << testCycle << " ===" << std::endl;
+      for (int i = 0; i < testInputCount; ++i) {
+	testInputFile >> deviceId;
+	testInputFile >> deviceValue;
+	
+	//      std::cout << deviceId << ": " << deviceValue << std::endl;
+	
+	int size = engine->mpsDb->deviceInputs->size() + 1;
+	if (deviceId > size) {
+	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
+		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
+		    << std::endl;
+	  return 1;
+	}
+	engine->mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+      }
     }
+
+    if (analog) {
+      analogInputFile >> s;
+      analogInputFile >> analogInputCount;
+      analogInputFile >> analogCycle;
+
+      if (analogInputFile.eof()) {
+	analogInputFile.clear();
+	analogInputFile.seekg(0, std::ios::beg);
+	
+	analogInputFile >> s;
+	analogInputFile >> analogInputCount;
+	analogInputFile >> analogCycle;
+      }
+
+      std::cout << "=== Testing analog cycle " << analogCycle << " ===" << std::endl;
+      for (int i = 0; i < analogInputCount; ++i) {
+	analogInputFile >> deviceId;
+	analogInputFile >> analogValue;
+	
+	//      std::cout << deviceId << ": " << deviceValue << std::endl;
+	
+	int size = engine->mpsDb->deviceInputs->size() + 1;
+	if (deviceId > size) {
+	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
+		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
+		    << std::endl;
+	  return 1;
+	}
+	engine->mpsDb->analogDevices->at(deviceId)->update(analogValue);
+      }
+    }
+
 
     //    std::cout << engine->mpsDb->deviceInputs->at(1)->value << std::endl;
 
@@ -93,8 +153,9 @@ class EngineTest {
 int main(int argc, char **argv) {
   std::string mpsFileName = "";
   std::string inputFileName = "";
+  std::string analogFileName = "";
 
-  for (int opt; (opt = getopt(argc, argv, "hf:i:")) > 0;) {
+  for (int opt; (opt = getopt(argc, argv, "hf:i:a:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
     case 'f' :
@@ -102,6 +163,9 @@ int main(int argc, char **argv) {
       break;
     case 'i':
       inputFileName = optarg;
+      break;
+    case 'a':
+      analogFileName = optarg;
       break;
     case 'h': usage(argv[0]); return 0;
     default:
@@ -116,8 +180,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  if (inputFileName == "") {
-    std::cerr << "Missing -i option" << std::endl;
+  if (inputFileName == "" && analogFileName == "") {
+    std::cerr << "Missing -i option and/or -a option" << std::endl;
     usage(argv[0]);
     return 1;
   }
@@ -136,25 +200,58 @@ int main(int argc, char **argv) {
 
   EngineTest *t = new EngineTest(EnginePtr(e));
   
-  if (t->loadInputTestFile(inputFileName) != 0) {
-    std::cerr << "ERROR: Failed to open input test file" << std::endl;
-    return -1;
+  if (inputFileName != "") {
+    if (t->loadInputTestFile(inputFileName, 0) != 0) {
+      std::cerr << "ERROR: Failed to open input test file" << std::endl;
+      return -1;
+    }
+  }
+
+  if (analogFileName != "") {
+    if (t->loadInputTestFile(analogFileName, 1) != 0) {
+      std::cerr << "ERROR: Failed to open analog test file" << std::endl;
+      return -1;
+    }
   }
 
   t->updateInputsFromTestFile();
   e->checkFaults();
+  //  e->showFaults();
+  e->showMitigationDevices();
+
   t->updateInputsFromTestFile();
   e->checkFaults();
+  //  e->showFaults();
+  e->showMitigationDevices();
+
   t->updateInputsFromTestFile();
   e->checkFaults();
+  //  e->showFaults();
+  e->showMitigationDevices();
+
   t->updateInputsFromTestFile();
   e->checkFaults();
+  //  e->showFaults();
+  e->showMitigationDevices();
+  /*
   t->updateInputsFromTestFile();
   e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+
   t->updateInputsFromTestFile();
   e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+
   t->updateInputsFromTestFile();
   e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+  */
+  std::cout << "-------------------------" << std::endl;
+  
+  e->showStats();
 
   delete t;
 

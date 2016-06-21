@@ -31,12 +31,12 @@ OPT_CXXFLAGS=-g -Wall -O2
 OPT_CFLAGS  =-g -Wall -O2
 
 CXXFLAGS+= $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
-CXXFLAGS+= $(addprefix -I,$(subst :, ,$(cpswinc_DIRS)))
+CXXFLAGS+= $(addprefix -I,$(subst :, ,$(central_node_engineinc_DIRS)))
 CXXFLAGS+= $(OPT_CXXFLAGS)
 CXXFLAGS+= $(USR_CXXFLAGS) $(or $(USR_CXXFLAGS_$(TARNM)),$(USR_CXXFLAGS_default))
 
 CFLAGS  += $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
-CFLAGS  += $(addprefix -I,$(subst :, ,$(cpswinc_DIRS)))
+CFLAGS  += $(addprefix -I,$(subst :, ,$(central_node_engineinc_DIRS)))
 CFLAGS  += $(OPT_CFLAGS)
 CFLAGS  += $(USR_CFLAGS)   $(or $(USR_CFLAGS_$(TARNM)),$(USR_CFLAGS_default))
 
@@ -51,12 +51,12 @@ RUN_OPTS=''
 # Libraries currently required by central_node_engine itself (and thus by anything using it)
 
 # colon separated dirlist
-cpswinc_DIRS=$(CENTRAL_NODE_ENGINE_DIR)$(addprefix :,$(or $(boostinc_DIR_$(TARNM)), $(boostinc_DIR_default), $(boostinc_DIR)))
+central_node_engineinc_DIRS=$(CENTRAL_NODE_ENGINE_DIR)$(addprefix :,$(or $(boostinc_DIR_$(TARNM)), $(boostinc_DIR_default), $(boostinc_DIR)))
 # colon separated dirlist
-cpswlib_DIRS=$(CENTRAL_NODE_ENGINE_DIR)/O.$(TARCH)$(addprefix :,$(or $(boostlib_DIR_$(TARNM)), $(boostlib_DIR_default), $(boostlib_DIR)))
+central_node_enginelib_DIRS=$(CENTRAL_NODE_ENGINE_DIR)/O.$(TARCH)$(addprefix :,$(or $(boostlib_DIR_$(TARNM)), $(boostlib_DIR_default), $(boostlib_DIR)))
 
-# Libraries CPSW requires -- must be added to application's <prog>_LIBS variable
-CPSW_LIBS   = cpsw boost_system.a pthread rt
+# Libraries CENTRAL_NODE_ENGINE requires -- must be added to application's <prog>_LIBS variable
+CENTRAL_NODE_ENGINE_LIBS   = central_node_engine pthread rt
 
 # definitions
 include $(CENTRAL_NODE_ENGINE_DIR)/config.mak

@@ -2419,204 +2419,211 @@ MitigationDevice:
 BeamClass:
 - id: 1
   number: 1
-  name: "Class 1"
+  name: "No Beam"
 - id: 2
   number: 2
-  name: "Class 2"
+  name: "Class 1"
 - id: 3
   number: 3
+  name: "Class 2"
+- id: 4
+  number: 4
   name: "Class 3"
 ---
 AllowedClass:
 - id: 1
   fault_state_id: 1
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 2
   fault_state_id: 1
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 3
   fault_state_id: 1
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 4
   fault_state_id: 2
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 5
   fault_state_id: 2
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 6
   fault_state_id: 2
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 7
   fault_state_id: 5
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 8
   fault_state_id: 5
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 9
   fault_state_id: 5
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 10
   fault_state_id: 6
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 11
   fault_state_id: 6
   mitigation_device_id: 2
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 12
   fault_state_id: 6
   mitigation_device_id: 3
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 13
   fault_state_id: 8
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 14
   fault_state_id: 8
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 15
   fault_state_id: 8
   mitigation_device_id: 2
-  beam_class_id: 2
+  beam_class_id: 3
 - id: 16
   fault_state_id: 9
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 17
   fault_state_id: 9
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 18
   fault_state_id: 9
   mitigation_device_id: 2
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 19
   fault_state_id: 10
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 20
   fault_state_id: 10
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 21
   fault_state_id: 10
   mitigation_device_id: 2
-  beam_class_id: 2
+  beam_class_id: 3
 - id: 22
   fault_state_id: 11
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 23
   fault_state_id: 11
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 24
   fault_state_id: 11
   mitigation_device_id: 2
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 25
   fault_state_id: 12
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 26
   fault_state_id: 12
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 27
   fault_state_id: 12
   mitigation_device_id: 2
-  beam_class_id: 2
+  beam_class_id: 3
 - id: 28
   fault_state_id: 13
   mitigation_device_id: 1
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 29
   fault_state_id: 13
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 30
   fault_state_id: 13
   mitigation_device_id: 2
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 31
   fault_state_id: 14
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 32
   fault_state_id: 14
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 33
   fault_state_id: 14
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 34
   fault_state_id: 15
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 35
   fault_state_id: 15
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 36
   fault_state_id: 15
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 37
   fault_state_id: 16
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 38
   fault_state_id: 16
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 39
   fault_state_id: 16
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 40
   fault_state_id: 17
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 41
   fault_state_id: 17
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 42
   fault_state_id: 17
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 43
   fault_state_id: 18
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 44
   fault_state_id: 18
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 45
   fault_state_id: 18
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 46
   fault_state_id: 19
   mitigation_device_id: 1
-  beam_class_id: 1
+  beam_class_id: 2
 - id: 47
   fault_state_id: 19
   mitigation_device_id: 3
-  beam_class_id: 3
+  beam_class_id: 4
 - id: 48
   fault_state_id: 19
   mitigation_device_id: 2
-  beam_class_id: 3
+  beam_class_id: 4
+- id: 49
+  fault_state_id: 4
+  mitigation_device_id: 1
+  beam_class_id: 1

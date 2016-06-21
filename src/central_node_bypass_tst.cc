@@ -32,6 +32,25 @@ class BypassTest {
   bool digital;
   bool analog;
 
+  void checkBypass(time_t t) {
+    engine->bypassManager->checkBypassQueue(t);
+  }
+
+  void addBypass() {
+    // Now bypass the OTR IN limit switch to 0 and
+    // OTR OUT limit switch to 1, i.e. screen is OUT
+    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
+				     1 /* bypass value */, 100 /* until */, true);
+    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
+				     0 /* bypass value */, 100 /* until*/, true);
+    
+    // OTR Attr both out
+    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
+				     0 /* bypass value */, 110 /* until */, true);
+    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
+				     1 /* bypass value */, 110 /* until*/, true);
+  }
+
   void showFaults() {
     engine->mpsDb->showFaults();
   }
@@ -218,45 +237,86 @@ int main(int argc, char **argv) {
     }
   }
 
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  //  e->showFaults();
-  e->showMitigationDevices();
-  t->showFaults();
-
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  //  e->showFaults();
-  e->showMitigationDevices();
-  t->showFaults();
-
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  //  e->showFaults();
-  e->showMitigationDevices();
-  t->showFaults();
-
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  //  e->showFaults();
-  e->showMitigationDevices();
-  t->showFaults();
-  /*
+  // First four updates without bypass
   t->updateInputsFromTestFile();
   e->checkFaults();
   e->showFaults();
   e->showMitigationDevices();
+  //t->showFaults();
 
   t->updateInputsFromTestFile();
   e->checkFaults();
   e->showFaults();
   e->showMitigationDevices();
+  //t->showFaults();
 
   t->updateInputsFromTestFile();
   e->checkFaults();
   e->showFaults();
   e->showMitigationDevices();
-  */
+  //t->showFaults();
+
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+
+  t->addBypass();
+  std::cout << "### BYPASS ADDED" << std::endl;
+
+  // Check bypass expiration - bypass should be all valid
+  t->checkBypass(99);
+
+  // Next four updates with bypass VALID
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+  t->showFaults();
+
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+  //t->showFaults();
+
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+  //t->showFaults();
+
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+
+  // Check bypass expiration - bypass should expire now
+  t->checkBypass(200);
+  std::cout << "### BYPASS EXPIRED" << std::endl;
+ 
+  // Next four updates with bypass EXPIRED
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+  t->showFaults();
+
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+  //t->showFaults();
+
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+  e->showMitigationDevices();
+  //t->showFaults();
+
+  t->updateInputsFromTestFile();
+  e->checkFaults();
+  e->showFaults();
+
+
   std::cout << "-------------------------" << std::endl;
   
   e->showStats();

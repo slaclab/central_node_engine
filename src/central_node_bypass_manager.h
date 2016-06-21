@@ -3,16 +3,37 @@
 
 #include <central_node_database.h>
 
+/**
+ * The bypass expirations are monitored via a priority queue. The head of the
+ * queue points to the bypass that will expire first. If a bypass time is
+ *  
+ */
+typedef std::pair<time_t, InputBypassPtr> BypassQueueEntry;
+
+class CompareBypassTime {
+ public:
+  bool operator()(BypassQueueEntry f1, BypassQueueEntry f2) {
+    return f1.first > f2.first;
+  }
+};
+
 typedef std::priority_queue<BypassQueueEntry, std::vector<BypassQueueEntry>, CompareBypassTime> BypassPriorityQueue;
 
 class BypassManager {
  private:
-  FaultInputBypassMapPtr bypassMap;
+  InputBypassMapPtr bypassMap;
   BypassPriorityQueue bypassQueue;
 
+  bool checkBypassQueueTop(time_t now);
+  
  public:
   void createBypassMap(MpsDbPtr db);
   void assignBypass(MpsDbPtr db);
+  void checkBypassQueue(time_t testTime = 0);
+  void setBypass(MpsDbPtr db, BypassType bypassType, int deviceId,
+		 int value, time_t bypassUntil, bool test = false);
+  
+  friend class BypassTest;
 };
 
 typedef shared_ptr<BypassManager> BypassManagerPtr;
