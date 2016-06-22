@@ -319,6 +319,7 @@ class DbFaultInput : public DbEntry {
 
   // Values calculated at run time
   int value; // Fault value calculated from the DeviceInputs
+  DbDigitalDevicePtr digitalDevice;
   
  DbFaultInput() : DbEntry(), faultId(-1), deviceId(-1), bitPosition(-1) {
   }
@@ -701,6 +702,15 @@ typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
 class MpsDb {
  private:
   void setName(std::string yamlFileName);
+  void configureAllowedClasses();
+  void configureDeviceInputs();
+  void configureFaultInputs();
+  void configureThresholdFaults();
+  void configureDigitalFaultStates();
+  void configureThresholdValues();
+  void configureAnalogDeviceTypes();
+  void configureAnalogDevices();
+  void configureThresholdFaultStates();
 
  public:
   DbCrateMapPtr crates;
@@ -732,7 +742,7 @@ class MpsDb {
   //  DbFaultStateMapPtr faultStates; 
 
   int load(std::string yamlFile);
-  int configure();
+  void configure();
 
   void showFaults();
   void showFault(DbFaultPtr fault);

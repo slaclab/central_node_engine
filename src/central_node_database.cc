@@ -8,13 +8,7 @@
 #include <iostream>
 #include <sstream>
 
-/**
- * Iterates over the database entries assigning cross references, e.g.
- * every AllowedClass entry has a foreign key to a MitigationDevice.
- * The configuration finds the pointer to the MitigationDevice and
- * stores it along with the AllowedClass entry.
- */
-int MpsDb::configure() {
+void MpsDb::configureAllowedClasses() {
   std::stringstream errorStream;
   // Assign BeamClass and MitigationDevice to AllowedClass
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
@@ -36,83 +30,6 @@ int MpsDb::configure() {
       throw(DbException(errorStream.str()));
     }
     (*it).second->mitigationDevice = (*mitigationIt).second;
-  }
-
-  // Assign DeviceInputs to it's DigitalDevices
-  for (DbDeviceInputMap::iterator it = deviceInputs->begin(); 
-       it != deviceInputs->end(); ++it) {
-    int id = (*it).second->digitalDeviceId;
-
-    DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
-    if (deviceIt == digitalDevices->end()) {
-      errorStream << "ERROR: Failed to configure database, invalid ID found for DigitalDevice ("
-		  << id << ") for DeviceInput (" << (*it).second->id << ")";
-      throw(DbException(errorStream.str()));
-    }
-
-    // Create a map to hold deviceInput for the digitalDevice
-    if (!(*deviceIt).second->inputDevices) {
-      DbDeviceInputMap *deviceInputs = new DbDeviceInputMap();
-      (*deviceIt).second->inputDevices = DbDeviceInputMapPtr(deviceInputs);
-    }
-    (*deviceIt).second->inputDevices->insert(std::pair<int, DbDeviceInputPtr>((*it).second->id,
-									      (*it).second));
-  }
-
-  // Assing fault inputs to faults
-  for (DbFaultInputMap::iterator it = faultInputs->begin();
-       it != faultInputs->end(); ++it) {
-    int id = (*it).second->faultId;
-
-    DbFaultMap::iterator faultIt = faults->find(id);
-    if (faultIt == faults->end()) {
-      errorStream <<  "ERROR: Failed to configure database, invalid ID found for Fault ("
-		  << id << ") for FaultInput (" << (*it).second->id << ")";
-      throw(DbException(errorStream.str()));
-    }
-
-    // Create a map to hold faultInputs for the fault
-    if (!(*faultIt).second->faultInputs) {
-      DbFaultInputMap *faultInputs = new DbFaultInputMap();
-      (*faultIt).second->faultInputs = DbFaultInputMapPtr(faultInputs);
-    }
-    (*faultIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*it).second->id,
-									   (*it).second));
-  }
-
-  // Assign AnalogDevice to each ThresholdFault
-  for (DbThresholdFaultMap::iterator it = thresholdFaults->begin();
-       it != thresholdFaults->end(); ++it) {
-    int id = (*it).second->analogDeviceId;
-    DbAnalogDeviceMap::iterator analogIt = analogDevices->find(id);
-    if (analogIt == analogDevices->end()) {
-      errorStream << "ERROR: Failed to configure database, invalid AnalogDevice ("
-		  << id << ") for ThresholdFault (" << (*it).second->id << ")";
-      throw(DbException(errorStream.str()));
-    }
-
-    (*it).second->analogDevice = (*analogIt).second;
-  }
-
-  // Assign all DigitalFaultStates to a Fault
-  for (DbDigitalFaultStateMap::iterator it = digitalFaultStates->begin();
-       it != digitalFaultStates->end(); ++it) {
-    int id = (*it).second->faultId;
-
-    DbFaultMap::iterator faultIt = faults->find(id);
-    if (faultIt == faults->end()) {
-      errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
-		  << id << ") for DigitalFaultState (" << (*it).second->id << ")";
-      throw(DbException(errorStream.str()));
-    }
-
-    // Create a map to hold faultInputs for the fault
-    if (!(*faultIt).second->digitalFaultStates) {
-      DbDigitalFaultStateMap *digFaultStates = new DbDigitalFaultStateMap();
-      (*faultIt).second->digitalFaultStates = DbDigitalFaultStateMapPtr(digFaultStates);
-    }
-    (*faultIt).second->digitalFaultStates->insert(std::pair<int, DbDigitalFaultStatePtr>((*it).second->id,
-											 (*it).second));
   }
 
   // Assign AllowedClasses to DigitalFaultState or ThresholdFaultState
@@ -149,7 +66,113 @@ int MpsDb::configure() {
       }
     }
   }
+}
 
+void MpsDb::configureDeviceInputs() {
+  std::stringstream errorStream;
+  // Assign DeviceInputs to it's DigitalDevices
+  for (DbDeviceInputMap::iterator it = deviceInputs->begin(); 
+       it != deviceInputs->end(); ++it) {
+    int id = (*it).second->digitalDeviceId;
+
+    DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
+    if (deviceIt == digitalDevices->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid ID found for DigitalDevice ("
+		  << id << ") for DeviceInput (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+
+    // Create a map to hold deviceInput for the digitalDevice
+    if (!(*deviceIt).second->inputDevices) {
+      DbDeviceInputMap *deviceInputs = new DbDeviceInputMap();
+      (*deviceIt).second->inputDevices = DbDeviceInputMapPtr(deviceInputs);
+    }
+    (*deviceIt).second->inputDevices->insert(std::pair<int, DbDeviceInputPtr>((*it).second->id,
+									      (*it).second));
+  }
+}
+
+void MpsDb::configureFaultInputs() {
+  std::stringstream errorStream;
+  // Assign DigitalDevice to FaultInputs
+  for (DbFaultInputMap::iterator it = faultInputs->begin();
+       it != faultInputs->end(); ++it) {
+    int id = (*it).second->deviceId;
+
+    DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
+    if (deviceIt == digitalDevices->end()) {
+      errorStream << "ERROR: Failed to find DigitalDevice (" << id
+		  << ") for FaultInput (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+    (*it).second->digitalDevice = (*deviceIt).second;
+  }
+
+  // Assing fault inputs to faults
+  for (DbFaultInputMap::iterator it = faultInputs->begin();
+       it != faultInputs->end(); ++it) {
+    int id = (*it).second->faultId;
+
+    DbFaultMap::iterator faultIt = faults->find(id);
+    if (faultIt == faults->end()) {
+      errorStream <<  "ERROR: Failed to configure database, invalid ID found for Fault ("
+		  << id << ") for FaultInput (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+
+    // Create a map to hold faultInputs for the fault
+    if (!(*faultIt).second->faultInputs) {
+      DbFaultInputMap *faultInputs = new DbFaultInputMap();
+      (*faultIt).second->faultInputs = DbFaultInputMapPtr(faultInputs);
+    }
+    (*faultIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*it).second->id,
+									   (*it).second));
+  }
+}
+
+void MpsDb::configureThresholdFaults() {
+  std::stringstream errorStream;
+  // Assign AnalogDevice to each ThresholdFault
+  for (DbThresholdFaultMap::iterator it = thresholdFaults->begin();
+       it != thresholdFaults->end(); ++it) {
+    int id = (*it).second->analogDeviceId;
+    DbAnalogDeviceMap::iterator analogIt = analogDevices->find(id);
+    if (analogIt == analogDevices->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid AnalogDevice ("
+		  << id << ") for ThresholdFault (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+
+    (*it).second->analogDevice = (*analogIt).second;
+  }
+}
+
+void MpsDb::configureDigitalFaultStates() {
+  std::stringstream errorStream;
+  // Assign all DigitalFaultStates to a Fault
+  for (DbDigitalFaultStateMap::iterator it = digitalFaultStates->begin();
+       it != digitalFaultStates->end(); ++it) {
+    int id = (*it).second->faultId;
+
+    DbFaultMap::iterator faultIt = faults->find(id);
+    if (faultIt == faults->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
+		  << id << ") for DigitalFaultState (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+
+    // Create a map to hold faultInputs for the fault
+    if (!(*faultIt).second->digitalFaultStates) {
+      DbDigitalFaultStateMap *digFaultStates = new DbDigitalFaultStateMap();
+      (*faultIt).second->digitalFaultStates = DbDigitalFaultStateMapPtr(digFaultStates);
+    }
+    (*faultIt).second->digitalFaultStates->insert(std::pair<int, DbDigitalFaultStatePtr>((*it).second->id,
+											 (*it).second));
+  }
+}
+
+void MpsDb::configureThresholdValues() {
+  std::stringstream errorStream;
   // Assign list of ThresholdValues to each ThresholdValueMap
   for (DbThresholdValueMap::iterator it = thresholdValues->begin();
        it != thresholdValues->end(); ++it) {
@@ -172,7 +195,10 @@ int MpsDb::configure() {
       throw(DbException(errorStream.str()));
     }
   }
+}
 
+void MpsDb::configureAnalogDeviceTypes() {
+  std::stringstream errorStream;
   // Assign the ThresholdValueMap to each AnalogDeviceType
   for (DbAnalogDeviceTypeMap::iterator it = analogDeviceTypes->begin();
        it != analogDeviceTypes->end(); ++it) {
@@ -189,7 +215,10 @@ int MpsDb::configure() {
       throw(DbException(errorStream.str()));
     }
   }
+}
 
+void MpsDb::configureAnalogDevices() {
+  std::stringstream errorStream;
   // Assign the AnalogDeviceType to each AnalogDevice
   for (DbAnalogDeviceMap::iterator it = analogDevices->begin();
        it != analogDevices->end(); ++it) {
@@ -205,6 +234,10 @@ int MpsDb::configure() {
       throw(DbException(errorStream.str()));
     }
   }
+}
+
+void MpsDb::configureThresholdFaultStates() {
+  std::stringstream errorStream;
 
   // Assign ThresholdFault to ThresholdFaultStates
   for (DbThresholdFaultStateMap::iterator it = thresholdFaultStates->begin();
@@ -221,8 +254,27 @@ int MpsDb::configure() {
       throw(DbException(errorStream.str()));
     }
   }
+}
 
-  return 0;
+
+/**
+ * After the YAML database file is loaded this method must be called to resolve
+ * references between tables. In the YAML table entries there is a reference to
+ * another table using a 'foreign key'. The configure*() methods look for the 
+ * actual item referenced by the foreign key and saves a pointer to the
+ * referenced element for direct access. This allows the engine to evaluate
+ * faults without having to search for entries.
+ */
+void MpsDb::configure() {
+  configureAllowedClasses();
+  configureDeviceInputs();
+  configureFaultInputs();
+  configureThresholdFaults();
+  configureDigitalFaultStates();
+  configureThresholdValues();
+  configureAnalogDeviceTypes();
+  configureAnalogDevices();
+  configureThresholdFaultStates();
 }
 
 void MpsDb::setName(std::string yamlFileName) {

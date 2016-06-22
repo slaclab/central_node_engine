@@ -5,11 +5,11 @@ Engine::Engine() :
 }
 
 int Engine::loadConfig(std::string yamlFileName) {
-  std::stringstream errorStream;
   MpsDb *db = new MpsDb();
   mpsDb = shared_ptr<MpsDb>(db);
 
   if (mpsDb->load(yamlFileName) != 0) {
+    errorStream.str(std::string());
     errorStream << "ERROR: Failed to load yaml database ("
 		<< yamlFileName << ")";
     throw(EngineException(errorStream.str()));
@@ -53,8 +53,44 @@ int Engine::updateInputs() {
   return 0;
 }
 
-int Engine::checkFaults() {
-  checkFaultTime.start();
+/**
+ * Prior to check digital/analog faults assign the highest beam class available
+ * as tentativeBeamClass for all mitigation devices. Also temporarily sets the
+ * allowedBeamClass as the lowest beam class available.
+ *
+ * As faults are detected the tentativeBeamClass gets lowered accordingly.
+ */
+void Engine::setTentativeBeamClass() {
+  // Assigns highestBeamClass as tentativeBeamClass for all MitigationDevices
+  for (DbMitigationDeviceMap::iterator device = mpsDb->mitigationDevices->begin();
+       device != mpsDb->mitigationDevices->end(); ++device) {
+    (*device).second->tentativeBeamClass = highestBeamClass;
+    (*device).second->allowedBeamClass = lowestBeamClass;
+  }
+}
+
+/**
+ * After checking the faults move the final tentativeBeamClass into the 
+ * allowedBeamClass for the mitigation devices.
+ */
+void Engine::setAllowedBeamClass() {
+  for (DbMitigationDeviceMap::iterator it = mpsDb->mitigationDevices->begin(); 
+       it != mpsDb->mitigationDevices->end(); ++it) {
+    // std::cout << "  " <<  (*it).second->name << ": "
+    //   	      << (*it).second->allowedBeamClass->number << "/"
+    // 	      << (*it).second->tentativeBeamClass->number << std::endl;
+    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
+  }
+}
+
+/**
+ * Check if there are digital faults. First assemble the actual values
+ * for the DigitalDevices - which may use multiple digital inputs.
+ * Then iterate over the faults and assign tentativeBeamClass values
+ * to the mitigation devices.
+ */
+void Engine::checkDigitalFaults() {
+  std::stringstream errorStream;
 
   // Update digital device values based on individual inputs
   for (DbDigitalDeviceMap::iterator device = mpsDb->digitalDevices->begin(); 
@@ -74,31 +110,17 @@ int Engine::checkFaults() {
       deviceValue |= inputValue;
     }
     (*device).second->update(deviceValue);
-  }
-  
-  // Assigns highestBeamClass as tentativeBeamClass for all MitigationDevices
-  for (DbMitigationDeviceMap::iterator device = mpsDb->mitigationDevices->begin();
-       device != mpsDb->mitigationDevices->end(); ++device) {
-    (*device).second->tentativeBeamClass = highestBeamClass;
-    (*device).second->allowedBeamClass = lowestBeamClass;
-  }
+  }  
 
   // Update digital Fault values and MitigationDevice allowed class
   for (DbFaultMap::iterator fault = mpsDb->faults->begin();
        fault != mpsDb->faults->end(); ++fault) {
 
-    // First calculate the digital Fault value from the one or more inputs
+    // First calculate the digital Fault value from its one or more digital device inputs
     int faultValue = 0;
     for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
 	 input != (*fault).second->faultInputs->end(); ++input) {
-
-      DbDigitalDeviceMap::iterator deviceIt = mpsDb->digitalDevices->find((*input).second->deviceId);
-      if (deviceIt == mpsDb->digitalDevices->end()) {
-	checkFaultTime.end();
-	std::cerr << "ERROR updating faults" << std::endl;
-	return -1;
-      }
-      int inputValue = (*deviceIt).second->value;
+      int inputValue = (*input).second->digitalDevice->value;
       faultValue |= (inputValue << (*input).second->bitPosition);
     }
     (*fault).second->update(faultValue);
@@ -112,11 +134,6 @@ int Engine::checkFaults() {
 	if ((*state).second->allowedClasses) {
 	  for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
 	       allowed != (*state).second->allowedClasses->end(); ++allowed) {
-	    // std::cout << "Mitigation: " << (*allowed).second->mitigationDevice->name
-	    // 	      << ", Tentative [" << (*allowed).second->mitigationDevice->tentativeBeamClass->number
-	    // 	      << "], Allowed [" << (*allowed).second->beamClass->number << "]"
-	    // 	      << ", AllowedId [" << (*allowed).second->id << "]" << std::endl;
-	    // Update the allowedBeamClass for the MitigationDevices associated with this fault
 	    if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
 		(*allowed).second->beamClass->number) {
 	      (*allowed).second->mitigationDevice->tentativeBeamClass =
@@ -126,15 +143,18 @@ int Engine::checkFaults() {
 	}
       }
       else {
-	if ((*state).second->faulted) {
-	  //	  std::cout << "  > Clearing fault " << (*fault).second->name << ": "
-	  //		    << (*state).second->name << std::endl;
-	}
 	(*state).second->faulted = false;
       }
     }
   }
+}
 
+/**
+ * Check if there are analog faults, i.e. values read from the analog devices
+ * exceed the allowed thresholds. The tentativeBeamClass of the mitigation
+ * devices are updated according to the faults.
+ */
+void Engine::checkAnalogFaults() {
   // Update ThresholdFaults
   for (DbThresholdFaultStateMap::iterator faultState = mpsDb->thresholdFaultStates->begin();
        faultState != mpsDb->thresholdFaultStates->end(); ++faultState) {
@@ -159,15 +179,15 @@ int Engine::checkFaults() {
       }
     }
   }
+}
 
-  //  std::cout << "> Class at MitigationDevices: " << std::endl;
-  for (DbMitigationDeviceMap::iterator it = mpsDb->mitigationDevices->begin(); 
-       it != mpsDb->mitigationDevices->end(); ++it) {
-    // std::cout << "  " <<  (*it).second->name << ": "
-    //   	      << (*it).second->allowedBeamClass->number << "/"
-    // 	      << (*it).second->tentativeBeamClass->number << std::endl;
-    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
-  }
+int Engine::checkFaults() {
+  checkFaultTime.start();
+
+  setTentativeBeamClass();
+  checkDigitalFaults();
+  checkAnalogFaults();
+  setAllowedBeamClass();
 
   checkFaultTime.end();
 

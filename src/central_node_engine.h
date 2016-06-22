@@ -2,6 +2,7 @@
 #define CENTRAL_NODE_ENGINE_H
 
 #include <iostream>
+#include <sstream>
 #include <boost/shared_ptr.hpp>
 
 #include <central_node_exception.h>
@@ -45,18 +46,18 @@ class Engine {
 
  protected:
   int updateInputs();
-  //  void createBypassMap();
-  //  void assignBypass(shared_ptr<MpsDb> db);
+  void setTentativeBeamClass();
+  void setAllowedBeamClass();
+  void checkDigitalFaults();
+  void checkAnalogFaults();
 
   MpsDbPtr mpsDb;
-  //  shared_ptr<MpsDb> mpsDb;
-  //  FaultInputBypassMapPtr bypassMap;
-  //  BypassPriorityQueue bypassQueue;
   BypassManagerPtr bypassManager;
 
   DbBeamClassPtr highestBeamClass;
   DbBeamClassPtr lowestBeamClass;
 
+  std::stringstream errorStream;
   TimeAverage checkFaultTime;
 };
 
