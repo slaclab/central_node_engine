@@ -251,6 +251,9 @@ class DbDeviceInput : public DbEntry {
   // Pointer to the bypass for this input
   InputBypassPtr bypass;
 
+  // Pointer to the Channel connected to the device
+  DbChannelPtr channel;
+
  DbDeviceInput() : DbEntry(), 
     bitPosition(-1), channelId(-1), digitalDeviceId(-1) {
   }
@@ -447,6 +450,9 @@ class DbAnalogDevice : public DbEntry {
   // Configured after loading the YAML file
   float value; // Analog value from read from the Central Node Firmware
   DbAnalogDeviceTypePtr analogDeviceType;
+
+  // Pointer to the Channel connected to the device
+  DbChannelPtr channel;
 
   // Pointer to the bypass for this input
   InputBypassPtr bypass;

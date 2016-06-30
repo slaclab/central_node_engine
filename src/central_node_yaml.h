@@ -126,20 +126,12 @@ namespace YAML {
   template<>
     struct convert<DbChannelMapPtr> {
     static bool decode(const Node &node, DbChannelMapPtr &rhs) {
-      std::string key = "";
+      std::string key = "DigitalChannel";
 
       try {
-	key = "DigitalChannel";
+	int s = node[key].size();
       } catch (InvalidNode &e) {
-	key = "";
-      }
-      
-      if (key == "") {
-	try {
-	  key = "AnalogChannel";
-	} catch (InvalidNode &e) {
-	  throw e;
-	}
+	key = "AnalogChannel";
       }
 
       DbChannelMap *channels = new DbChannelMap();

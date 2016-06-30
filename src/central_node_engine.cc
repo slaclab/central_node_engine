@@ -48,9 +48,12 @@ int Engine::loadConfig(std::string yamlFileName) {
   return 0;
 }
 
-int Engine::updateInputs() {
-  // Update values from firmware...
-  return 0;
+// Update values from firmware...
+void Engine::updateInputs() {
+}
+
+// Update mitigation devices...
+void Engine::mitigate() {
 }
 
 /**

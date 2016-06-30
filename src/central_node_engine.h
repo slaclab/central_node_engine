@@ -45,7 +45,9 @@ class Engine {
   void showMitigationDevices();
 
  protected:
-  int updateInputs();
+  void updateInputs();
+  void mitigate();
+
   void setTentativeBeamClass();
   void setAllowedBeamClass();
   void checkDigitalFaults();

@@ -70,7 +70,8 @@ void MpsDb::configureAllowedClasses() {
 
 void MpsDb::configureDeviceInputs() {
   std::stringstream errorStream;
-  // Assign DeviceInputs to it's DigitalDevices
+  // Assign DeviceInputs to it's DigitalDevices, and find the Channel
+  // the device is connected to
   for (DbDeviceInputMap::iterator it = deviceInputs->begin(); 
        it != deviceInputs->end(); ++it) {
     int id = (*it).second->digitalDeviceId;
@@ -89,6 +90,15 @@ void MpsDb::configureDeviceInputs() {
     }
     (*deviceIt).second->inputDevices->insert(std::pair<int, DbDeviceInputPtr>((*it).second->id,
 									      (*it).second));
+
+    int channelId = (*it).second->channelId;
+    DbChannelMap::iterator channelIt = digitalChannels->find(channelId);
+    if (channelIt == digitalChannels->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid ID found for Channel ("
+		  << channelId << ") for DeviceInput (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+    (*it).second->channel = (*channelIt).second;
   }
 }
 
@@ -233,6 +243,16 @@ void MpsDb::configureAnalogDevices() {
 		  << typeId << ") for AnalogDevice (" <<  (*it).second->id << ")";
       throw(DbException(errorStream.str()));
     }
+    /*
+    int channelId = (*it).second->channelId;
+    DbChannelMap::iterator channelIt = analogChannels->find(channelId);
+    if (channelIt == analogChannels->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid ID found for Channel ("
+		  << channelId << ") for AnalogDevice (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+    (*it).second->channel = (*channelIt).second;
+    */
   }
 }
 
