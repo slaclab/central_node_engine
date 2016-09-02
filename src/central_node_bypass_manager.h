@@ -2,6 +2,7 @@
 #define CENTRAL_NODE_BYPASS_MANAGER_H
 
 #include <central_node_database.h>
+#include <stdint.h>
 
 /**
  * The bypass expirations are monitored via a priority queue. The head of the
@@ -30,8 +31,8 @@ class BypassManager {
   void createBypassMap(MpsDbPtr db);
   void assignBypass(MpsDbPtr db);
   void checkBypassQueue(time_t testTime = 0);
-  void setBypass(MpsDbPtr db, BypassType bypassType, int deviceId,
-		 int value, time_t bypassUntil, bool test = false);
+  void setBypass(MpsDbPtr db, BypassType bypassType, uint32_t deviceId,
+		 uint32_t value, time_t bypassUntil, bool test = false);
   
   friend class BypassTest;
 };

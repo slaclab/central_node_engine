@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <central_node_yaml.h>
 #include <central_node_database.h>
@@ -37,21 +38,25 @@ class BypassTest {
   }
 
   void addBypass() {
-    // Now bypass the OTR IN limit switch to 0 and
-    // OTR OUT limit switch to 1, i.e. screen is OUT
-    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
-				     1 /* bypass value */, 100 /* until */, true);
-    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
-				     0 /* bypass value */, 100 /* until*/, true);
-    
-    // OTR Attr both out
-    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
-				     0 /* bypass value */, 110 /* until */, true);
-    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
-				     1 /* bypass value */, 110 /* until*/, true);
-
-    // PIC
-    engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 1, 0, 115, true);
+    try {
+      // Now bypass the OTR IN limit switch to 0 and
+      // OTR OUT limit switch to 1, i.e. screen is OUT
+      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
+				       1 /* bypass value */, 100 /* until */, true);
+      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
+				       0 /* bypass value */, 100 /* until*/, true);
+      
+      // OTR Attr both out
+      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
+				       0 /* bypass value */, 110 /* until */, true);
+      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
+				       1 /* bypass value */, 110 /* until*/, true);
+      
+      // PIC
+      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 1, 0, 115, true);
+    } catch (CentralNodeException e) {
+      std::cerr << e.what() << std::endl;
+    }
   }
 
   void showFaults() {
@@ -101,9 +106,9 @@ class BypassTest {
     int analogCycle;
 
     // If eof reached, start from beginning
-    int deviceId;
-    int deviceValue;
-    float analogValue;
+    uint32_t deviceId;
+    uint32_t deviceValue;
+    uint32_t analogValue;
 
     if (digital) {
       testInputFile >> s;
@@ -126,7 +131,7 @@ class BypassTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	
-	int size = engine->mpsDb->deviceInputs->size() + 1;
+	uint32_t size = engine->mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
 		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
@@ -158,7 +163,7 @@ class BypassTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	
-	int size = engine->mpsDb->deviceInputs->size() + 1;
+	uint32_t size = engine->mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
 		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()

@@ -155,6 +155,20 @@ void MpsDb::configureThresholdFaults() {
 
     (*it).second->analogDevice = (*analogIt).second;
   }
+
+  // Assign ThresholdValue to each ThresholdFault
+  for (DbThresholdFaultMap::iterator it = thresholdFaults->begin();
+       it != thresholdFaults->end(); ++it) {
+    int id = (*it).second->thresholdValueId;
+    DbThresholdValueMap::iterator thresholdIt = thresholdValues->find(id);
+    if (thresholdIt == thresholdValues->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid ThresholdValue ("
+		  << id << ") for ThresholdFault (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+
+    (*it).second->thresholdValue = (*thresholdIt).second;
+  }
 }
 
 void MpsDb::configureDigitalFaultStates() {

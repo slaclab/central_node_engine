@@ -1,4 +1,5 @@
 #include <central_node_engine.h>
+#include <stdint.h>
 
 Engine::Engine() :
   checkFaultTime(5, "Evaluation time") {
@@ -33,8 +34,8 @@ int Engine::loadConfig(std::string yamlFileName) {
   bypassManager->assignBypass(mpsDb);
 
   // Find the lowest/highest BeamClasses - used when checking faults
-  int num = -1;
-  int lowNum = 100;
+  uint32_t num = 0;
+  uint32_t lowNum = 100;
   for (DbBeamClassMap::iterator beamClass = mpsDb->beamClasses->begin();
        beamClass != mpsDb->beamClasses->end(); ++beamClass) {
     if ((*beamClass).second->number > num) {
@@ -98,10 +99,10 @@ void Engine::checkDigitalFaults() {
   // Update digital device values based on individual inputs
   for (DbDigitalDeviceMap::iterator device = mpsDb->digitalDevices->begin(); 
        device != mpsDb->digitalDevices->end(); ++device) {
-    int deviceValue = 0;
+    uint32_t deviceValue = 0;
     for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin(); 
 	 input != (*device).second->inputDevices->end(); ++input) {
-      int inputValue = 0;
+      uint32_t inputValue = 0;
       // Check if the input has a valid bypass value
       if ((*input).second->bypass->status == BYPASS_VALID) {
 	inputValue = (*input).second->bypass->value;
@@ -120,10 +121,10 @@ void Engine::checkDigitalFaults() {
        fault != mpsDb->faults->end(); ++fault) {
 
     // First calculate the digital Fault value from its one or more digital device inputs
-    int faultValue = 0;
+    uint32_t faultValue = 0;
     for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
 	 input != (*fault).second->faultInputs->end(); ++input) {
-      int inputValue = (*input).second->digitalDevice->value;
+      uint32_t inputValue = (*input).second->digitalDevice->value;
       faultValue |= (inputValue << (*input).second->bitPosition);
     }
     (*fault).second->update(faultValue);
@@ -161,11 +162,26 @@ void Engine::checkAnalogFaults() {
   // Update ThresholdFaults
   for (DbThresholdFaultStateMap::iterator faultState = mpsDb->thresholdFaultStates->begin();
        faultState != mpsDb->thresholdFaultStates->end(); ++faultState) {
-    float deviceValue = (*faultState).second->thresholdFault->analogDevice->value;
+    // This is the compressed analog value read from the device
+    uint32_t deviceValue = (*faultState).second->thresholdFault->analogDevice->value;
 
     // If there is no active bypass then check if the device value exceeds threshold 
     if ((*faultState).second->thresholdFault->analogDevice->bypass->status != BYPASS_VALID) {
-      if (deviceValue > (*faultState).second->thresholdFault->threshold) {
+      // Check if the value from the device is greater/smaller than threshold
+      bool fault = false;
+      if ((*faultState).second->thresholdFault->greaterThan) {
+	if (deviceValue >= (*faultState).second->thresholdFault->thresholdValue->threshold) {
+	  fault = true;
+	}
+      }
+      else {
+	if (deviceValue < (*faultState).second->thresholdFault->thresholdValue->threshold) {
+	  fault = true;
+	}
+      }
+
+      // If there is a fault, assign a tentative beam class
+      if (fault) {
 	(*faultState).second->faulted = true;
 	// Update allowedClass for the ThresholdFaultState
 	for (DbAllowedClassMap::iterator allowed = (*faultState).second->allowedClasses->begin();

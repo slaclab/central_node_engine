@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 #include <time.h>
 #include <queue>
+#include <stdint.h>
 
 using boost::shared_ptr;
 
@@ -19,13 +20,13 @@ enum BypassStatus {
 
 class InputBypass {
  public:
-  int id;
+  uint32_t id;
   
   // Index of the device for this bypass
-  int deviceId;
+  uint32_t deviceId;
 
   // This value is used to calculate the Fault value instead of the actual input value
-  int value; 
+  uint32_t value; 
 
   // Defines the input type (analog or digital)
   // If digital then the faultInputId refers to a DbDeviceInput entry
@@ -41,7 +42,7 @@ class InputBypass {
   // should be used.
   BypassStatus status;
 
- InputBypass() : id(-1), deviceId(-1), value(0),
+ InputBypass() : id(0), deviceId(0), value(0),
     type(BYPASS_DIGITAL), until(0), status(BYPASS_EXPIRED) {
   }
 };

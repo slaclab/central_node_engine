@@ -428,7 +428,8 @@ namespace YAML {
 	thresFault->id = (*it)["id"].as<int>();
 	thresFault->analogDeviceId = (*it)["analog_device_id"].as<int>();
 	thresFault->name = (*it)["name"].as<std::string>();
-	thresFault->threshold = (*it)["threshold"].as<float>();
+	thresFault->thresholdValueId = (*it)["threshold_value_id"].as<int>();
+	//	thresFault->threshold = (*it)["threshold"].as<int>();
 	
 	std::string greaterThanString = (*it)["greater_than"].as<std::string>();
 	if (greaterThanString == "True") {

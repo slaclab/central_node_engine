@@ -6,6 +6,7 @@
 #include <iostream>
 #include <central_node_exception.h>
 #include <central_node_bypass.h>
+#include <stdint.h>
 
 #include <boost/shared_ptr.hpp>
 
@@ -29,7 +30,7 @@ class DbException: public CentralNodeException {
  */
 class DbEntry {
  public:
-  int id;
+  uint32_t id;
 
   DbEntry() : id(-1) {
   }
@@ -52,9 +53,9 @@ class DbEntry {
  */
 class DbCrate : public DbEntry {
  public:
-  int number;
-  int numSlots;
-  int shelfNumber;
+  uint32_t number;
+  uint32_t numSlots;
+  uint32_t shelfNumber;
   
  DbCrate() : DbEntry(), number(-1), numSlots(-1), shelfNumber(-1) {
   }
@@ -69,7 +70,7 @@ class DbCrate : public DbEntry {
 };
 
 typedef shared_ptr<DbCrate> DbCratePtr;
-typedef std::map<int, DbCratePtr> DbCrateMap;
+typedef std::map<uint32_t, DbCratePtr> DbCrateMap;
 typedef shared_ptr<DbCrateMap> DbCrateMapPtr;
 
 /**
@@ -84,11 +85,11 @@ typedef shared_ptr<DbCrateMap> DbCrateMapPtr;
  */
 class DbApplicationType : public DbEntry {
  public:
-  int number;
-  int analogChannelCount;
-  int analogChannelSize;
-  int digitalChannelCount;
-  int digitalChannelSize;
+  uint32_t number;
+  uint32_t analogChannelCount;
+  uint32_t analogChannelSize;
+  uint32_t digitalChannelCount;
+  uint32_t digitalChannelSize;
   std::string description;
 
  DbApplicationType() : DbEntry(), number(-1),
@@ -110,7 +111,7 @@ class DbApplicationType : public DbEntry {
 };
 
 typedef shared_ptr<DbApplicationType> DbApplicationTypePtr;
-typedef std::map<int, DbApplicationTypePtr> DbApplicationTypeMap;
+typedef std::map<uint32_t, DbApplicationTypePtr> DbApplicationTypeMap;
 typedef shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
 
 
@@ -124,10 +125,10 @@ typedef shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
  */
 class DbApplicationCard : public DbEntry {
  public:
-  int number;
-  int slotNumber;
-  int crateId;
-  int applicationTypeId;
+  uint32_t number;
+  uint32_t slotNumber;
+  uint32_t crateId;
+  uint32_t applicationTypeId;
   //  shared_ptr<const DbCrate> crate;
   //  shared_ptr<const DbApplicationType> applicationType;
 
@@ -146,7 +147,7 @@ class DbApplicationCard : public DbEntry {
 };
 
 typedef shared_ptr<DbApplicationCard> DbApplicationCardPtr;
-typedef std::map<int, DbApplicationCardPtr> DbApplicationCardMap;
+typedef std::map<uint32_t, DbApplicationCardPtr> DbApplicationCardMap;
 typedef shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 
 /**
@@ -162,8 +163,8 @@ typedef shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
  */
 class DbChannel : public DbEntry {
  public:
-  int number;
-  int cardId;
+  uint32_t number;
+  uint32_t cardId;
   
  DbChannel() : DbEntry(), number(-1), cardId(-1) {
   }
@@ -177,7 +178,7 @@ class DbChannel : public DbEntry {
 };
 
 typedef shared_ptr<DbChannel> DbChannelPtr;
-typedef std::map<int, DbChannelPtr> DbChannelMap;
+typedef std::map<uint32_t, DbChannelPtr> DbChannelMap;
 typedef shared_ptr<DbChannelMap> DbChannelMapPtr;
 
 /**
@@ -200,7 +201,7 @@ class DbDeviceType : public DbEntry {
 };
 
 typedef shared_ptr<DbDeviceType> DbDeviceTypePtr;
-typedef std::map<int, DbDeviceTypePtr> DbDeviceTypeMap;
+typedef std::map<uint32_t, DbDeviceTypePtr> DbDeviceTypeMap;
 typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
 
 /**
@@ -212,8 +213,8 @@ typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
  */
 class DbDeviceState : public DbEntry {
  public:  
-  int deviceTypeId;
-  int value;
+  uint32_t deviceTypeId;
+  uint32_t value;
   std::string name;
   
  DbDeviceState() : DbEntry(), deviceTypeId(-1), value(-1), name("") {
@@ -229,7 +230,7 @@ class DbDeviceState : public DbEntry {
 };
 
 typedef shared_ptr<DbDeviceState> DbDeviceStatePtr;
-typedef std::map<int, DbDeviceStatePtr> DbDeviceStateMap;
+typedef std::map<uint32_t, DbDeviceStatePtr> DbDeviceStateMap;
 typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
 
 /**
@@ -241,14 +242,14 @@ typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
  */
 class DbDeviceInput : public DbEntry {
  public:
-  int bitPosition;
-  int channelId;
-  int digitalDeviceId;
+  uint32_t bitPosition;
+  uint32_t channelId;
+  uint32_t digitalDeviceId;
 
   // Device input value must be read from the Central Node Firmware
-  int value;
+  uint32_t value;
 
-  // Pointer to the bypass for this input
+  // Pouint32_ter to the bypass for this input
   InputBypassPtr bypass;
 
   // Pointer to the Channel connected to the device
@@ -259,7 +260,7 @@ class DbDeviceInput : public DbEntry {
   }
 
   // This should update the value from the data read from the central node firmware
-  void update(int v) {
+  void update(uint32_t v) {
     value = v;
   }
 
@@ -274,7 +275,7 @@ class DbDeviceInput : public DbEntry {
 };
 
 typedef shared_ptr<DbDeviceInput> DbDeviceInputPtr;
-typedef std::map<int, DbDeviceInputPtr> DbDeviceInputMap;
+typedef std::map<uint32_t, DbDeviceInputPtr> DbDeviceInputMap;
 typedef shared_ptr<DbDeviceInputMap> DbDeviceInputMapPtr;
 
 /**
@@ -284,14 +285,14 @@ typedef shared_ptr<DbDeviceInputMap> DbDeviceInputMapPtr;
  */
 class DbDigitalDevice : public DbEntry {
  public:
-  int deviceTypeId;
-  int value; // calculated from the DeviceInputs for this device
+  uint32_t deviceTypeId;
+  uint32_t value; // calculated from the DeviceInputs for this device
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
  DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
   }
 
-  void update(int v) {
+  void update(uint32_t v) {
     value = v;
   }
 
@@ -303,7 +304,7 @@ class DbDigitalDevice : public DbEntry {
 };
 
 typedef shared_ptr<DbDigitalDevice> DbDigitalDevicePtr;
-typedef std::map<int, DbDigitalDevicePtr> DbDigitalDeviceMap;
+typedef std::map<uint32_t, DbDigitalDevicePtr> DbDigitalDeviceMap;
 typedef shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
 
 /**
@@ -316,12 +317,12 @@ typedef shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
 class DbFaultInput : public DbEntry {
  public:
   // Values loaded from YAML file
-  int faultId;
-  int deviceId; // DbDigitalDevice
-  int bitPosition;
+  uint32_t faultId;
+  uint32_t deviceId; // DbDigitalDevice
+  uint32_t bitPosition;
 
   // Values calculated at run time
-  int value; // Fault value calculated from the DeviceInputs
+  uint32_t value; // Fault value calculated from the DeviceInputs
   DbDigitalDevicePtr digitalDevice;
   
  DbFaultInput() : DbEntry(), faultId(-1), deviceId(-1), bitPosition(-1) {
@@ -342,7 +343,7 @@ class DbFaultInput : public DbEntry {
 };
 
 typedef shared_ptr<DbFaultInput> DbFaultInputPtr;
-typedef std::map<int, DbFaultInputPtr> DbFaultInputMap;
+typedef std::map<uint32_t, DbFaultInputPtr> DbFaultInputMap;
 typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
 
 
@@ -355,8 +356,8 @@ typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
  */
 class DbThresholdValue : public DbEntry {
  public:
-  int threshold;
-  int thresholdValueMapId;
+  uint32_t threshold;
+  uint32_t thresholdValueMapId;
   float value;
   
  DbThresholdValue() : DbEntry(), threshold(-1), thresholdValueMapId(-1), value(0.0) {
@@ -373,7 +374,7 @@ class DbThresholdValue : public DbEntry {
 };
 
 typedef shared_ptr<DbThresholdValue> DbThresholdValuePtr;
-typedef std::map<int, DbThresholdValuePtr> DbThresholdValueMap;
+typedef std::map<uint32_t, DbThresholdValuePtr> DbThresholdValueMap;
 typedef shared_ptr<DbThresholdValueMap> DbThresholdValueMapPtr;
 
 /**
@@ -399,7 +400,7 @@ class DbThresholdValueMapEntry : public DbEntry {
 };
 
 typedef shared_ptr<DbThresholdValueMapEntry> DbThresholdValueMapEntryPtr;
-typedef std::map<int, DbThresholdValueMapEntryPtr> DbThresholdValueMapEntryMap;
+typedef std::map<uint32_t, DbThresholdValueMapEntryPtr> DbThresholdValueMapEntryMap;
 typedef shared_ptr<DbThresholdValueMapEntryMap> DbThresholdValueMapEntryMapPtr;
 
 
@@ -413,7 +414,7 @@ typedef shared_ptr<DbThresholdValueMapEntryMap> DbThresholdValueMapEntryMapPtr;
 class DbAnalogDeviceType : public DbEntry {
  public:
   std::string name;
-  int thresholdValueMapId;
+  uint32_t thresholdValueMapId;
   std::string units;
 
   // Configured after loading the YAML file
@@ -433,7 +434,7 @@ class DbAnalogDeviceType : public DbEntry {
 };
 
 typedef shared_ptr<DbAnalogDeviceType> DbAnalogDeviceTypePtr;
-typedef std::map<int, DbAnalogDeviceTypePtr> DbAnalogDeviceTypeMap;
+typedef std::map<uint32_t, DbAnalogDeviceTypePtr> DbAnalogDeviceTypeMap;
 typedef shared_ptr<DbAnalogDeviceTypeMap> DbAnalogDeviceTypeMapPtr;
 
 /**
@@ -444,11 +445,11 @@ typedef shared_ptr<DbAnalogDeviceTypeMap> DbAnalogDeviceTypeMapPtr;
  */
 class DbAnalogDevice : public DbEntry {
  public:
-  int analogDeviceTypeId;
-  int channelId;
+  uint32_t analogDeviceTypeId;
+  uint32_t channelId;
   
   // Configured after loading the YAML file
-  float value; // Analog value from read from the Central Node Firmware
+  int32_t value; // Compressed analog value from read from the Central Node Firmware
   DbAnalogDeviceTypePtr analogDeviceType;
 
   // Pointer to the Channel connected to the device
@@ -460,7 +461,8 @@ class DbAnalogDevice : public DbEntry {
  DbAnalogDevice() : DbEntry(), analogDeviceTypeId(-1), channelId(-1), value(0) {
   }
 
-  void update(float v) {
+  void update(uint32_t v) {
+    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
     value = v;
   }
 
@@ -473,7 +475,7 @@ class DbAnalogDevice : public DbEntry {
 };
 
 typedef shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
-typedef std::map<int, DbAnalogDevicePtr> DbAnalogDeviceMap;
+typedef std::map<uint32_t, DbAnalogDevicePtr> DbAnalogDeviceMap;
 typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
 
 /**
@@ -484,7 +486,7 @@ typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
  */
 class DbBeamClass : public DbEntry {
  public:
-  int number;
+  uint32_t number;
   std::string name;
   
  DbBeamClass() : DbEntry(), number(-1), name("") {
@@ -499,7 +501,7 @@ class DbBeamClass : public DbEntry {
 };
 
 typedef shared_ptr<DbBeamClass> DbBeamClassPtr;
-typedef std::map<int, DbBeamClassPtr> DbBeamClassMap;
+typedef std::map<uint32_t, DbBeamClassPtr> DbBeamClassMap;
 typedef shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
 
 
@@ -527,7 +529,7 @@ class DbMitigationDevice : public DbEntry {
 };
 
 typedef shared_ptr<DbMitigationDevice> DbMitigationDevicePtr;
-typedef std::map<int, DbMitigationDevicePtr> DbMitigationDeviceMap;
+typedef std::map<uint32_t, DbMitigationDevicePtr> DbMitigationDeviceMap;
 typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
 
 
@@ -540,9 +542,9 @@ typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
  */
 class DbAllowedClass : public DbEntry {
  public:
-  int beamClassId;
-  int faultStateId; // This can be a DigitalFaultState or a ThresholdFaultState
-  int mitigationDeviceId;
+  uint32_t beamClassId;
+  uint32_t faultStateId; // This can be a DigitalFaultState or a ThresholdFaultState
+  uint32_t mitigationDeviceId;
 
   // Configured after loading the YAML file
   DbBeamClassPtr beamClass;
@@ -561,7 +563,7 @@ class DbAllowedClass : public DbEntry {
 };
 
 typedef shared_ptr<DbAllowedClass> DbAllowedClassPtr;
-typedef std::map<int, DbAllowedClassPtr> DbAllowedClassMap;
+typedef std::map<uint32_t, DbAllowedClassPtr> DbAllowedClassMap;
 typedef shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
 
 /**
@@ -575,23 +577,25 @@ typedef shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
 class DbThresholdFault : public DbEntry {
  public:
   std::string name;
-  float threshold;
+  //  float threshold;
   bool greaterThan;
-  int analogDeviceId;
+  uint32_t analogDeviceId;
+  uint32_t thresholdValueId;
   
   // Configured after loading the YAML file
   DbAnalogDevicePtr analogDevice; // Device that can generate this fault
-  float value; // Analog value from the device
+  DbThresholdValuePtr thresholdValue; // Threshold value for this fault
+  uint32_t value; // Compressed analog value from device
   //  DbThresholdFaultStateMapPtr thresholdFaultStates; // Map of threshold fault states for this fault
 
- DbThresholdFault() : DbEntry(), name(""), threshold(0.0),
+ DbThresholdFault() : DbEntry(), name(""), // threshold(0.0),
     greaterThan(true), analogDeviceId(-1) {
   }
 
   friend std::ostream & operator<<(std::ostream &os,
 				   DbThresholdFault * const thresFault) {
     os << "id[" << thresFault->id << "]; "
-       << "threshold[" << thresFault->threshold << "]; "
+      //       << "threshold[" << thresFault->threshold << "]; "
        << "greaterThan[" << thresFault->greaterThan << "]; "
        << "analogDeviceId[" << thresFault->analogDeviceId << "]; "
        << "name[" << thresFault->name << "]";
@@ -600,7 +604,7 @@ class DbThresholdFault : public DbEntry {
 };
 
 typedef shared_ptr<DbThresholdFault> DbThresholdFaultPtr;
-typedef std::map<int, DbThresholdFaultPtr> DbThresholdFaultMap;
+typedef std::map<uint32_t, DbThresholdFaultPtr> DbThresholdFaultMap;
 typedef shared_ptr<DbThresholdFaultMap> DbThresholdFaultMapPtr;
 
 /**
@@ -610,7 +614,7 @@ typedef shared_ptr<DbThresholdFaultMap> DbThresholdFaultMapPtr;
  */
 class DbThresholdFaultState : public DbEntry {
  public:
-  int thresholdFaultId;
+  uint32_t thresholdFaultId;
   
   // Configured/Used after loading the YAML file
   bool faulted;
@@ -629,7 +633,7 @@ class DbThresholdFaultState : public DbEntry {
 };
 
 typedef shared_ptr<DbThresholdFaultState> DbThresholdFaultStatePtr;
-typedef std::map<int, DbThresholdFaultStatePtr> DbThresholdFaultStateMap;
+typedef std::map<uint32_t, DbThresholdFaultStatePtr> DbThresholdFaultStateMap;
 typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
 
 /**
@@ -641,8 +645,8 @@ typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
  */
 class DbDigitalFaultState : public DbEntry {
  public:
-  int faultId;
-  int value;
+  uint32_t faultId;
+  uint32_t value;
   std::string name;
 
   // Configured/Used after loading the YAML file
@@ -662,7 +666,7 @@ class DbDigitalFaultState : public DbEntry {
 };
 
 typedef shared_ptr<DbDigitalFaultState> DbDigitalFaultStatePtr;
-typedef std::map<int, DbDigitalFaultStatePtr> DbDigitalFaultStateMap;
+typedef std::map<uint32_t, DbDigitalFaultStatePtr> DbDigitalFaultStateMap;
 typedef shared_ptr<DbDigitalFaultStateMap> DbDigitalFaultStateMapPtr;
 
 
@@ -679,13 +683,13 @@ class DbFault : public DbEntry {
 
   // Configured after loading the YAML file
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
-  int value; // Calculated from the list of faultInputs
+  uint32_t value; // Calculated from the list of faultInputs
   DbDigitalFaultStateMapPtr digitalFaultStates; // Map of fault states for this fault
 
  DbFault() : DbEntry(), name(""), description("") {
   }
 
-  void update(int v) {
+  void update(uint32_t v) {
     value = v;
   }
 
@@ -698,7 +702,7 @@ class DbFault : public DbEntry {
 };
 
 typedef shared_ptr<DbFault> DbFaultPtr;
-typedef std::map<int, DbFaultPtr> DbFaultMap;
+typedef std::map<uint32_t, DbFaultPtr> DbFaultMap;
 typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
 
 

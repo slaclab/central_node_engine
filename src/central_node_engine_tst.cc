@@ -77,7 +77,7 @@ class EngineTest {
     // If eof reached, start from beginning
     int deviceId;
     int deviceValue;
-    float analogValue;
+    int analogValue;
 
     if (digital) {
       testInputFile >> s;
@@ -130,9 +130,9 @@ class EngineTest {
 	analogInputFile >> deviceId;
 	analogInputFile >> analogValue;
 	
-	//      std::cout << deviceId << ": " << deviceValue << std::endl;
+	//std::cout << deviceId << ": " << analogValue << std::endl;
 	
-	int size = engine->mpsDb->deviceInputs->size() + 1;
+	int size = engine->mpsDb->analogDevices->size() + 1 + engine->mpsDb->digitalDevices->size();
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
 		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
@@ -216,22 +216,22 @@ int main(int argc, char **argv) {
 
   t->updateInputsFromTestFile();
   e->checkFaults();
-  //  e->showFaults();
+  e->showFaults();
   e->showMitigationDevices();
 
   t->updateInputsFromTestFile();
   e->checkFaults();
-  //  e->showFaults();
+  e->showFaults();
   e->showMitigationDevices();
 
   t->updateInputsFromTestFile();
   e->checkFaults();
-  //  e->showFaults();
+  e->showFaults();
   e->showMitigationDevices();
 
   t->updateInputsFromTestFile();
   e->checkFaults();
-  //  e->showFaults();
+  e->showFaults();
   e->showMitigationDevices();
   /*
   t->updateInputsFromTestFile();

@@ -203,7 +203,7 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
  * expires.
  */
 void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
-			      int deviceId, int value, time_t bypassUntil,
+			      uint32_t deviceId, uint32_t value, time_t bypassUntil,
 			      bool test) {
   InputBypassPtr bypass;
   std::stringstream errorStream;
