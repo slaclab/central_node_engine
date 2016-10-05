@@ -1,0 +1,17 @@
+Digital test file format:
+
+Inputs <number of inputs> <cycle count>
+<device id> <value>
+<device id> <value>
+...
+Repeat
+
+=======================================
+
+Analog test file format:
+
+Inputs <number of inputs> <cycle count>
+<device id> <value>
+<device id> <value>
+...
+Repeat
