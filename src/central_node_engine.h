@@ -43,6 +43,7 @@ class Engine {
   void showFaults();
   void showStats();
   void showMitigationDevices();
+  void showDeviceInputs();
 
  protected:
   void updateInputs();

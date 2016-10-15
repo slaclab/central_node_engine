@@ -5,9 +5,12 @@
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <central_node_engine.h>
+#include <log.h>
+
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
+using namespace easyloggingpp;
 
 class TestFailed {};
 
@@ -16,6 +19,8 @@ static void usage(const char *nm) {
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
   std::cerr << "       -i <file>   :  digital input test file" << std::endl;
   std::cerr << "       -a <file>   :  analog input test file" << std::endl;
+  std::cerr << "       -v          :  verbose output" << std::endl;
+  std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
@@ -92,8 +97,8 @@ class EngineTest {
 	testInputFile >> testInputCount;
 	testInputFile >> testCycle;
       }
-
-      std::cout << "=== Testing digital cycle " << testCycle << " ===" << std::endl;
+      
+      //      std::cout << "=== Testing digital cycle " << testCycle << " ===" << std::endl;
       for (int i = 0; i < testInputCount; ++i) {
 	testInputFile >> deviceId;
 	testInputFile >> deviceValue;
@@ -125,7 +130,7 @@ class EngineTest {
 	analogInputFile >> analogCycle;
       }
 
-      std::cout << "=== Testing analog cycle " << analogCycle << " ===" << std::endl;
+      //      std::cout << "=== Testing analog cycle " << analogCycle << " ===" << std::endl;
       for (int i = 0; i < analogInputCount; ++i) {
 	analogInputFile >> deviceId;
 	analogInputFile >> analogValue;
@@ -154,8 +159,11 @@ int main(int argc, char **argv) {
   std::string mpsFileName = "";
   std::string inputFileName = "";
   std::string analogFileName = "";
-
-  for (int opt; (opt = getopt(argc, argv, "hf:i:a:")) > 0;) {
+  bool verbose = false;
+  bool trace = false;
+  int repeat = 1;
+  
+  for (int opt; (opt = getopt(argc, argv, "tvhf:i:a:r:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
     case 'f' :
@@ -166,6 +174,15 @@ int main(int argc, char **argv) {
       break;
     case 'a':
       analogFileName = optarg;
+      break;
+    case 'v':
+      verbose = true;
+      break;
+    case 't':
+      trace = true;
+      break;
+    case 'r':
+      repeat = atoi(optarg);
       break;
     case 'h': usage(argv[0]); return 0;
     default:
@@ -184,6 +201,12 @@ int main(int argc, char **argv) {
     std::cerr << "Missing -i option and/or -a option" << std::endl;
     usage(argv[0]);
     return 1;
+  }
+
+  if (!trace) {
+    Configurations c;
+    c.setAll(ConfigurationType::Enabled, "false");
+    Loggers::setDefaultConfigurations(c, true);
   }
 
   Engine *e = new Engine();
@@ -214,44 +237,19 @@ int main(int argc, char **argv) {
     }
   }
 
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  for (int i = 0; i < repeat; ++i) {
+    t->updateInputsFromTestFile();
+    e->checkFaults();
+    if (verbose) {
+      e->showFaults();
+      e->showMitigationDevices();
+    }
+  }
 
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-  /*
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-
-  t->updateInputsFromTestFile();
-  e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-  */
-  std::cout << "-------------------------" << std::endl;
-  
-  e->showStats();
+  if (verbose) {  
+    std::cout << "-------------------------" << std::endl;
+    e->showStats();
+  }
 
   delete t;
 

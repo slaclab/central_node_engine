@@ -18,6 +18,9 @@ enum BypassStatus {
   BYPASS_EXPIRED
 };
 
+/**
+ * Each DeviceInput and AnalogDevice have a pointer to a instance of InputBypass.
+ */
 class InputBypass {
  public:
   uint32_t id;

@@ -142,6 +142,7 @@ namespace YAML {
 	DbChannel *channel = new DbChannel();
 	
 	channel->id = (*it)["id"].as<int>();
+	channel->name = (*it)["name"].as<std::string>();
 	channel->number = (*it)["number"].as<int>();
 	channel->cardId = (*it)["card_id"].as<int>();
 
@@ -197,6 +198,7 @@ namespace YAML {
 	
 	deviceState->id = (*it)["id"].as<int>();
 	deviceState->value = (*it)["value"].as<int>();
+	deviceState->mask = (*it)["mask"].as<uint32_t>();
 	deviceState->deviceTypeId = (*it)["device_type_id"].as<int>();
 	deviceState->name = (*it)["name"].as<std::string>();
 
@@ -225,6 +227,10 @@ namespace YAML {
 	
 	digitalDevice->id = (*it)["id"].as<int>();
 	digitalDevice->deviceTypeId = (*it)["device_type_id"].as<int>();
+	digitalDevice->name = (*it)["name"].as<std::string>();
+	digitalDevice->description = (*it)["description"].as<std::string>();
+	digitalDevice->zPosition = (*it)["z_position"].as<float>();
+	digitalDevice->value = 0;
 
 	rhs->insert(std::pair<int, DbDigitalDevicePtr>(digitalDevice->id,
 						       DbDigitalDevicePtr(digitalDevice)));
@@ -255,6 +261,7 @@ namespace YAML {
 	deviceInput->bitPosition = (*it)["bit_position"].as<int>();
 	deviceInput->digitalDeviceId = (*it)["digital_device_id"].as<int>();
 	deviceInput->channelId = (*it)["channel_id"].as<int>();
+	deviceInput->value = 0;
 
 	rhs->insert(std::pair<int, DbDeviceInputPtr>(deviceInput->id,
 						     DbDeviceInputPtr(deviceInput)));
@@ -283,6 +290,7 @@ namespace YAML {
 	fault->id = (*it)["id"].as<int>();
 	fault->name = (*it)["name"].as<std::string>();
 	fault->description = (*it)["description"].as<std::string>();
+	fault->value = 0;
 
 	rhs->insert(std::pair<int, DbFaultPtr>(fault->id, DbFaultPtr(fault)));
       }
@@ -312,6 +320,7 @@ namespace YAML {
 	faultInput->bitPosition = (*it)["bit_position"].as<int>();
 	faultInput->deviceId = (*it)["device_id"].as<int>();
 	faultInput->faultId = (*it)["fault_id"].as<int>();
+	faultInput->value = 0;
 
 	rhs->insert(std::pair<int, DbFaultInputPtr>(faultInput->id,
 						    DbFaultInputPtr(faultInput)));
@@ -339,9 +348,11 @@ namespace YAML {
 	DbDigitalFaultState *digitalFaultState = new DbDigitalFaultState();
 	
 	digitalFaultState->id = (*it)["id"].as<int>();
-	digitalFaultState->value = (*it)["value"].as<int>();
+	//	digitalFaultState->value = (*it)["value"].as<int>();
 	digitalFaultState->faultId = (*it)["fault_id"].as<int>();
-	digitalFaultState->name = (*it)["name"].as<std::string>();
+	//	digitalFaultState->name = (*it)["name"].as<std::string>();
+	digitalFaultState->deviceStateId = (*it)["device_state_id"].as<int>();
+	digitalFaultState->defaultState = (*it)["default"].as<bool>();
 
 	rhs->insert(std::pair<int, DbDigitalFaultStatePtr>(digitalFaultState->id,
 							   DbDigitalFaultStatePtr(digitalFaultState)));
@@ -496,6 +507,10 @@ namespace YAML {
 	analogDevice->id = (*it)["id"].as<int>();
 	analogDevice->analogDeviceTypeId = (*it)["analog_device_type_id"].as<int>();
 	analogDevice->channelId = (*it)["channel_id"].as<int>();
+	analogDevice->name = (*it)["name"].as<std::string>();
+	analogDevice->description = (*it)["description"].as<std::string>();
+	analogDevice->zPosition = (*it)["z_position"].as<float>();
+	analogDevice->value = 0;
 
 	rhs->insert(std::pair<int, DbAnalogDevicePtr>(analogDevice->id,
 						      DbAnalogDevicePtr(analogDevice)));

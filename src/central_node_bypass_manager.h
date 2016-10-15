@@ -28,6 +28,7 @@ class BypassManager {
   bool checkBypassQueueTop(time_t now);
   
  public:
+  BypassManager();
   void createBypassMap(MpsDbPtr db);
   void assignBypass(MpsDbPtr db);
   void checkBypassQueue(time_t testTime = 0);

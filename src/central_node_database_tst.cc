@@ -8,8 +8,10 @@
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <boost/shared_ptr.hpp>
+#include <log.h>
 
 using boost::shared_ptr;
+using namespace easyloggingpp;
 
 class TestFailed {};
 
@@ -17,6 +19,7 @@ static void usage(const char *nm) {
   std::cerr << "Usage: " << nm << " [-f <file>] [-d]" << std::endl;
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
   std::cerr << "       -d          :  dump YAML file to stdout" << std::endl;
+  std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
@@ -26,8 +29,9 @@ int main(int argc, char **argv) {
   bool dump = false;
   std::vector<YAML::Node> nodes;
   std::string fileName;
+  bool trace = false;
 
-  for (int opt; (opt = getopt(argc, argv, "hdf:")) > 0;) {
+  for (int opt; (opt = getopt(argc, argv, "hdtf:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
     case 'f' :
@@ -38,6 +42,9 @@ int main(int argc, char **argv) {
     case 'd' :
       dump = true;
       break;
+    case 't':
+      trace = true;
+      break;
     case 'h': usage(argv[0]); return 0;
     default:
       std::cerr << "Unknown option '" << opt << "'"  << std::endl;
@@ -46,6 +53,12 @@ int main(int argc, char **argv) {
   }
 
   shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb());
+
+  if (!trace) {
+    Configurations c;
+    c.setAll(ConfigurationType::Enabled, "false");
+    Loggers::setDefaultConfigurations(c, true);
+  }
 
   if (loaded) {
     try {
@@ -62,6 +75,32 @@ int main(int argc, char **argv) {
   }
 
   std::cout << "Done." << std::endl;
+  /*
+  Configurations c;
+  //  c.set(Level::All,  ConfigurationType::Enabled, "false");
+  c.setAll(ConfigurationType::Format, "[%datetime] %level: %log [%logger]");
+  //  c.setAll(ConfigurationType::Filename, "/tmp/custom.log");
+  
+  CLOG(INFO, "testLogger") << "Done.";
 
+  // Set default configuration for any future logger - existing logger will not use this configuration unless
+  // either true is passed in second argument or set explicitly using Loggers::reconfigureAllLoggers(c);
+  Loggers::setDefaultConfigurations(c);
+  LOG(INFO) << "Set default configuration but existing loggers not updated yet"; // Logging using trivial logger
+  CLOG(INFO, "testLogger") << "Logging using new logger 1"; // You can also use CINFO << "..."
+  // Now setting default and also resetting existing loggers
+  Loggers::setDefaultConfigurations(c, true);
+  c.setAll(ConfigurationType::Enabled, "false");
+  c.set(Level::All, ConfigurationType::Enabled, "false");
+
+  Loggers::getLogger("testLogger2");
+  Loggers::setDefaultConfigurations(c);
+
+  CLOG(INFO, "testLogger2") << "Logging using new logger 2";
+  Loggers::disableAll();
+  LOG(INFO) << "Does this show up?";
+  CLOG(INFO, "testLogger") << "Does this show up?";
+  CLOG(INFO, "testLogger2") << "Does this show up?";
+  */
   return 0;
 }

@@ -8,6 +8,14 @@
 #include <iostream>
 #include <sstream>
 
+#include "easylogging++.h"
+using namespace easyloggingpp;
+static Logger *databaseLogger;
+
+MpsDb::MpsDb() {
+  databaseLogger = Loggers::getLogger("DATABASE");
+}
+
 void MpsDb::configureAllowedClasses() {
   std::stringstream errorStream;
   // Assign BeamClass and MitigationDevice to AllowedClass
@@ -173,7 +181,8 @@ void MpsDb::configureThresholdFaults() {
 
 void MpsDb::configureDigitalFaultStates() {
   std::stringstream errorStream;
-  // Assign all DigitalFaultStates to a Fault
+  // Assign all DigitalFaultStates to a Fault, and also
+  // find the DeviceState and save a reference in the DigitalFaultState
   for (DbDigitalFaultStateMap::iterator it = digitalFaultStates->begin();
        it != digitalFaultStates->end(); ++it) {
     int id = (*it).second->faultId;
@@ -192,7 +201,24 @@ void MpsDb::configureDigitalFaultStates() {
     }
     (*faultIt).second->digitalFaultStates->insert(std::pair<int, DbDigitalFaultStatePtr>((*it).second->id,
 											 (*it).second));
+
+    // If this DigitalFault is the default, then assign it to the fault:
+    if ((*it).second->defaultState && !((*faultIt).second->defaultDigitalFaultState)) {
+      (*faultIt).second->defaultDigitalFaultState = (*it).second;
+    }
+
+    // DevicState
+    id = (*it).second->deviceStateId;
+    DbDeviceStateMap::iterator deviceStateIt = deviceStates->find(id);
+    if (deviceStateIt == deviceStates->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid ID found for DeviceState ("
+		  << id << ") for DigitalFaultState (" << (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+    (*it).second->deviceState = (*deviceStateIt).second;
   }
+
+  
 }
 
 void MpsDb::configureThresholdValues() {
@@ -325,6 +351,7 @@ int MpsDb::load(std::string yamlFileName) {
   YAML::Node doc;
   std::vector<YAML::Node> nodes;
 
+  CTRACE("DATABASE") << "Loading YAML from file " << yamlFileName;
   try {
     nodes = YAML::LoadAllFromFile(yamlFileName);
   } catch (...) {
@@ -333,6 +360,7 @@ int MpsDb::load(std::string yamlFileName) {
     throw(DbException(errorStream.str()));
   }
 
+  CTRACE("DATABASE") << "Parsing YAML";
   for (std::vector<YAML::Node>::iterator node = nodes.begin();
        node != nodes.end(); ++node) {
     std::string s = YAML::Dump(*node);
@@ -343,6 +371,8 @@ int MpsDb::load(std::string yamlFileName) {
       throw(DbException(errorStream.str()));
     }
     std::string nodeName = s.substr(0, found);
+
+    CTRACE("DATABASE") << "Parsing " << nodeName;
 
     if (nodeName == "Crate") {
       crates = (*node).as<DbCrateMapPtr>();

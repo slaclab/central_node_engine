@@ -165,6 +165,7 @@ class DbChannel : public DbEntry {
  public:
   uint32_t number;
   uint32_t cardId;
+  std::string name;
   
  DbChannel() : DbEntry(), number(-1), cardId(-1) {
   }
@@ -172,7 +173,8 @@ class DbChannel : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbChannel * const channel) {
     os << "id[" << channel->id << "]; " 
        << "number[" << channel->number << "]; "
-       << "cardId[" << channel->cardId << "];";
+       << "cardId[" << channel->cardId << "]; " 
+       << "name[" << channel->name << "]";
     return os;
   }
 };
@@ -215,15 +217,17 @@ class DbDeviceState : public DbEntry {
  public:  
   uint32_t deviceTypeId;
   uint32_t value;
+  uint32_t mask;
   std::string name;
   
- DbDeviceState() : DbEntry(), deviceTypeId(-1), value(-1), name("") {
+ DbDeviceState() : DbEntry(), deviceTypeId(0), value(0), mask(0), name("") {
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState) {
     os << "id[" << devState->id << "]; "
        << "deviceTypeId[" << devState->deviceTypeId << "]; "
-       << "value[" << devState->value << "]; "
+       << "value[0x" << std::hex << devState->value << "]; "
+       << "mask[0x" << devState->mask << std::dec << "]; "
        << "name[" << devState->name << "]";
     return os;
   }
@@ -287,6 +291,10 @@ class DbDigitalDevice : public DbEntry {
  public:
   uint32_t deviceTypeId;
   uint32_t value; // calculated from the DeviceInputs for this device
+  std::string name;
+  std::string description;
+  float zPosition;
+
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
  DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
@@ -298,7 +306,10 @@ class DbDigitalDevice : public DbEntry {
 
   friend std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevice) {
     os << "id[" << digitalDevice->id << "]; "
-       << "deviceTypeId[" << digitalDevice->deviceTypeId << "];";
+       << "deviceTypeId[" << digitalDevice->deviceTypeId << "]; "
+       << "name[" << digitalDevice->name << "]; "
+       << "z[" << digitalDevice->zPosition << "]; "
+       << "description[" << digitalDevice->description << "]";
     return os;
   }
 };
@@ -447,6 +458,9 @@ class DbAnalogDevice : public DbEntry {
  public:
   uint32_t analogDeviceTypeId;
   uint32_t channelId;
+  std::string name;
+  std::string description;
+  float zPosition;
   
   // Configured after loading the YAML file
   int32_t value; // Compressed analog value from read from the Central Node Firmware
@@ -462,7 +476,7 @@ class DbAnalogDevice : public DbEntry {
   }
 
   void update(uint32_t v) {
-    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
+    //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
     value = v;
   }
 
@@ -636,6 +650,8 @@ typedef shared_ptr<DbThresholdFaultState> DbThresholdFaultStatePtr;
 typedef std::map<uint32_t, DbThresholdFaultStatePtr> DbThresholdFaultStateMap;
 typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
 
+//class DbFaultPtr;
+
 /**
  * DigitalFaultState:
  * - fault_id: '1'
@@ -646,21 +662,42 @@ typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
 class DbDigitalFaultState : public DbEntry {
  public:
   uint32_t faultId;
-  uint32_t value;
-  std::string name;
+  uint32_t deviceStateId;
+  bool defaultState;
+  //  uint32_t value;
 
   // Configured/Used after loading the YAML file
   bool faulted;
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each mitigation device) for this fault states
+  DbDeviceStatePtr deviceState;
 
- DbDigitalFaultState() : DbEntry(), faultId(-1), value(-1), name(""), faulted(false) {
+ DbDigitalFaultState() : DbEntry(), faultId(0), deviceStateId(0), defaultState(false), faulted(false) {
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbDigitalFaultState * const digitalFault) {
     os << "id[" << digitalFault->id << "]; "
        << "faultId[" << digitalFault->faultId << "]; "
-       << "value[" << digitalFault->value << "]; "
-       << "name[" << digitalFault->name << "]";
+       << "deviceStateId[" << digitalFault->deviceStateId << "]; "
+       << "faulted[" << digitalFault->faulted << "]; "
+       << "default[" << digitalFault->defaultState << "]";
+    if (digitalFault->deviceState) {
+      os << ": DeviceState[name=" << digitalFault->deviceState->name
+	 << ", value=" << digitalFault->deviceState->value << "]";
+    }
+    if (digitalFault->allowedClasses) {
+      os << " : AllowedClasses[";
+      unsigned int i = 1;
+      for (DbAllowedClassMap::iterator it = digitalFault->allowedClasses->begin();
+	   it != digitalFault->allowedClasses->end(); ++it, ++i) {
+	os << (*it).second->mitigationDevice->name << "->"
+	   << (*it).second->beamClass->name;
+	if (i < digitalFault->allowedClasses->size()) {
+	  os << ", ";
+	}
+      }
+      os << "]";
+    }
+
     return os;
   }
 };
@@ -671,10 +708,13 @@ typedef shared_ptr<DbDigitalFaultStateMap> DbDigitalFaultStateMapPtr;
 
 
 /** 
- * Fault: (these are digital faults)
+ * Fault: (these are digital faults types)
  *  - description: None
  *    id: '1'
  *    name: OTR Fault
+ *
+ * After these are loaded from YAML, then it gets expanded based on the
+ * FaultInput list.
  */
 class DbFault : public DbEntry {
  public:
@@ -685,6 +725,8 @@ class DbFault : public DbEntry {
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
   DbDigitalFaultStateMapPtr digitalFaultStates; // Map of fault states for this fault
+  DbDigitalFaultStatePtr defaultDigitalFaultState; // Default fault state if no other fault is active
+                                                   // the default state not necessarily is a real fault
 
  DbFault() : DbEntry(), name(""), description("") {
   }
@@ -697,6 +739,38 @@ class DbFault : public DbEntry {
     os << "id[" << fault->id << "]; "
        << "name[" << fault->name << "]; "
        << "description[" << fault->description << "]";
+
+    if (fault->faultInputs) {
+      os << " : FaultInputs[";
+      unsigned int i = 1;
+      for (DbFaultInputMap::iterator it = fault->faultInputs->begin();
+	   it != fault->faultInputs->end(); ++it, ++i) {
+	os << (*it).second->digitalDevice->name;
+	if (i < fault->faultInputs->size()) {
+	  os << ", ";
+	}
+      }
+      os << "]";
+    }
+
+    if (fault->digitalFaultStates) {
+      os << " : DigitalFaultStates[";
+      unsigned int i = 1;
+      for (DbDigitalFaultStateMap::iterator it = fault->digitalFaultStates->begin();
+	   it != fault->digitalFaultStates->end(); ++it, ++i) {
+	os << (*it).second->deviceState->name;
+	if (i < fault->digitalFaultStates->size()) {
+	  os << ", ";
+	}
+      }
+      os << "]";
+    }
+
+    if (fault->defaultDigitalFaultState) {
+      os << " : Defaul["
+	 << fault->defaultDigitalFaultState->deviceState->name << "]";
+    }
+
     return os;
   }
 };
@@ -751,6 +825,7 @@ class MpsDb {
   // This is initialized by the configure() method, after loading the YAML file
   //  DbFaultStateMapPtr faultStates; 
 
+  MpsDb();
   int load(std::string yamlFile);
   void configure();
 

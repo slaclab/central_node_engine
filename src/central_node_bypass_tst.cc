@@ -7,8 +7,10 @@
 #include <central_node_database.h>
 #include <central_node_engine.h>
 #include <boost/shared_ptr.hpp>
+#include <log.h>
 
 using boost::shared_ptr;
+using namespace easyloggingpp;
 
 class TestFailed {};
 
@@ -17,6 +19,8 @@ static void usage(const char *nm) {
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
   std::cerr << "       -i <file>   :  digital input test file" << std::endl;
   std::cerr << "       -a <file>   :  analog input test file" << std::endl;
+  std::cerr << "       -v          :  verbose output" << std::endl;
+  std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
@@ -53,7 +57,16 @@ class BypassTest {
 				       1 /* bypass value */, 110 /* until*/, true);
       
       // PIC
-      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 1, 0, 115, true);
+      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 3, 0, 300, true);
+    } catch (CentralNodeException e) {
+      std::cerr << e.what() << std::endl;
+    }
+  }
+
+  void cancelBypass() {
+    try {
+      // PIC
+      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 3, 0, 0, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
@@ -88,7 +101,7 @@ class BypassTest {
     return 0;
   }
 
-  int updateInputsFromTestFile() {
+  int updateInputsFromTestFile(bool verbose = false) {
     if (!testInputFile.is_open() && digital) {
       std::cerr << "ERROR: Input test file not opened, can't update inputs."
 		<< std::endl;
@@ -124,13 +137,15 @@ class BypassTest {
 	testInputFile >> testCycle;
       }
 
-      std::cout << "=== Testing digital cycle " << testCycle << " ===" << std::endl;
+      if (verbose) {
+	std::cout << "=== Testing digital cycle " << testCycle << " ===" << std::endl;
+      }
       for (int i = 0; i < testInputCount; ++i) {
 	testInputFile >> deviceId;
 	testInputFile >> deviceValue;
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
-	
+	/* this check is wrong	
 	uint32_t size = engine->mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
@@ -138,6 +153,7 @@ class BypassTest {
 		    << std::endl;
 	  return 1;
 	}
+	*/
 	engine->mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
       }
     }
@@ -156,13 +172,15 @@ class BypassTest {
 	analogInputFile >> analogCycle;
       }
 
-      std::cout << "=== Testing analog cycle " << analogCycle << " ===" << std::endl;
+      if (verbose) {
+	std::cout << "=== Testing analog cycle " << analogCycle << " ===" << std::endl;
+      }
       for (int i = 0; i < analogInputCount; ++i) {
 	analogInputFile >> deviceId;
 	analogInputFile >> analogValue;
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
-	
+	/* this check may not work	
 	uint32_t size = engine->mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
@@ -170,6 +188,7 @@ class BypassTest {
 		    << std::endl;
 	  return 1;
 	}
+	*/
 	engine->mpsDb->analogDevices->at(deviceId)->update(analogValue);
       }
     }
@@ -185,8 +204,10 @@ int main(int argc, char **argv) {
   std::string mpsFileName = "";
   std::string inputFileName = "";
   std::string analogFileName = "";
+  bool verbose = false;
+  bool trace = false;
 
-  for (int opt; (opt = getopt(argc, argv, "hf:i:a:")) > 0;) {
+  for (int opt; (opt = getopt(argc, argv, "hf:i:a:tv")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
     case 'f' :
@@ -199,6 +220,12 @@ int main(int argc, char **argv) {
       analogFileName = optarg;
       break;
     case 'h': usage(argv[0]); return 0;
+    case 'v':
+      verbose = true;
+      break;
+    case 't':
+      trace = true;
+      break;
     default:
       std::cerr << "Unknown option '" << opt << "'"  << std::endl;
       usage(argv[0]);
@@ -215,6 +242,12 @@ int main(int argc, char **argv) {
     std::cerr << "Missing -i option and/or -a option" << std::endl;
     usage(argv[0]);
     return 1;
+  }
+
+  if (!trace) {
+    Configurations c;
+    c.setAll(ConfigurationType::Enabled, "false");
+    Loggers::setDefaultConfigurations(c, true);
   }
 
   Engine *e = new Engine();
@@ -246,88 +279,129 @@ int main(int argc, char **argv) {
   }
 
   // First four updates without bypass
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+  }
+  t->checkBypass(1);
   //t->showFaults();
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+  }
+  t->checkBypass(1);
   //t->showFaults();
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+  }
+  t->checkBypass(1);
   //t->showFaults();
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
+  if (verbose) {
+    e->showFaults();
+  }
+  t->checkBypass(1);
 
   t->addBypass();
-  std::cout << "### BYPASS ADDED" << std::endl;
+  if (verbose) {
+    std::cout << "### BYPASS ADDED" << std::endl;
+  }
 
   // Check bypass expiration - bypass should be all valid
-  t->checkBypass(99);
+  t->checkBypass(90);
 
   // Next four updates with bypass VALID
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-  t->showFaults();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+    t->showFaults();
+  }
+  t->checkBypass(91);
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+  }
+  t->checkBypass(92);
   //t->showFaults();
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+  }
+  t->checkBypass(93);
   //t->showFaults();
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
+  if (verbose) {
+    e->showFaults();
+  }
 
   // Check bypass expiration - bypass should expire now
   t->checkBypass(200);
-  std::cout << "### BYPASS EXPIRED" << std::endl;
+  if (verbose) {
+    std::cout << "### BYPASS EXPIRED" << std::endl;
+  }
  
   // Next four updates with bypass EXPIRED
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
-  t->showFaults();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+    t->showFaults();
+  }
+  t->checkBypass(201);
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+  }
+  t->checkBypass(202);
+
   //t->showFaults();
 
-  t->updateInputsFromTestFile();
+  if (verbose) {
+    std::cout << "### CANCEL PIC BYPASS" << std::endl;
+  }
+  t->cancelBypass();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-  e->showMitigationDevices();
+  if (verbose) {
+    e->showFaults();
+    e->showMitigationDevices();
+  }
+  t->checkBypass(203);
+
   //t->showFaults();
 
-  t->updateInputsFromTestFile();
+  t->updateInputsFromTestFile(verbose);
   e->checkFaults();
-  e->showFaults();
-
-
-  std::cout << "-------------------------" << std::endl;
-  
-  e->showStats();
+  if (verbose) {
+    e->showFaults();
+    std::cout << "-------------------------" << std::endl;
+    e->showStats();
+  }
 
   delete t;
 

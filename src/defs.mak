@@ -27,13 +27,15 @@ RANLIB =$(CROSS)$(or $(RANLIB_$(TARNM)),$(RANLIB_default),ranlib)
 INSTALL=install -C
 
 # Tool options
-OPT_CXXFLAGS=-g -Wall -O2
+OPT_CXXFLAGS=-g -Wall -O2 #-std=c++11 # -std=gnu++11
 OPT_CFLAGS  =-g -Wall -O2
 
 CXXFLAGS+= $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
 CXXFLAGS+= $(addprefix -I,$(subst :, ,$(central_node_engineinc_DIRS)))
 CXXFLAGS+= $(OPT_CXXFLAGS)
 CXXFLAGS+= $(USR_CXXFLAGS) $(or $(USR_CXXFLAGS_$(TARNM)),$(USR_CXXFLAGS_default))
+CXXFLAGS+= $(addprefix -I, $(PACKAGE_TOP)/easylogging/easyloggingpp-8.91)
+CXXFLAGS+= -DELPP_DISABLE_LOGS
 
 CFLAGS  += $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
 CFLAGS  += $(addprefix -I,$(subst :, ,$(central_node_engineinc_DIRS)))
