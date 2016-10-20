@@ -272,6 +272,91 @@ namespace YAML {
   };
 
   /** 
+   * Condition:
+   * - id: 1
+   *   name: "YAG01_IN"
+   *   description: "YAG01 screen IN"
+   *   value: 1
+   */
+  template<>
+    struct convert<DbConditionMapPtr> {
+    static bool decode(const Node &node, DbConditionMapPtr &rhs) {
+      DbConditionMap *conditions = new DbConditionMap();
+      rhs = DbConditionMapPtr(conditions);
+
+      for (YAML::Node::const_iterator it = node["Condition"].begin();
+	   it != node["Condition"].end(); ++it) {
+	DbCondition *condition = new DbCondition();
+	
+	condition->id = (*it)["id"].as<int>();
+	condition->name = (*it)["name"].as<std::string>();
+	condition->description = (*it)["description"].as<std::string>();
+	condition->mask = (*it)["value"].as<int>();
+
+	rhs->insert(std::pair<int, DbConditionPtr>(condition->id, DbConditionPtr(condition)));
+      }
+
+      return true;
+    }
+  };
+
+  /**
+   * IgnoreCondition:
+   * - id: 1
+   *   condition_id: 1
+   *   fault_state_id: 14
+   */
+  template<>
+    struct convert<DbIgnoreConditionMapPtr> {
+    static bool decode(const Node &node, DbIgnoreConditionMapPtr &rhs) {
+      DbIgnoreConditionMap *ignoreConditions = new DbIgnoreConditionMap();
+      rhs = DbIgnoreConditionMapPtr(ignoreConditions);
+
+      for (YAML::Node::const_iterator it = node["IgnoreCondition"].begin();
+	   it != node["IgnoreCondition"].end(); ++it) {
+	DbIgnoreCondition *ignoreCondition = new DbIgnoreCondition();
+	
+	ignoreCondition->id = (*it)["id"].as<int>();
+	ignoreCondition->faultStateId = (*it)["fault_state_id"].as<int>();
+	ignoreCondition->conditionId = (*it)["condition_id"].as<int>();
+
+	rhs->insert(std::pair<int, DbIgnoreConditionPtr>(ignoreCondition->id, DbIgnoreConditionPtr(ignoreCondition)));
+      }
+
+      return true;
+    }
+  };
+
+  /**
+   * ConditionInput:
+   * - id: 1
+   *   bit_position: 0
+   *   fault_state_id: 1
+   *   condition_id: 1
+   */
+  template<>
+    struct convert<DbConditionInputMapPtr> {
+    static bool decode(const Node &node, DbConditionInputMapPtr &rhs) {
+      DbConditionInputMap *conditionInputs = new DbConditionInputMap();
+      rhs = DbConditionInputMapPtr(conditionInputs);
+
+      for (YAML::Node::const_iterator it = node["ConditionInput"].begin();
+	   it != node["ConditionInput"].end(); ++it) {
+	DbConditionInput *conditionInput = new DbConditionInput();
+	
+	conditionInput->id = (*it)["id"].as<int>();
+	conditionInput->bitPosition = (*it)["bit_position"].as<int>();
+	conditionInput->faultStateId = (*it)["fault_state_id"].as<int>();
+	conditionInput->conditionId = (*it)["condition_id"].as<int>();
+
+	rhs->insert(std::pair<int, DbConditionInputPtr>(conditionInput->id, DbConditionInputPtr(conditionInput)));
+      }
+
+      return true;
+    }
+  };
+
+  /** 
    * Fault:
    * - description: None
    *   id: '1'

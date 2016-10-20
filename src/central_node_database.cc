@@ -416,6 +416,12 @@ int MpsDb::load(std::string yamlFileName) {
       beamClasses = (*node).as<DbBeamClassMapPtr>();
     } else if (nodeName == "AllowedClass") {
       allowedClasses = (*node).as<DbAllowedClassMapPtr>();
+    } else if (nodeName == "Condition") {
+      conditions = (*node).as<DbConditionMapPtr>();
+    } else if (nodeName == "IgnoreCondition") {
+      ignoreConditions = (*node).as<DbIgnoreConditionMapPtr>();
+    } else if (nodeName == "ConditionInput") {
+      conditionInputs = (*node).as<DbConditionInputMapPtr>();
     } else {
       errorStream << "ERROR: Unknown YAML node name ("
 		  << nodeName << ")";

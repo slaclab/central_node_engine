@@ -54,6 +54,11 @@ class Engine {
   void checkDigitalFaults();
   void checkAnalogFaults();
 
+  void evaluateDigitalFaults();
+  void evaluateAnalogFaults();
+  void evaluateIgnoreConditions();
+  void mitgate();
+
   MpsDbPtr mpsDb;
   BypassManagerPtr bypassManager;
 

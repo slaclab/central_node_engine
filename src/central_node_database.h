@@ -712,9 +712,6 @@ typedef shared_ptr<DbDigitalFaultStateMap> DbDigitalFaultStateMapPtr;
  *  - description: None
  *    id: '1'
  *    name: OTR Fault
- *
- * After these are loaded from YAML, then it gets expanded based on the
- * FaultInput list.
  */
 class DbFault : public DbEntry {
  public:
@@ -779,6 +776,97 @@ typedef shared_ptr<DbFault> DbFaultPtr;
 typedef std::map<uint32_t, DbFaultPtr> DbFaultMap;
 typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
 
+/**
+ * ConditionInput:
+ * - id: 1
+ *   bit_position: 0
+ *   fault_state_id: 1
+ *   condition_id: 1
+ */
+class DbConditionInput : public DbEntry {
+ public:
+  // Values loaded from YAML file
+  uint32_t bitPosition;
+  uint32_t faultStateId;
+  uint32_t conditionId;
+  
+ DbConditionInput() : DbEntry(), bitPosition(0), faultStateId(0), conditionId(0) {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbConditionInput * const input) {
+    os << "id[" << input->id << "]; " 
+       << "bitPosition[" << input->bitPosition << "]; "
+       << "faultStateId[" << input->faultStateId << "]; "
+       << "conditionId[" << input->conditionId << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbConditionInput> DbConditionInputPtr;
+typedef std::map<uint32_t, DbConditionInputPtr> DbConditionInputMap;
+typedef shared_ptr<DbConditionInputMap> DbConditionInputMapPtr;
+
+/**
+ * IgnoreCondition:
+ * - id: 1
+ *   condition_id: 1
+ *   fault_state_id: 14
+ */
+class DbIgnoreCondition : public DbEntry {
+ public:
+  uint32_t faultStateId;
+  uint32_t conditionId;
+
+ DbIgnoreCondition() : DbEntry(), faultStateId(0), conditionId(0) {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input) {
+    os << "id[" << input->id << "]; " 
+       << "faultStateId[" << input->faultStateId << "]; "
+       << "conditionId[" << input->conditionId << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbIgnoreCondition> DbIgnoreConditionPtr;
+typedef std::map<uint32_t, DbIgnoreConditionPtr> DbIgnoreConditionMap;
+typedef shared_ptr<DbIgnoreConditionMap> DbIgnoreConditionMapPtr;
+
+/** 
+ * Condition:
+ * - id: 1
+ *   name: "YAG01_IN"
+ *   description: "YAG01 screen IN"
+ *   value: 1
+ */
+class DbCondition : public DbEntry {
+ public:
+  std::string name;
+  std::string description;
+  uint32_t mask;
+
+  // Configured after loading the YAML file
+  DbConditionInputMapPtr conditionInputs; // A condition is composed of one or more condition inputs
+  bool state; // State is true when condition is met
+  DbIgnoreConditionMapPtr ignoreConditions;
+
+ DbCondition() : DbEntry(), name(""), description(""), mask(0) {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbCondition * const fault) {
+    os << "id[" << fault->id << "]; "
+       << "name[" << fault->name << "]; "
+       << "mask[0x" << fault->mask << std::dec << "]; "
+       << "description[" << fault->description << "]";
+
+    return os;
+  }
+};
+
+typedef shared_ptr<DbCondition> DbConditionPtr;
+typedef std::map<uint32_t, DbConditionPtr> DbConditionMap;
+typedef shared_ptr<DbConditionMap> DbConditionMapPtr;
+
 
 /**
  * Class containing all YAML MPS configuration
@@ -818,6 +906,9 @@ class MpsDb {
   DbMitigationDeviceMapPtr mitigationDevices;
   DbBeamClassMapPtr beamClasses;
   DbAllowedClassMapPtr allowedClasses;
+  DbConditionMapPtr conditions;
+  DbIgnoreConditionMapPtr ignoreConditions;
+  DbConditionInputMapPtr conditionInputs;
 
   // Name of the loaded YAML file
   std::string name;
@@ -833,137 +924,95 @@ class MpsDb {
   void showFault(DbFaultPtr fault);
   void showThresholdFault(DbThresholdFaultPtr fault);
 
+  //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
+
+  template<class MapPtrType, class IteratorType>
+    void printMap(std::ostream &os, MapPtrType map,
+	     std::string mapName) {
+    os << mapName << ":" << std::endl;
+    for (IteratorType it = map->begin(); 
+	 it != map->end(); ++it) {
+      os << "  " << (*it).second << std::endl;
+    }
+  }
+
   /**
    * Print contents of all entities
    */
   friend std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
     os << "Name: " << mpsDb->name << std::endl;
-    os << "Crates: " << std::endl;
-    for (DbCrateMap::iterator it = mpsDb->crates->begin(); 
-	 it != mpsDb->crates->end(); ++it) {
-      os << "  " << (*it).second << std::endl;
-    }
 
-    os << "ApplicationTypes: " << std::endl;
-    for (DbApplicationTypeMap::iterator it = mpsDb->applicationTypes->begin(); 
-	 it != mpsDb->applicationTypes->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbCrateMapPtr, DbCrateMap::iterator>
+      (os, mpsDb->crates, "Crate");
 
-    os << "ApplicationCards: " << std::endl;
-    for (DbApplicationCardMap::iterator it = mpsDb->applicationCards->begin(); 
-	 it != mpsDb->applicationCards->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbApplicationTypeMapPtr, DbApplicationTypeMap::iterator>
+      (os, mpsDb->applicationTypes, "ApplicationType");
 
-    os << "DigitalChannels: " << std::endl;
-    for (DbChannelMap::iterator it = mpsDb->digitalChannels->begin(); 
-	 it != mpsDb->digitalChannels->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbApplicationCardMapPtr, DbApplicationCardMap::iterator>
+      (os, mpsDb->applicationCards, "ApplicationCard");
 
-    os << "AnalogChannels: " << std::endl;
-    for (DbChannelMap::iterator it = mpsDb->analogChannels->begin(); 
-	 it != mpsDb->analogChannels->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbChannelMapPtr, DbChannelMap::iterator>
+      (os, mpsDb->digitalChannels, "DigitalChannel");
 
-    os << "DeviceTypes: " << std::endl;
-    for (DbDeviceTypeMap::iterator it = mpsDb->deviceTypes->begin(); 
-	 it != mpsDb->deviceTypes->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbChannelMapPtr, DbChannelMap::iterator>
+      (os, mpsDb->analogChannels, "AnalogChannel");
 
-    os << "DeviceStates: " << std::endl;
-    for (DbDeviceStateMap::iterator it = mpsDb->deviceStates->begin(); 
-	 it != mpsDb->deviceStates->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbDeviceTypeMapPtr, DbDeviceTypeMap::iterator>
+      (os, mpsDb->deviceTypes, "DeviceType");
 
-    os << "DigitalDevices: " << std::endl;
-    for (DbDigitalDeviceMap::iterator it = mpsDb->digitalDevices->begin(); 
-	 it != mpsDb->digitalDevices->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbDeviceStateMapPtr, DbDeviceStateMap::iterator>
+      (os, mpsDb->deviceStates, "DeviceState");
 
-    os << "DeviceInputs: " << std::endl;
-    for (DbDeviceInputMap::iterator it = mpsDb->deviceInputs->begin(); 
-	 it != mpsDb->deviceInputs->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbDigitalDeviceMapPtr, DbDigitalDeviceMap::iterator>
+      (os, mpsDb->digitalDevices, "DigitalDevice");
 
-    os << "Faults: " << std::endl;
-    for (DbFaultMap::iterator it = mpsDb->faults->begin(); 
-	 it != mpsDb->faults->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbDeviceInputMapPtr, DbDeviceInputMap::iterator>
+      (os, mpsDb->deviceInputs, "DeviceInput");
 
-    os << "FaultInputs: " << std::endl;
-    for (DbFaultInputMap::iterator it = mpsDb->faultInputs->begin(); 
-	 it != mpsDb->faultInputs->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbFaultMapPtr, DbFaultMap::iterator>
+      (os, mpsDb->faults, "Fault");
 
-    os << "DigitalFaultStates: " << std::endl;
-    for (DbDigitalFaultStateMap::iterator it = mpsDb->digitalFaultStates->begin(); 
-	 it != mpsDb->digitalFaultStates->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbFaultInputMapPtr, DbFaultInputMap::iterator>
+      (os, mpsDb->faultInputs, "FaultInput");
 
-    os << "ThresholdValueMaps: " << std::endl;
-    for (DbThresholdValueMapEntryMap::iterator it = mpsDb->thresholdValueMaps->begin(); 
-	 it != mpsDb->thresholdValueMaps->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbDigitalFaultStateMapPtr, DbDigitalFaultStateMap::iterator>
+      (os, mpsDb->digitalFaultStates, "DigitalFaultState");
 
-    os << "AnalogDeviceTypes: " << std::endl;
-    for (DbAnalogDeviceTypeMap::iterator it = mpsDb->analogDeviceTypes->begin(); 
-	 it != mpsDb->analogDeviceTypes->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbThresholdValueMapEntryMapPtr, DbThresholdValueMapEntryMap::iterator>
+      (os, mpsDb->thresholdValueMaps, "ThresholdValueMap");
 
-    os << "AnalogDevices: " << std::endl;
-    for (DbAnalogDeviceMap::iterator it = mpsDb->analogDevices->begin(); 
-	 it != mpsDb->analogDevices->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbAnalogDeviceTypeMapPtr, DbAnalogDeviceTypeMap::iterator>
+      (os, mpsDb->analogDeviceTypes, "AnalogDeviceType");
 
-    os << "ThresholdValues: " << std::endl;
-    for (DbThresholdValueMap::iterator it = mpsDb->thresholdValues->begin(); 
-	 it != mpsDb->thresholdValues->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbAnalogDeviceMapPtr, DbAnalogDeviceMap::iterator>
+      (os, mpsDb->analogDevices, "AnalogDevice");
 
-    os << "ThresholdFaults: " << std::endl;
-    for (DbThresholdFaultMap::iterator it = mpsDb->thresholdFaults->begin(); 
-	 it != mpsDb->thresholdFaults->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbThresholdValueMapPtr, DbThresholdValueMap::iterator>
+      (os, mpsDb->thresholdValues, "ThresholdValue");
 
-    os << "ThresholdFaultStates: " << std::endl;
-    for (DbThresholdFaultStateMap::iterator it = mpsDb->thresholdFaultStates->begin(); 
-	 it != mpsDb->thresholdFaultStates->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbThresholdFaultMapPtr, DbThresholdFaultMap::iterator>
+      (os, mpsDb->thresholdFaults, "ThresholdFault");
 
-    os << "MitigationDevices: " << std::endl;
-    for (DbMitigationDeviceMap::iterator it = mpsDb->mitigationDevices->begin(); 
-	 it != mpsDb->mitigationDevices->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbThresholdFaultStateMapPtr, DbThresholdFaultStateMap::iterator>
+      (os, mpsDb->thresholdFaultStates, "ThresholdFaultState");
 
-    os << "BeamClasss: " << std::endl;
-    for (DbBeamClassMap::iterator it = mpsDb->beamClasses->begin(); 
-	 it != mpsDb->beamClasses->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbMitigationDeviceMapPtr, DbMitigationDeviceMap::iterator>
+      (os, mpsDb->mitigationDevices, "MitigationDevice");
 
-    os << "AllowedClasss: " << std::endl;
-    for (DbAllowedClassMap::iterator it = mpsDb->allowedClasses->begin(); 
-	 it != mpsDb->allowedClasses->end(); ++it) {
-      os << "  " <<  (*it).second << std::endl;
-    }
+    mpsDb->printMap<DbBeamClassMapPtr, DbBeamClassMap::iterator>
+      (os, mpsDb->beamClasses, "BeamClass");
 
+    mpsDb->printMap<DbAllowedClassMapPtr, DbAllowedClassMap::iterator>
+      (os, mpsDb->allowedClasses, "AllowedClass");
+
+    mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>
+      (os, mpsDb->conditions, "Conditions");
+
+    mpsDb->printMap<DbConditionInputMapPtr, DbConditionInputMap::iterator>
+      (os, mpsDb->conditionInputs, "ConditionInputs");
+
+    mpsDb->printMap<DbIgnoreConditionMapPtr, DbIgnoreConditionMap::iterator>
+      (os, mpsDb->ignoreConditions, "IgnoreConditions");
 
     return os;
   }
