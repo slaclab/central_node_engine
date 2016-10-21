@@ -631,12 +631,14 @@ class DbThresholdFaultState : public DbEntry {
   uint32_t thresholdFaultId;
   
   // Configured/Used after loading the YAML file
-  bool faulted;
+  bool faulted; // Evaluated based on the status of the thresholdFault
+  bool ignored; // Fault state is ignored if there are valid ignore conditions 
+
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each
                                        // mitigation device) for this fault state
   DbThresholdFaultPtr thresholdFault;
 
- DbThresholdFaultState() : DbEntry(), thresholdFaultId(-1), faulted(false) {
+ DbThresholdFaultState() : DbEntry(), thresholdFaultId(-1), faulted(false), ignored(false) {
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbThresholdFaultState * const thresFaultState) {
@@ -667,11 +669,13 @@ class DbDigitalFaultState : public DbEntry {
   //  uint32_t value;
 
   // Configured/Used after loading the YAML file
-  bool faulted;
+  bool faulted; // Evaluated based on the status of the deviceState
+  bool ignored; // Fault state is ignored if there are valid ignore conditions 
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each mitigation device) for this fault states
   DbDeviceStatePtr deviceState;
 
- DbDigitalFaultState() : DbEntry(), faultId(0), deviceStateId(0), defaultState(false), faulted(false) {
+ DbDigitalFaultState() : DbEntry(), faultId(0), deviceStateId(0),
+    defaultState(false), faulted(false), ignored(false) {
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbDigitalFaultState * const digitalFault) {
@@ -789,6 +793,12 @@ class DbConditionInput : public DbEntry {
   uint32_t bitPosition;
   uint32_t faultStateId;
   uint32_t conditionId;
+
+  // The DbIgnoreCondition may point to a digital or analog fault state
+  // TODO: this does not look good, these should be a single pointer, can't they?
+  // This also happens with the DbIgnoreCondition class
+  DbDigitalFaultStatePtr digitalFaultState;
+  DbThresholdFaultStatePtr analogFaultState;
   
  DbConditionInput() : DbEntry(), bitPosition(0), faultStateId(0), conditionId(0) {
   }
@@ -816,6 +826,11 @@ class DbIgnoreCondition : public DbEntry {
  public:
   uint32_t faultStateId;
   uint32_t conditionId;
+
+  // The DbIgnoreCondition may point to a digital or analog fault state
+  // TODO: this does not look good, these should be a single pointer, can't they?
+  DbDigitalFaultStatePtr digitalFaultState;
+  DbThresholdFaultStatePtr analogFaultState;
 
  DbIgnoreCondition() : DbEntry(), faultStateId(0), conditionId(0) {
   }
@@ -883,6 +898,7 @@ class MpsDb {
   void configureAnalogDeviceTypes();
   void configureAnalogDevices();
   void configureThresholdFaultStates();
+  void configureIgnoreConditions();
 
  public:
   DbCrateMapPtr crates;

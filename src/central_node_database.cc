@@ -316,6 +316,91 @@ void MpsDb::configureThresholdFaultStates() {
   }
 }
 
+void MpsDb::configureIgnoreConditions() {
+  std::stringstream errorStream;
+
+  // Loop through the IgnoreConditions, and assign to the Condition
+  for (DbIgnoreConditionMap::iterator ignoreCondition = ignoreConditions->begin();
+       ignoreCondition != ignoreConditions->end(); ++ignoreCondition) {
+    uint32_t conditionId = (*ignoreCondition).second->conditionId;
+
+    DbConditionMap::iterator condition = conditions->find(conditionId);
+    if (condition != conditions->end()) {
+      // Create a map to hold IgnoreConditions
+      if (!(*condition).second->ignoreConditions) {
+	DbIgnoreConditionMap *ignoreConditionMap = new DbIgnoreConditionMap();
+	(*condition).second->ignoreConditions = DbIgnoreConditionMapPtr(ignoreConditionMap);
+      }
+      (*condition).second->ignoreConditions->
+	insert(std::pair<int, DbIgnoreConditionPtr>((*ignoreCondition).second->id, (*ignoreCondition).second));      
+    }
+    else {
+      errorStream << "ERROR: Failed to configure database, invalid conditionId ("
+		  << conditionId << ") for ignoreCondition (" <<  (*ignoreCondition).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+    
+    // Find if the ignored fault state is digital or analog
+    uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
+
+    DbDigitalFaultStateMap::iterator digFaultIt = digitalFaultStates->find(faultStateId);
+    if (digFaultIt != digitalFaultStates->end()) {
+      (*ignoreCondition).second->digitalFaultState = (*digFaultIt).second;
+    }
+    else {
+      DbThresholdFaultStateMap::iterator thresFaultIt = thresholdFaultStates->find(faultStateId);
+      if (thresFaultIt != thresholdFaultStates->end()) {
+	(*ignoreCondition).second->analogFaultState = (*thresFaultIt).second;
+      }
+      else {
+	errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
+		    << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
+	throw(DbException(errorStream.str()));
+      }
+    }
+  }
+
+  // Loop through the ConditionInputs, and assign to the Condition
+  for (DbConditionInputMap::iterator conditionInput = conditionInputs->begin();
+       conditionInput != conditionInputs->end(); ++conditionInput) {
+    uint32_t conditionId = (*conditionInput).second->conditionId;
+
+    DbConditionMap::iterator condition = conditions->find(conditionId);
+    if (condition != conditions->end()) {
+      // Create a map to hold ConditionInputs
+      if (!(*condition).second->conditionInputs) {
+	DbConditionInputMap *conditionInputMap = new DbConditionInputMap();
+	(*condition).second->conditionInputs = DbConditionInputMapPtr(conditionInputMap);
+      }
+      (*condition).second->conditionInputs->
+	insert(std::pair<int, DbConditionInputPtr>((*conditionInput).second->id, (*conditionInput).second));      
+    }
+    else {
+      errorStream << "ERROR: Failed to configure database, invalid conditionId ("
+		  << conditionId << ") for conditionInput (" <<  (*conditionInput).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
+
+    // Find if the ignored fault state is digital or analog
+    uint32_t faultStateId = (*conditionInput).second->faultStateId;
+
+    DbDigitalFaultStateMap::iterator digFaultIt = digitalFaultStates->find(faultStateId);
+    if (digFaultIt != digitalFaultStates->end()) {
+      (*conditionInput).second->digitalFaultState = (*digFaultIt).second;
+    }
+    else {
+      DbThresholdFaultStateMap::iterator thresFaultIt = thresholdFaultStates->find(faultStateId);
+      if (thresFaultIt != thresholdFaultStates->end()) {
+	(*conditionInput).second->analogFaultState = (*thresFaultIt).second;
+      }
+      else {
+	errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
+		    << faultStateId << ") for ConditionInput (" <<  (*conditionInput).second->id << ")";
+	throw(DbException(errorStream.str()));
+      }
+    }
+  }
+}
 
 /**
  * After the YAML database file is loaded this method must be called to resolve
@@ -335,6 +420,7 @@ void MpsDb::configure() {
   configureAnalogDeviceTypes();
   configureAnalogDevices();
   configureThresholdFaultStates();
+  configureIgnoreConditions();
 }
 
 void MpsDb::setName(std::string yamlFileName) {
