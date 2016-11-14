@@ -3,16 +3,20 @@
 #include <central_node_bypass_manager.h>
 #include <central_node_bypass.h>
 #include <central_node_exception.h>
-//#include <log.h>
-#include "easylogging++.h"
+#include <log_wrapper.h>
 
+#ifdef LOG_ENABLED
 using namespace easyloggingpp;
 static Logger *bypassLogger;
 
 BypassManager::BypassManager() {
   bypassLogger = Loggers::getLogger("BYPASS");
-  CTRACE("BYPASS") << "Created BypassManager";
+  LOG_TRACE("BYPASS", "Created BypassManager");
 } 
+#else
+BypassManager::BypassManager() {
+}
+#endif
 
 /**
  * This creates bypasses for all digital/analog inputs. Should be invoked
@@ -21,7 +25,7 @@ BypassManager::BypassManager() {
  * is shared by the loaded configs.
  */
 void BypassManager::createBypassMap(MpsDbPtr db) {
-  CTRACE("BYPASS") << "Creating bypass map";
+  LOG_TRACE("BYPASS", "Creating bypass map");
   
   InputBypassMap *map = new InputBypassMap();
   bypassMap = InputBypassMapPtr(map);
@@ -70,7 +74,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
  */
 void BypassManager::assignBypass(MpsDbPtr db) {
   std::stringstream errorStream;
-  CTRACE("BYPASS") << "Assigning bypass slots to MPS database inputs (analog/digital)";
+  LOG_TRACE("BYPASS", "Assigning bypass slots to MPS database inputs (analog/digital)");
 
   for (InputBypassMap::iterator bypass = bypassMap->begin();
        bypass != bypassMap->end(); ++bypass) {
@@ -155,8 +159,8 @@ void BypassManager::checkBypassQueue(time_t testTime) {
     now = testTime;
   }
 
-  CTRACE("BYPASS") << "Checking for expired bypasses (time=" << now
-		   << ", size=" << bypassQueue.size() << ")";
+  LOG_TRACE("BYPASS", "Checking for expired bypasses (time=" << now
+	    << ", size=" << bypassQueue.size() << ")");
 
   bool expired = true;
   while (expired) {
@@ -177,11 +181,11 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
     top = bypassQueue.top();
     // The time from the priority queue expired
     if (top.first <= now) {
-      CTRACE("BYPASS") << "Bypass for device [" << top.second->deviceId << "] expired, "
-		       << "type=" << top.second->type
-		       << ", until=" << top.first << " sec"
-		       << ", now=" << now << " sec"
-		       << ", (actual until=" << top.second->until << ")";
+      LOG_TRACE("BYPASS", "Bypass for device [" << top.second->deviceId << "] expired, "
+		<< "type=" << top.second->type
+		<< ", until=" << top.first << " sec"
+		<< ", now=" << now << " sec"
+		<< ", (actual until=" << top.second->until << ")");
       bypassQueue.pop();
       // Check if bypass expiration time (from the queue) is different
       // than top.first
@@ -195,17 +199,17 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 	// If the bypass expiration time is greater than the current time then
 	// the status must still be BYPASS_VALID
 	if (top.second->status != BYPASS_VALID) {
-	  CTRACE("BYPASS") << "Found BYPASS_EXPIRED status, setting back to BYPASS_VALID"
-			   << " and returning error";
+	  LOG_TRACE("BYPASS", "Found BYPASS_EXPIRED status, setting back to BYPASS_VALID"
+		    << " and returning error");
 	  return false;
 	}
 	else {
-	  CTRACE("BYPASS") << "Found BYPASS_VALID, no bypass status change";
+	  LOG_TRACE("BYPASS", "Found BYPASS_VALID, no bypass status change");
 	}
       }
       else if (top.second->until <= top.first) {
 	top.second->status = BYPASS_EXPIRED;
-	CTRACE("BYPASS") << "Setting status to BYPASS_EXPIRED";
+	LOG_TRACE("BYPASS", "Setting status to BYPASS_EXPIRED");
       }
       return true;
     }
@@ -284,8 +288,8 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
   if (bypassUntil == 0) {
     bypass->status = BYPASS_EXPIRED;
     bypass->until = 0;
-    CTRACE("BYPASS") << "Set bypass EXPIRED for device [" << deviceId << "], "
-		     << "type=" << bypassType;
+    LOG_TRACE("BYPASS", "Set bypass EXPIRED for device [" << deviceId << "], "
+	      << "type=" << bypassType);
   }
   else {
     time_t now;
@@ -298,10 +302,10 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
     
     // This handles cases #1 and #2, for new and modified bypasses.
     if (bypassUntil > now) {
-      CTRACE("BYPASS") << "New bypass for device [" << deviceId << "], "
-		       << "type=" << bypassType
-		       << ", until=" << bypassUntil << " sec"
-		       << ", now=" << now << " sec";
+      LOG_TRACE("BYPASS", "New bypass for device [" << deviceId << "], "
+		<< "type=" << bypassType
+		<< ", until=" << bypassUntil << " sec"
+		<< ", now=" << now << " sec");
       bypass->until = bypassUntil;
       bypass->status = BYPASS_VALID;
       bypass->value = value;

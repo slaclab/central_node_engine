@@ -8,13 +8,19 @@
 #include <iostream>
 #include <sstream>
 
-#include "easylogging++.h"
+#include <log_wrapper.h>
+
+#ifdef LOG_ENABLED
 using namespace easyloggingpp;
 static Logger *databaseLogger;
 
 MpsDb::MpsDb() {
   databaseLogger = Loggers::getLogger("DATABASE");
 }
+#else
+MpsDb::MpsDb() {
+}
+#endif
 
 void MpsDb::configureAllowedClasses() {
   std::stringstream errorStream;
@@ -437,7 +443,7 @@ int MpsDb::load(std::string yamlFileName) {
   YAML::Node doc;
   std::vector<YAML::Node> nodes;
 
-  CTRACE("DATABASE") << "Loading YAML from file " << yamlFileName;
+  LOG_TRACE("DATABASE", "Loading YAML from file " << yamlFileName);
   try {
     nodes = YAML::LoadAllFromFile(yamlFileName);
   } catch (...) {
@@ -446,7 +452,7 @@ int MpsDb::load(std::string yamlFileName) {
     throw(DbException(errorStream.str()));
   }
 
-  CTRACE("DATABASE") << "Parsing YAML";
+  LOG_TRACE("DATABASE", "Parsing YAML");
   for (std::vector<YAML::Node>::iterator node = nodes.begin();
        node != nodes.end(); ++node) {
     std::string s = YAML::Dump(*node);
@@ -458,7 +464,7 @@ int MpsDb::load(std::string yamlFileName) {
     }
     std::string nodeName = s.substr(0, found);
 
-    CTRACE("DATABASE") << "Parsing " << nodeName;
+    LOG_TRACE("DATABASE", "Parsing " << nodeName);
 
     if (nodeName == "Crate") {
       crates = (*node).as<DbCrateMapPtr>();

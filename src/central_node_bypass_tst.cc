@@ -10,7 +10,6 @@
 #include <log.h>
 
 using boost::shared_ptr;
-using namespace easyloggingpp;
 
 class TestFailed {};
 
@@ -244,11 +243,13 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+#ifdef LOG_ENABLED
   if (!trace) {
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
   }
+#endif 
 
   Engine *e = new Engine();
   try {

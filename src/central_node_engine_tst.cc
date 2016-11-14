@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
+#include <exception>
 
 #include <central_node_yaml.h>
 #include <central_node_database.h>
@@ -10,7 +11,6 @@
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
-using namespace easyloggingpp;
 
 class TestFailed {};
 
@@ -112,7 +112,12 @@ class EngineTest {
 		    << std::endl;
 	  return 1;
 	}
-	engine->mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+	try {
+	  engine->mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+	} catch (std::exception e) {
+	  std::cerr << "ERROR: invalid device input index of " << deviceId << std::endl;
+	  return -1;
+	}
       }
     }
 
@@ -207,11 +212,13 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+#ifdef LOG_ENABLED
   if (!trace) {
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
   }
+#endif
 
   Engine *e = new Engine();
   try {
@@ -250,10 +257,10 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (verbose) {  
+  //  if (verbose) {  
     std::cout << "-------------------------" << std::endl;
     e->showStats();
-  }
+    //  }
 
   delete t;
 

@@ -1,15 +1,19 @@
 #include <central_node_engine.h>
 #include <stdint.h>
-//#include <log.h>
-#include "easylogging++.h"
+#include <log_wrapper.h>
 
+#ifdef LOG_ENABLED
 using namespace easyloggingpp;
 static Logger *engineLogger;
+#endif 
 
 Engine::Engine() :
   checkFaultTime(5, "Evaluation time") {
+#ifdef LOG_ENABLED
   engineLogger = Loggers::getLogger("ENGINE");
+#endif
 }
+
 
 int Engine::loadConfig(std::string yamlFileName) {
   MpsDb *db = new MpsDb();
@@ -22,7 +26,7 @@ int Engine::loadConfig(std::string yamlFileName) {
     throw(EngineException(errorStream.str()));
   }
 
-  CTRACE("ENGINE") << "YAML Database loaded from " << yamlFileName;
+  LOG_TRACE("ENGINE", "YAML Database loaded from " << yamlFileName);
 
   // When the first yaml configuration file is loaded the bypassMap
   // must be created.  
@@ -31,7 +35,7 @@ int Engine::loadConfig(std::string yamlFileName) {
     bypassManager->createBypassMap(mpsDb);
   }
 
-  CTRACE("ENGINE") << "BypassManager created";
+  LOG_TRACE("ENGINE", "BypassManager created");
 
   try {
     mpsDb->configure();
@@ -40,7 +44,7 @@ int Engine::loadConfig(std::string yamlFileName) {
     throw e;
   }
 
-  CTRACE("ENGINE") << "MPS Database configured from YAML";
+  LOG_TRACE("ENGINE", "MPS Database configured from YAML");
 
   // Assign bypass to each digital/analog input
   bypassManager->assignBypass(mpsDb);
@@ -60,8 +64,8 @@ int Engine::loadConfig(std::string yamlFileName) {
     }
   }
 
-  CTRACE("ENGINE") << "Lowest beam class found: " << lowestBeamClass->number;
-  CTRACE("ENGINE") << "Highest beam class found: " << highestBeamClass->number;
+  LOG_TRACE("ENGINE", "Lowest beam class found: " << lowestBeamClass->number);
+  LOG_TRACE("ENGINE", "Highest beam class found: " << highestBeamClass->number);
 
   return 0;
 }
@@ -83,10 +87,10 @@ void Engine::setTentativeBeamClass() {
        device != mpsDb->mitigationDevices->end(); ++device) {
     (*device).second->tentativeBeamClass = highestBeamClass;
     (*device).second->allowedBeamClass = lowestBeamClass;
-    CTRACE("ENGINE") << (*device).second->name << " tentative class set to: "
-		     << (*device).second->tentativeBeamClass->number
-		     << "; allowed class set to: "
-		     << (*device).second->allowedBeamClass->number;
+    LOG_TRACE("ENGINE", (*device).second->name << " tentative class set to: "
+	      << (*device).second->tentativeBeamClass->number
+	      << "; allowed class set to: "
+	      << (*device).second->allowedBeamClass->number);
   }
 }
 
@@ -98,8 +102,8 @@ void Engine::setAllowedBeamClass() {
   for (DbMitigationDeviceMap::iterator it = mpsDb->mitigationDevices->begin(); 
        it != mpsDb->mitigationDevices->end(); ++it) {
     (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
-    CTRACE("ENGINE") << (*it).second->name << " allowed class set to "
-		     << (*it).second->allowedBeamClass->number;
+    LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
+	      << (*it).second->allowedBeamClass->number);
   }
 }
 
@@ -118,18 +122,18 @@ void Engine::checkDigitalFaults() {
   for (DbDigitalDeviceMap::iterator device = mpsDb->digitalDevices->begin(); 
        device != mpsDb->digitalDevices->end(); ++device) {
     uint32_t deviceValue = 0;
-    CTRACE("ENGINE") << "Getting inputs for " << (*device).second->name << " device"
-		     << ", there are " << (*device).second->inputDevices->size()
-		     << " inputs";
+    LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
+	      << ", there are " << (*device).second->inputDevices->size()
+	      << " inputs");
     for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin(); 
 	 input != (*device).second->inputDevices->end(); ++input) {
       uint32_t inputValue = 0;
       // Check if the input has a valid bypass value
       if ((*input).second->bypass->status == BYPASS_VALID) {
 	inputValue = (*input).second->bypass->value;
-	CTRACE("ENGINE") << (*device).second->name << " bypassing input value to "
-			 << (*input).second->bypass->value << " (actual value is "
-			 << (*input).second->value << ")";
+	LOG_TRACE("ENGINE", (*device).second->name << " bypassing input value to "
+		  << (*input).second->bypass->value << " (actual value is "
+		  << (*input).second->value << ")");
       }
       else {
 	inputValue = (*input).second->value;
@@ -138,7 +142,7 @@ void Engine::checkDigitalFaults() {
       deviceValue |= inputValue;
     }
     (*device).second->update(deviceValue);
-    CTRACE("ENGINE") << (*device).second->name << " current value " << std::hex << deviceValue << std::dec;
+    LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
   }  
 
   // At this point all digital devices have an updated value
@@ -153,12 +157,12 @@ void Engine::checkDigitalFaults() {
 	 input != (*fault).second->faultInputs->end(); ++input) {
       uint32_t inputValue = (*input).second->digitalDevice->value;
       faultValue |= (inputValue << (*input).second->bitPosition);
-      CTRACE("ENGINE") << (*fault).second->name << " current value " << std::hex << faultValue
-		       << ", input value " << inputValue << std::dec << " bit pos "
-		       << (*input).second->bitPosition;
+      LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue
+		<< ", input value " << inputValue << std::dec << " bit pos "
+		<< (*input).second->bitPosition);
     }
     (*fault).second->update(faultValue);
-    CTRACE("ENGINE") << (*fault).second->name << " current value " << std::hex << faultValue << std::dec;
+    LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
     // Now that a Fault has a new value check if it is in the FaultStates list,
     // and update the allowedBeamClass for the MitigationDevices
@@ -168,11 +172,11 @@ void Engine::checkDigitalFaults() {
       if ((*state).second->deviceState->value == maskedValue) {
 	(*state).second->faulted = true;
 	faulted = true; // Signal that at least one state is faulted
-	CTRACE("ENGINE") << (*fault).second->name << " is faulted value=" 
-			 << faultValue << ", masked=" << maskedValue
-			 << " (fault state="
-			 << (*state).second->deviceState->name
-			 << ", value=" << (*state).second->deviceState->value << ")";
+	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		  << faultValue << ", masked=" << maskedValue
+		  << " (fault state="
+		  << (*state).second->deviceState->name
+		  << ", value=" << (*state).second->deviceState->value << ")");
 	if ((*state).second->allowedClasses) {
 	  for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
 	       allowed != (*state).second->allowedClasses->end(); ++allowed) {
@@ -180,8 +184,8 @@ void Engine::checkDigitalFaults() {
 		(*allowed).second->beamClass->number) {
 	      (*allowed).second->mitigationDevice->tentativeBeamClass =
 		(*allowed).second->beamClass;
-	      CTRACE("ENGINE") << (*allowed).second->mitigationDevice->name << " tentative class set to "
-			       << (*allowed).second->beamClass->number;
+	      LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+			<< (*allowed).second->beamClass->number);
 	    }
 	  }
 	}
@@ -194,9 +198,9 @@ void Engine::checkDigitalFaults() {
     // If there are no faults, then enable the default - if there is one
     if (!faulted && (*fault).second->defaultDigitalFaultState) {
       (*fault).second->defaultDigitalFaultState->faulted = true;
-      CTRACE("ENGINE") << (*fault).second->name << " is faulted value=" 
-		       << faultValue << " (Default) fault state="
-		       << (*fault).second->defaultDigitalFaultState->deviceState->name;
+      LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		<< faultValue << " (Default) fault state="
+		<< (*fault).second->defaultDigitalFaultState->deviceState->name);
       if ((*fault).second->defaultDigitalFaultState->allowedClasses) {
 	for (DbAllowedClassMap::iterator allowed = (*fault).second->defaultDigitalFaultState->allowedClasses->begin();
 	     allowed != (*fault).second->defaultDigitalFaultState->allowedClasses->end(); ++allowed) {
@@ -204,8 +208,8 @@ void Engine::checkDigitalFaults() {
 	      (*allowed).second->beamClass->number) {
 	    (*allowed).second->mitigationDevice->tentativeBeamClass =
 	      (*allowed).second->beamClass;
-	    CTRACE("ENGINE") << (*allowed).second->mitigationDevice->name << " tentative class set to "
-			     << (*allowed).second->beamClass->number;
+	    LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+		      << (*allowed).second->beamClass->number);
 	  }
 	}
       }
@@ -224,11 +228,11 @@ void Engine::checkAnalogFaults() {
        faultState != mpsDb->thresholdFaultStates->end(); ++faultState) {
     // This is the compressed analog value read from the device
     uint32_t deviceValue = (*faultState).second->thresholdFault->analogDevice->value;
-    CTRACE("ENGINE") << (*faultState).second->thresholdFault->analogDevice->name
-		     << " current value (compressed) 0x"
-		     << std::hex << deviceValue << std::dec
-		     << " [thresholdFaultId=" << (*faultState).second->thresholdFaultId
-		     << "]";
+    LOG_TRACE("ENGINE", (*faultState).second->thresholdFault->analogDevice->name
+	      << " current value (compressed) 0x"
+	      << std::hex << deviceValue << std::dec
+	      << " [thresholdFaultId=" << (*faultState).second->thresholdFaultId
+	      << "]");
 
     // If there is no active bypass then check if the device value exceeds threshold 
     if ((*faultState).second->thresholdFault->analogDevice->bypass->status != BYPASS_VALID) {
@@ -248,7 +252,7 @@ void Engine::checkAnalogFaults() {
       // If there is a fault, assign a tentative beam class
       if (fault) {
 	(*faultState).second->faulted = true;
-	CTRACE("ENGINE") << (*faultState).second->thresholdFault->analogDevice->name << " is faulted";
+	LOG_TRACE("ENGINE", (*faultState).second->thresholdFault->analogDevice->name << " is faulted");
 	// Update allowedClass for the ThresholdFaultState
 	for (DbAllowedClassMap::iterator allowed = (*faultState).second->allowedClasses->begin();
 	     allowed != (*faultState).second->allowedClasses->end(); ++allowed) {
@@ -256,8 +260,8 @@ void Engine::checkAnalogFaults() {
 	      (*allowed).second->beamClass->number) {
 	    (*allowed).second->mitigationDevice->tentativeBeamClass =
 	      (*allowed).second->beamClass;
-	    CTRACE("ENGINE") << (*allowed).second->mitigationDevice->name << " tentative class set to "
-			     << (*allowed).second->beamClass->number;
+	    LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+		      << (*allowed).second->beamClass->number);
 	  }
 	}
       }
@@ -266,7 +270,7 @@ void Engine::checkAnalogFaults() {
       }
     }
     else {
-      CTRACE("ENGINE") << (*faultState).second->thresholdFault->analogDevice->name << " bypassed";
+      LOG_TRACE("ENGINE", (*faultState).second->thresholdFault->analogDevice->name << " bypassed");
     }
   }
 }
@@ -286,18 +290,18 @@ void Engine::evaluateDigitalFaults() {
   for (DbDigitalDeviceMap::iterator device = mpsDb->digitalDevices->begin(); 
        device != mpsDb->digitalDevices->end(); ++device) {
     uint32_t deviceValue = 0;
-    CTRACE("ENGINE") << "Getting inputs for " << (*device).second->name << " device"
-		     << ", there are " << (*device).second->inputDevices->size()
-		     << " inputs";
+    LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
+	      << ", there are " << (*device).second->inputDevices->size()
+	      << " inputs");
     for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin(); 
 	 input != (*device).second->inputDevices->end(); ++input) {
       uint32_t inputValue = 0;
       // Check if the input has a valid bypass value
       if ((*input).second->bypass->status == BYPASS_VALID) {
 	inputValue = (*input).second->bypass->value;
-	CTRACE("ENGINE") << (*device).second->name << " bypassing input value to "
-			 << (*input).second->bypass->value << " (actual value is "
-			 << (*input).second->value << ")";
+	LOG_TRACE("ENGINE", (*device).second->name << " bypassing input value to "
+		  << (*input).second->bypass->value << " (actual value is "
+		  << (*input).second->value << ")");
       }
       else {
 	inputValue = (*input).second->value;
@@ -306,7 +310,7 @@ void Engine::evaluateDigitalFaults() {
       deviceValue |= inputValue;
     }
     (*device).second->update(deviceValue);
-    CTRACE("ENGINE") << (*device).second->name << " current value " << std::hex << deviceValue << std::dec;
+    LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
   }  
 
   // At this point all digital devices have an updated value
@@ -321,12 +325,12 @@ void Engine::evaluateDigitalFaults() {
 	 input != (*fault).second->faultInputs->end(); ++input) {
       uint32_t inputValue = (*input).second->digitalDevice->value;
       faultValue |= (inputValue << (*input).second->bitPosition);
-      CTRACE("ENGINE") << (*fault).second->name << " current value " << std::hex << faultValue
-		       << ", input value " << inputValue << std::dec << " bit pos "
-		       << (*input).second->bitPosition;
+      LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue
+		<< ", input value " << inputValue << std::dec << " bit pos "
+		<< (*input).second->bitPosition);
     }
     (*fault).second->update(faultValue);
-    CTRACE("ENGINE") << (*fault).second->name << " current value " << std::hex << faultValue << std::dec;
+    LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
     // Now that a Fault has a new value check if it is in the FaultStates list,
     // and update the allowedBeamClass for the MitigationDevices
@@ -336,11 +340,11 @@ void Engine::evaluateDigitalFaults() {
       if ((*state).second->deviceState->value == maskedValue) {
 	(*state).second->faulted = true;
 	faulted = true; // Signal that at least one state is faulted
-	CTRACE("ENGINE") << (*fault).second->name << " is faulted value=" 
-			 << faultValue << ", masked=" << maskedValue
-			 << " (fault state="
-			 << (*state).second->deviceState->name
-			 << ", value=" << (*state).second->deviceState->value << ")";
+	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		  << faultValue << ", masked=" << maskedValue
+		  << " (fault state="
+		  << (*state).second->deviceState->name
+		  << ", value=" << (*state).second->deviceState->value << ")");
       }
       else {
 	(*state).second->faulted = false;
@@ -350,9 +354,9 @@ void Engine::evaluateDigitalFaults() {
     // If there are no faults, then enable the default - if there is one
     if (!faulted && (*fault).second->defaultDigitalFaultState) {
       (*fault).second->defaultDigitalFaultState->faulted = true;
-      CTRACE("ENGINE") << (*fault).second->name << " is faulted value=" 
-		       << faultValue << " (Default) fault state="
-		       << (*fault).second->defaultDigitalFaultState->deviceState->name;
+      LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		<< faultValue << " (Default) fault state="
+		<< (*fault).second->defaultDigitalFaultState->deviceState->name);
     }
   }
 }
@@ -367,11 +371,11 @@ void Engine::evaluateAnalogFaults() {
        faultState != mpsDb->thresholdFaultStates->end(); ++faultState) {
     // This is the compressed analog value read from the device
     uint32_t deviceValue = (*faultState).second->thresholdFault->analogDevice->value;
-    CTRACE("ENGINE") << (*faultState).second->thresholdFault->analogDevice->name
-		     << " current value (compressed) 0x"
-		     << std::hex << deviceValue << std::dec
-		     << " [thresholdFaultId=" << (*faultState).second->thresholdFaultId
-		     << "]";
+    LOG_TRACE("ENGINE", (*faultState).second->thresholdFault->analogDevice->name
+	      << " current value (compressed) 0x"
+	      << std::hex << deviceValue << std::dec
+	      << " [thresholdFaultId=" << (*faultState).second->thresholdFaultId
+	      << "]");
 
     // If there is no active bypass then check if the device value exceeds threshold 
     if ((*faultState).second->thresholdFault->analogDevice->bypass->status != BYPASS_VALID) {
@@ -391,7 +395,7 @@ void Engine::evaluateAnalogFaults() {
     }
     else {
       (*faultState).second->faulted = false;
-      CTRACE("ENGINE") << (*faultState).second->thresholdFault->analogDevice->name << " bypassed";
+      LOG_TRACE("ENGINE", (*faultState).second->thresholdFault->analogDevice->name << " bypassed");
     }
   }
 }
@@ -415,9 +419,9 @@ void Engine::evaluateIgnoreConditions() {
 	}
       }
       conditionValue |= (inputValue << (*input).second->bitPosition);
-      CTRACE("ENGINE") << "Condition " << (*condition).second->name << " current value " << std::hex << conditionValue
-		       << ", input value " << inputValue << std::dec << " bit pos "
-		       << (*input).second->bitPosition;
+      LOG_TRACE("ENGINE", "Condition " << (*condition).second->name << " current value " << std::hex << conditionValue
+		<< ", input value " << inputValue << std::dec << " bit pos "
+		<< (*input).second->bitPosition);
     }
     if ((*condition).second->mask == conditionValue) {
       (*condition).second->state = true;
@@ -425,7 +429,7 @@ void Engine::evaluateIgnoreConditions() {
     else {
       (*condition).second->state = false;
     }
-    CTRACE("ENGINE") <<  "Condition " << (*condition).second->name << " is " << (*condition).second->state;
+    LOG_TRACE("ENGINE",  "Condition " << (*condition).second->name << " is " << (*condition).second->state);
 
     for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
 	 ignoreCondition != (*condition).second->ignoreConditions->end(); ++ignoreCondition) {
@@ -448,11 +452,11 @@ void Engine::mitigate() {
     for (DbDigitalFaultStateMap::iterator state = (*fault).second->digitalFaultStates->begin();
 	 state != (*fault).second->digitalFaultStates->end(); ++state) {
       if ((*state).second->faulted && !(*state).second->ignored) {
-	CTRACE("ENGINE") << (*fault).second->name << " is faulted value=" 
-			 << (*fault).second->value
-			 << " (fault state="
-			 << (*state).second->deviceState->name
-			 << ", value=" << (*state).second->deviceState->value << ")";
+	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		  << (*fault).second->value
+		  << " (fault state="
+		  << (*state).second->deviceState->name
+		  << ", value=" << (*state).second->deviceState->value << ")");
 	if ((*state).second->allowedClasses) {
 	  for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
 	       allowed != (*state).second->allowedClasses->end(); ++allowed) {
@@ -460,8 +464,8 @@ void Engine::mitigate() {
 		(*allowed).second->beamClass->number) {
 	      (*allowed).second->mitigationDevice->tentativeBeamClass =
 		(*allowed).second->beamClass;
-	      CTRACE("ENGINE") << (*allowed).second->mitigationDevice->name << " tentative class set to "
-			       << (*allowed).second->beamClass->number;
+	      LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+			<< (*allowed).second->beamClass->number);
 	    }
 	  }
 	}
@@ -472,9 +476,9 @@ void Engine::mitigate() {
     if ((*fault).second->defaultDigitalFaultState) {
       if ((*fault).second->defaultDigitalFaultState->faulted &&
 	  !(*fault).second->defaultDigitalFaultState->ignored) {
-	CTRACE("ENGINE") << (*fault).second->name << " is faulted value=" 
-			 << (*fault).second->value << " (Default) fault state="
-			 << (*fault).second->defaultDigitalFaultState->deviceState->name;
+	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		  << (*fault).second->value << " (Default) fault state="
+		  << (*fault).second->defaultDigitalFaultState->deviceState->name);
 	if ((*fault).second->defaultDigitalFaultState->allowedClasses) {
 	  for (DbAllowedClassMap::iterator allowed = (*fault).second->defaultDigitalFaultState->allowedClasses->begin();
 	       allowed != (*fault).second->defaultDigitalFaultState->allowedClasses->end(); ++allowed) {
@@ -482,8 +486,8 @@ void Engine::mitigate() {
 		(*allowed).second->beamClass->number) {
 	      (*allowed).second->mitigationDevice->tentativeBeamClass =
 		(*allowed).second->beamClass;
-	      CTRACE("ENGINE") << (*allowed).second->mitigationDevice->name << " tentative class set to "
-			       << (*allowed).second->beamClass->number;
+	      LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+			<< (*allowed).second->beamClass->number);
 	    }
 	  }
 	}
@@ -496,7 +500,7 @@ void Engine::mitigate() {
        faultState != mpsDb->thresholdFaultStates->end(); ++faultState) {
     // If there is no active bypass then check if the device value exceeds threshold 
     if ((*faultState).second->faulted && !(*faultState).second->ignored) {
-      CTRACE("ENGINE") << (*faultState).second->thresholdFault->analogDevice->name << " is faulted";
+      LOG_TRACE("ENGINE", (*faultState).second->thresholdFault->analogDevice->name << " is faulted");
       // Update allowedClass for the ThresholdFaultState
       for (DbAllowedClassMap::iterator allowed = (*faultState).second->allowedClasses->begin();
 	   allowed != (*faultState).second->allowedClasses->end(); ++allowed) {
@@ -504,8 +508,8 @@ void Engine::mitigate() {
 	    (*allowed).second->beamClass->number) {
 	  (*allowed).second->mitigationDevice->tentativeBeamClass =
 	    (*allowed).second->beamClass;
-	  CTRACE("ENGINE") << (*allowed).second->mitigationDevice->name << " tentative class set to "
-			   << (*allowed).second->beamClass->number;
+	  LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+		    << (*allowed).second->beamClass->number);
 	}
       }
     }
@@ -515,12 +519,8 @@ void Engine::mitigate() {
 int Engine::checkFaults() {
   checkFaultTime.start();
 
-  CTRACE("ENGINE") << "Checking faults";
+  LOG_TRACE("ENGINE", "Checking faults");
   setTentativeBeamClass();
-  /*
-  checkDigitalFaults();
-  checkAnalogFaults();
-  */
   evaluateDigitalFaults();
   evaluateAnalogFaults();
   evaluateIgnoreConditions();
