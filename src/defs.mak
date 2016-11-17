@@ -35,7 +35,7 @@ CXXFLAGS+= $(addprefix -I,$(subst :, ,$(central_node_engineinc_DIRS)))
 CXXFLAGS+= $(OPT_CXXFLAGS)
 CXXFLAGS+= $(USR_CXXFLAGS) $(or $(USR_CXXFLAGS_$(TARNM)),$(USR_CXXFLAGS_default))
 CXXFLAGS+= $(addprefix -I, $(PACKAGE_TOP)/easylogging/easyloggingpp-8.91)
-CXXFLAGS+= -DELPP_DISABLE_LOGS #-DLOG_ENABLED
+CXXFLAGS+= -DELPP_DISABLE_LOGS -DLOG_ENABLED
 
 CFLAGS  += $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
 CFLAGS  += $(addprefix -I,$(subst :, ,$(central_node_engineinc_DIRS)))

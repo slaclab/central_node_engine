@@ -23,6 +23,7 @@ MpsDb::MpsDb() {
 #endif
 
 void MpsDb::configureAllowedClasses() {
+  LOG_TRACE("DATABASE", "Configure: AllowedClasses");
   std::stringstream errorStream;
   // Assign BeamClass and MitigationDevice to AllowedClass
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
@@ -83,6 +84,7 @@ void MpsDb::configureAllowedClasses() {
 }
 
 void MpsDb::configureDeviceInputs() {
+  LOG_TRACE("DATABASE", "Configure: DeviceInputs");
   std::stringstream errorStream;
   // Assign DeviceInputs to it's DigitalDevices, and find the Channel
   // the device is connected to
@@ -117,6 +119,7 @@ void MpsDb::configureDeviceInputs() {
 }
 
 void MpsDb::configureFaultInputs() {
+  LOG_TRACE("DATABASE", "Configure: FaultInputs");
   std::stringstream errorStream;
   // Assign DigitalDevice to FaultInputs
   for (DbFaultInputMap::iterator it = faultInputs->begin();
@@ -125,11 +128,19 @@ void MpsDb::configureFaultInputs() {
 
     DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
     if (deviceIt == digitalDevices->end()) {
-      errorStream << "ERROR: Failed to find DigitalDevice (" << id
-		  << ") for FaultInput (" << (*it).second->id << ")";
-      throw(DbException(errorStream.str()));
+      DbAnalogDeviceMap::iterator aDeviceIt = analogDevices->find(id);
+      if (aDeviceIt == analogDevices->end()) {
+	errorStream << "ERROR: Failed to find DigitalDevice/AnalogDevice (" << id
+		    << ") for FaultInput (" << (*it).second->id << ")";
+	throw(DbException(errorStream.str()));
+      }
+      else {
+	(*it).second->analogDevice = (*aDeviceIt).second;
+      }
     }
-    (*it).second->digitalDevice = (*deviceIt).second;
+    else {
+      (*it).second->digitalDevice = (*deviceIt).second;
+    }
   }
 
   // Assing fault inputs to faults
@@ -186,7 +197,8 @@ void MpsDb::configureThresholdFaults() {
 }
 
 void MpsDb::configureDigitalFaultStates() {
-  std::stringstream errorStream;
+  LOG_TRACE("DATABASE", "Configure: FaultStates");
+ std::stringstream errorStream;
   // Assign all DigitalFaultStates to a Fault, and also
   // find the DeviceState and save a reference in the DigitalFaultState
   for (DbDigitalFaultStateMap::iterator it = digitalFaultStates->begin();
@@ -274,18 +286,19 @@ void MpsDb::configureAnalogDeviceTypes() {
 }
 
 void MpsDb::configureAnalogDevices() {
+  LOG_TRACE("DATABASE", "Configure: AnalogDevices");
   std::stringstream errorStream;
   // Assign the AnalogDeviceType to each AnalogDevice
   for (DbAnalogDeviceMap::iterator it = analogDevices->begin();
        it != analogDevices->end(); ++it) {
-    int typeId = (*it).second->analogDeviceTypeId;
+    int typeId = (*it).second->deviceTypeId;
 
-    DbAnalogDeviceTypeMap::iterator analogDeviceType = analogDeviceTypes->find(typeId);
-    if (analogDeviceType != analogDeviceTypes->end()) {
-      (*it).second->analogDeviceType = (*analogDeviceType).second;
+    DbDeviceTypeMap::iterator deviceType = deviceTypes->find(typeId);
+    if (deviceType != deviceTypes->end()) {
+      (*it).second->deviceType = (*deviceType).second;
     }
     else {
-      errorStream << "ERROR: Failed to configure database, invalid analogDeviceTypeId ("
+      errorStream << "ERROR: Failed to configure database, invalid deviceTypeId ("
 		  << typeId << ") for AnalogDevice (" <<  (*it).second->id << ")";
       throw(DbException(errorStream.str()));
     }
@@ -323,6 +336,7 @@ void MpsDb::configureThresholdFaultStates() {
 }
 
 void MpsDb::configureIgnoreConditions() {
+  LOG_TRACE("DATABASE", "Configure: IgnoreConditions");
   std::stringstream errorStream;
 
   // Loop through the IgnoreConditions, and assign to the Condition
@@ -420,12 +434,12 @@ void MpsDb::configure() {
   configureAllowedClasses();
   configureDeviceInputs();
   configureFaultInputs();
-  configureThresholdFaults();
+  //  configureThresholdFaults();
   configureDigitalFaultStates();
-  configureThresholdValues();
-  configureAnalogDeviceTypes();
+  //  configureThresholdValues();
+  //  configureAnalogDeviceTypes();
   configureAnalogDevices();
-  configureThresholdFaultStates();
+  //  configureThresholdFaultStates();
   configureIgnoreConditions();
 }
 
@@ -596,7 +610,7 @@ void MpsDb::showThresholdFault(DbThresholdFaultPtr fault) {
   else {
     std::cout << "| - Input[" << fault->analogDevice->id
 	      << "], Value[" << fault->analogDevice->value
-	      << "], Type[" << fault->analogDevice->analogDeviceType->name
+	      << "], Type[" << fault->analogDevice->deviceType->name
 	      << "], Bypass[";
     
     if (!fault->analogDevice->bypass) {

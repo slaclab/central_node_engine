@@ -319,46 +319,8 @@ typedef std::map<uint32_t, DbDigitalDevicePtr> DbDigitalDeviceMap;
 typedef shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
 
 /**
- * FaultInput:
- * - bit_position: '0'
- *   device_id: '1'
- *   fault_id: '1'
- *   id: '1'
- */
-class DbFaultInput : public DbEntry {
- public:
-  // Values loaded from YAML file
-  uint32_t faultId;
-  uint32_t deviceId; // DbDigitalDevice
-  uint32_t bitPosition;
-
-  // Values calculated at run time
-  uint32_t value; // Fault value calculated from the DeviceInputs
-  DbDigitalDevicePtr digitalDevice;
-  
- DbFaultInput() : DbEntry(), faultId(-1), deviceId(-1), bitPosition(-1) {
-  }
-
-  // Update the value from the DeviceInputs
-  void update() {
-    value = 1;
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
-    os << "id[" << crate->id << "]; " 
-       << "faultId[" << crate->faultId << "]; "
-       << "deviceId[" << crate->deviceId << "]; "
-       << "bitPosition[" << crate->bitPosition << "]";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbFaultInput> DbFaultInputPtr;
-typedef std::map<uint32_t, DbFaultInputPtr> DbFaultInputMap;
-typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
-
-
-/**
+ * ### UNUSED ###
+ *
  * ThresholdValue:
  * - id: '1'
  *   threshold: '0'
@@ -389,6 +351,8 @@ typedef std::map<uint32_t, DbThresholdValuePtr> DbThresholdValueMap;
 typedef shared_ptr<DbThresholdValueMap> DbThresholdValueMapPtr;
 
 /**
+ * ### UNUSED ###
+ *
  * ThresholdValueMap:
  * - description: Map for generic PICs.
  *   id: '1'
@@ -416,6 +380,8 @@ typedef shared_ptr<DbThresholdValueMapEntryMap> DbThresholdValueMapEntryMapPtr;
 
 
 /**
+ * ### UNUSED ###
+ *
  * AnalogDeviceType:
  * - id: '1'
  *   name: PIC
@@ -456,7 +422,7 @@ typedef shared_ptr<DbAnalogDeviceTypeMap> DbAnalogDeviceTypeMapPtr;
  */
 class DbAnalogDevice : public DbEntry {
  public:
-  uint32_t analogDeviceTypeId;
+  uint32_t deviceTypeId;
   uint32_t channelId;
   std::string name;
   std::string description;
@@ -464,7 +430,7 @@ class DbAnalogDevice : public DbEntry {
   
   // Configured after loading the YAML file
   int32_t value; // Compressed analog value from read from the Central Node Firmware
-  DbAnalogDeviceTypePtr analogDeviceType;
+  DbDeviceTypePtr deviceType;
 
   // Pointer to the Channel connected to the device
   DbChannelPtr channel;
@@ -472,7 +438,7 @@ class DbAnalogDevice : public DbEntry {
   // Pointer to the bypass for this input
   InputBypassPtr bypass;
   
- DbAnalogDevice() : DbEntry(), analogDeviceTypeId(-1), channelId(-1), value(0) {
+ DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0) {
   }
 
   void update(uint32_t v) {
@@ -482,7 +448,10 @@ class DbAnalogDevice : public DbEntry {
 
   friend std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice) {
     os << "id[" << analogDevice->id << "]; "
-       << "analogDeviceTypeId[" << analogDevice->analogDeviceTypeId << "]; "
+       << "deviceTypeId[" << analogDevice->deviceTypeId << "]; "
+       << "name[" << analogDevice->name << "]; "
+       << "z[" << analogDevice->zPosition << "]; "
+       << "description[" << analogDevice->description << "]; "
        << "channelId[" << analogDevice->channelId << "]";
     return os;
   }
@@ -491,6 +460,48 @@ class DbAnalogDevice : public DbEntry {
 typedef shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
 typedef std::map<uint32_t, DbAnalogDevicePtr> DbAnalogDeviceMap;
 typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
+
+/**
+ * FaultInput:
+ * - bit_position: '0'
+ *   device_id: '1'
+ *   fault_id: '1'
+ *   id: '1'
+ */
+class DbFaultInput : public DbEntry {
+ public:
+  // Values loaded from YAML file
+  uint32_t faultId;
+  uint32_t deviceId; // DbDigitalDevice or DbAnalogDevice
+  uint32_t bitPosition;
+
+  // Values calculated at run time
+  uint32_t value; // Fault value calculated from the DeviceInputs
+  // A fault input may come from a digital device or analog device threshold fault bits
+  DbAnalogDevicePtr analogDevice;
+  DbDigitalDevicePtr digitalDevice;
+  
+ DbFaultInput() : DbEntry(), faultId(-1), deviceId(-1), bitPosition(-1) {
+  }
+
+  // Update the value from the DeviceInputs
+  void update() {
+    value = 1;
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
+    os << "id[" << crate->id << "]; " 
+       << "faultId[" << crate->faultId << "]; "
+       << "deviceId[" << crate->deviceId << "]; "
+       << "bitPosition[" << crate->bitPosition << "]";
+    return os;
+  }
+};
+
+typedef shared_ptr<DbFaultInput> DbFaultInputPtr;
+typedef std::map<uint32_t, DbFaultInputPtr> DbFaultInputMap;
+typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
+
 
 /**
  * BeamClass:
@@ -581,6 +592,8 @@ typedef std::map<uint32_t, DbAllowedClassPtr> DbAllowedClassMap;
 typedef shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
 
 /**
+ * ### UNUSED ###
+ *
  * ThresholdFault:
  * - analog_device_id: '3'
  *   greater_than: 'True'
@@ -622,6 +635,8 @@ typedef std::map<uint32_t, DbThresholdFaultPtr> DbThresholdFaultMap;
 typedef shared_ptr<DbThresholdFaultMap> DbThresholdFaultMapPtr;
 
 /**
+ * ### UNUSED ###
+ *
  * ThresholdFaultState:
  * - id: '8'
  *   threshold_fault_id: '1'
@@ -746,9 +761,17 @@ class DbFault : public DbEntry {
       unsigned int i = 1;
       for (DbFaultInputMap::iterator it = fault->faultInputs->begin();
 	   it != fault->faultInputs->end(); ++it, ++i) {
-	os << (*it).second->digitalDevice->name;
-	if (i < fault->faultInputs->size()) {
-	  os << ", ";
+	if ((*it).second->digitalDevice) {
+	  os << (*it).second->digitalDevice->name;
+	  if (i < fault->faultInputs->size()) {
+	    os << ", ";
+	  }
+	}
+	else {
+	  os << (*it).second->analogDevice->name;
+	  if (i < fault->faultInputs->size()) {
+	    os << ", ";
+	  }
 	}
       }
       os << "]";
@@ -994,23 +1017,23 @@ class MpsDb {
     mpsDb->printMap<DbDigitalFaultStateMapPtr, DbDigitalFaultStateMap::iterator>
       (os, mpsDb->digitalFaultStates, "DigitalFaultState");
 
-    mpsDb->printMap<DbThresholdValueMapEntryMapPtr, DbThresholdValueMapEntryMap::iterator>
-      (os, mpsDb->thresholdValueMaps, "ThresholdValueMap");
+    /* mpsDb->printMap<DbThresholdValueMapEntryMapPtr, DbThresholdValueMapEntryMap::iterator> */
+    /*   (os, mpsDb->thresholdValueMaps, "ThresholdValueMap"); */
 
-    mpsDb->printMap<DbAnalogDeviceTypeMapPtr, DbAnalogDeviceTypeMap::iterator>
-      (os, mpsDb->analogDeviceTypes, "AnalogDeviceType");
+    /* mpsDb->printMap<DbAnalogDeviceTypeMapPtr, DbAnalogDeviceTypeMap::iterator> */
+    /*   (os, mpsDb->analogDeviceTypes, "AnalogDeviceType"); */
 
     mpsDb->printMap<DbAnalogDeviceMapPtr, DbAnalogDeviceMap::iterator>
       (os, mpsDb->analogDevices, "AnalogDevice");
 
-    mpsDb->printMap<DbThresholdValueMapPtr, DbThresholdValueMap::iterator>
-      (os, mpsDb->thresholdValues, "ThresholdValue");
+    /* mpsDb->printMap<DbThresholdValueMapPtr, DbThresholdValueMap::iterator> */
+    /*   (os, mpsDb->thresholdValues, "ThresholdValue"); */
 
-    mpsDb->printMap<DbThresholdFaultMapPtr, DbThresholdFaultMap::iterator>
-      (os, mpsDb->thresholdFaults, "ThresholdFault");
+    /* mpsDb->printMap<DbThresholdFaultMapPtr, DbThresholdFaultMap::iterator> */
+    /*   (os, mpsDb->thresholdFaults, "ThresholdFault"); */
 
-    mpsDb->printMap<DbThresholdFaultStateMapPtr, DbThresholdFaultStateMap::iterator>
-      (os, mpsDb->thresholdFaultStates, "ThresholdFaultState");
+    /* mpsDb->printMap<DbThresholdFaultStateMapPtr, DbThresholdFaultStateMap::iterator> */
+    /*   (os, mpsDb->thresholdFaultStates, "ThresholdFaultState"); */
 
     mpsDb->printMap<DbMitigationDeviceMapPtr, DbMitigationDeviceMap::iterator>
       (os, mpsDb->mitigationDevices, "MitigationDevice");

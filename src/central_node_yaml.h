@@ -448,6 +448,8 @@ namespace YAML {
   };
 
   /**
+   * ### UNUSED ###
+   *
    * ThresholdValueMap:
    * - description: Map for generic PICs.
    *   id: '1'
@@ -474,6 +476,8 @@ namespace YAML {
   };
 
   /**
+   * ### UNUSED ###
+   *
    * ThresholdValue:
    * - id: '1'
    *   threshold: '0'
@@ -504,6 +508,8 @@ namespace YAML {
   };
 
   /**
+   * ### UNUSED ###
+   *
    * ThresholdFault:
    * - analog_device_id: '3'
    *   greater_than: 'True'
@@ -544,6 +550,8 @@ namespace YAML {
 
 
   /**
+   * ### UNUSED ###
+   *
    * AnalogDeviceType:
    * - id: '1'
    *   name: PIC
@@ -590,7 +598,7 @@ namespace YAML {
 	DbAnalogDevice *analogDevice = new DbAnalogDevice();
 	
 	analogDevice->id = (*it)["id"].as<int>();
-	analogDevice->analogDeviceTypeId = (*it)["analog_device_type_id"].as<int>();
+	analogDevice->deviceTypeId = (*it)["device_type_id"].as<int>();
 	analogDevice->channelId = (*it)["channel_id"].as<int>();
 	analogDevice->name = (*it)["name"].as<std::string>();
 	analogDevice->description = (*it)["description"].as<std::string>();
@@ -606,6 +614,8 @@ namespace YAML {
   };
 
   /**
+   * ### UNUSED ###
+   *
    * ThresholdFaultState:
    * - id: '8'
    *   threshold_fault_id: '1'

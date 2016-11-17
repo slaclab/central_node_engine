@@ -140,11 +140,11 @@ class EngineTest {
 	analogInputFile >> deviceId;
 	analogInputFile >> analogValue;
 	
-	// std::cout << deviceId << ": " << analogValue << " analogSize: "
-	//  	  << engine->mpsDb->analogDevices->size() 
-	//  	  << " digitalSize: "
-        // 	  << engine->mpsDb->digitalDevices->size() 
-	//  	  << std::endl;
+	std::cout << deviceId << ": " << analogValue << " analogSize: "
+	  	  << engine->mpsDb->analogDevices->size() 
+	  	  << " digitalSize: "
+         	  << engine->mpsDb->digitalDevices->size() 
+	  	  << std::endl;
 	
 	int size = engine->mpsDb->analogDevices->size() + 1 + engine->mpsDb->digitalDevices->size();
 	if (deviceId > size) {

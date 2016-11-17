@@ -51,11 +51,8 @@ class Engine {
 
   void setTentativeBeamClass();
   void setAllowedBeamClass();
-  void checkDigitalFaults();
-  void checkAnalogFaults();
 
-  void evaluateDigitalFaults();
-  void evaluateAnalogFaults();
+  void evaluateFaults();
   void evaluateIgnoreConditions();
   void mitgate();
 
