@@ -1,0 +1,309 @@
+---
+Crate:
+- id: 1
+  number: 1
+  shelf_number: 1
+  num_slots: 6
+- id: 2
+  number: 2
+  shelf_number: 1
+  num_slots: 6
+---
+ApplicationType:
+- id: 1
+  number: 0
+  name: "Mixed Mode Link Node"
+  analog_channel_count: 0
+  analog_channel_size: 1
+  digital_channel_count: 7
+  digital_channel_size: 1
+- id: 2
+  number: 2
+  name: "Mitigation Link Node"
+  analog_channel_count: 0
+  analog_channel_size: 0
+  digital_channel_count: 0
+  digital_channel_size: 0
+---
+ApplicationCard:
+- id: 1
+  number: 1
+  slot_number: 2
+  crate_id: 1
+  type_id: 1
+---
+DigitalChannel:
+- id: 1
+  number: 0
+  name: "YAG01_OUT_SWITCH"
+  card_id: 1
+- id: 2
+  number: 1
+  name: "YAG01_IN_SWITCH"
+  card_id: 1
+- id: 3
+  number: 2
+  name: "GUN_TEMP"
+  card_id: 1
+- id: 4
+  number: 3
+  name: "WAVEGUIDE_TEMP"
+  card_id: 1
+- id: 5
+  number: 4
+  name: "BUNCHER_TEMP"
+  card_id: 1
+- id: 6
+  number: 5
+  name: "SOL01_TEMP"
+  card_id: 1
+- id: 7
+  number: 6
+  name: "SOL02_TEMP"
+  card_id: 1
+---
+AnalogChannel: []
+---
+DeviceType:
+- id: 1
+  name: "Profile Monitor"
+- id: 2
+  name: "Solenoid"
+- id: 3
+  name: "Temperature"
+---
+DeviceState:
+- id: 1
+  name: "Out"
+  value: 1
+  device_type_id: 1
+- id: 2
+  name: "In"
+  value: 2
+  device_type_id: 1
+- id: 3
+  name: "Moving"
+  value: 0
+  device_type_id: 1
+- id: 4
+  name: "Broken"
+  value: 3
+  device_type_id: 1
+- id: 5
+  name: "Temperature Fault"
+  value: 0
+  device_type_id: 3
+---
+DigitalDevice:
+- id: 1
+  device_type_id: 1
+  id: 1
+  name: "YAG01"
+  description: "YAG Screen"
+  z_position: -28.061394
+  application_id: 1
+- id: 2
+  device_type_id: 3
+  id: 2
+  name: "Gun Temperature"
+  description: "Gun Temperature Summary Input"
+  z_position: 0.0
+  application_id: 1
+- id: 3
+  device_type_id: 3
+  id: 3
+  name: "Waveguide Temperature"
+  description: "Waveguide Temperature Summary Input"
+  z_position: 0.0
+  application_id: 1
+- id: 4
+  device_type_id: 3
+  id: 4
+  name: "Buncher Temperature"
+  description: "Buncher Temperature Summary Input"
+  z_position: -30.299721
+  application_id: 1
+- id: 5
+  device_type_id: 3
+  id: 5
+  name: "SOL01"
+  description: "SOL01 Temperature"
+  z_position: -32.115049
+  application_id: 1
+- id: 6
+  device_type_id: 3
+  id: 6
+  name: "SOL02"
+  description: "SOL02 Temperature"
+  z_position: -27.538278
+  application_id: 1
+---
+DeviceInput:
+- id: 1
+  digital_device_id: 1
+  bit_position: 0
+  channel_id: 1
+- id: 2
+  digital_device_id: 1
+  bit_position: 1
+  channel_id: 2
+- id: 3
+  digital_device_id: 2
+  bit_position: 0
+  channel_id: 3
+- id: 4
+  digital_device_id: 3
+  bit_position: 0
+  channel_id: 4
+- id: 5
+  digital_device_id: 4
+  bit_position: 0
+  channel_id: 5
+- id: 6
+  digital_device_id: 5
+  bit_position: 0
+  channel_id: 6
+- id: 7
+  digital_device_id: 6
+  bit_position: 0
+  channel_id: 7
+---
+Fault:
+- id: 1
+  name: "YAG01 Profile Monitor Fault"
+  description: "None"
+- id: 2
+  name: "Gun Temperature Fault"
+  description: "None"
+- id: 3
+  name: "Waveguide Temperature Fault"
+  description: "None"
+- id: 4
+  name: "Buncher Temperature Fault"
+  description: "None"
+- id: 5
+  name: "SOL01 Temperature Fault"
+  description: "None"
+- id: 6
+  name: "SOL02 Temperature Fault"
+  description: "None"
+---
+FaultInput:
+- id: 1
+  fault_id: 1
+  bit_position: 0
+  device_id: 1
+- id: 2
+  fault_id: 2
+  bit_position: 0
+  device_id: 2
+- id: 3
+  fault_id: 3
+  bit_position: 0
+  device_id: 3
+- id: 4
+  fault_id: 4
+  bit_position: 0
+  device_id: 4
+- id: 5
+  fault_id: 5
+  bit_position: 0
+  device_id: 5
+- id: 6
+  fault_id: 6
+  bit_position: 0
+  device_id: 6
+---
+DigitalFaultState:
+- id: 1
+  fault_id: 1
+  device_state_id: 2
+- id: 2
+  fault_id: 1
+  device_state_id: 3
+- id: 3
+  fault_id: 1
+  device_state_id: 4
+- id: 4
+  fault_id: 2
+  device_state_id: 5
+- id: 5
+  fault_id: 3
+  device_state_id: 5
+- id: 6
+  fault_id: 4
+  device_state_id: 5
+- id: 7
+  fault_id: 5
+  device_state_id: 5
+- id: 8
+  fault_id: 6
+  device_state_id: 5
+---
+ThresholdValueMap: []
+---
+ThresholdValue: []
+---
+AnalogDeviceType: []
+---
+AnalogDevice: []
+---
+ThresholdFault: []
+---
+ThresholdFaultState: []
+---
+MitigationDevice:
+- id: 1
+  name: "Shutter"
+- id: 2
+  name: "AOM"
+- id: 3
+  name: "LLRF"
+---
+BeamClass:
+- id: 1
+  number: 0
+  name: "Class ZERO"
+- id: 2
+  number: 1
+  name: "Class 1"
+- id: 3
+  number: 2
+  name: "Class 2"
+- id: 4
+  number: 3
+  name: "Class 3"
+---
+AllowedClass:
+- id: 1
+  fault_state_id: 1
+  mitigation_device_id: 2
+  beam_class_id: 2
+- id: 2
+  fault_state_id: 2
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 3
+  fault_state_id: 3
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 4
+  fault_state_id: 4
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 5
+  fault_state_id: 5
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 6
+  fault_state_id: 6
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 7
+  fault_state_id: 7
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 8
+  fault_state_id: 8
+  mitigation_device_id: 1
+  beam_class_id: 1
