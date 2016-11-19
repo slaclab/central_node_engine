@@ -134,40 +134,40 @@ DeviceState:
 ---
 DigitalDevice:
 - id: 1
-  device_type_id: 1
   id: 1
   name: "M1"
   description: "M1 Insertion Device"
   z_position: 30.0
   application_id: 1
-- id: 2
   device_type_id: 1
+- id: 2
   id: 2
   name: "SL"
   description: "Slit Insertion Device"
   z_position: 60.0
   application_id: 1
-- id: 3
   device_type_id: 1
+- id: 3
   id: 3
   name: "M2"
   description: "M2 Insertion Device"
   z_position: 70.0
   application_id: 1
-- id: 4
   device_type_id: 1
+- id: 4
   id: 4
   name: "M3"
   description: "M3 Insertion Device"
   z_position: 72.0
   application_id: 1
+  device_type_id: 1
 - id: 5
-  device_type_id: 2
   id: 5
   name: "CP"
   description: "Chicane Power Device"
   z_position: 10.0
   application_id: 1
+  device_type_id: 2
 ---
 DeviceInput:
 - id: 1
@@ -252,17 +252,7 @@ DigitalFaultState:
   fault_id: 1
   device_state_id: 10
 ---
-ThresholdValueMap: []
----
-ThresholdValue: []
----
-AnalogDeviceType: []
----
 AnalogDevice: []
----
-ThresholdFault: []
----
-ThresholdFaultState: []
 ---
 MitigationDevice:
 - id: 1
@@ -299,3 +289,9 @@ AllowedClass:
   fault_state_id: 4
   mitigation_device_id: 1
   beam_class_id: 4
+---
+Condition: []
+---
+IgnoreCondition: []
+---
+ConditionInput: []

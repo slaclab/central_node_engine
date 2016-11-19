@@ -7,6 +7,8 @@ using namespace easyloggingpp;
 static Logger *engineLogger;
 #endif 
 
+Engine Engine::instance;
+
 Engine::Engine() :
   checkFaultTime(5, "Evaluation time") {
 #ifdef LOG_ENABLED
@@ -14,6 +16,9 @@ Engine::Engine() :
 #endif
 }
 
+Engine &Engine::getInstance() {
+  return instance;
+}
 
 int Engine::loadConfig(std::string yamlFileName) {
   MpsDb *db = new MpsDb();

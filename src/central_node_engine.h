@@ -40,6 +40,8 @@ class Engine {
   friend class EngineTest;
   friend class BypassTest;
   
+  static Engine &getInstance();
+  
   void showFaults();
   void showStats();
   void showMitigationDevices();
@@ -64,6 +66,8 @@ class Engine {
 
   std::stringstream errorStream;
   TimeAverage checkFaultTime;
+
+  static Engine instance;
 };
 
 typedef shared_ptr<Engine> EnginePtr;

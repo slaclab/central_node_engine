@@ -27,7 +27,8 @@ static void usage(const char *nm) {
 
 class EngineTest {
  public:
-  EngineTest(EnginePtr e) : engine(e), digital(false), analog(false) {};
+  //  EngineTest(EnginePtr e) : engine(e), digital(false), analog(false) {};
+  EngineTest() : digital(false), analog(false) {};
 
   EnginePtr engine;
   int testInputCount;
@@ -105,15 +106,15 @@ class EngineTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	
-	int size = engine->mpsDb->deviceInputs->size() + 1;
+	int size = Engine::getInstance().mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
 	try {
-	  engine->mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+	  Engine::getInstance().mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
 	} catch (std::exception e) {
 	  std::cerr << "ERROR: invalid device input index of " << deviceId << std::endl;
 	  return -1;
@@ -141,24 +142,24 @@ class EngineTest {
 	analogInputFile >> analogValue;
 	
 	std::cout << deviceId << ": " << analogValue << " analogSize: "
-	  	  << engine->mpsDb->analogDevices->size() 
+	  	  << Engine::getInstance().mpsDb->analogDevices->size() 
 	  	  << " digitalSize: "
-         	  << engine->mpsDb->digitalDevices->size() 
-	  	  << std::endl;
+         	  << Engine::getInstance().mpsDb->digitalDevices->size() 
+	    	  << std::endl;
 	
-	int size = engine->mpsDb->analogDevices->size() + 1 + engine->mpsDb->digitalDevices->size();
+	int size = Engine::getInstance().mpsDb->analogDevices->size() + 1 + Engine::getInstance().mpsDb->digitalDevices->size();
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
-	engine->mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	Engine::getInstance().mpsDb->analogDevices->at(deviceId)->update(analogValue);
       }
     }
 
 
-    //    std::cout << engine->mpsDb->deviceInputs->at(1)->value << std::endl;
+    //    std::cout << Engine::getInstance().mpsDb->deviceInputs->at(1)->value << std::endl;
 
     return 0;
   }
@@ -220,19 +221,19 @@ int main(int argc, char **argv) {
   }
 #endif
 
-  Engine *e = new Engine();
+  //  Engine *e = new Engine();
   try {
-    if (e->loadConfig(mpsFileName) != 0) {
+    if (Engine::getInstance().loadConfig(mpsFileName) != 0) {
       std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
       return 1;
     }
   } catch (DbException ex) {
     std::cerr << ex.what() << std::endl;
-    delete e;
+    //    delete e;
     return -1;
   }
 
-  EngineTest *t = new EngineTest(EnginePtr(e));
+  EngineTest *t = new EngineTest();//EnginePtr(e));
   
   if (inputFileName != "") {
     if (t->loadInputTestFile(inputFileName, 0) != 0) {
@@ -250,16 +251,16 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < repeat; ++i) {
     t->updateInputsFromTestFile();
-    e->checkFaults();
+    Engine::getInstance().checkFaults();
     if (verbose) {
-      e->showFaults();
-      e->showMitigationDevices();
+      Engine::getInstance().showFaults();
+      Engine::getInstance().showMitigationDevices();
     }
   }
 
   //  if (verbose) {  
     std::cout << "-------------------------" << std::endl;
-    e->showStats();
+    Engine::getInstance().showStats();
     //  }
 
   delete t;
