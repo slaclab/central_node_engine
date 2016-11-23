@@ -129,7 +129,7 @@ namespace YAML {
       std::string key = "DigitalChannel";
 
       try {
-	int s = node[key].size();
+	node[key].size();
       } catch (InvalidNode &e) {
 	key = "AnalogChannel";
       }

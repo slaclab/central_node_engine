@@ -17,7 +17,7 @@ HARCH=linux-x86_64
 
 # ARCHES += xxx yyy
 
-ARCHES += linuxRT-x86_64
+#ARCHES += linuxRT-x86_64
 
 # Next, you need to define prefixes (which may include
 # absolute paths) so that e.g., $(CROSS_xxx)gcc can be
@@ -89,6 +89,13 @@ YAML_CPP_PATH            = /afs/slac/g/lcls/package/yaml-cpp/$(YAML_CPP_VERSION)
 yaml_cpp_DIR_linux_x86_64  =$(YAML_CPP_PATH)/rhel6-x86_64
 yaml_cpp_DIR_linuxRT_x86_64=$(YAML_CPP_PATH)/buildroot-2015.02-x86_64
 
+EASYLOGGINGPP_VERSION=easyloggingpp-8.91
+EASYLOGGINGPP_PATH=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)
+easyloggingppinc_DIR=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)
+
+#easyloggingpp_DIR_linux_x86_64=$(EASYLOGGINGPP_PATH)
+#easyloggingpp_DIR_linuxRT_x86_64=$(EASYLOGGINGPP_PATH)
+
 # Whether to build static libraries (YES/NO)
 WITH_STATIC_LIBRARIES_default=YES
 # Whether to build shared libraries (YES/NO)
@@ -105,3 +112,4 @@ WITH_SHARED_LIBRARIES_default=YES
 
 # Define an install location
 # INSTALL_DIR=/usr/local
+INSTALL_DIR=/afs/slac.stanford.edu/u/cd/lpiccoli/top/central_node_engine

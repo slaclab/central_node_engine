@@ -14,13 +14,20 @@ Engine::Engine() :
 #ifdef LOG_ENABLED
   engineLogger = Loggers::getLogger("ENGINE");
 #endif
+  CTRACE("ENGINE") << "Engine created";
+  std::cout << "ENGINE CREATED" << std::endl;
 }
 
 Engine &Engine::getInstance() {
   return instance;
 }
 
+MpsDbPtr Engine::getCurrentDb() {
+  return mpsDb;
+}
+
 int Engine::loadConfig(std::string yamlFileName) {
+  std::cout << "ENGINE LOADCONFIG" << std::endl;
   MpsDb *db = new MpsDb();
   mpsDb = shared_ptr<MpsDb>(db);
 

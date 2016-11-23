@@ -52,6 +52,7 @@ ARCHSPECIFIC_VARS+=USR_LDFLAGS
 #
 ARCHSPECIFIC_LIBVARS+=yaml_cpp
 ARCHSPECIFIC_LIBVARS+=boost
+ARCHSPECIFIC_LIBVARS+=easyloggingpp
 ARCHSPECIFIC_LIBVARS+=py
 
 $(foreach var,$(ARCHSPECIFIC_VARS),$(eval $(call arch2var,$(var))))
@@ -68,14 +69,15 @@ RANLIB =$(CROSS)$(or $(RANLIB_$(TARNM)),$(RANLIB_default),ranlib)
 INSTALL=install -C
 
 # Tool options
-OPT_CXXFLAGS=-g -Wall -O2
-OPT_CFLAGS  =-g -Wall -O2
+OPT_CXXFLAGS=-g #-Wall -O2
+OPT_CFLAGS  =-g #-Wall -O2
 
 CPPFLAGS+= $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
 CPPFLAGS+= $(addprefix -I,$(subst :, ,$(central_nodeinc_DIRS)))
 CPPFLAGS+= $(USR_CPPFLAGS)
 CXXFLAGS+= $(OPT_CXXFLAGS)
 CXXFLAGS+= $(USR_CXXFLAGS)
+CXXFLAGS+= -DLOG_ENABLED
 CFLAGS  += $(OPT_CFLAGS)
 CFLAGS  += $(USR_CFLAGS)
 
@@ -91,7 +93,7 @@ RUN_OPTS=''
 
 # colon separated dirlist
 # Note: += adds a whitespace
-central_nodeinc_DIRS=$(CENTRAL_NODE_DIR)$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))
+central_nodeinc_DIRS=$(CENTRAL_NODE_DIR)$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))$(addprefix :,$(easyloggingppinc_DIR))
 # colon separated dirlist
 central_nodelib_DIRS=$(addsuffix /O.$(TARCH),$(CENTRAL_NODE_DIR))$(addprefix :,$(boostlib_DIR))$(addprefix :,$(yaml_cpplib_DIR))
 

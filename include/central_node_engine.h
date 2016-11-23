@@ -46,6 +46,7 @@ class Engine {
   void showStats();
   void showMitigationDevices();
   void showDeviceInputs();
+  MpsDbPtr getCurrentDb();
 
  protected:
   void updateInputs();

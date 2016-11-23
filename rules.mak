@@ -22,7 +22,6 @@ multi-test: sub-$(HARCH)$(TSEP)run_tests
 	@true
 
 multi-clean: clean
-	$(warning multi-clean?)
 	@true
 
 # 'multi-target'; execute a target for all architectures:
@@ -78,7 +77,6 @@ endef
 
 # subdir make
 sub-./%:
-	$(warning At sub-./%)
 	$(QUIET)$(MAKE) $(QUIET:%=-s) -C  $(TARCH)  UPDIR=../$(UPDIR) \
          CENTRAL_NODE_DIR="$(call ADD_updir,$(CENTRAL_NODE_DIR),../)" \
          INSTALL_DIR="$(call ADD_updir,$(INSTALL_DIR),../)" \
@@ -86,7 +84,6 @@ sub-./%:
 
 # No need to step into O.<arch> subdir to clean; it will be removed anyways
 sub-%$(TSEP)clean:
-	$(warning At sub-%$(TSEP)clean)
 	@true
 
 # No need to step into O.<arch> subdir to install headers
@@ -96,6 +93,7 @@ sub-%$(TSEP)install_headers:
 # arch-subdir make
 sub-%:
 	$(QUIET)mkdir -p O.$(TARCH)
+	echo `pwd`
 	$(QUIET)$(MAKE) $(QUIET:%=-s) -C  O.$(TARCH) -f ../makefile SRCDIR=.. UPDIR=../$(UPDIR) \
          CENTRAL_NODE_DIR="$(call ADD_updir,$(CENTRAL_NODE_DIR),../)" \
          INCLUDE_DIRS="$(call ADD_updir,$(INCLUDE_DIRS),../)" \
@@ -136,7 +134,6 @@ $(2)_OBJS=$$(patsubst %.cpp,%.pic.o,$$(patsubst %.cc,%.pic.o,$$(patsubst %.c,%.p
 
 lib$(1).so: $$($(2)_OBJS)
 
-$(warning SRCS $(2) $$($(2)_SRCS))
 SRCS+=$$($(2)_SRCS)
 
 # when computing dependencies (.dp) for source files we want to add target_specific CPPFLAGS (-I)
@@ -271,10 +268,7 @@ $(addsuffix _pat,$(FILTERED_TBINS)):%_pat: %
 # they depend on.
 ifneq ($(SRCS),)
 deps: $(addsuffix .dp, $(basename $(SRCS)))
-	$(warning Removing file $@)
 	$(RM) $@
-	$(warning Dumping $^ to $@)
-	$(warning Source files are $(SRCS))
 	cat $^ > $@
 endif
 
@@ -285,7 +279,6 @@ endif
 	$(CC) $(CPPFLAGS) $(CFLAGS) -MM -MT "$(addprefix $(@:%.dp=%),.o .pic.o)" $< > $@
 
 clean: multi-subdir-clean multi-postsubdir-clean clean_local
-	$(warning cleaning)
 	$(RM) deps $(GENERATED_SRCS)
 	$(RM) -r O.*
 
@@ -299,6 +292,7 @@ install_headers:
 			mkdir -p $(INSTALL_DIR)/include ;\
 			$(INSTALL) $(addprefix $(SRCDIR:%=%/),$(HEADERS)) $(INSTALL_DIR)/include ;\
 		fi ;\
+                echo "Headers installed"; \
 	fi
 
 do_install: install_headers install_local
@@ -306,6 +300,7 @@ do_install: install_headers install_local
 		if [ -n "$(STATIC_LIBRARIES)" ] ; then \
 			mkdir -p $(INSTALL_DIR)/lib/$(TARCH) ;\
 			echo "Installing Libraries $(STATIC_LIBRARIES:%=%lib.a)" ; \
+	                echo $(INSTALL) $(foreach lib,$(STATIC_LIBRARIES),$(lib:%=lib%.a)) $(INSTALL_DIR)/lib/$(TARCH) ;\
 			$(INSTALL) $(foreach lib,$(STATIC_LIBRARIES),$(lib:%=lib%.a)) $(INSTALL_DIR)/lib/$(TARCH) ;\
 		fi ;\
 		if [ -n "$(SHARED_LIBRARIES)" ] ; then \

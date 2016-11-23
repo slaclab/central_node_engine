@@ -8,12 +8,6 @@ DEP_HEADERS +=
 STATIC_LIBRARIES_YES+=
 SHARED_LIBRARIES_YES+=
 
-rssi_bridge_SRCS = rssi_bridge.cc
-rssi_bridge_SRCS+= udpsrv_util.cc
-rssi_bridge_SRCS+= udpsrv_stream_state_monitor.cc
-
-rssi_bridge_LIBS = $(CENTRAL_NODE_LIBS)
-
 central_node_database_tst_SRCS       = central_node_database_tst.cc
 central_node_database_tst_LIBS       = $(CENTRAL_NODE_LIBS)
 TESTPROGRAMS            += central_node_database_tst
