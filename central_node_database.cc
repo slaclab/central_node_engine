@@ -47,14 +47,14 @@ void MpsDb::configureAllowedClasses() {
     (*it).second->mitigationDevice = (*mitigationIt).second;
   }
 
-  // Assign AllowedClasses to DigitalFaultState or ThresholdFaultState
+  // Assign AllowedClasses to FaultState or ThresholdFaultState
   // There are multiple AllowedClasses for each Fault, one per MitigationDevice
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
        it != allowedClasses->end(); ++it) {
     int id = (*it).second->faultStateId;
 
-    DbDigitalFaultStateMap::iterator digFaultIt = digitalFaultStates->find(id);
-    if (digFaultIt != digitalFaultStates->end()) {
+    DbFaultStateMap::iterator digFaultIt = faultStates->find(id);
+    if (digFaultIt != faultStates->end()) {
       // Create a map to hold deviceInput for the digitalDevice
       if (!(*digFaultIt).second->allowedClasses) {
 	DbAllowedClassMap *faultAllowedClasses = new DbAllowedClassMap();
@@ -196,33 +196,33 @@ void MpsDb::configureThresholdFaults() {
   }
 }
 
-void MpsDb::configureDigitalFaultStates() {
+void MpsDb::configureFaultStates() {
   LOG_TRACE("DATABASE", "Configure: FaultStates");
  std::stringstream errorStream;
-  // Assign all DigitalFaultStates to a Fault, and also
-  // find the DeviceState and save a reference in the DigitalFaultState
-  for (DbDigitalFaultStateMap::iterator it = digitalFaultStates->begin();
-       it != digitalFaultStates->end(); ++it) {
+  // Assign all FaultStates to a Fault, and also
+  // find the DeviceState and save a reference in the FaultState
+  for (DbFaultStateMap::iterator it = faultStates->begin();
+       it != faultStates->end(); ++it) {
     int id = (*it).second->faultId;
 
     DbFaultMap::iterator faultIt = faults->find(id);
     if (faultIt == faults->end()) {
       errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
-		  << id << ") for DigitalFaultState (" << (*it).second->id << ")";
+		  << id << ") for FaultState (" << (*it).second->id << ")";
       throw(DbException(errorStream.str()));
     }
 
     // Create a map to hold faultInputs for the fault
-    if (!(*faultIt).second->digitalFaultStates) {
-      DbDigitalFaultStateMap *digFaultStates = new DbDigitalFaultStateMap();
-      (*faultIt).second->digitalFaultStates = DbDigitalFaultStateMapPtr(digFaultStates);
+    if (!(*faultIt).second->faultStates) {
+      DbFaultStateMap *digFaultStates = new DbFaultStateMap();
+      (*faultIt).second->faultStates = DbFaultStateMapPtr(digFaultStates);
     }
-    (*faultIt).second->digitalFaultStates->insert(std::pair<int, DbDigitalFaultStatePtr>((*it).second->id,
+    (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
 											 (*it).second));
 
     // If this DigitalFault is the default, then assign it to the fault:
-    if ((*it).second->defaultState && !((*faultIt).second->defaultDigitalFaultState)) {
-      (*faultIt).second->defaultDigitalFaultState = (*it).second;
+    if ((*it).second->defaultState && !((*faultIt).second->defaultFaultState)) {
+      (*faultIt).second->defaultFaultState = (*it).second;
     }
 
     // DevicState
@@ -230,7 +230,7 @@ void MpsDb::configureDigitalFaultStates() {
     DbDeviceStateMap::iterator deviceStateIt = deviceStates->find(id);
     if (deviceStateIt == deviceStates->end()) {
       errorStream << "ERROR: Failed to configure database, invalid ID found for DeviceState ("
-		  << id << ") for DigitalFaultState (" << (*it).second->id << ")";
+		  << id << ") for FaultState (" << (*it).second->id << ")";
       throw(DbException(errorStream.str()));
     }
     (*it).second->deviceState = (*deviceStateIt).second;
@@ -363,20 +363,14 @@ void MpsDb::configureIgnoreConditions() {
     // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
 
-    DbDigitalFaultStateMap::iterator digFaultIt = digitalFaultStates->find(faultStateId);
-    if (digFaultIt != digitalFaultStates->end()) {
-      (*ignoreCondition).second->digitalFaultState = (*digFaultIt).second;
+    DbFaultStateMap::iterator digFaultIt = faultStates->find(faultStateId);
+    if (digFaultIt != faultStates->end()) {
+      (*ignoreCondition).second->faultState = (*digFaultIt).second;
     }
     else {
-      DbThresholdFaultStateMap::iterator thresFaultIt = thresholdFaultStates->find(faultStateId);
-      if (thresFaultIt != thresholdFaultStates->end()) {
-	(*ignoreCondition).second->analogFaultState = (*thresFaultIt).second;
-      }
-      else {
-	errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
-		    << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
-	throw(DbException(errorStream.str()));
-      }
+      errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
+		  << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
+      throw(DbException(errorStream.str()));
     }
   }
 
@@ -404,20 +398,14 @@ void MpsDb::configureIgnoreConditions() {
     // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*conditionInput).second->faultStateId;
 
-    DbDigitalFaultStateMap::iterator digFaultIt = digitalFaultStates->find(faultStateId);
-    if (digFaultIt != digitalFaultStates->end()) {
-      (*conditionInput).second->digitalFaultState = (*digFaultIt).second;
+    DbFaultStateMap::iterator digFaultIt = faultStates->find(faultStateId);
+    if (digFaultIt != faultStates->end()) {
+      (*conditionInput).second->faultState = (*digFaultIt).second;
     }
     else {
-      DbThresholdFaultStateMap::iterator thresFaultIt = thresholdFaultStates->find(faultStateId);
-      if (thresFaultIt != thresholdFaultStates->end()) {
-	(*conditionInput).second->analogFaultState = (*thresFaultIt).second;
-      }
-      else {
-	errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
-		    << faultStateId << ") for ConditionInput (" <<  (*conditionInput).second->id << ")";
-	throw(DbException(errorStream.str()));
-      }
+      errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
+		  << faultStateId << ") for ConditionInput (" <<  (*conditionInput).second->id << ")";
+      throw(DbException(errorStream.str()));
     }
   }
 }
@@ -435,7 +423,7 @@ void MpsDb::configure() {
   configureDeviceInputs();
   configureFaultInputs();
   //  configureThresholdFaults();
-  configureDigitalFaultStates();
+  configureFaultStates();
   //  configureThresholdValues();
   //  configureAnalogDeviceTypes();
   configureAnalogDevices();
@@ -478,7 +466,7 @@ int MpsDb::load(std::string yamlFileName) {
     }
     std::string nodeName = s.substr(0, found);
 
-    LOG_TRACE("DATABASE", "Parsing " << nodeName);
+    LOG_TRACE("DATABASE", "Parsing \"" << nodeName << "\"");
 
     if (nodeName == "Crate") {
       crates = (*node).as<DbCrateMapPtr>();
@@ -502,20 +490,10 @@ int MpsDb::load(std::string yamlFileName) {
       faults = (*node).as<DbFaultMapPtr>();
     } else if (nodeName == "FaultInput") {
       faultInputs = (*node).as<DbFaultInputMapPtr>();
-    } else if (nodeName == "DigitalFaultState") {
-      digitalFaultStates = (*node).as<DbDigitalFaultStateMapPtr>();
-    } else if (nodeName == "ThresholdValueMap") {
-      thresholdValueMaps = (*node).as<DbThresholdValueMapEntryMapPtr>();
-    } else if (nodeName == "ThresholdValue") {
-      thresholdValues = (*node).as<DbThresholdValueMapPtr>();
-    } else if (nodeName == "AnalogDeviceType") {
-      analogDeviceTypes = (*node).as<DbAnalogDeviceTypeMapPtr>();
+    } else if (nodeName == "FaultState") {
+      faultStates = (*node).as<DbFaultStateMapPtr>();
     } else if (nodeName == "AnalogDevice") {
       analogDevices = (*node).as<DbAnalogDeviceMapPtr>();
-    } else if (nodeName == "ThresholdFault") {
-      thresholdFaults = (*node).as<DbThresholdFaultMapPtr>();
-    } else if (nodeName == "ThresholdFaultState") {
-      thresholdFaultStates = (*node).as<DbThresholdFaultStateMapPtr>();
     } else if (nodeName == "MitigationDevice") {
       mitigationDevices = (*node).as<DbMitigationDeviceMapPtr>();
     } else if (nodeName == "BeamClass") {
@@ -581,7 +559,6 @@ void MpsDb::showFault(DbFaultPtr fault) {
 	     devInput != (*digitalDevice).second->inputDevices->end(); ++devInput) {
 	  std::cout << "| - Input[" << (*devInput).second->id
 		    << "], Position[" << (*devInput).second->bitPosition
-		    << "], Value[" << (*devInput).second->value
 		    << "], Bypass[";
       
 	  if (!(*devInput).second->bypass) {

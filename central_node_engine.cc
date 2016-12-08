@@ -1,5 +1,6 @@
 #include <central_node_engine.h>
 #include <stdint.h>
+#include <log.h>
 #include <log_wrapper.h>
 
 #ifdef LOG_ENABLED
@@ -7,19 +8,12 @@ using namespace easyloggingpp;
 static Logger *engineLogger;
 #endif 
 
-Engine Engine::instance;
-
 Engine::Engine() :
   checkFaultTime(5, "Evaluation time") {
 #ifdef LOG_ENABLED
   engineLogger = Loggers::getLogger("ENGINE");
+  LOG_TRACE("ENGINE", "Created Engine");
 #endif
-  CTRACE("ENGINE") << "Engine created";
-  std::cout << "ENGINE CREATED" << std::endl;
-}
-
-Engine &Engine::getInstance() {
-  return instance;
 }
 
 MpsDbPtr Engine::getCurrentDb() {
@@ -27,7 +21,6 @@ MpsDbPtr Engine::getCurrentDb() {
 }
 
 int Engine::loadConfig(std::string yamlFileName) {
-  std::cout << "ENGINE LOADCONFIG" << std::endl;
   MpsDb *db = new MpsDb();
   mpsDb = shared_ptr<MpsDb>(db);
 
@@ -121,7 +114,7 @@ void Engine::setAllowedBeamClass() {
 
 /**
  * First goes through the list of DigitalDevices and updates the current state.
- * Second updates the DigitalFaultStates for each Fault.
+ * Second updates the FaultStates for each Fault.
  * At the end of this method all Digital Faults will have updated values,
  * i.e. the field 'faulted' gets updated based on the current machine state. 
  */
@@ -184,8 +177,8 @@ void Engine::evaluateFaults() {
 
     // Now that a Fault has a new value check if it is in the FaultStates list,
     // and update the allowedBeamClass for the MitigationDevices
-    for (DbDigitalFaultStateMap::iterator state = (*fault).second->digitalFaultStates->begin();
-	 state != (*fault).second->digitalFaultStates->end(); ++state) {
+    for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+	 state != (*fault).second->faultStates->end(); ++state) {
       uint32_t maskedValue = faultValue & (*state).second->deviceState->mask;
       if ((*state).second->deviceState->value == maskedValue) {
 	(*state).second->faulted = true;
@@ -202,11 +195,11 @@ void Engine::evaluateFaults() {
     }
 
     // If there are no faults, then enable the default - if there is one
-    if (!faulted && (*fault).second->defaultDigitalFaultState) {
-      (*fault).second->defaultDigitalFaultState->faulted = true;
+    if (!faulted && (*fault).second->defaultFaultState) {
+      (*fault).second->defaultFaultState->faulted = true;
       LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
 		<< faultValue << " (Default) fault state="
-		<< (*fault).second->defaultDigitalFaultState->deviceState->name);
+		<< (*fault).second->defaultFaultState->deviceState->name);
     }
   }
 }
@@ -219,13 +212,8 @@ void Engine::evaluateIgnoreConditions() {
     for (DbConditionInputMap::iterator input = (*condition).second->conditionInputs->begin();
 	 input != (*condition).second->conditionInputs->end(); ++input) {
       uint32_t inputValue = 1;
-      if ((*input).second->digitalFaultState) {
- 	if (!(*input).second->digitalFaultState->faulted) {
-	  inputValue = 0;
-	}
-      }
-      else if ((*input).second->analogFaultState) {
- 	if (!(*input).second->analogFaultState->faulted) {
+      if ((*input).second->faultState) {
+ 	if (!(*input).second->faultState->faulted) {
 	  inputValue = 0;
 	}
       }
@@ -245,11 +233,8 @@ void Engine::evaluateIgnoreConditions() {
     for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
 	 ignoreCondition != (*condition).second->ignoreConditions->end(); ++ignoreCondition) {
       // If ignore condition is true, update the fault state (digital or analog)
-      if ((*ignoreCondition).second->digitalFaultState) {
-	(*ignoreCondition).second->digitalFaultState->ignored = (*condition).second->state;
-      }
-      else if ((*ignoreCondition).second->analogFaultState) {
-	(*ignoreCondition).second->analogFaultState->ignored = (*condition).second->state;
+      if ((*ignoreCondition).second->faultState) {
+	(*ignoreCondition).second->faultState->ignored = (*condition).second->state;
       }
     }
   }
@@ -260,8 +245,8 @@ void Engine::mitigate() {
   for (DbFaultMap::iterator fault = mpsDb->faults->begin();
        fault != mpsDb->faults->end(); ++fault) {
 
-    for (DbDigitalFaultStateMap::iterator state = (*fault).second->digitalFaultStates->begin();
-	 state != (*fault).second->digitalFaultStates->end(); ++state) {
+    for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+	 state != (*fault).second->faultStates->end(); ++state) {
       if ((*state).second->faulted && !(*state).second->ignored) {
 	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
 		  << (*fault).second->value
@@ -284,15 +269,15 @@ void Engine::mitigate() {
     }
 
     // If there are no faults, then enable the default - if there is one
-    if ((*fault).second->defaultDigitalFaultState) {
-      if ((*fault).second->defaultDigitalFaultState->faulted &&
-	  !(*fault).second->defaultDigitalFaultState->ignored) {
+    if ((*fault).second->defaultFaultState) {
+      if ((*fault).second->defaultFaultState->faulted &&
+	  !(*fault).second->defaultFaultState->ignored) {
 	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
 		  << (*fault).second->value << " (Default) fault state="
-		  << (*fault).second->defaultDigitalFaultState->deviceState->name);
-	if ((*fault).second->defaultDigitalFaultState->allowedClasses) {
-	  for (DbAllowedClassMap::iterator allowed = (*fault).second->defaultDigitalFaultState->allowedClasses->begin();
-	       allowed != (*fault).second->defaultDigitalFaultState->allowedClasses->end(); ++allowed) {
+		  << (*fault).second->defaultFaultState->deviceState->name);
+	if ((*fault).second->defaultFaultState->allowedClasses) {
+	  for (DbAllowedClassMap::iterator allowed = (*fault).second->defaultFaultState->allowedClasses->begin();
+	       allowed != (*fault).second->defaultFaultState->allowedClasses->end(); ++allowed) {
 	    if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
 		(*allowed).second->beamClass->number) {
 	      (*allowed).second->mitigationDevice->tentativeBeamClass =
@@ -329,8 +314,8 @@ void Engine::showFaults() {
   // Digital Faults
   for (DbFaultMap::iterator fault = mpsDb->faults->begin();
        fault != mpsDb->faults->end(); ++fault) {
-    for (DbDigitalFaultStateMap::iterator state = (*fault).second->digitalFaultStates->begin();
-	 state != (*fault).second->digitalFaultStates->end(); ++state) {
+    for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+	 state != (*fault).second->faultStates->end(); ++state) {
       if ((*state).second->faulted) {
 	if (!faults) {
 	  std::cout << "# Current faults:" << std::endl;

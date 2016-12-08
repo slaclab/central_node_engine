@@ -31,16 +31,17 @@ class EngineException: public CentralNodeException {
  */
 
 class Engine {
- public:
+ private:
   Engine();
+  Engine(Engine const &);
+  void operator=(Engine const &);
 
+ public:
   int loadConfig(std::string yamlFileName);
   int checkFaults();
 
   friend class EngineTest;
   friend class BypassTest;
-  
-  static Engine &getInstance();
   
   void showFaults();
   void showStats();
@@ -68,7 +69,11 @@ class Engine {
   std::stringstream errorStream;
   TimeAverage checkFaultTime;
 
-  static Engine instance;
+ public:
+  static Engine &getInstance() {
+    static Engine instance;
+    return instance;
+  }
 };
 
 typedef shared_ptr<Engine> EnginePtr;

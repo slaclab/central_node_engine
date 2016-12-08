@@ -6,10 +6,12 @@
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <central_node_engine.h>
-#include <log.h>
 
 #include <boost/shared_ptr.hpp>
+//#include <log.h>
+#include <log_wrapper.h>
 
+using namespace easyloggingpp;
 using boost::shared_ptr;
 
 class TestFailed {};

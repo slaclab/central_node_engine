@@ -568,7 +568,7 @@ typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
 class DbAllowedClass : public DbEntry {
  public:
   uint32_t beamClassId;
-  uint32_t faultStateId; // This can be a DigitalFaultState or a ThresholdFaultState
+  uint32_t faultStateId;
   uint32_t mitigationDeviceId;
 
   // Configured after loading the YAML file
@@ -670,13 +670,13 @@ typedef shared_ptr<DbThresholdFaultStateMap> DbThresholdFaultStateMapPtr;
 //class DbFaultPtr;
 
 /**
- * DigitalFaultState:
+ * FaultState:
  * - fault_id: '1'
  *   id: '1'
  *   name: Out
  *   value: '1'
  */
-class DbDigitalFaultState : public DbEntry {
+class DbFaultState : public DbEntry {
  public:
   uint32_t faultId;
   uint32_t deviceStateId;
@@ -689,11 +689,11 @@ class DbDigitalFaultState : public DbEntry {
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each mitigation device) for this fault states
   DbDeviceStatePtr deviceState;
 
- DbDigitalFaultState() : DbEntry(), faultId(0), deviceStateId(0),
+ DbFaultState() : DbEntry(), faultId(0), deviceStateId(0),
     defaultState(false), faulted(false), ignored(false) {
   }
 
-  friend std::ostream & operator<<(std::ostream &os, DbDigitalFaultState * const digitalFault) {
+  friend std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
     os << "id[" << digitalFault->id << "]; "
        << "faultId[" << digitalFault->faultId << "]; "
        << "deviceStateId[" << digitalFault->deviceStateId << "]; "
@@ -721,9 +721,9 @@ class DbDigitalFaultState : public DbEntry {
   }
 };
 
-typedef shared_ptr<DbDigitalFaultState> DbDigitalFaultStatePtr;
-typedef std::map<uint32_t, DbDigitalFaultStatePtr> DbDigitalFaultStateMap;
-typedef shared_ptr<DbDigitalFaultStateMap> DbDigitalFaultStateMapPtr;
+typedef shared_ptr<DbFaultState> DbFaultStatePtr;
+typedef std::map<uint32_t, DbFaultStatePtr> DbFaultStateMap;
+typedef shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
 
 
 /** 
@@ -740,8 +740,8 @@ class DbFault : public DbEntry {
   // Configured after loading the YAML file
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
-  DbDigitalFaultStateMapPtr digitalFaultStates; // Map of fault states for this fault
-  DbDigitalFaultStatePtr defaultDigitalFaultState; // Default fault state if no other fault is active
+  DbFaultStateMapPtr faultStates; // Map of fault states for this fault
+  DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active
                                                    // the default state not necessarily is a real fault
 
  DbFault() : DbEntry(), name(""), description("") {
@@ -777,22 +777,22 @@ class DbFault : public DbEntry {
       os << "]";
     }
 
-    if (fault->digitalFaultStates) {
-      os << " : DigitalFaultStates[";
+    if (fault->faultStates) {
+      os << " : FaultStates[";
       unsigned int i = 1;
-      for (DbDigitalFaultStateMap::iterator it = fault->digitalFaultStates->begin();
-	   it != fault->digitalFaultStates->end(); ++it, ++i) {
+      for (DbFaultStateMap::iterator it = fault->faultStates->begin();
+	   it != fault->faultStates->end(); ++it, ++i) {
 	os << (*it).second->deviceState->name;
-	if (i < fault->digitalFaultStates->size()) {
+	if (i < fault->faultStates->size()) {
 	  os << ", ";
 	}
       }
       os << "]";
     }
 
-    if (fault->defaultDigitalFaultState) {
+    if (fault->defaultFaultState) {
       os << " : Defaul["
-	 << fault->defaultDigitalFaultState->deviceState->name << "]";
+	 << fault->defaultFaultState->deviceState->name << "]";
     }
 
     return os;
@@ -820,8 +820,7 @@ class DbConditionInput : public DbEntry {
   // The DbIgnoreCondition may point to a digital or analog fault state
   // TODO: this does not look good, these should be a single pointer, can't they?
   // This also happens with the DbIgnoreCondition class
-  DbDigitalFaultStatePtr digitalFaultState;
-  DbThresholdFaultStatePtr analogFaultState;
+  DbFaultStatePtr faultState;
   
  DbConditionInput() : DbEntry(), bitPosition(0), faultStateId(0), conditionId(0) {
   }
@@ -852,8 +851,7 @@ class DbIgnoreCondition : public DbEntry {
 
   // The DbIgnoreCondition may point to a digital or analog fault state
   // TODO: this does not look good, these should be a single pointer, can't they?
-  DbDigitalFaultStatePtr digitalFaultState;
-  DbThresholdFaultStatePtr analogFaultState;
+  DbFaultStatePtr faultState;
 
  DbIgnoreCondition() : DbEntry(), faultStateId(0), conditionId(0) {
   }
@@ -916,7 +914,7 @@ class MpsDb {
   void configureDeviceInputs();
   void configureFaultInputs();
   void configureThresholdFaults();
-  void configureDigitalFaultStates();
+  void configureFaultStates();
   void configureThresholdValues();
   void configureAnalogDeviceTypes();
   void configureAnalogDevices();
@@ -935,7 +933,7 @@ class MpsDb {
   DbDeviceInputMapPtr deviceInputs;
   DbFaultMapPtr faults;
   DbFaultInputMapPtr faultInputs;
-  DbDigitalFaultStateMapPtr digitalFaultStates;
+  DbFaultStateMapPtr faultStates;
   DbThresholdValueMapEntryMapPtr thresholdValueMaps;
   DbThresholdValueMapPtr thresholdValues; // All thresholds for all types
   DbAnalogDeviceTypeMapPtr analogDeviceTypes;
@@ -1014,8 +1012,8 @@ class MpsDb {
     mpsDb->printMap<DbFaultInputMapPtr, DbFaultInputMap::iterator>
       (os, mpsDb->faultInputs, "FaultInput");
 
-    mpsDb->printMap<DbDigitalFaultStateMapPtr, DbDigitalFaultStateMap::iterator>
-      (os, mpsDb->digitalFaultStates, "DigitalFaultState");
+    mpsDb->printMap<DbFaultStateMapPtr, DbFaultStateMap::iterator>
+      (os, mpsDb->faultStates, "FaultState");
 
     /* mpsDb->printMap<DbThresholdValueMapEntryMapPtr, DbThresholdValueMapEntryMap::iterator> */
     /*   (os, mpsDb->thresholdValueMaps, "ThresholdValueMap"); */

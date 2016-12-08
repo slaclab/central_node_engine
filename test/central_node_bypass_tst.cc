@@ -26,9 +26,10 @@ static void usage(const char *nm) {
 
 class BypassTest {
  public:
-  BypassTest(EnginePtr e) : engine(e), digital(false), analog(false) {};
+  //  BypassTest(EnginePtr e) : engine(e), digital(false), analog(false) {};
+  BypassTest() : digital(false), analog(false) {};
 
-  EnginePtr engine;
+  //  EnginePtr engine;
   int testInputCount;
   int analogInputCount;
   std::ifstream testInputFile;
@@ -37,26 +38,26 @@ class BypassTest {
   bool analog;
 
   void checkBypass(time_t t) {
-    engine->bypassManager->checkBypassQueue(t);
+    Engine::getInstance().bypassManager->checkBypassQueue(t);
   }
 
   void addBypass() {
     try {
       // Now bypass the OTR IN limit switch to 0 and
       // OTR OUT limit switch to 1, i.e. screen is OUT
-      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
 				       1 /* bypass value */, 100 /* until */, true);
-      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
 				       0 /* bypass value */, 100 /* until*/, true);
       
       // OTR Attr both out
-      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
 				       0 /* bypass value */, 110 /* until */, true);
-      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
 				       1 /* bypass value */, 110 /* until*/, true);
       
       // PIC
-      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 3, 0, 300, true);
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 3, 0, 300, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
@@ -65,14 +66,14 @@ class BypassTest {
   void cancelBypass() {
     try {
       // PIC
-      engine->bypassManager->setBypass(engine->mpsDb, BYPASS_ANALOG, 3, 0, 0, true);
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 3, 0, 0, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
   }
 
   void showFaults() {
-    engine->mpsDb->showFaults();
+    Engine::getInstance().mpsDb->showFaults();
   }
 
   // type==0 -> digital
@@ -145,15 +146,15 @@ class BypassTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	/* this check is wrong	
-	uint32_t size = engine->mpsDb->deviceInputs->size() + 1;
+	uint32_t size = Engine::getInstance().mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
 	*/
-	engine->mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+	Engine::getInstance().mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
       }
     }
 
@@ -180,20 +181,20 @@ class BypassTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	/* this check may not work	
-	uint32_t size = engine->mpsDb->deviceInputs->size() + 1;
+	uint32_t size = Engine::getInstance().mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << engine->mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
 	*/
-	engine->mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	Engine::getInstance().mpsDb->analogDevices->at(deviceId)->update(analogValue);
       }
     }
 
 
-    //    std::cout << engine->mpsDb->deviceInputs->at(1)->value << std::endl;
+    //    std::cout << Engine::getInstance().mpsDb->deviceInputs->at(1)->value << std::endl;
 
     return 0;
   }
@@ -251,19 +252,17 @@ int main(int argc, char **argv) {
   }
 #endif 
 
-  Engine *e = new Engine();
   try {
-    if (e->loadConfig(mpsFileName) != 0) {
+    if (Engine::getInstance().loadConfig(mpsFileName) != 0) {
       std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
       return 1;
     }
   } catch (DbException ex) {
     std::cerr << ex.what() << std::endl;
-    delete e;
     return -1;
   }
 
-  BypassTest *t = new BypassTest(EnginePtr(e));
+  BypassTest *t = new BypassTest();
   
   if (inputFileName != "") {
     if (t->loadInputTestFile(inputFileName, 0) != 0) {
@@ -281,36 +280,36 @@ int main(int argc, char **argv) {
 
   // First four updates without bypass
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
   }
   t->checkBypass(1);
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
   }
   t->checkBypass(1);
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
   }
   t->checkBypass(1);
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
+    Engine::getInstance().showFaults();
   }
   t->checkBypass(1);
 
@@ -324,36 +323,36 @@ int main(int argc, char **argv) {
 
   // Next four updates with bypass VALID
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
     t->showFaults();
   }
   t->checkBypass(91);
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
   }
   t->checkBypass(92);
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
   }
   t->checkBypass(93);
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
+    Engine::getInstance().showFaults();
   }
 
   // Check bypass expiration - bypass should expire now
@@ -364,19 +363,19 @@ int main(int argc, char **argv) {
  
   // Next four updates with bypass EXPIRED
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
     t->showFaults();
   }
   t->checkBypass(201);
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
   }
   t->checkBypass(202);
 
@@ -387,21 +386,21 @@ int main(int argc, char **argv) {
   }
   t->cancelBypass();
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
-    e->showMitigationDevices();
+    Engine::getInstance().showFaults();
+    Engine::getInstance().showMitigationDevices();
   }
   t->checkBypass(203);
 
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  e->checkFaults();
+  Engine::getInstance().checkFaults();
   if (verbose) {
-    e->showFaults();
+    Engine::getInstance().showFaults();
     std::cout << "-------------------------" << std::endl;
-    e->showStats();
+    Engine::getInstance().showStats();
   }
 
   delete t;

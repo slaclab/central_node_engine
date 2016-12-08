@@ -416,165 +416,29 @@ namespace YAML {
   };
 
   /**
-   * DigitalFaultState:
+   * FaultState:
    * - fault_id: '1'
    *   id: '1'
    *   name: Out
    *   value: '1'
    */
   template<>
-    struct convert<DbDigitalFaultStateMapPtr> {
-    static bool decode(const Node &node, DbDigitalFaultStateMapPtr &rhs) {
-      DbDigitalFaultStateMap *digitalFaultStates = new DbDigitalFaultStateMap();
-      rhs = DbDigitalFaultStateMapPtr(digitalFaultStates);
+    struct convert<DbFaultStateMapPtr> {
+    static bool decode(const Node &node, DbFaultStateMapPtr &rhs) {
+      DbFaultStateMap *faultStates = new DbFaultStateMap();
+      rhs = DbFaultStateMapPtr(faultStates);
 
-      for (YAML::Node::const_iterator it = node["DigitalFaultState"].begin();
-	   it != node["DigitalFaultState"].end(); ++it) {
-	DbDigitalFaultState *digitalFaultState = new DbDigitalFaultState();
+      for (YAML::Node::const_iterator it = node["FaultState"].begin();
+	   it != node["FaultState"].end(); ++it) {
+	DbFaultState *faultState = new DbFaultState();
 	
-	digitalFaultState->id = (*it)["id"].as<int>();
-	//	digitalFaultState->value = (*it)["value"].as<int>();
-	digitalFaultState->faultId = (*it)["fault_id"].as<int>();
-	//	digitalFaultState->name = (*it)["name"].as<std::string>();
-	digitalFaultState->deviceStateId = (*it)["device_state_id"].as<int>();
-	digitalFaultState->defaultState = (*it)["default"].as<bool>();
+	faultState->id = (*it)["id"].as<int>();
+	faultState->faultId = (*it)["fault_id"].as<int>();
+	faultState->deviceStateId = (*it)["device_state_id"].as<int>();
+	faultState->defaultState = (*it)["default"].as<bool>();
 
-	rhs->insert(std::pair<int, DbDigitalFaultStatePtr>(digitalFaultState->id,
-							   DbDigitalFaultStatePtr(digitalFaultState)));
-      }
-
-      return true;
-    }
-  };
-
-  /**
-   * ### UNUSED ###
-   *
-   * ThresholdValueMap:
-   * - description: Map for generic PICs.
-   *   id: '1'
-   */
-  template<>
-    struct convert<DbThresholdValueMapEntryMapPtr> {
-    static bool decode(const Node &node, DbThresholdValueMapEntryMapPtr &rhs) {
-      DbThresholdValueMapEntryMap *thresValueMaps = new DbThresholdValueMapEntryMap();
-      rhs = DbThresholdValueMapEntryMapPtr(thresValueMaps);
-
-      for (YAML::Node::const_iterator it = node["ThresholdValueMap"].begin();
-	   it != node["ThresholdValueMap"].end(); ++it) {
-	DbThresholdValueMapEntry *thresValueMap = new DbThresholdValueMapEntry();
-	
-	thresValueMap->id = (*it)["id"].as<int>();
-	thresValueMap->description = (*it)["description"].as<std::string>();
-
-	rhs->insert(std::pair<int, DbThresholdValueMapEntryPtr>(thresValueMap->id,
-								DbThresholdValueMapEntryPtr(thresValueMap)));
-      }
-
-      return true;
-    }
-  };
-
-  /**
-   * ### UNUSED ###
-   *
-   * ThresholdValue:
-   * - id: '1'
-   *   threshold: '0'
-   *   threshold_value_map_id: '1'
-   *   value: '0.0'
-   */
-  template<>
-    struct convert<DbThresholdValueMapPtr> {
-    static bool decode(const Node &node, DbThresholdValueMapPtr &rhs) {
-      DbThresholdValueMap *thresValues = new DbThresholdValueMap();
-      rhs = DbThresholdValueMapPtr(thresValues);
-
-      for (YAML::Node::const_iterator it = node["ThresholdValue"].begin();
-	   it != node["ThresholdValue"].end(); ++it) {
-	DbThresholdValue *thresValue = new DbThresholdValue();
-	
-	thresValue->id = (*it)["id"].as<int>();
-	thresValue->threshold = (*it)["threshold"].as<int>();
-	thresValue->thresholdValueMapId = (*it)["threshold_value_map_id"].as<int>();
-	thresValue->value = (*it)["value"].as<float>();
-
-	rhs->insert(std::pair<int, DbThresholdValuePtr>(thresValue->id, 
-							DbThresholdValuePtr(thresValue)));
-      }
-
-      return true;
-    }
-  };
-
-  /**
-   * ### UNUSED ###
-   *
-   * ThresholdFault:
-   * - analog_device_id: '3'
-   *   greater_than: 'True'
-   *   id: '1'
-   *   name: PIC Loss > 1.0
-   *   threshold: '1.0'
-   */
-  template<>
-    struct convert<DbThresholdFaultMapPtr> {
-    static bool decode(const Node &node, DbThresholdFaultMapPtr &rhs) {
-      DbThresholdFaultMap *thresFaults = new DbThresholdFaultMap();
-      rhs = DbThresholdFaultMapPtr(thresFaults);
-
-      for (YAML::Node::const_iterator it = node["ThresholdFault"].begin();
-	   it != node["ThresholdFault"].end(); ++it) {
-	DbThresholdFault *thresFault = new DbThresholdFault();
-	
-	thresFault->id = (*it)["id"].as<int>();
-	thresFault->analogDeviceId = (*it)["analog_device_id"].as<int>();
-	thresFault->name = (*it)["name"].as<std::string>();
-	thresFault->thresholdValueId = (*it)["threshold_value_id"].as<int>();
-	//	thresFault->threshold = (*it)["threshold"].as<int>();
-	
-	std::string greaterThanString = (*it)["greater_than"].as<std::string>();
-	if (greaterThanString == "True") {
-	  thresFault->greaterThan = true;
-	} else {
-	  thresFault->greaterThan = false;
-	}
-
-	rhs->insert(std::pair<int, DbThresholdFaultPtr>(thresFault->id,
-							DbThresholdFaultPtr(thresFault)));
-      }
-
-      return true;
-    }
-  };
-
-
-  /**
-   * ### UNUSED ###
-   *
-   * AnalogDeviceType:
-   * - id: '1'
-   *   name: PIC
-   *   threshold_value_map_id: '1'
-   *   units: counts
-   */
-  template<>
-    struct convert<DbAnalogDeviceTypeMapPtr> {
-    static bool decode(const Node &node, DbAnalogDeviceTypeMapPtr &rhs) {
-      DbAnalogDeviceTypeMap *analogDeviceTypes = new DbAnalogDeviceTypeMap();
-      rhs = DbAnalogDeviceTypeMapPtr(analogDeviceTypes);
-
-      for (YAML::Node::const_iterator it = node["AnalogDeviceType"].begin();
-	   it != node["AnalogDeviceType"].end(); ++it) {
-	DbAnalogDeviceType *analogDeviceType = new DbAnalogDeviceType();
-	
-	analogDeviceType->id = (*it)["id"].as<int>();
-	analogDeviceType->name = (*it)["name"].as<std::string>();
-	analogDeviceType->units = (*it)["units"].as<std::string>();
-	analogDeviceType->thresholdValueMapId = (*it)["threshold_value_map_id"].as<int>();
-
-	rhs->insert(std::pair<int, DbAnalogDeviceTypePtr>(analogDeviceType->id,
-							  DbAnalogDeviceTypePtr(analogDeviceType)));
+	rhs->insert(std::pair<int, DbFaultStatePtr>(faultState->id,
+						    DbFaultStatePtr(faultState)));
       }
 
       return true;
