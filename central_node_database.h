@@ -513,14 +513,16 @@ class DbBeamClass : public DbEntry {
  public:
   uint32_t number;
   std::string name;
+  std::string description;
   
- DbBeamClass() : DbEntry(), number(-1), name("") {
+ DbBeamClass() : DbEntry(), number(-1), name(""), description("") {
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
     os << "id[" << beamClass->id << "]; "
        << "number[" << beamClass->number << "]; "
-       << "name[" << beamClass->name << "]";
+       << "name[" << beamClass->name << "] "
+       << "description[" << beamClass->description << "]";
     return os;
   }
 };

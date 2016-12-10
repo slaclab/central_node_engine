@@ -535,6 +535,7 @@ namespace YAML {
    * BeamClass:
    * - id: '1'
    *   name: Class 1
+   *   description: short description
    *   number: '1'
    */
   template<>
@@ -550,6 +551,7 @@ namespace YAML {
 	beamClass->id = (*it)["id"].as<int>();
 	beamClass->name = (*it)["name"].as<std::string>();
 	beamClass->number = (*it)["number"].as<int>();
+	beamClass->description = (*it)["description"].as<std::string>();
 
 	rhs->insert(std::pair<int, DbBeamClassPtr>(beamClass->id, DbBeamClassPtr(beamClass)));
       }
