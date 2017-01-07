@@ -1,5 +1,8 @@
 #include <iostream>
 #include <sstream>
+#include <stdio.h>
+#include <time.h>
+
 #include <central_node_bypass_manager.h>
 #include <central_node_bypass.h>
 #include <central_node_exception.h>
@@ -8,15 +11,18 @@
 #ifdef LOG_ENABLED
 using namespace easyloggingpp;
 static Logger *bypassLogger;
+#endif
 
 BypassManager::BypassManager() {
+#ifdef LOG_ENABLED
   bypassLogger = Loggers::getLogger("BYPASS");
   LOG_TRACE("BYPASS", "Created BypassManager");
-} 
-#else
-BypassManager::BypassManager() {
-}
 #endif
+  int ret = pthread_mutex_init(&mutex, NULL);
+  if (0 != ret) {
+    throw("ERROR: BypassManager::BypassManager() failed to init mutex.");
+  }
+} 
 
 /**
  * This creates bypasses for all digital/analog inputs. Should be invoked
@@ -163,8 +169,17 @@ void BypassManager::checkBypassQueue(time_t testTime) {
 	    << ", size=" << bypassQueue.size() << ")");
 
   bool expired = true;
+  int ret = pthread_mutex_lock(&mutex);
+  if (0 != ret) {
+    throw("ERROR: BypassManager::checkBypassQueue() failed to lock mutex.");
+  }
+
   while (expired) {
     expired = checkBypassQueueTop(now);
+  }
+  ret = pthread_mutex_unlock(&mutex);
+  if (0 != ret) {
+    throw("ERROR: BypassManager::checkBypassQueue() failed to unlock mutex.");
   }
 }
  
@@ -306,10 +321,45 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
 		<< "type=" << bypassType
 		<< ", until=" << bypassUntil << " sec"
 		<< ", now=" << now << " sec");
+      int ret = pthread_mutex_lock(&mutex);
+      if (0 != ret) {
+	throw("ERROR: BypassManager::setBypass() failed to lock mutex.");
+      }
       bypass->until = bypassUntil;
       bypass->status = BYPASS_VALID;
       bypass->value = value;
       bypassQueue.push(newEntry);
+      ret = pthread_mutex_unlock(&mutex);
+      if (0 != ret) {
+	throw("ERROR: BypassManager::setBypass() failed to unlock mutex.");
+      }
     }
+  }
+}
+
+void BypassManager::printBypassQueue() {
+  int ret = pthread_mutex_lock(&mutex);
+  if (0 != ret) {
+    throw("ERROR: BypassManager::printBypassQueue() failed to lock mutex.");
+  }
+  BypassPriorityQueue copy = bypassQueue;
+  ret = pthread_mutex_unlock(&mutex);
+  if (0 != ret) {
+    throw("ERROR: BypassManager::printBypassQueue() failed to unlock mutex.");
+  }
+  std::cout << "=== Bypass Queue (orded by expiration date) ===" << std::endl;
+  while (!copy.empty()) {
+    struct tm *ptr;
+    char buf[40];
+    ptr = localtime(&copy.top().first);
+    strftime(buf, 40, "%x %X", ptr);
+    std::cout << buf << " (" << copy.top().first << "): " << copy.top().second->deviceId;
+    if (copy.top().second->status == BYPASS_VALID) {
+      std::cout << " [VALID]" << std::endl;
+    }
+    else {
+      std::cout << " [EXPIRED]" << std::endl;
+    }
+    copy.pop();
   }
 }

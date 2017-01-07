@@ -48,6 +48,7 @@ class Engine {
   void showMitigationDevices();
   void showDeviceInputs();
   MpsDbPtr getCurrentDb();
+  BypassManagerPtr getBypassManager();
 
  protected:
   void updateInputs();

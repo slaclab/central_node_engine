@@ -3,6 +3,7 @@
 
 #include <central_node_database.h>
 #include <stdint.h>
+#include <pthread.h>
 
 /**
  * The bypass expirations are monitored via a priority queue. The head of the
@@ -18,7 +19,8 @@ class CompareBypassTime {
   }
 };
 
-typedef std::priority_queue<BypassQueueEntry, std::vector<BypassQueueEntry>, CompareBypassTime> BypassPriorityQueue;
+typedef std::priority_queue<BypassQueueEntry,
+  std::vector<BypassQueueEntry>, CompareBypassTime> BypassPriorityQueue;
 
 class BypassManager {
  private:
@@ -26,6 +28,8 @@ class BypassManager {
   BypassPriorityQueue bypassQueue;
 
   bool checkBypassQueueTop(time_t now);
+
+  pthread_mutex_t mutex;
   
  public:
   BypassManager();
@@ -34,6 +38,7 @@ class BypassManager {
   void checkBypassQueue(time_t testTime = 0);
   void setBypass(MpsDbPtr db, BypassType bypassType, uint32_t deviceId,
 		 uint32_t value, time_t bypassUntil, bool test = false);
+  void printBypassQueue();
   
   friend class BypassTest;
 };

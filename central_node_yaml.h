@@ -243,6 +243,7 @@ namespace YAML {
   /**
    * DeviceInput:
    * - bit_position: '0'
+   *   fault_value: '0'
    *   channel_id: '1'
    *   digital_device_id: '1'
    *   id: '1'
@@ -259,6 +260,7 @@ namespace YAML {
 	
 	deviceInput->id = (*it)["id"].as<int>();
 	deviceInput->bitPosition = (*it)["bit_position"].as<int>();
+	deviceInput->faultValue = (*it)["fault_value"].as<int>();
 	deviceInput->digitalDeviceId = (*it)["digital_device_id"].as<int>();
 	deviceInput->channelId = (*it)["channel_id"].as<int>();
 	deviceInput->value = 0;
@@ -471,34 +473,6 @@ namespace YAML {
 
 	rhs->insert(std::pair<int, DbAnalogDevicePtr>(analogDevice->id,
 						      DbAnalogDevicePtr(analogDevice)));
-      }
-
-      return true;
-    }
-  };
-
-  /**
-   * ### UNUSED ###
-   *
-   * ThresholdFaultState:
-   * - id: '8'
-   *   threshold_fault_id: '1'
-   */
-  template<>
-    struct convert<DbThresholdFaultStateMapPtr> {
-    static bool decode(const Node &node, DbThresholdFaultStateMapPtr &rhs) {
-      DbThresholdFaultStateMap *thresFaultStates = new DbThresholdFaultStateMap();
-      rhs = DbThresholdFaultStateMapPtr(thresFaultStates);
-
-      for (YAML::Node::const_iterator it = node["ThresholdFaultState"].begin();
-	   it != node["ThresholdFaultState"].end(); ++it) {
-	DbThresholdFaultState *thresFaultState = new DbThresholdFaultState();
-	
-	thresFaultState->id = (*it)["id"].as<int>();
-	thresFaultState->thresholdFaultId = (*it)["threshold_fault_id"].as<int>();
-
-	rhs->insert(std::pair<int, DbThresholdFaultStatePtr>(thresFaultState->id,
-							     DbThresholdFaultStatePtr(thresFaultState)));
       }
 
       return true;

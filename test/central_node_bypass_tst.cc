@@ -45,19 +45,22 @@ class BypassTest {
     try {
       // Now bypass the OTR IN limit switch to 0 and
       // OTR OUT limit switch to 1, i.e. screen is OUT
+      // YAG01_OUT - NOT_OUT
       Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
 				       1 /* bypass value */, 100 /* until */, true);
+      // YAG01_IN - IN
       Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
 				       0 /* bypass value */, 100 /* until*/, true);
       
-      // OTR Attr both out
+      // GUN_TEMP - Fault
       Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
 				       0 /* bypass value */, 110 /* until */, true);
+      // Waveguide TEMP Ok
       Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
 				       1 /* bypass value */, 110 /* until*/, true);
       
-      // PIC
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 3, 0, 300, true);
+      // BPM01
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 11, 7, 300, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
@@ -65,8 +68,8 @@ class BypassTest {
 
   void cancelBypass() {
     try {
-      // PIC
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 3, 0, 0, true);
+      // BPM
+      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 11, 7, 0, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
@@ -348,7 +351,7 @@ int main(int argc, char **argv) {
   }
   t->checkBypass(93);
   //t->showFaults();
-
+  
   t->updateInputsFromTestFile(verbose);
   Engine::getInstance().checkFaults();
   if (verbose) {
@@ -356,6 +359,7 @@ int main(int argc, char **argv) {
   }
 
   // Check bypass expiration - bypass should expire now
+  Engine::getInstance().getBypassManager()->printBypassQueue();
   t->checkBypass(200);
   if (verbose) {
     std::cout << "### BYPASS EXPIRED" << std::endl;
@@ -382,7 +386,7 @@ int main(int argc, char **argv) {
   //t->showFaults();
 
   if (verbose) {
-    std::cout << "### CANCEL PIC BYPASS" << std::endl;
+    std::cout << "### CANCEL BPM01 BYPASS" << std::endl;
   }
   t->cancelBypass();
   t->updateInputsFromTestFile(verbose);
@@ -393,7 +397,9 @@ int main(int argc, char **argv) {
   }
   t->checkBypass(203);
 
-  //t->showFaults();
+  if (verbose) {
+    t->showFaults();
+  }
 
   t->updateInputsFromTestFile(verbose);
   Engine::getInstance().checkFaults();

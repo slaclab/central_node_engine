@@ -20,6 +20,10 @@ MpsDbPtr Engine::getCurrentDb() {
   return mpsDb;
 }
 
+BypassManagerPtr Engine::getBypassManager() {
+  return bypassManager;
+}
+
 int Engine::loadConfig(std::string yamlFileName) {
   MpsDb *db = new MpsDb();
   mpsDb = shared_ptr<MpsDb>(db);
@@ -165,7 +169,16 @@ void Engine::evaluateFaults() {
 	inputValue = (*input).second->digitalDevice->value;
       }
       else {
-	inputValue = (*input).second->analogDevice->value;
+	// Check if there is an active bypass for analog device
+	if ((*input).second->analogDevice->bypass->status == BYPASS_VALID) {
+	  inputValue = (*input).second->analogDevice->bypass->value;
+	  LOG_TRACE("ENGINE", (*input).second->analogDevice->name << " bypassing input value to "
+		    << (*input).second->analogDevice->bypass->value << " (actual value is "
+		    << (*input).second->analogDevice->value << ")");
+	}
+	else {
+	  inputValue = (*input).second->analogDevice->value;
+	}
       }
       faultValue |= (inputValue << (*input).second->bitPosition);
       LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue
@@ -173,15 +186,22 @@ void Engine::evaluateFaults() {
 		<< (*input).second->bitPosition);
     }
     (*fault).second->update(faultValue);
+    (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
     LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
     // Now that a Fault has a new value check if it is in the FaultStates list,
     // and update the allowedBeamClass for the MitigationDevices
     for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
 	 state != (*fault).second->faultStates->end(); ++state) {
+      (*state).second->ignored = false; // Mark not ignored - the ignore logic is evaluated later
       uint32_t maskedValue = faultValue & (*state).second->deviceState->mask;
+      LOG_TRACE("ENGINE", (*fault).second->name << ", checking fault state ["
+		<< (*state).second->id << "]: "
+		<< "masked value is " << std::hex << maskedValue << " (mask="
+		<< (*state).second->deviceState->mask << ")" << std::dec);
       if ((*state).second->deviceState->value == maskedValue) {
-	(*state).second->faulted = true;
+	(*state).second->faulted = true; // Set input faulted field
+	(*fault).second->faulted = true; // Set fault faulted field
 	faulted = true; // Signal that at least one state is faulted
 	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
 		  << faultValue << ", masked=" << maskedValue
@@ -222,6 +242,7 @@ void Engine::evaluateIgnoreConditions() {
 		<< ", input value " << inputValue << std::dec << " bit pos "
 		<< (*input).second->bitPosition);
     }
+    // 'mask' is the condition value that needs to be matched in order to ignore faults
     if ((*condition).second->mask == conditionValue) {
       (*condition).second->state = true;
     }
@@ -232,8 +253,9 @@ void Engine::evaluateIgnoreConditions() {
 
     for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
 	 ignoreCondition != (*condition).second->ignoreConditions->end(); ++ignoreCondition) {
-      // If ignore condition is true, update the fault state (digital or analog)
       if ((*ignoreCondition).second->faultState) {
+	LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
+		  << ", state=" << (*condition).second->state);
 	(*ignoreCondition).second->faultState->ignored = (*condition).second->state;
       }
     }
