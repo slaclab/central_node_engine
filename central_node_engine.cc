@@ -9,7 +9,8 @@ static Logger *engineLogger;
 #endif 
 
 Engine::Engine() :
-  checkFaultTime(5, "Evaluation time") {
+  checkFaultTime(5, "Evaluation time"),
+  initialized(false) {
 #ifdef LOG_ENABLED
   engineLogger = Loggers::getLogger("ENGINE");
   LOG_TRACE("ENGINE", "Created Engine");
@@ -76,11 +77,17 @@ int Engine::loadConfig(std::string yamlFileName) {
   LOG_TRACE("ENGINE", "Lowest beam class found: " << lowestBeamClass->number);
   LOG_TRACE("ENGINE", "Highest beam class found: " << highestBeamClass->number);
 
+  initialized = true;
+
   return 0;
 }
 
 // Update values from firmware...
 void Engine::updateInputs() {
+}
+
+bool Engine::isInitialized() {
+  return initialized;
 }
 
 /**

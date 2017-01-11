@@ -35,10 +35,12 @@ class Engine {
   Engine();
   Engine(Engine const &);
   void operator=(Engine const &);
+  bool initialized;
 
  public:
   int loadConfig(std::string yamlFileName);
   int checkFaults();
+  bool isInitialized();
 
   friend class EngineTest;
   friend class BypassTest;
