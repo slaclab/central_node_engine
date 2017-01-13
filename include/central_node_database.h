@@ -344,7 +344,11 @@ class DbAnalogDevice : public DbEntry {
   float zPosition;
   
   // Configured after loading the YAML file
-  int32_t value; // Compressed analog value from read from the Central Node Firmware
+  int32_t value; // Each bit represents a threshold state from the analog device
+
+  // Latched value
+  uint32_t latchedValue;
+
   DbDeviceTypePtr deviceType;
 
   // Pointer to the Channel connected to the device
@@ -353,12 +357,17 @@ class DbAnalogDevice : public DbEntry {
   // Pointer to the bypass for this input
   InputBypassPtr bypass;
   
- DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0) {
+ DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0) {
   }
 
   void update(uint32_t v) {
     //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
     value = v;
+
+    // Latch new value if this there is a threshold at fault
+    if (value | latchedValue != latchedValue) {
+      latchedValue |= value;
+    }
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice) {
