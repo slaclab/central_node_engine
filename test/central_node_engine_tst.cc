@@ -11,7 +11,9 @@
 //#include <log.h>
 #include <log_wrapper.h>
 
+#ifdef LOG_DEFINED
 using namespace easyloggingpp;
+#endif 
 using boost::shared_ptr;
 
 class TestFailed {};

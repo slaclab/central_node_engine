@@ -322,6 +322,7 @@ void Engine::mitigate() {
 }
 
 int Engine::checkFaults() {
+  // must first get updated input values
   checkFaultTime.start();
 
   LOG_TRACE("ENGINE", "Checking faults");

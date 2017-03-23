@@ -344,7 +344,10 @@ class DbAnalogDevice : public DbEntry {
   float zPosition;
   
   // Configured after loading the YAML file
-  int32_t value; // Each bit represents a threshold state from the analog device
+  // Each bit represents a threshold state from the analog device
+  // BPM devices: 3 bytes (X, Y, TMIT thresholds)
+  // BLM devices: 4 bytes (one byte for each integration window)
+  int32_t value; 
 
   // Latched value
   uint32_t latchedValue;
