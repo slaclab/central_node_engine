@@ -17,7 +17,8 @@ HARCH=linux-x86_64
 
 # ARCHES += xxx yyy
 
-ARCHES += linuxRT-x86_64
+# Uncomment this to build for linuxRT
+#ARCHES += linuxRT-x86_64
 
 # Next, you need to define prefixes (which may include
 # absolute paths) so that e.g., $(CROSS_xxx)gcc can be

@@ -87,6 +87,9 @@ namespace YAML {
    *   number: '1'
    *   slot_number: '2'
    *   type_id: '1'
+   *   global_id: 0
+   *   name: "EIC Digital"
+   *   description: "EIC Digital Status"
    */
   template<>
     struct convert<DbApplicationCardMapPtr> {
@@ -103,6 +106,9 @@ namespace YAML {
 	appCard->crateId = (*it)["crate_id"].as<int>();
 	appCard->slotNumber = (*it)["slot_number"].as<int>();
 	appCard->applicationTypeId = (*it)["type_id"].as<int>();
+	appCard->globalId = (*it)["global_id"].as<int>();
+	appCard->name = (*it)["name"].as<std::string>();
+	appCard->description = (*it)["description"].as<std::string>();
 
 	rhs->insert(std::pair<int, DbApplicationCardPtr>(appCard->id,
 							 DbApplicationCardPtr(appCard)));
@@ -230,6 +236,8 @@ namespace YAML {
 	digitalDevice->name = (*it)["name"].as<std::string>();
 	digitalDevice->description = (*it)["description"].as<std::string>();
 	digitalDevice->zPosition = (*it)["z_position"].as<float>();
+	digitalDevice->evaluation = (*it)["evaluation"].as<int>();
+	digitalDevice->cardId = (*it)["card_id"].as<int>();
 	digitalDevice->value = 0;
 
 	rhs->insert(std::pair<int, DbDigitalDevicePtr>(digitalDevice->id,
@@ -469,6 +477,8 @@ namespace YAML {
 	analogDevice->name = (*it)["name"].as<std::string>();
 	analogDevice->description = (*it)["description"].as<std::string>();
 	analogDevice->zPosition = (*it)["z_position"].as<float>();
+	analogDevice->evaluation = (*it)["evaluation"].as<int>();
+	analogDevice->cardId = (*it)["card_id"].as<int>();
 	analogDevice->value = 0;
 
 	rhs->insert(std::pair<int, DbAnalogDevicePtr>(analogDevice->id,
@@ -482,7 +492,8 @@ namespace YAML {
   /**
    * MitigationDevice:
    * - id: '1'
-   *   name: Gun
+   *   name: Shutter
+   *   destination_mask: 1
    */
   template<>
     struct convert<DbMitigationDeviceMapPtr> {
@@ -496,6 +507,7 @@ namespace YAML {
 	
 	mitigationDevice->id = (*it)["id"].as<int>();
 	mitigationDevice->name = (*it)["name"].as<std::string>();
+	mitigationDevice->destinationMask = (*it)["destination_mask"].as<short>();
 
 	rhs->insert(std::pair<int, DbMitigationDevicePtr>(mitigationDevice->id, 
 							  DbMitigationDevicePtr(mitigationDevice)));

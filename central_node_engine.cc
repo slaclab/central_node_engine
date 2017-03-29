@@ -135,6 +135,9 @@ void Engine::evaluateFaults() {
   bool faulted = false;
 
   // Update digital device values based on individual inputs
+  // The individual inputs come from independent digital inputs,
+  // this does not apply to analog devices, where the input
+  // come from a single channel (with multiple bits in it)
   for (DbDigitalDeviceMap::iterator device = mpsDb->digitalDevices->begin(); 
        device != mpsDb->digitalDevices->end(); ++device) {
     uint32_t deviceValue = 0;
@@ -166,6 +169,7 @@ void Engine::evaluateFaults() {
   // Update digital & analog Fault values and MitigationDevice allowed class
   for (DbFaultMap::iterator fault = mpsDb->faults->begin();
        fault != mpsDb->faults->end(); ++fault) {
+    LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
 
     // First calculate the digital Fault value from its one or more digital device inputs
     uint32_t faultValue = 0;

@@ -4,6 +4,7 @@
 #include <map>
 #include <exception>
 #include <iostream>
+#include <bitset>
 #include <central_node_exception.h>
 #include <central_node_bypass.h>
 #include <stdint.h>
@@ -11,6 +12,53 @@
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
+
+const uint32_t SLOW_EVALUATION = 0;
+const uint32_t FAST_EVALUATION = 1;
+
+// Definition of number of applications and memory space for
+// the hardware (fast) configuration
+const uint32_t NUM_APPLICATIONS = 1024;
+const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bytes
+
+//
+// Each application card has an array of bits for the fast firmware
+// evaluation. The formats are different for digital and analog inputs
+// 
+// Digital input configuration (total size = 1344 bits):
+//
+//   +------------> Expected digital input state 
+//   |   +--------> 16-bit destination mask
+//   |   |    +---> 4-bit encoded power class
+//   |   |    |
+// +---+----+---+---        +---+----+---+---+----+---+
+// | 1 | 16 | 4 |    ...    | 1 | 16 | 4 | 1 | 16 | 4 |
+// +---+----+---+---     ---+---+----+---+---+----+---+
+// |    M63     |    ...    |     M1     |     M0     |
+//
+// where Mxx is the mask for bit xx
+//
+// Analog input configuration (total size = 1152 bits):
+//
+//   +------------> 16-bit destination mask
+//   |   
+//   |                        +---> 4-bit encoded power class
+//   |                        |
+// +----+----+---   ---+----+----+---+---   ---+---+---+
+// | 16 | 16 |   ...   | 16 | 4  | 4 |   ...   | 4 | 4 |
+// +----+----+---   ---+----+----+---+---   ---+---+---+
+// |B23 |B22 |   ...   | B0 |M191|M190   ...   | M1| M0|
+//
+// Bxx are the 16-bit destination masks for each 
+// 4 integrators of each of the 6 channels:
+// 6 * 4 = 24 (B0-B23)
+// 
+// Power classes (M0-M191):
+// 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
+// 8 comparators for each integrator:
+// 8 * 4 * 6 = 192 (M0 through M191)
+// 
+typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationConfigBufferBitSet;
 
 /**
  * DbException class
@@ -113,42 +161,6 @@ class DbApplicationType : public DbEntry {
 typedef shared_ptr<DbApplicationType> DbApplicationTypePtr;
 typedef std::map<uint32_t, DbApplicationTypePtr> DbApplicationTypeMap;
 typedef shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
-
-
-/**
- * ApplicationCard:
- * - crate_id: '1'
- *   id: '1'
- *   number: '1'
- *   slot_number: '2'
- *   type_id: '1'
- */
-class DbApplicationCard : public DbEntry {
- public:
-  uint32_t number;
-  uint32_t slotNumber;
-  uint32_t crateId;
-  uint32_t applicationTypeId;
-  //  shared_ptr<const DbCrate> crate;
-  //  shared_ptr<const DbApplicationType> applicationType;
-
- DbApplicationCard() : DbEntry(), 
-  number(-1), slotNumber(-1), crateId(-1), applicationTypeId(-1) {
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
-    os << "id[" << appCard->id << "]; " 
-       << "number[" << appCard->number << "]; "
-       << "crateId[" << appCard->crateId << "]; "
-       << "slotNumber[" << appCard->slotNumber << "]; "
-       << "applicationTypeId[" << appCard->applicationTypeId << "];";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbApplicationCard> DbApplicationCardPtr;
-typedef std::map<uint32_t, DbApplicationCardPtr> DbApplicationCardMap;
-typedef shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 
 /**
  * DigitalChannel:
@@ -304,6 +316,8 @@ class DbDigitalDevice : public DbEntry {
   std::string name;
   std::string description;
   float zPosition;
+  uint32_t evaluation;
+  uint32_t cardId; // Application Card ID
 
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
@@ -319,7 +333,9 @@ class DbDigitalDevice : public DbEntry {
        << "deviceTypeId[" << digitalDevice->deviceTypeId << "]; "
        << "name[" << digitalDevice->name << "]; "
        << "z[" << digitalDevice->zPosition << "]; "
-       << "description[" << digitalDevice->description << "]";
+       << "evaluation[" << digitalDevice->evaluation << "]; "
+       << "description[" << digitalDevice->description << "]; "
+       << "cardId[" << digitalDevice->cardId << "]";
     return os;
   }
 };
@@ -342,9 +358,14 @@ class DbAnalogDevice : public DbEntry {
   std::string name;
   std::string description;
   float zPosition;
-  
+  uint32_t evaluation;
+  uint32_t cardId; // Application Card ID
+
   // Configured after loading the YAML file
-  int32_t value; // Each bit represents a threshold state from the analog device
+  // Each bit represents a threshold state from the analog device
+  // BPM devices: 3 bytes (X, Y, TMIT thresholds)
+  // BLM devices: 4 bytes (one byte for each integration window)
+  int32_t value; 
 
   // Latched value
   uint32_t latchedValue;
@@ -376,7 +397,9 @@ class DbAnalogDevice : public DbEntry {
        << "name[" << analogDevice->name << "]; "
        << "z[" << analogDevice->zPosition << "]; "
        << "description[" << analogDevice->description << "]; "
-       << "channelId[" << analogDevice->channelId << "]";
+       << "evaluation[" << analogDevice->evaluation << "]; "
+       << "channelId[" << analogDevice->channelId << "]; "
+       << "cardId[" << analogDevice->cardId << "]";
     return os;
   }
 };
@@ -384,6 +407,83 @@ class DbAnalogDevice : public DbEntry {
 typedef shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
 typedef std::map<uint32_t, DbAnalogDevicePtr> DbAnalogDeviceMap;
 typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
+
+
+/**
+ * ApplicationCard:
+ * - crate_id: '1'
+ *   id: '1'
+ *   number: '1'
+ *   slot_number: '2'
+ *   type_id: '1'
+ *   global_id: 0
+ *   name: "EIC Digital"
+ *   description: "EIC Digital Status"
+ */
+class DbApplicationCard : public DbEntry {
+ public:
+  uint32_t number;
+  uint32_t slotNumber;
+  uint32_t crateId;
+  uint32_t applicationTypeId;
+  // Unique application ID, identifies the card were digital/analog signas are coming from
+  uint32_t globalId;
+  std::string name;
+  std::string description;
+
+  // Firmware configuration buffer
+  //  ApplicationConfigBufferPtr applicationBuffer;
+  ApplicationConfigBufferBitSet *applicationBuffer;
+  //  shared_ptr<const DbCrate> crate;
+  //  shared_ptr<const DbApplicationType> applicationType;
+
+  // Each application has a list of analog or digital devices.
+  // Only the devices that have 'fast' evaluation need
+  // to be in this list - these maps are used to configure
+  // the firmware logic
+  DbAnalogDeviceMapPtr analogDevices;
+  DbDigitalDeviceMapPtr digitalDevices;
+
+ DbApplicationCard() : DbEntry(), 
+  number(-1), slotNumber(-1), crateId(-1), applicationTypeId(-1) {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
+    os << "id[" << appCard->id << "]; " 
+       << "number[" << appCard->number << "]; "
+       << "crateId[" << appCard->crateId << "]; "
+       << "slotNumber[" << appCard->slotNumber << "]; "
+       << "applicationTypeId[" << appCard->applicationTypeId << "]; "
+       << "globalId[" << appCard->globalId << "]; "
+       << "name[" << appCard->name << "]; "
+       << "description[" << appCard->description << "]; ";
+
+    if (appCard->digitalDevices) {
+      os << "DigitalDevices [";
+      for (DbDigitalDeviceMap::iterator digitalDevice = appCard->digitalDevices->begin();
+	   digitalDevice != appCard->digitalDevices->end(); ++digitalDevice) {
+	os << (*digitalDevice).second->name << ", ";
+      }
+      os << "]";
+    }
+    else if (appCard->analogDevices) {
+      os << "AnalogDevices [";
+      for (DbAnalogDeviceMap::iterator analogDevice = appCard->analogDevices->begin();
+	   analogDevice != appCard->analogDevices->end(); ++analogDevice) {
+	os << (*analogDevice).second->name << ", ";
+      }
+      os << "]";
+    }
+    else {
+      os << " - no devices (?)";
+    }
+    return os;
+  }
+};
+
+typedef shared_ptr<DbApplicationCard> DbApplicationCardPtr;
+typedef std::map<uint32_t, DbApplicationCardPtr> DbApplicationCardMap;
+typedef shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 
 /**
  * FaultInput:
@@ -459,11 +559,13 @@ typedef shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
 /**
  * MitigationDevice:
  * - id: '1'
- *   name: Gun
+ *   name: Shutter
+ *   destination_mask: 1
  */
 class DbMitigationDevice : public DbEntry {
  public:
   std::string name;
+  uint16_t destinationMask;
 
   // Used after loading the YAML file
   DbBeamClassPtr allowedBeamClass; // allowed beam class after evaluating faults
@@ -474,7 +576,8 @@ class DbMitigationDevice : public DbEntry {
 
   friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
     os << "id[" << mitigationDevice->id << "]; "
-       << "name[" << mitigationDevice->name << "]";
+       << "name[" << mitigationDevice->name << "]; "
+       << "destinationMask[" << mitigationDevice->destinationMask << "]";
     return os;
   }
 };
@@ -769,6 +872,16 @@ class MpsDb {
   void configureFaultStates();
   void configureAnalogDevices();
   void configureIgnoreConditions();
+  void configureApplicationCards();
+
+  /**
+   * Memory that holds the firmware/hardware database configuration.
+   * Every 0x100 chunk is reserved for an application configuration.
+   * Even though there are 2048 bits on every chunk, the digital
+   * configuration takes 1343 bits and the analog configuration takes
+   * 1151 bits.
+   */
+  char fastConfigurationBuffer[NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE];
 
  public:
   DbCrateMapPtr crates;

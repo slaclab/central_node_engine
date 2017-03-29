@@ -11,7 +11,7 @@
 //#include <log.h>
 #include <log_wrapper.h>
 
-#ifdef LOG_DEFINED
+#ifdef LOG_ENABLED
 using namespace easyloggingpp;
 #endif 
 using boost::shared_ptr;
@@ -144,13 +144,13 @@ class EngineTest {
       for (int i = 0; i < analogInputCount; ++i) {
 	analogInputFile >> deviceId;
 	analogInputFile >> analogValue;
-	
+	/*	
 	std::cout << deviceId << ": " << analogValue << " analogSize: "
 	  	  << Engine::getInstance().mpsDb->analogDevices->size() 
 	  	  << " digitalSize: "
          	  << Engine::getInstance().mpsDb->digitalDevices->size() 
 	    	  << std::endl;
-	
+	*/
 	int size = Engine::getInstance().mpsDb->analogDevices->size() + 1 + Engine::getInstance().mpsDb->digitalDevices->size();
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId

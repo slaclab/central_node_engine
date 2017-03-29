@@ -297,6 +297,66 @@ void MpsDb::configureIgnoreConditions() {
 }
 
 /**
+ * Configure each application card, setting its map of digital or analog
+ * inputs, and setting up the location within the fast configuration memory.
+ */
+void MpsDb::configureApplicationCards() {
+  std::stringstream errorStream;
+
+  //  char fastConfigurationBuffer[NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE];
+  char *configBuffer = 0;
+  for (DbApplicationCardMap::iterator applicationCard = applicationCards->begin();
+       applicationCard != applicationCards->end(); ++applicationCard) {
+    configBuffer = fastConfigurationBuffer + (*applicationCard).second->globalId *
+      APPLICATION_CONFIG_BUFFER_SIZE;
+    (*applicationCard).second->applicationBuffer = 
+      reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
+  }
+
+  // Get all devices for each application card, starting with the digital devices
+  for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
+       digitalDevice != digitalDevices->end(); ++digitalDevice) {
+    DbApplicationCardMap::iterator applicationCard =
+      applicationCards->find((*digitalDevice).second->cardId);
+    if (applicationCard != applicationCards->end()) {
+      // Alloc a new map for digital devices if one is not there yet
+      if (!(*applicationCard).second->digitalDevices) {
+	DbDigitalDeviceMap *digitalDevices = new DbDigitalDeviceMap();
+	(*applicationCard).second->digitalDevices = DbDigitalDeviceMapPtr(digitalDevices);
+      }
+      // Once the map is there, add the digital device
+      (*applicationCard).second->digitalDevices->
+	insert(std::pair<int, DbDigitalDevicePtr>((*digitalDevice).second->id,
+						  (*digitalDevice).second));
+    }
+  }
+
+  // Do the same for analog devices
+  for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
+       analogDevice != analogDevices->end(); ++analogDevice) {
+    DbApplicationCardMap::iterator applicationCard =
+      applicationCards->find((*analogDevice).second->cardId);
+    if (applicationCard != applicationCards->end()) {
+      // Alloc a new map for analog devices if one is not there yet
+      if ((*applicationCard).second->digitalDevices) {
+	errorStream << "ERROR: Found ApplicationCard with digital AND analog devices,"
+		    << " can't handle that (cardId="
+		    << (*analogDevice).second->cardId << ")";
+	throw(DbException(errorStream.str()));
+      }
+      if (!(*applicationCard).second->analogDevices) {
+	DbAnalogDeviceMap *analogDevices = new DbAnalogDeviceMap();
+	(*applicationCard).second->analogDevices = DbAnalogDeviceMapPtr(analogDevices);
+      }
+      // Once the map is there, add the analog device
+      (*applicationCard).second->analogDevices->
+	insert(std::pair<int, DbAnalogDevicePtr>((*analogDevice).second->id,
+						  (*analogDevice).second));
+    }
+  }
+}
+
+/**
  * After the YAML database file is loaded this method must be called to resolve
  * references between tables. In the YAML table entries there is a reference to
  * another table using a 'foreign key'. The configure*() methods look for the 
@@ -311,6 +371,7 @@ void MpsDb::configure() {
   configureFaultStates();
   configureAnalogDevices();
   configureIgnoreConditions();
+  configureApplicationCards();
 }
 
 void MpsDb::setName(std::string yamlFileName) {
@@ -396,6 +457,9 @@ int MpsDb::load(std::string yamlFileName) {
   }
 
   setName(yamlFileName);
+
+  // Zero out the buffer that holds the firmware configuration
+  memset(fastConfigurationBuffer, 0, NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE); 
 
   return 0;
 }
