@@ -14,6 +14,67 @@
 using namespace easyloggingpp;
 static Logger *databaseLogger;
 
+/**
+ * 
+ */
+void DbApplicationCard::writeConfiguration() {
+  if (digitalDevices) {
+    writeDigitalConfiguration();
+  }
+  else if (analogDevices) {
+    writeAnalogConfiguration();
+  }
+  else {
+    throw(DbException("Can't configure application card - no devices configured"));
+  }
+}
+
+// Digital input configuration (total size = 1344 bits):
+//
+//   +------------> Expected digital input state 
+//   |   +--------> 16-bit destination mask
+//   |   |    +---> 4-bit encoded power class
+//   |   |    |
+// +---+----+---+---        +---+----+---+---+----+---+
+// | 1 | 16 | 4 |    ...    | 1 | 16 | 4 | 1 | 16 | 4 |
+// +---+----+---+---     ---+---+----+---+---+----+---+
+// |    M63     |    ...    |     M1     |     M0     |
+//
+// where Mxx is the mask for bit xx
+void DbApplicationCard::writeDigitalConfiguration() {
+  std::stringstream errorStream;
+  for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
+       digitalDevice != digitalDevices->end(); ++digitalDevice) {
+    // Only configure firmware for devices/faults that require fast evaluation
+    if ((*digitalDevice).second->evaluation == FAST_EVALUATION) {
+      if ((*digitalDevice).second->inputDevices->size() == 1) {
+	DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
+	// This is the channel number
+	std::cout << "Channel number: " << (*deviceInput).second->channel->number << std::endl;
+	// Must find all the allowed classes and build the destination mask and set the lowest power class
+	
+      }
+      else {
+	errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one input only."
+		    << " Found " << (*digitalDevice).second->inputDevices->size() << " inputs for "
+		    << "device " << (*digitalDevice).second->name;
+	throw(DbException(errorStream.str())); 
+      }
+    }
+    else {
+    }
+    /*
+    for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
+	 deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
+
+    }
+    */
+  }
+}
+
+void DbApplicationCard::writeAnalogConfiguration() {
+}
+
 MpsDb::MpsDb() {
   databaseLogger = Loggers::getLogger("DATABASE");
 }
@@ -33,7 +94,7 @@ void MpsDb::configureAllowedClasses() {
     if (beamIt == beamClasses->end()) {
       errorStream <<  "ERROR: Failed to configure database, invalid ID found for BeamClass ("
 		  << id << ") for AllowedClass (" << (*it).second->id << ")";
-      throw(DbException(errorStream.str()));
+      throw(DbException(errorStream.str())); 
     }
     (*it).second->beamClass = (*beamIt).second;
 
@@ -62,6 +123,25 @@ void MpsDb::configureAllowedClasses() {
       }
       (*digFaultIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*it).second->id,
 										     (*it).second));      
+    }
+  }
+}
+
+void MpsDb::configureDeviceTypes() {
+  // Compile a list of DeviceStates and assign to the proper DeviceType
+  for (DbDeviceStateMap::iterator it = deviceStates->begin(); 
+       it != deviceStates->end(); ++it) {
+    int id = (*it).second->deviceTypeId;
+
+    DbDeviceTypeMap::iterator deviceType = deviceTypes->find(id);
+    if (deviceType != deviceTypes->end()) {
+      // Create a map to hold deviceStates for the deviceType
+      if (!(*deviceType).second->deviceStates) {
+	DbDeviceStateMap *deviceStates = new DbDeviceStateMap();
+	(*deviceType).second->deviceStates = DbDeviceStateMapPtr(deviceStates);
+      }
+      (*deviceType).second->deviceStates->insert(std::pair<int, DbDeviceStatePtr>((*it).second->id,
+										  (*it).second));      
     }
   }
 }
@@ -98,6 +178,22 @@ void MpsDb::configureDeviceInputs() {
       throw(DbException(errorStream.str()));
     }
     (*it).second->channel = (*channelIt).second;
+  }
+
+  // Set the DbDeviceType for all DbDigitaDevices
+  for (DbDigitalDeviceMap::iterator it = digitalDevices->begin();
+       it != digitalDevices->end(); ++it) {
+    int typeId = (*it).second->deviceTypeId;
+
+    DbDeviceTypeMap::iterator deviceType = deviceTypes->find(typeId);
+    if (deviceType != deviceTypes->end()) {
+      (*it).second->deviceType = (*deviceType).second;
+    }
+    else {
+      errorStream << "ERROR: Failed to configure database, invalid deviceTypeId ("
+		  << typeId << ") for DigitalDevice (" <<  (*it).second->id << ")";
+      throw(DbException(errorStream.str()));
+    }
   }
 }
 
@@ -366,12 +462,20 @@ void MpsDb::configureApplicationCards() {
  */
 void MpsDb::configure() {
   configureAllowedClasses();
+  configureDeviceTypes();
   configureDeviceInputs();
   configureFaultInputs();
   configureFaultStates();
   configureAnalogDevices();
   configureIgnoreConditions();
   configureApplicationCards();
+}
+
+void MpsDb::writeFirmwareConfiguration() {
+  for (DbApplicationCardMap::iterator card = applicationCards->begin();
+       card != applicationCards->end(); ++card) {
+    (*card).second->writeConfiguration();
+  }
 }
 
 void MpsDb::setName(std::string yamlFileName) {

@@ -196,29 +196,6 @@ typedef std::map<uint32_t, DbChannelPtr> DbChannelMap;
 typedef shared_ptr<DbChannelMap> DbChannelMapPtr;
 
 /**
- * DeviceType:
- * - id: '1'
- *   name: Insertion Device
- */
-class DbDeviceType : public DbEntry {
- public:
-  std::string name;
-  
- DbDeviceType() : DbEntry(), name("") {
-  }
-
-  friend std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType) {
-    os << "id[" << devType->id << "]; "
-       << "name[" << devType->name << "];";
-    return os;
-  }
-};
-
-typedef shared_ptr<DbDeviceType> DbDeviceTypePtr;
-typedef std::map<uint32_t, DbDeviceTypePtr> DbDeviceTypeMap;
-typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
-
-/**
  * DeviceState:
  * - device_type_id: '1'
  *   id: '1'
@@ -248,6 +225,40 @@ class DbDeviceState : public DbEntry {
 typedef shared_ptr<DbDeviceState> DbDeviceStatePtr;
 typedef std::map<uint32_t, DbDeviceStatePtr> DbDeviceStateMap;
 typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
+
+/**
+ * DeviceType:
+ * - id: '1'
+ *   name: Insertion Device
+ */
+class DbDeviceType : public DbEntry {
+ public:
+  std::string name;
+  
+  DbDeviceStateMapPtr deviceStates;
+
+ DbDeviceType() : DbEntry(), name("") {
+  }
+
+  friend std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType) {
+    os << "id[" << devType->id << "]; "
+       << "name[" << devType->name << "]; ";
+
+    if (devType->deviceStates) {
+      os << " deviceStates [";
+      for (DbDeviceStateMap::iterator deviceState = devType->deviceStates->begin();
+	   deviceState != devType->deviceStates->end(); ++deviceState) {
+	os << (*deviceState).second->id << " ";
+      }
+      os << "]";
+    }
+    return os;
+  }
+};
+
+typedef shared_ptr<DbDeviceType> DbDeviceTypePtr;
+typedef std::map<uint32_t, DbDeviceTypePtr> DbDeviceTypeMap;
+typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
 
 /**
  * DeviceInput:
@@ -321,6 +332,12 @@ class DbDigitalDevice : public DbEntry {
 
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
+  DbDeviceTypePtr deviceType;
+
+  // list of fault states - populated if the device evaluation happens in firmware
+  // TODO: populate this map
+  //DbFaultStateMapPtr fastFaultStates; 
+
  DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
   }
 
@@ -377,6 +394,10 @@ class DbAnalogDevice : public DbEntry {
 
   // Pointer to the bypass for this input
   InputBypassPtr bypass;
+
+  // list of fault states - populated if the device evaluation happens in firmware
+  // TODO: populate this map
+  //DbFaultStateMapPtr fastFaultStates; 
   
  DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0) {
   }
@@ -447,6 +468,10 @@ class DbApplicationCard : public DbEntry {
  DbApplicationCard() : DbEntry(), 
   number(-1), slotNumber(-1), crateId(-1), applicationTypeId(-1) {
   }
+
+  void writeConfiguration();
+  void writeDigitalConfiguration();
+  void writeAnalogConfiguration();
 
   friend std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
     os << "id[" << appCard->id << "]; " 
@@ -868,6 +893,7 @@ class MpsDb {
   void setName(std::string yamlFileName);
   void configureAllowedClasses();
   void configureDeviceInputs();
+  void configureDeviceTypes();
   void configureFaultInputs();
   void configureFaultStates();
   void configureAnalogDevices();
@@ -916,6 +942,8 @@ class MpsDb {
 
   void showFaults();
   void showFault(DbFaultPtr fault);
+
+  void writeFirmwareConfiguration();
 
   //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
 

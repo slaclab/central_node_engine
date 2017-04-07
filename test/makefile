@@ -12,6 +12,10 @@ central_node_database_tst_SRCS       = central_node_database_tst.cc
 central_node_database_tst_LIBS       = $(CENTRAL_NODE_LIBS)
 TESTPROGRAMS            += central_node_database_tst
 
+central_node_config_tst_SRCS       = central_node_config_tst.cc
+central_node_config_tst_LIBS       = $(CENTRAL_NODE_LIBS)
+TESTPROGRAMS            += central_node_config_tst
+
 central_node_engine_tst_SRCS       = central_node_engine_tst.cc
 central_node_engine_tst_LIBS       = $(CENTRAL_NODE_LIBS)
 TESTPROGRAMS            += central_node_engine_tst
