@@ -51,8 +51,13 @@ void DbApplicationCard::writeDigitalConfiguration() {
 	DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
 	// This is the channel number
 	std::cout << "Channel number: " << (*deviceInput).second->channel->number << std::endl;
+	std::cout << "- FaultStates: " << (*digitalDevice).second->fastFaultStates->size() << std::endl; 
+	std::cout << "- DestinationMask: " << (*digitalDevice).second->fastDestinationMask << std::endl; 
+	std::cout << "- PowerClass: " << (*digitalDevice).second->fastPowerClass << std::endl; 
 	// Must find all the allowed classes and build the destination mask and set the lowest power class
-	
+	// Need the FaultStates for the Device!
+	// The DeviceInput has a DeviceType, and the device type has a list of states. For the fast
+	// devices/inputs there should be only one fail state
       }
       else {
 	errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one input only."
@@ -195,6 +200,7 @@ void MpsDb::configureDeviceInputs() {
       throw(DbException(errorStream.str()));
     }
   }
+
 }
 
 void MpsDb::configureFaultInputs() {
@@ -219,6 +225,51 @@ void MpsDb::configureFaultInputs() {
     }
     else {
       (*it).second->digitalDevice = (*deviceIt).second;
+      // If the DbDigitalDevice is set for fast evaluation, save a pointer to the 
+      // DbFaultInput
+      if ((*deviceIt).second->evaluation == FAST_EVALUATION) {
+	/*
+	if (!(*deviceIt).second->fastFaultStates) {
+	  DbFaultStateMap *fastFaultStates = new DbFaultStateMap();
+	  (*deviceIt).second->fastFaultStates = DbFaultStateMapPtr(fastFaultStates);
+	}
+	*/
+	DbFaultMap::iterator faultIt = faults->find((*it).second->faultId);
+	if (faultIt == faults->end()) {
+	  errorStream << "ERROR: Failed to find Fault (" << id
+		      << ") for FaultInput (" << (*it).second->id << ")";
+	  throw(DbException(errorStream.str()));
+	}
+	else {
+	  if (!(*faultIt).second->faultStates) {
+	    errorStream << "ERROR: No FaultStates found for Fault (" << (*faultIt).second->id
+			<< ") for FaultInput (" << (*it).second->id << ")";
+	    throw(DbException(errorStream.str()));
+	  }
+	  (*deviceIt).second->fastFaultStates = (*faultIt).second->faultStates;
+	  (*deviceIt).second->fastDestinationMask = 0;
+	  (*deviceIt).second->fastPowerClass = 100;
+
+	  if ((*faultIt).second->faultStates->size() != 1) {
+	    errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one fault state only."
+			<< " Found " << (*faultIt).second->faultStates->size() << " fault states for "
+			<< "device " << (*deviceIt).second->name;
+	    throw(DbException(errorStream.str())); 
+	  }
+	  DbFaultStateMap::iterator faultState = (*faultIt).second->faultStates->begin();
+	  //	  DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
+	  for (DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
+	       allowedClass != (*faultState).second->allowedClasses->end(); ++allowedClass) {
+	    (*deviceIt).second->fastDestinationMask |= (*allowedClass).second->mitigationDevice->destinationMask;
+	    if ((*allowedClass).second->beamClass->number < (*deviceIt).second->fastPowerClass) {
+	      (*deviceIt).second->fastPowerClass = (*allowedClass).second->beamClass->number;
+	    }
+	  }
+	}
+	// Given the FaultInput, find the DbFault and then the DbFaultState...
+	//	(*deviceIt).second->fastFaultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
+	//									    (*it).second));
+      }
     }
   }
 
@@ -273,7 +324,7 @@ void MpsDb::configureFaultStates() {
       (*faultIt).second->defaultFaultState = (*it).second;
     }
 
-    // DevicState
+    // DeviceState
     id = (*it).second->deviceStateId;
     DbDeviceStateMap::iterator deviceStateIt = deviceStates->find(id);
     if (deviceStateIt == deviceStates->end()) {
@@ -464,8 +515,8 @@ void MpsDb::configure() {
   configureAllowedClasses();
   configureDeviceTypes();
   configureDeviceInputs();
-  configureFaultInputs();
   configureFaultStates();
+  configureFaultInputs();
   configureAnalogDevices();
   configureIgnoreConditions();
   configureApplicationCards();

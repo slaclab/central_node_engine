@@ -12,6 +12,7 @@
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
+using boost::weak_ptr;
 
 const uint32_t SLOW_EVALUATION = 0;
 const uint32_t FAST_EVALUATION = 1;
@@ -315,6 +316,13 @@ typedef shared_ptr<DbDeviceInput> DbDeviceInputPtr;
 typedef std::map<uint32_t, DbDeviceInputPtr> DbDeviceInputMap;
 typedef shared_ptr<DbDeviceInputMap> DbDeviceInputMapPtr;
 
+
+class DbFaultState;
+typedef shared_ptr<DbFaultState> DbFaultStatePtr;
+typedef std::map<uint32_t, DbFaultStatePtr> DbFaultStateMap;
+typedef shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
+
+
 /**
  * DigitalDevice:
  * - device_type_id: '1'
@@ -336,7 +344,9 @@ class DbDigitalDevice : public DbEntry {
 
   // list of fault states - populated if the device evaluation happens in firmware
   // TODO: populate this map
-  //DbFaultStateMapPtr fastFaultStates; 
+  DbFaultStateMapPtr fastFaultStates; 
+  uint16_t fastDestinationMask;
+  uint16_t fastPowerClass;
 
  DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
   }
@@ -397,7 +407,7 @@ class DbAnalogDevice : public DbEntry {
 
   // list of fault states - populated if the device evaluation happens in firmware
   // TODO: populate this map
-  //DbFaultStateMapPtr fastFaultStates; 
+  DbFaultStateMapPtr fastFaultStates; 
   
  DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0) {
   }
@@ -697,10 +707,6 @@ class DbFaultState : public DbEntry {
     return os;
   }
 };
-
-typedef shared_ptr<DbFaultState> DbFaultStatePtr;
-typedef std::map<uint32_t, DbFaultStatePtr> DbFaultStateMap;
-typedef shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
 
 
 /** 
