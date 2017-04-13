@@ -22,6 +22,29 @@ const uint32_t FAST_EVALUATION = 1;
 const uint32_t NUM_APPLICATIONS = 1024;
 const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bytes
 
+const uint32_t POWER_CLASS_BIT_SIZE = 4;
+const uint32_t DESTINATION_MASK_BIT_SIZE = 16;
+
+// Constants for application cards
+const uint32_t APP_CARD_MAX_ANALOG_CHANNELS = 6;
+const uint32_t APP_CARD_MAX_DIGITAL_CHANNELS = 64;
+
+// Offsets for firmware digital channel configuration
+const uint32_t DIGITAL_CHANNEL_CONFIG_SIZE = 21; // in bits
+const uint32_t DIGITAL_CHANNEL_POWER_CLASS_OFFSET = 0;
+const uint32_t DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET = 4; // in bits
+const uint32_t DIGITAL_CHANNEL_EXPECTED_STATE_OFFSET = 20; // in buts
+
+// Constants for analog channel configuration
+const uint32_t ANALOG_CHANNEL_INTEGRATORS_SIZE = 8; // in bits
+const uint32_t ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL = 4; // in bits
+const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_BASE = // in bits
+  POWER_CLASS_BIT_SIZE *
+  APP_CARD_MAX_ANALOG_CHANNELS *
+  ANALOG_CHANNEL_INTEGRATORS_SIZE *
+  ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL;
+//const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_SIZE = DESTINATION_MASK_BIT_SIZE *
+
 //
 // Each application card has an array of bits for the fast firmware
 // evaluation. The formats are different for digital and analog inputs
@@ -342,11 +365,21 @@ class DbDigitalDevice : public DbEntry {
 
   DbDeviceTypePtr deviceType;
 
-  // list of fault states - populated if the device evaluation happens in firmware
-  // TODO: populate this map
-  DbFaultStateMapPtr fastFaultStates; 
+  /**
+   * These fields get populated when the database is loaded, they are
+   * used to configure the central node firmware with fast fault
+   * information.
+   */
+  // 16-bit beam destination mask for fast digital devices/faults
   uint16_t fastDestinationMask;
+
+  // 4-bit encoded max beam power class for faults from this device
   uint16_t fastPowerClass;
+
+  // This is the value that must be present when there is no fault,
+  // when the digital device has a value different from the expected
+  // the firmware will apply the fastPowerClass/fastDestinationMask
+  uint8_t fastExpectedState;
 
  DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
   }
@@ -405,11 +438,26 @@ class DbAnalogDevice : public DbEntry {
   // Pointer to the bypass for this input
   InputBypassPtr bypass;
 
-  // list of fault states - populated if the device evaluation happens in firmware
-  // TODO: populate this map
-  DbFaultStateMapPtr fastFaultStates; 
-  
+  /**
+   * These fields get populated when the database is loaded, they are
+   * used to configure the central node firmware with fast fault
+   * information.
+   */
+  // 16-bit beam destination mask for fast digital devices/faults
+  // there is a destination mask per integrator. 
+  uint16_t fastDestinationMask[ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL];
+
+  // 4-bit encoded max beam power class for each integrator threshold
+  uint16_t fastPowerClass[ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
+
  DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0) {
+    for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+      fastDestinationMask[i] = 0;
+    }
+
+    for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+      fastPowerClass[i] = 0;
+    }
   }
 
   void update(uint32_t v) {
@@ -431,6 +479,19 @@ class DbAnalogDevice : public DbEntry {
        << "evaluation[" << analogDevice->evaluation << "]; "
        << "channelId[" << analogDevice->channelId << "]; "
        << "cardId[" << analogDevice->cardId << "]";
+
+    if (analogDevice->evaluation == FAST_EVALUATION) {
+      os << "; destinationMasks[";
+      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+	os << std::hex << analogDevice->fastDestinationMask[i] << ", " << std::dec;
+      }
+      os << "]; powerClasses[";
+      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+	os << analogDevice->fastPowerClass[i] << ", ";
+      }
+      os << "]";
+    }
+
     return os;
   }
 };

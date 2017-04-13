@@ -42,6 +42,9 @@ void DbApplicationCard::writeConfiguration() {
 //
 // where Mxx is the mask for bit xx
 void DbApplicationCard::writeDigitalConfiguration() {
+  // First set all bits to zero
+  applicationBuffer->reset();
+  
   std::stringstream errorStream;
   for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
        digitalDevice != digitalDevices->end(); ++digitalDevice) {
@@ -49,15 +52,26 @@ void DbApplicationCard::writeDigitalConfiguration() {
     if ((*digitalDevice).second->evaluation == FAST_EVALUATION) {
       if ((*digitalDevice).second->inputDevices->size() == 1) {
 	DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
-	// This is the channel number
-	std::cout << "Channel number: " << (*deviceInput).second->channel->number << std::endl;
-	std::cout << "- FaultStates: " << (*digitalDevice).second->fastFaultStates->size() << std::endl; 
-	std::cout << "- DestinationMask: " << (*digitalDevice).second->fastDestinationMask << std::endl; 
-	std::cout << "- PowerClass: " << (*digitalDevice).second->fastPowerClass << std::endl; 
-	// Must find all the allowed classes and build the destination mask and set the lowest power class
-	// Need the FaultStates for the Device!
-	// The DeviceInput has a DeviceType, and the device type has a list of states. For the fast
-	// devices/inputs there should be only one fail state
+
+	// Write the ExpectedState (index 20)
+	int channelNumber = (*deviceInput).second->channel->number;
+	int channelOffset = channelNumber * DIGITAL_CHANNEL_CONFIG_SIZE;
+	int offset = DIGITAL_CHANNEL_EXPECTED_STATE_OFFSET;
+	applicationBuffer->set(channelOffset + offset, (*digitalDevice).second->fastExpectedState);
+
+	// Write the destination mask (index 4 through 19)
+	offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
+	for (int i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
+	  applicationBuffer->set(channelOffset + offset + i,
+				 ((*digitalDevice).second->fastDestinationMask >> i) & 0x01);
+	}
+
+	// Write the beam power class (index 0 through 3)
+	offset = DIGITAL_CHANNEL_POWER_CLASS_OFFSET;
+	for (int i = 0; i < POWER_CLASS_BIT_SIZE; ++i) {
+	  applicationBuffer->set(channelOffset + offset + i,
+				 ((*digitalDevice).second->fastPowerClass >> i) & 0x01);
+	}
       }
       else {
 	errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one input only."
@@ -66,18 +80,71 @@ void DbApplicationCard::writeDigitalConfiguration() {
 	throw(DbException(errorStream.str())); 
       }
     }
-    else {
-    }
-    /*
-    for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
-	 deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
-
-    }
-    */
   }
+  // Print bitset in string format
+  //  std::cout << *applicationBuffer << std::endl;
 }
 
+// Analog input configuration (total size = 1152 bits):
+//
+//   +------------> 16-bit destination mask
+//   |   
+//   |                        +---> 4-bit encoded power class
+//   |                        |
+// +----+----+---   ---+----+----+---+---   ---+---+---+
+// | 16 | 16 |   ...   | 16 | 4  | 4 |   ...   | 4 | 4 |
+// +----+----+---   ---+----+----+---+---   ---+---+---+
+// |B23 |B22 |   ...   | B0 |M191|M190   ...   | M1| M0|
+//
+// Bxx are the 16-bit destination masks for each 
+// 4 integrators of each of the 6 channels:
+// 6 * 4 = 24 (B0-B23)
+// 
+// Power classes (M0-M191):
+// 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
+// 8 comparators for each integrator:
+// 8 * 4 * 6 = 192 (M0 through M191)
 void DbApplicationCard::writeAnalogConfiguration() {
+  // First set all bits to zero
+  applicationBuffer->reset();
+  
+  std::stringstream errorStream;
+
+  // Loop through all Analog Devices within this Application
+  for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
+       analogDevice != analogDevices->end(); ++analogDevice) {
+    // Only configure firmware for devices/faults that require fast evaluation
+    if ((*analogDevice).second->evaluation == FAST_EVALUATION) {
+      LOG_TRACE("DATABASE", "AnalogConfig: " << (*analogDevice).second->name);
+      std::cout << (*analogDevice).second << std::endl;
+      int channelNumber = (*analogDevice).second->channel->number;
+
+      // Write power classes for each threshold bit
+      uint32_t powerClassOffset = channelNumber *
+	ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * POWER_CLASS_BIT_SIZE;
+      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL *
+	     ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+	for (int j = 0; j < POWER_CLASS_BIT_SIZE; ++j) {
+	  applicationBuffer->set(powerClassOffset + j,
+				 ((*analogDevice).second->fastPowerClass[i] >> j) & 0x01);
+	}
+	powerClassOffset += POWER_CLASS_BIT_SIZE;
+      }
+      
+      // Write the destination mask for each integrator
+      int offset = ANALOG_CHANNEL_DESTINATION_MASK_BASE +
+	channelNumber * ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * DESTINATION_MASK_BIT_SIZE;
+      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+	for (int j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) {
+	  applicationBuffer->set(offset + j,
+				 ((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01);
+	}
+	offset += DESTINATION_MASK_BIT_SIZE;
+      }
+    }
+  }
+  // Print bitset in string format
+  std::cout << *applicationBuffer << std::endl;
 }
 
 MpsDb::MpsDb() {
@@ -211,6 +278,7 @@ void MpsDb::configureFaultInputs() {
        it != faultInputs->end(); ++it) {
     int id = (*it).second->deviceId;
 
+    // Find the DbDigitalDevice or DbAnalogDevice referenced by the FaultInput
     DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
     if (deviceIt == digitalDevices->end()) {
       DbAnalogDeviceMap::iterator aDeviceIt = analogDevices->find(id);
@@ -219,8 +287,94 @@ void MpsDb::configureFaultInputs() {
 		    << ") for FaultInput (" << (*it).second->id << ")";
 	throw(DbException(errorStream.str()));
       }
+      // Found the DbAnalogDevice, configure it
       else {
 	(*it).second->analogDevice = (*aDeviceIt).second;
+	if ((*aDeviceIt).second->evaluation == FAST_EVALUATION) {
+	  LOG_TRACE("DATABASE", "AnalogDevice " << (*aDeviceIt).second->name
+		    << ": Fast Evaluation");
+	  DbFaultMap::iterator faultIt = faults->find((*it).second->faultId);
+	  if (faultIt == faults->end()) {
+	    errorStream << "ERROR: Failed to find Fault (" << id
+			<< ") for FaultInput (" << (*it).second->id << ")";
+	    throw(DbException(errorStream.str()));
+	  }
+	  else {
+	    if (!(*faultIt).second->faultStates) {
+	      errorStream << "ERROR: No FaultStates found for Fault (" << (*faultIt).second->id
+			  << ") for FaultInput (" << (*it).second->id << ")";
+	      throw(DbException(errorStream.str()));
+	    }
+	    // There is one DbFaultState per threshold bit, for BPMs there are
+	    // 24 bits (8 for X, 8 for Y and 8 for TMIT). Other analog devices
+	    // have 32 bits (4 integrators).
+
+	    // There is a unique power class for each threshold bit (DbFaultState)
+	    // The destination masks for the thresholds for the same integrator
+	    // must be and'ed together.
+	    
+	    for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+	      (*aDeviceIt).second->fastDestinationMask[i] = 0;
+	    }
+	    
+	    for (int i = 0;
+		 i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+	      (*aDeviceIt).second->fastPowerClass[i] = 0xFF;
+	    }
+
+	    for (DbFaultStateMap::iterator faultState = (*faultIt).second->faultStates->begin();
+		 faultState != (*faultIt).second->faultStates->end(); ++faultState) {
+	      // The DbDeviceState value defines which integrator the fault belongs to.
+	      // Bits 0 through 7 are for the first integrator, 8 through 15 for the second,
+	      // and so on.
+	      uint32_t value = (*faultState).second->deviceState->value;
+	      int integratorIndex = 4;
+
+	      if (value & 0x000000FF) integratorIndex = 0;
+	      if (value & 0x0000FF00) integratorIndex = 1;
+	      if (value & 0x00FF0000) integratorIndex = 2;
+	      if (value & 0xFF000000) integratorIndex = 3;
+
+	      int thresholdIndex = 0;
+	      bool isSet = false;
+	      while (!isSet) {
+		if (value & 0x01) {
+		  isSet = true;
+		}
+		else {
+		  thresholdIndex++;
+		  value >>= 1;
+		}
+		if (thresholdIndex >= sizeof(uint32_t) * 8) {
+		  errorStream << "ERROR: Invalid threshold bit for Fault (" << (*faultIt).second->id
+			      << "), FaultInput (" << (*it).second->id << "), DeviceState ("
+			      << (*faultState).second->deviceState->id << ")";
+		  throw(DbException(errorStream.str()));
+		}
+	      }
+
+	      for (DbAllowedClassMap::iterator allowedClass =
+		     (*faultState).second->allowedClasses->begin();
+		   allowedClass != (*faultState).second->allowedClasses->end(); ++allowedClass) {
+		(*aDeviceIt).second->fastDestinationMask[integratorIndex] |=
+		  (*allowedClass).second->mitigationDevice->destinationMask;
+		LOG_TRACE("DATABASE", "PowerClass: threshold index=" << thresholdIndex
+			  << " power=" << (*allowedClass).second->beamClass->number);
+		if ((*allowedClass).second->beamClass->number <
+		    (*aDeviceIt).second->fastPowerClass[thresholdIndex]) {
+		  (*aDeviceIt).second->fastPowerClass[thresholdIndex] =
+		    (*allowedClass).second->beamClass->number;
+		}
+	      }
+	    }
+	    for (int i = 0;
+		 i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+	      if ((*aDeviceIt).second->fastPowerClass[i] == 0xFF) {
+		(*aDeviceIt).second->fastPowerClass[i] = 0;
+	      }
+	    }
+	  }
+	}
       }
     }
     else {
@@ -228,12 +382,6 @@ void MpsDb::configureFaultInputs() {
       // If the DbDigitalDevice is set for fast evaluation, save a pointer to the 
       // DbFaultInput
       if ((*deviceIt).second->evaluation == FAST_EVALUATION) {
-	/*
-	if (!(*deviceIt).second->fastFaultStates) {
-	  DbFaultStateMap *fastFaultStates = new DbFaultStateMap();
-	  (*deviceIt).second->fastFaultStates = DbFaultStateMapPtr(fastFaultStates);
-	}
-	*/
 	DbFaultMap::iterator faultIt = faults->find((*it).second->faultId);
 	if (faultIt == faults->end()) {
 	  errorStream << "ERROR: Failed to find Fault (" << id
@@ -246,9 +394,9 @@ void MpsDb::configureFaultInputs() {
 			<< ") for FaultInput (" << (*it).second->id << ")";
 	    throw(DbException(errorStream.str()));
 	  }
-	  (*deviceIt).second->fastFaultStates = (*faultIt).second->faultStates;
 	  (*deviceIt).second->fastDestinationMask = 0;
 	  (*deviceIt).second->fastPowerClass = 100;
+	  (*deviceIt).second->fastExpectedState = 0;
 
 	  if ((*faultIt).second->faultStates->size() != 1) {
 	    errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one fault state only."
@@ -257,6 +405,14 @@ void MpsDb::configureFaultInputs() {
 	    throw(DbException(errorStream.str())); 
 	  }
 	  DbFaultStateMap::iterator faultState = (*faultIt).second->faultStates->begin();
+
+	  // Set the expected state as the oposite of the expected faulted value
+	  // For example a faulted fast valve sets the digital input to high (0V, digital 0),
+	  // the expected normal state is 1.
+	  if (!(*faultState).second->deviceState->value) {
+	    (*deviceIt).second->fastExpectedState = 1;
+	  }
+
 	  //	  DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
 	  for (DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
 	       allowedClass != (*faultState).second->allowedClasses->end(); ++allowedClass) {
@@ -266,9 +422,6 @@ void MpsDb::configureFaultInputs() {
 	    }
 	  }
 	}
-	// Given the FaultInput, find the DbFault and then the DbFaultState...
-	//	(*deviceIt).second->fastFaultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
-	//									    (*it).second));
       }
     }
   }
