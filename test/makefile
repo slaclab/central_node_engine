@@ -5,6 +5,7 @@ include $(CENTRAL_NODE_DIR)/defs.mak
 
 DEP_HEADERS +=
 
+#STATIC_LIBRARIES_YES+=central_node_engine
 STATIC_LIBRARIES_YES+=
 SHARED_LIBRARIES_YES+=
 
@@ -27,6 +28,10 @@ TESTPROGRAMS            += central_node_engine_tst_analog
 central_node_bypass_tst_SRCS       = central_node_bypass_tst.cc
 central_node_bypass_tst_LIBS       = $(CENTRAL_NODE_LIBS)
 TESTPROGRAMS            += central_node_bypass_tst
+
+central_node_update_tst_SRCS       = central_node_update_tst.cc
+central_node_update_tst_LIBS       = $(CENTRAL_NODE_LIBS)
+TESTPROGRAMS            += central_node_update_tst
 
 PROGRAMS =
 include $(CENTRAL_NODE_DIR)/rules.mak

@@ -32,10 +32,10 @@ namespace YAML {
 	   it != node["Crate"].end(); ++it) {
 	DbCrate *crate = new DbCrate();
 	
-	crate->id = (*it)["id"].as<int>();
-	crate->number = (*it)["number"].as<int>();
-	crate->numSlots = (*it)["num_slots"].as<int>();
-	crate->shelfNumber = (*it)["shelf_number"].as<int>();
+	crate->id = (*it)["id"].as<unsigned int>();
+	crate->number = (*it)["number"].as<unsigned int>();
+	crate->numSlots = (*it)["num_slots"].as<unsigned int>();
+	crate->shelfNumber = (*it)["shelf_number"].as<unsigned int>();
 
 	rhs->insert(std::pair<int, DbCratePtr>(crate->id, DbCratePtr(crate)));
       }
@@ -64,12 +64,12 @@ namespace YAML {
 	   it != node["ApplicationType"].end(); ++it) {
 	DbApplicationType *appType = new DbApplicationType();
 	
-	appType->id = (*it)["id"].as<int>();
-	appType->number = (*it)["number"].as<int>();
-	appType->analogChannelCount = (*it)["analog_channel_count"].as<int>();
-	appType->analogChannelSize = (*it)["analog_channel_size"].as<int>();
-	appType->digitalChannelCount = (*it)["digital_channel_count"].as<int>();
-	appType->digitalChannelSize = (*it)["digital_channel_size"].as<int>();
+	appType->id = (*it)["id"].as<unsigned int>();
+	appType->number = (*it)["number"].as<unsigned int>();
+	appType->analogChannelCount = (*it)["analog_channel_count"].as<unsigned int>();
+	appType->analogChannelSize = (*it)["analog_channel_size"].as<unsigned int>();
+	appType->digitalChannelCount = (*it)["digital_channel_count"].as<unsigned int>();
+	appType->digitalChannelSize = (*it)["digital_channel_size"].as<unsigned int>();
 	appType->description = (*it)["name"].as<std::string>();
 
 	rhs->insert(std::pair<int, DbApplicationTypePtr>(appType->id,
@@ -101,12 +101,12 @@ namespace YAML {
 	   it != node["ApplicationCard"].end(); ++it) {
 	DbApplicationCard *appCard = new DbApplicationCard();
 	
-	appCard->id = (*it)["id"].as<int>();
-	appCard->number = (*it)["number"].as<int>();
-	appCard->crateId = (*it)["crate_id"].as<int>();
-	appCard->slotNumber = (*it)["slot_number"].as<int>();
-	appCard->applicationTypeId = (*it)["type_id"].as<int>();
-	appCard->globalId = (*it)["global_id"].as<int>();
+	appCard->id = (*it)["id"].as<unsigned int>();
+	appCard->number = (*it)["number"].as<unsigned int>();
+	appCard->crateId = (*it)["crate_id"].as<unsigned int>();
+	appCard->slotNumber = (*it)["slot_number"].as<unsigned int>();
+	appCard->applicationTypeId = (*it)["type_id"].as<unsigned int>();
+	appCard->globalId = (*it)["global_id"].as<unsigned int>();
 	appCard->name = (*it)["name"].as<std::string>();
 	appCard->description = (*it)["description"].as<std::string>();
 
@@ -147,10 +147,10 @@ namespace YAML {
 	   it != node[key].end(); ++it) {
 	DbChannel *channel = new DbChannel();
 	
-	channel->id = (*it)["id"].as<int>();
+	channel->id = (*it)["id"].as<unsigned int>();
 	channel->name = (*it)["name"].as<std::string>();
-	channel->number = (*it)["number"].as<int>();
-	channel->cardId = (*it)["card_id"].as<int>();
+	channel->number = (*it)["number"].as<unsigned int>();
+	channel->cardId = (*it)["card_id"].as<unsigned int>();
 
 	rhs->insert(std::pair<int, DbChannelPtr>(channel->id, DbChannelPtr(channel)));
       }
@@ -174,7 +174,7 @@ namespace YAML {
 	   it != node["DeviceType"].end(); ++it) {
 	DbDeviceType *deviceType = new DbDeviceType();
 	
-	deviceType->id = (*it)["id"].as<int>();
+	deviceType->id = (*it)["id"].as<unsigned int>();
 	deviceType->name = (*it)["name"].as<std::string>();
 
 	rhs->insert(std::pair<int, DbDeviceTypePtr>(deviceType->id,
@@ -202,10 +202,10 @@ namespace YAML {
 	   it != node["DeviceState"].end(); ++it) {
 	DbDeviceState *	deviceState = new DbDeviceState();
 	
-	deviceState->id = (*it)["id"].as<int>();
-	deviceState->value = (*it)["value"].as<int>();
+	deviceState->id = (*it)["id"].as<unsigned int>();
+	deviceState->value = (*it)["value"].as<unsigned int>();
 	deviceState->mask = (*it)["mask"].as<uint32_t>();
-	deviceState->deviceTypeId = (*it)["device_type_id"].as<int>();
+	deviceState->deviceTypeId = (*it)["device_type_id"].as<unsigned int>();
 	deviceState->name = (*it)["name"].as<std::string>();
 
 	rhs->insert(std::pair<int, DbDeviceStatePtr>(deviceState->id,
@@ -231,13 +231,13 @@ namespace YAML {
 	   it != node["DigitalDevice"].end(); ++it) {
 	DbDigitalDevice *digitalDevice = new DbDigitalDevice();
 	
-	digitalDevice->id = (*it)["id"].as<int>();
-	digitalDevice->deviceTypeId = (*it)["device_type_id"].as<int>();
+	digitalDevice->id = (*it)["id"].as<unsigned int>();
+	digitalDevice->deviceTypeId = (*it)["device_type_id"].as<unsigned int>();
 	digitalDevice->name = (*it)["name"].as<std::string>();
 	digitalDevice->description = (*it)["description"].as<std::string>();
 	digitalDevice->zPosition = (*it)["z_position"].as<float>();
-	digitalDevice->evaluation = (*it)["evaluation"].as<int>();
-	digitalDevice->cardId = (*it)["card_id"].as<int>();
+	digitalDevice->evaluation = (*it)["evaluation"].as<unsigned int>();
+	digitalDevice->cardId = (*it)["card_id"].as<unsigned int>();
 	digitalDevice->value = 0;
 
 	rhs->insert(std::pair<int, DbDigitalDevicePtr>(digitalDevice->id,
@@ -266,11 +266,11 @@ namespace YAML {
 	   it != node["DeviceInput"].end(); ++it) {
 	DbDeviceInput *deviceInput = new DbDeviceInput();
 	
-	deviceInput->id = (*it)["id"].as<int>();
-	deviceInput->bitPosition = (*it)["bit_position"].as<int>();
-	deviceInput->faultValue = (*it)["fault_value"].as<int>();
-	deviceInput->digitalDeviceId = (*it)["digital_device_id"].as<int>();
-	deviceInput->channelId = (*it)["channel_id"].as<int>();
+	deviceInput->id = (*it)["id"].as<unsigned int>();
+	deviceInput->bitPosition = (*it)["bit_position"].as<unsigned int>();
+	deviceInput->faultValue = (*it)["fault_value"].as<unsigned int>();
+	deviceInput->digitalDeviceId = (*it)["digital_device_id"].as<unsigned int>();
+	deviceInput->channelId = (*it)["channel_id"].as<unsigned int>();
 	deviceInput->value = 0;
 
 	rhs->insert(std::pair<int, DbDeviceInputPtr>(deviceInput->id,
@@ -298,10 +298,10 @@ namespace YAML {
 	   it != node["Condition"].end(); ++it) {
 	DbCondition *condition = new DbCondition();
 	
-	condition->id = (*it)["id"].as<int>();
+	condition->id = (*it)["id"].as<unsigned int>();
 	condition->name = (*it)["name"].as<std::string>();
 	condition->description = (*it)["description"].as<std::string>();
-	condition->mask = (*it)["value"].as<int>();
+	condition->mask = (*it)["value"].as<unsigned int>();
 
 	rhs->insert(std::pair<int, DbConditionPtr>(condition->id, DbConditionPtr(condition)));
       }
@@ -326,9 +326,9 @@ namespace YAML {
 	   it != node["IgnoreCondition"].end(); ++it) {
 	DbIgnoreCondition *ignoreCondition = new DbIgnoreCondition();
 	
-	ignoreCondition->id = (*it)["id"].as<int>();
-	ignoreCondition->faultStateId = (*it)["fault_state_id"].as<int>();
-	ignoreCondition->conditionId = (*it)["condition_id"].as<int>();
+	ignoreCondition->id = (*it)["id"].as<unsigned int>();
+	ignoreCondition->faultStateId = (*it)["fault_state_id"].as<unsigned int>();
+	ignoreCondition->conditionId = (*it)["condition_id"].as<unsigned int>();
 
 	rhs->insert(std::pair<int, DbIgnoreConditionPtr>(ignoreCondition->id, DbIgnoreConditionPtr(ignoreCondition)));
       }
@@ -354,10 +354,10 @@ namespace YAML {
 	   it != node["ConditionInput"].end(); ++it) {
 	DbConditionInput *conditionInput = new DbConditionInput();
 	
-	conditionInput->id = (*it)["id"].as<int>();
-	conditionInput->bitPosition = (*it)["bit_position"].as<int>();
-	conditionInput->faultStateId = (*it)["fault_state_id"].as<int>();
-	conditionInput->conditionId = (*it)["condition_id"].as<int>();
+	conditionInput->id = (*it)["id"].as<unsigned int>();
+	conditionInput->bitPosition = (*it)["bit_position"].as<unsigned int>();
+	conditionInput->faultStateId = (*it)["fault_state_id"].as<unsigned int>();
+	conditionInput->conditionId = (*it)["condition_id"].as<unsigned int>();
 
 	rhs->insert(std::pair<int, DbConditionInputPtr>(conditionInput->id, DbConditionInputPtr(conditionInput)));
       }
@@ -382,7 +382,7 @@ namespace YAML {
 	   it != node["Fault"].end(); ++it) {
 	DbFault *fault = new DbFault();
 	
-	fault->id = (*it)["id"].as<int>();
+	fault->id = (*it)["id"].as<unsigned int>();
 	fault->name = (*it)["name"].as<std::string>();
 	fault->description = (*it)["description"].as<std::string>();
 	fault->value = 0;
@@ -411,10 +411,10 @@ namespace YAML {
 	   it != node["FaultInput"].end(); ++it) {
 	DbFaultInput *faultInput = new DbFaultInput();
 	
-	faultInput->id = (*it)["id"].as<int>();
-	faultInput->bitPosition = (*it)["bit_position"].as<int>();
-	faultInput->deviceId = (*it)["device_id"].as<int>();
-	faultInput->faultId = (*it)["fault_id"].as<int>();
+	faultInput->id = (*it)["id"].as<unsigned int>();
+	faultInput->bitPosition = (*it)["bit_position"].as<unsigned int>();
+	faultInput->deviceId = (*it)["device_id"].as<unsigned int>();
+	faultInput->faultId = (*it)["fault_id"].as<unsigned int>();
 	faultInput->value = 0;
 
 	rhs->insert(std::pair<int, DbFaultInputPtr>(faultInput->id,
@@ -442,9 +442,9 @@ namespace YAML {
 	   it != node["FaultState"].end(); ++it) {
 	DbFaultState *faultState = new DbFaultState();
 	
-	faultState->id = (*it)["id"].as<int>();
-	faultState->faultId = (*it)["fault_id"].as<int>();
-	faultState->deviceStateId = (*it)["device_state_id"].as<int>();
+	faultState->id = (*it)["id"].as<unsigned int>();
+	faultState->faultId = (*it)["fault_id"].as<unsigned int>();
+	faultState->deviceStateId = (*it)["device_state_id"].as<unsigned int>();
 	faultState->defaultState = (*it)["default"].as<bool>();
 
 	rhs->insert(std::pair<int, DbFaultStatePtr>(faultState->id,
@@ -471,14 +471,14 @@ namespace YAML {
 	   it != node["AnalogDevice"].end(); ++it) {
 	DbAnalogDevice *analogDevice = new DbAnalogDevice();
 	
-	analogDevice->id = (*it)["id"].as<int>();
-	analogDevice->deviceTypeId = (*it)["device_type_id"].as<int>();
-	analogDevice->channelId = (*it)["channel_id"].as<int>();
+	analogDevice->id = (*it)["id"].as<unsigned int>();
+	analogDevice->deviceTypeId = (*it)["device_type_id"].as<unsigned int>();
+	analogDevice->channelId = (*it)["channel_id"].as<unsigned int>();
 	analogDevice->name = (*it)["name"].as<std::string>();
 	analogDevice->description = (*it)["description"].as<std::string>();
 	analogDevice->zPosition = (*it)["z_position"].as<float>();
-	analogDevice->evaluation = (*it)["evaluation"].as<int>();
-	analogDevice->cardId = (*it)["card_id"].as<int>();
+	analogDevice->evaluation = (*it)["evaluation"].as<unsigned int>();
+	analogDevice->cardId = (*it)["card_id"].as<unsigned int>();
 	analogDevice->value = 0;
 
 	rhs->insert(std::pair<int, DbAnalogDevicePtr>(analogDevice->id,
@@ -505,7 +505,7 @@ namespace YAML {
 	   it != node["MitigationDevice"].end(); ++it) {
 	DbMitigationDevice *mitigationDevice = new DbMitigationDevice();
 	
-	mitigationDevice->id = (*it)["id"].as<int>();
+	mitigationDevice->id = (*it)["id"].as<unsigned int>();
 	mitigationDevice->name = (*it)["name"].as<std::string>();
 	mitigationDevice->destinationMask = (*it)["destination_mask"].as<short>();
 
@@ -534,9 +534,12 @@ namespace YAML {
 	   it != node["BeamClass"].end(); ++it) {
 	DbBeamClass *beamClass = new DbBeamClass();
 	
-	beamClass->id = (*it)["id"].as<int>();
+	beamClass->id = (*it)["id"].as<unsigned int>();
 	beamClass->name = (*it)["name"].as<std::string>();
-	beamClass->number = (*it)["number"].as<int>();
+	beamClass->number = (*it)["number"].as<unsigned int>();
+	beamClass->minPeriod = (*it)["min_period"].as<unsigned int>();
+	beamClass->integrationWindow = (*it)["integration_window"].as<unsigned int>();
+	beamClass->totalCharge = (*it)["total_charge"].as<unsigned int>();
 	beamClass->description = (*it)["description"].as<std::string>();
 
 	rhs->insert(std::pair<int, DbBeamClassPtr>(beamClass->id, DbBeamClassPtr(beamClass)));
@@ -563,10 +566,10 @@ namespace YAML {
 	   it != node["AllowedClass"].end(); ++it) {
 	DbAllowedClass *allowedClass = new DbAllowedClass();
 	
-	allowedClass->id = (*it)["id"].as<int>();
-	allowedClass->beamClassId = (*it)["beam_class_id"].as<int>();
-	allowedClass->faultStateId = (*it)["fault_state_id"].as<int>();
-	allowedClass->mitigationDeviceId = (*it)["mitigation_device_id"].as<int>();
+	allowedClass->id = (*it)["id"].as<unsigned int>();
+	allowedClass->beamClassId = (*it)["beam_class_id"].as<unsigned int>();
+	allowedClass->faultStateId = (*it)["fault_state_id"].as<unsigned int>();
+	allowedClass->mitigationDeviceId = (*it)["mitigation_device_id"].as<unsigned int>();
 
 	rhs->insert(std::pair<int, DbAllowedClassPtr>(allowedClass->id,
 						      DbAllowedClassPtr(allowedClass)));

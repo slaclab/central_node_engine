@@ -14,146 +14,34 @@
 using namespace easyloggingpp;
 static Logger *databaseLogger;
 
-/**
- * 
- */
-void DbApplicationCard::writeConfiguration() {
-  if (digitalDevices) {
-    writeDigitalConfiguration();
-  }
-  else if (analogDevices) {
-    writeAnalogConfiguration();
-  }
-  else {
-    throw(DbException("Can't configure application card - no devices configured"));
-  }
-}
-
-// Digital input configuration (total size = 1344 bits):
-//
-//   +------------> Expected digital input state 
-//   |   +--------> 16-bit destination mask
-//   |   |    +---> 4-bit encoded power class
-//   |   |    |
-// +---+----+---+---        +---+----+---+---+----+---+
-// | 1 | 16 | 4 |    ...    | 1 | 16 | 4 | 1 | 16 | 4 |
-// +---+----+---+---     ---+---+----+---+---+----+---+
-// |    M63     |    ...    |     M1     |     M0     |
-//
-// where Mxx is the mask for bit xx
-void DbApplicationCard::writeDigitalConfiguration() {
-  // First set all bits to zero
-  applicationBuffer->reset();
-  
-  std::stringstream errorStream;
-  for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
-       digitalDevice != digitalDevices->end(); ++digitalDevice) {
-    // Only configure firmware for devices/faults that require fast evaluation
-    if ((*digitalDevice).second->evaluation == FAST_EVALUATION) {
-      if ((*digitalDevice).second->inputDevices->size() == 1) {
-	DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
-
-	// Write the ExpectedState (index 20)
-	int channelNumber = (*deviceInput).second->channel->number;
-	int channelOffset = channelNumber * DIGITAL_CHANNEL_CONFIG_SIZE;
-	int offset = DIGITAL_CHANNEL_EXPECTED_STATE_OFFSET;
-	applicationBuffer->set(channelOffset + offset, (*digitalDevice).second->fastExpectedState);
-
-	// Write the destination mask (index 4 through 19)
-	offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
-	for (int i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
-	  applicationBuffer->set(channelOffset + offset + i,
-				 ((*digitalDevice).second->fastDestinationMask >> i) & 0x01);
-	}
-
-	// Write the beam power class (index 0 through 3)
-	offset = DIGITAL_CHANNEL_POWER_CLASS_OFFSET;
-	for (int i = 0; i < POWER_CLASS_BIT_SIZE; ++i) {
-	  applicationBuffer->set(channelOffset + offset + i,
-				 ((*digitalDevice).second->fastPowerClass >> i) & 0x01);
-	}
-      }
-      else {
-	errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one input only."
-		    << " Found " << (*digitalDevice).second->inputDevices->size() << " inputs for "
-		    << "device " << (*digitalDevice).second->name;
-	throw(DbException(errorStream.str())); 
-      }
-    }
-  }
-  // Print bitset in string format
-  //  std::cout << *applicationBuffer << std::endl;
-}
-
-// Analog input configuration (total size = 1152 bits):
-//
-//   +------------> 16-bit destination mask
-//   |   
-//   |                        +---> 4-bit encoded power class
-//   |                        |
-// +----+----+---   ---+----+----+---+---   ---+---+---+
-// | 16 | 16 |   ...   | 16 | 4  | 4 |   ...   | 4 | 4 |
-// +----+----+---   ---+----+----+---+---   ---+---+---+
-// |B23 |B22 |   ...   | B0 |M191|M190   ...   | M1| M0|
-//
-// Bxx are the 16-bit destination masks for each 
-// 4 integrators of each of the 6 channels:
-// 6 * 4 = 24 (B0-B23)
-// 
-// Power classes (M0-M191):
-// 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
-// 8 comparators for each integrator:
-// 8 * 4 * 6 = 192 (M0 through M191)
-void DbApplicationCard::writeAnalogConfiguration() {
-  // First set all bits to zero
-  applicationBuffer->reset();
-  
-  std::stringstream errorStream;
-
-  // Loop through all Analog Devices within this Application
-  for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
-       analogDevice != analogDevices->end(); ++analogDevice) {
-    // Only configure firmware for devices/faults that require fast evaluation
-    if ((*analogDevice).second->evaluation == FAST_EVALUATION) {
-      LOG_TRACE("DATABASE", "AnalogConfig: " << (*analogDevice).second->name);
-      std::cout << (*analogDevice).second << std::endl;
-      int channelNumber = (*analogDevice).second->channel->number;
-
-      // Write power classes for each threshold bit
-      uint32_t powerClassOffset = channelNumber *
-	ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * POWER_CLASS_BIT_SIZE;
-      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL *
-	     ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
-	for (int j = 0; j < POWER_CLASS_BIT_SIZE; ++j) {
-	  applicationBuffer->set(powerClassOffset + j,
-				 ((*analogDevice).second->fastPowerClass[i] >> j) & 0x01);
-	}
-	powerClassOffset += POWER_CLASS_BIT_SIZE;
-      }
-      
-      // Write the destination mask for each integrator
-      int offset = ANALOG_CHANNEL_DESTINATION_MASK_BASE +
-	channelNumber * ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * DESTINATION_MASK_BIT_SIZE;
-      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
-	for (int j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) {
-	  applicationBuffer->set(offset + j,
-				 ((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01);
-	}
-	offset += DESTINATION_MASK_BIT_SIZE;
-      }
-    }
-  }
-  // Print bitset in string format
-  std::cout << *applicationBuffer << std::endl;
-}
-
-MpsDb::MpsDb() {
+MpsDb::MpsDb() : inputUpdateTime(5, "Input update time") {
   databaseLogger = Loggers::getLogger("DATABASE");
 }
 #else
-MpsDb::MpsDb() {
+MpsDb::MpsDb() : inputUpdateTime(5, "Input update time") {
 }
 #endif
+
+MpsDb::~MpsDb() {
+  inputUpdateTime.show();
+}
+
+
+/**
+ * This method must be called after the input updates are read from
+ * the central node firmware. It updates the status of all
+ * digital/analog inputs.
+ */
+void MpsDb::updateInputs() {
+  inputUpdateTime.start();
+  DbApplicationCardMap::iterator applicationCardIt;
+  for (applicationCardIt = applicationCards->begin();
+       applicationCardIt != applicationCards->end();
+       ++applicationCardIt) {
+    (*applicationCardIt).second->updateInputs();
+  }
+  inputUpdateTime.end();
+}
 
 void MpsDb::configureAllowedClasses() {
   LOG_TRACE("DATABASE", "Configure: AllowedClasses");
@@ -598,61 +486,84 @@ void MpsDb::configureIgnoreConditions() {
 
 /**
  * Configure each application card, setting its map of digital or analog
- * inputs, and setting up the location within the fast configuration memory.
+ * inputs. Each application card gets a pointer to the buffer containing
+ * the fast rules (sent to firmware) and the buffer containing the
+ * input updates received from firmware at 360 Hz.
  */
 void MpsDb::configureApplicationCards() {
+  LOG_TRACE("DATABASE", "Configure: ApplicationCards");
   std::stringstream errorStream;
 
-  //  char fastConfigurationBuffer[NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE];
+  // Set the address of the firmware configuration location for each application card; and
+  // the address of the firmware input update location for each application card
   char *configBuffer = 0;
-  for (DbApplicationCardMap::iterator applicationCard = applicationCards->begin();
-       applicationCard != applicationCards->end(); ++applicationCard) {
-    configBuffer = fastConfigurationBuffer + (*applicationCard).second->globalId *
-      APPLICATION_CONFIG_BUFFER_SIZE;
-    (*applicationCard).second->applicationBuffer = 
-      reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
+  char *updateBuffer = 0;
+  DbApplicationCardPtr aPtr;
+  DbApplicationCardMap::iterator applicationCardIt;
+  for (applicationCardIt = applicationCards->begin(); applicationCardIt != applicationCards->end();
+       ++applicationCardIt) {
+    aPtr = (*applicationCardIt).second;
+    configBuffer = fastConfigurationBuffer + aPtr->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES;
+    aPtr->applicationConfigBuffer = reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
+
+    updateBuffer = fastUpdateBuffer + aPtr->globalId * APPLICATION_UPDATE_BUFFER_SIZE_BYTES;
+    aPtr->applicationUpdateBuffer = reinterpret_cast<ApplicationUpdateBufferBitSet *>(updateBuffer);
+
+    LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
   }
 
   // Get all devices for each application card, starting with the digital devices
-  for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
-       digitalDevice != digitalDevices->end(); ++digitalDevice) {
-    DbApplicationCardMap::iterator applicationCard =
-      applicationCards->find((*digitalDevice).second->cardId);
-    if (applicationCard != applicationCards->end()) {
+  // Create a map of digital devices for each DbApplicationCard
+  DbDigitalDeviceMap::iterator digitalDeviceIt;
+  DbDigitalDevicePtr dPtr;
+  for (digitalDeviceIt = digitalDevices->begin(); digitalDeviceIt != digitalDevices->end(); ++digitalDeviceIt) {
+    dPtr = (*digitalDeviceIt).second;
+    applicationCardIt = applicationCards->find(dPtr->cardId);
+    if (applicationCardIt != applicationCards->end()) {
+      aPtr = (*applicationCardIt).second;
       // Alloc a new map for digital devices if one is not there yet
-      if (!(*applicationCard).second->digitalDevices) {
+      if (!aPtr->digitalDevices) {
 	DbDigitalDeviceMap *digitalDevices = new DbDigitalDeviceMap();
-	(*applicationCard).second->digitalDevices = DbDigitalDeviceMapPtr(digitalDevices);
+	aPtr->digitalDevices = DbDigitalDeviceMapPtr(digitalDevices);
       }
       // Once the map is there, add the digital device
-      (*applicationCard).second->digitalDevices->
-	insert(std::pair<int, DbDigitalDevicePtr>((*digitalDevice).second->id,
-						  (*digitalDevice).second));
+      aPtr->digitalDevices->insert(std::pair<int, DbDigitalDevicePtr>(dPtr->id, dPtr));
+      //      std::cout << "AppCard[" << aPtr->number << "] <- digital " << dPtr->name << std::endl;
+      LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], DigitalDevice: " << dPtr->name);
     }
   }
 
   // Do the same for analog devices
-  for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
-       analogDevice != analogDevices->end(); ++analogDevice) {
-    DbApplicationCardMap::iterator applicationCard =
-      applicationCards->find((*analogDevice).second->cardId);
-    if (applicationCard != applicationCards->end()) {
+  DbAnalogDeviceMap::iterator analogDeviceIt;
+  DbAnalogDevicePtr adPtr;
+
+  for (DbAnalogDeviceMap::iterator analogDeviceIt = analogDevices->begin();
+       analogDeviceIt != analogDevices->end(); ++analogDeviceIt) {
+    adPtr = (*analogDeviceIt).second;
+    DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(adPtr->cardId);
+    if (applicationCardIt != applicationCards->end()) {
+      aPtr = (*applicationCardIt).second;
       // Alloc a new map for analog devices if one is not there yet
-      if ((*applicationCard).second->digitalDevices) {
+      if (aPtr->digitalDevices) {
 	errorStream << "ERROR: Found ApplicationCard with digital AND analog devices,"
 		    << " can't handle that (cardId="
-		    << (*analogDevice).second->cardId << ")";
+		    << (*analogDeviceIt).second->cardId << ")";
 	throw(DbException(errorStream.str()));
       }
-      if (!(*applicationCard).second->analogDevices) {
+      if (!aPtr->analogDevices) {
 	DbAnalogDeviceMap *analogDevices = new DbAnalogDeviceMap();
-	(*applicationCard).second->analogDevices = DbAnalogDeviceMapPtr(analogDevices);
+	aPtr->analogDevices = DbAnalogDeviceMapPtr(analogDevices);
       }
       // Once the map is there, add the analog device
-      (*applicationCard).second->analogDevices->
-	insert(std::pair<int, DbAnalogDevicePtr>((*analogDevice).second->id,
-						  (*analogDevice).second));
+      aPtr->analogDevices->insert(std::pair<int, DbAnalogDevicePtr>(adPtr->id, adPtr));
+      LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], AnalogDevice: " << adPtr->name);
     }
+  }
+
+  for (applicationCardIt = applicationCards->begin();
+       applicationCardIt != applicationCards->end();
+       ++applicationCardIt) {
+    (*applicationCardIt).second->configureUpdateBuffers();
   }
 }
 
@@ -767,7 +678,7 @@ int MpsDb::load(std::string yamlFileName) {
   setName(yamlFileName);
 
   // Zero out the buffer that holds the firmware configuration
-  memset(fastConfigurationBuffer, 0, NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE); 
+  //  memset(fastConfigurationBuffer, 0, NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE); 
 
   return 0;
 }

@@ -8,6 +8,7 @@
 #include <central_node_exception.h>
 #include <central_node_bypass.h>
 #include <stdint.h>
+#include <time_util.h>
 
 #include <boost/shared_ptr.hpp>
 
@@ -20,7 +21,10 @@ const uint32_t FAST_EVALUATION = 1;
 // Definition of number of applications and memory space for
 // the hardware (fast) configuration
 const uint32_t NUM_APPLICATIONS = 1024;
-const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bytes
+const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bits
+const uint32_t APPLICATION_CONFIG_BUFFER_SIZE_BYTES = APPLICATION_CONFIG_BUFFER_SIZE / 8;
+const uint32_t APPLICATION_UPDATE_BUFFER_SIZE = 384; // in bits, which is 48 bytes
+const uint32_t APPLICATION_UPDATE_BUFFER_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_SIZE / 8;
 
 const uint32_t POWER_CLASS_BIT_SIZE = 4;
 const uint32_t DESTINATION_MASK_BIT_SIZE = 16;
@@ -33,7 +37,7 @@ const uint32_t APP_CARD_MAX_DIGITAL_CHANNELS = 64;
 const uint32_t DIGITAL_CHANNEL_CONFIG_SIZE = 21; // in bits
 const uint32_t DIGITAL_CHANNEL_POWER_CLASS_OFFSET = 0;
 const uint32_t DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET = 4; // in bits
-const uint32_t DIGITAL_CHANNEL_EXPECTED_STATE_OFFSET = 20; // in buts
+const uint32_t DIGITAL_CHANNEL_EXPECTED_STATE_OFFSET = 20; // in bits
 
 // Constants for analog channel configuration
 const uint32_t ANALOG_CHANNEL_INTEGRATORS_SIZE = 8; // in bits
@@ -44,6 +48,12 @@ const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_BASE = // in bits
   ANALOG_CHANNEL_INTEGRATORS_SIZE *
   ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL;
 //const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_SIZE = DESTINATION_MASK_BIT_SIZE *
+
+// Constants for digital/analog input updates
+const uint32_t UPDATE_STATUS_BITS = 2; // 2 bits for each status, one for 'was Low' and one for 'was High'
+const uint32_t DEVICE_INPUT_UPDATE_SIZE = 2; // in bits (one 'was Low'/'was High' per input)
+const uint32_t ANALOG_DEVICE_NUM_THRESHOLDS = 32; // max number of thresholds per analog channel
+const uint32_t ANALOG_DEVICE_UPDATE_SIZE = ANALOG_DEVICE_NUM_THRESHOLDS * 2; // in bits ('was Low'/'was High')
 
 //
 // Each application card has an array of bits for the fast firmware
@@ -83,6 +93,8 @@ const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_BASE = // in bits
 // 8 * 4 * 6 = 192 (M0 through M191)
 // 
 typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationConfigBufferBitSet;
+
+typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationUpdateBufferBitSet;
 
 /**
  * DbException class
@@ -310,19 +322,17 @@ class DbDeviceInput : public DbEntry {
   // Pointer to the Channel connected to the device
   DbChannelPtr channel;
 
+  // Pointer to shared bitset buffer containing updates for all inputs from
+  // the same application card
+  ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
+
  DbDeviceInput() : DbEntry(), 
-    bitPosition(-1), channelId(-1), faultValue(0), digitalDeviceId(-1) {
+    bitPosition(-1), channelId(-1), faultValue(0), digitalDeviceId(-1), applicationUpdateBuffer(0) {
   }
 
-  // This should update the value from the data read from the central node firmware
-  void update(uint32_t v) {
-    value = v;
-
-    // Latch new value if this is a fault
-    if (v == faultValue) {
-      latchedValue = faultValue;
-    }
-  }
+  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
+  void update(uint32_t v);
+  void update();
 
   friend std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
     os << "id[" << deviceInput->id << "]; " 
@@ -450,25 +460,15 @@ class DbAnalogDevice : public DbEntry {
   // 4-bit encoded max beam power class for each integrator threshold
   uint16_t fastPowerClass[ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
 
- DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0) {
-    for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
-      fastDestinationMask[i] = 0;
-    }
+  // Pointer to shared bitset buffer containing updates for all inputs from
+  // the same application card
+  ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
 
-    for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
-      fastPowerClass[i] = 0;
-    }
-  }
+  DbAnalogDevice();
+  void update(uint32_t v);
+  void update();
 
-  void update(uint32_t v) {
-    //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
-    value = v;
-
-    // Latch new value if this there is a threshold at fault
-    if (value | latchedValue != latchedValue) {
-      latchedValue |= value;
-    }
-  }
+  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
 
   friend std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice) {
     os << "id[" << analogDevice->id << "]; "
@@ -523,11 +523,11 @@ class DbApplicationCard : public DbEntry {
   std::string name;
   std::string description;
 
-  // Firmware configuration buffer
-  //  ApplicationConfigBufferPtr applicationBuffer;
-  ApplicationConfigBufferBitSet *applicationBuffer;
-  //  shared_ptr<const DbCrate> crate;
-  //  shared_ptr<const DbApplicationType> applicationType;
+  // Memory containing firmware configuration buffer
+  ApplicationConfigBufferBitSet *applicationConfigBuffer;
+
+  // Memory containing input updates from firmware
+  ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
 
   // Each application has a list of analog or digital devices.
   // Only the devices that have 'fast' evaluation need
@@ -543,6 +543,11 @@ class DbApplicationCard : public DbEntry {
   void writeConfiguration();
   void writeDigitalConfiguration();
   void writeAnalogConfiguration();
+
+  void configureUpdateBuffers();
+  void updateInputs();
+  bool isAnalog();
+  bool isDigital();
 
   friend std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
     os << "id[" << appCard->id << "]; " 
@@ -634,6 +639,9 @@ class DbBeamClass : public DbEntry {
   uint32_t number;
   std::string name;
   std::string description;
+  uint32_t integrationWindow;
+  uint32_t minPeriod;
+  uint32_t totalCharge;
   
  DbBeamClass() : DbEntry(), number(-1), name(""), description("") {
   }
@@ -642,6 +650,9 @@ class DbBeamClass : public DbEntry {
     os << "id[" << beamClass->id << "]; "
        << "number[" << beamClass->number << "]; "
        << "name[" << beamClass->name << "] "
+       << "integrationWindow[" << beamClass->integrationWindow << "]"
+       << "minPeriod[" << beamClass->minPeriod << "]"
+       << "totalCharge[" << beamClass->totalCharge << "]"
        << "description[" << beamClass->description << "]";
     return os;
   }
@@ -974,7 +985,16 @@ class MpsDb {
    * configuration takes 1343 bits and the analog configuration takes
    * 1151 bits.
    */
-  char fastConfigurationBuffer[NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE];
+  char fastConfigurationBuffer[NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE_BYTES];
+
+  /**
+   * Memory that receives input updates from firmware/hardware. There are
+   * up to 384 inputs bits per application, 2-bit per input indicating 
+   * a 'was low' and 'was high' status.
+   */
+  char fastUpdateBuffer[NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_SIZE_BYTES];
+
+  TimeAverage inputUpdateTime;
 
  public:
   DbCrateMapPtr crates;
@@ -1004,6 +1024,7 @@ class MpsDb {
   //  DbFaultStateMapPtr faultStates; 
 
   MpsDb();
+  ~MpsDb();
   int load(std::string yamlFile);
   void configure();
 
@@ -1011,7 +1032,12 @@ class MpsDb {
   void showFault(DbFaultPtr fault);
 
   void writeFirmwareConfiguration();
+  void updateInputs();
 
+  char *getFastUpdateBuffer() {
+    return &fastUpdateBuffer[0];
+  }
+  
   //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
 
   template<class MapPtrType, class IteratorType>
