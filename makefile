@@ -3,7 +3,7 @@ CENTRAL_NODE_DIR=.
 
 include $(CENTRAL_NODE_DIR)/defs.mak
 
-POSTBUILD_SUBDIRS=test
+#POSTBUILD_SUBDIRS=test
 
 HEADERS = central_node_bypass.h central_node_bypass_manager.h \
 	central_node_database.h central_node_engine.h central_node_exception.h \
