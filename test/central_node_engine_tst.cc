@@ -23,6 +23,7 @@ static void usage(const char *nm) {
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
   std::cerr << "       -i <file>   :  digital input test file" << std::endl;
   std::cerr << "       -a <file>   :  analog input test file" << std::endl;
+  std::cerr << "       -r <n>      :  number evaluation cycles" << std::endl;
   std::cerr << "       -v          :  verbose output" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
