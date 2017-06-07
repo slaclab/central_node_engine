@@ -1,3 +1,6 @@
+/**
+ * Test: Load YAML MPS Database and write firmware configuration
+ */
 #include <iostream>
 #include <stdio.h>
 
