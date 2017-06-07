@@ -367,7 +367,6 @@ class DbDigitalDevice : public DbEntry {
   uint32_t value; // calculated from the DeviceInputs for this device
   std::string name;
   std::string description;
-  float zPosition;
   uint32_t evaluation;
   uint32_t cardId; // Application Card ID
 
@@ -402,7 +401,6 @@ class DbDigitalDevice : public DbEntry {
     os << "id[" << digitalDevice->id << "]; "
        << "deviceTypeId[" << digitalDevice->deviceTypeId << "]; "
        << "name[" << digitalDevice->name << "]; "
-       << "z[" << digitalDevice->zPosition << "]; "
        << "evaluation[" << digitalDevice->evaluation << "]; "
        << "description[" << digitalDevice->description << "]; "
        << "cardId[" << digitalDevice->cardId << "]";
@@ -427,7 +425,6 @@ class DbAnalogDevice : public DbEntry {
   uint32_t channelId;
   std::string name;
   std::string description;
-  float zPosition;
   uint32_t evaluation;
   uint32_t cardId; // Application Card ID
 
@@ -474,7 +471,6 @@ class DbAnalogDevice : public DbEntry {
     os << "id[" << analogDevice->id << "]; "
        << "deviceTypeId[" << analogDevice->deviceTypeId << "]; "
        << "name[" << analogDevice->name << "]; "
-       << "z[" << analogDevice->zPosition << "]; "
        << "description[" << analogDevice->description << "]; "
        << "evaluation[" << analogDevice->evaluation << "]; "
        << "channelId[" << analogDevice->channelId << "]; "

@@ -26,16 +26,33 @@ namespace YAML {
     struct convert<DbCrateMapPtr> {
     static bool decode(const Node &node, DbCrateMapPtr &rhs) {
       DbCrateMap *crates = new DbCrateMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbCrateMapPtr(crates);
 
       for (YAML::Node::const_iterator it = node["Crate"].begin();
 	   it != node["Crate"].end(); ++it) {
 	DbCrate *crate = new DbCrate();
-	
-	crate->id = (*it)["id"].as<unsigned int>();
-	crate->number = (*it)["number"].as<unsigned int>();
-	crate->numSlots = (*it)["num_slots"].as<unsigned int>();
-	crate->shelfNumber = (*it)["shelf_number"].as<unsigned int>();
+
+	try {
+	  field = "id";
+	  crate->id = (*it)[field].as<unsigned int>();
+
+	  field = "number";
+	  crate->number = (*it)[field].as<unsigned int>();
+
+	  field = "num_slots";
+	  crate->numSlots = (*it)[field].as<unsigned int>();
+
+	  field = "shelf_number";
+	  crate->shelfNumber = (*it)[field].as<unsigned int>();
+	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for Crate.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Crate (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbCratePtr>(crate->id, DbCratePtr(crate)));
       }
@@ -58,19 +75,45 @@ namespace YAML {
     struct convert<DbApplicationTypeMapPtr> {
     static bool decode(const Node &node, DbApplicationTypeMapPtr &rhs) {
       DbApplicationTypeMap *appTypes = new DbApplicationTypeMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbApplicationTypeMapPtr(appTypes);
 
       for (YAML::Node::const_iterator it = node["ApplicationType"].begin();
 	   it != node["ApplicationType"].end(); ++it) {
 	DbApplicationType *appType = new DbApplicationType();
-	
-	appType->id = (*it)["id"].as<unsigned int>();
-	appType->number = (*it)["number"].as<unsigned int>();
-	appType->analogChannelCount = (*it)["analog_channel_count"].as<unsigned int>();
-	appType->analogChannelSize = (*it)["analog_channel_size"].as<unsigned int>();
-	appType->digitalChannelCount = (*it)["digital_channel_count"].as<unsigned int>();
-	appType->digitalChannelSize = (*it)["digital_channel_size"].as<unsigned int>();
-	appType->description = (*it)["name"].as<std::string>();
+
+	try {
+	  field = "id";
+	  appType->id = (*it)[field].as<unsigned int>();
+
+	  field = "number";
+	  appType->number = (*it)[field].as<unsigned int>();
+
+	  field = "analog_channel_count";
+	  appType->analogChannelCount = (*it)[field].as<unsigned int>();
+
+	  field = "analog_channel_size";
+	  appType->analogChannelSize = (*it)[field].as<unsigned int>();
+
+	  field = "digital_channel_count";
+	  appType->digitalChannelCount = (*it)[field].as<unsigned int>();
+
+	  field = "digital_channel_size";
+	  appType->digitalChannelSize = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  appType->description = (*it)[field].as<std::string>();
+	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for ApplicationType.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbApplicationTypePtr>(appType->id,
 							 DbApplicationTypePtr(appType)));
@@ -95,20 +138,48 @@ namespace YAML {
     struct convert<DbApplicationCardMapPtr> {
     static bool decode(const Node &node, DbApplicationCardMapPtr &rhs) {
       DbApplicationCardMap *appCards = new DbApplicationCardMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbApplicationCardMapPtr(appCards);
 
       for (YAML::Node::const_iterator it = node["ApplicationCard"].begin();
 	   it != node["ApplicationCard"].end(); ++it) {
 	DbApplicationCard *appCard = new DbApplicationCard();
 	
-	appCard->id = (*it)["id"].as<unsigned int>();
-	appCard->number = (*it)["number"].as<unsigned int>();
-	appCard->crateId = (*it)["crate_id"].as<unsigned int>();
-	appCard->slotNumber = (*it)["slot_number"].as<unsigned int>();
-	appCard->applicationTypeId = (*it)["type_id"].as<unsigned int>();
-	appCard->globalId = (*it)["global_id"].as<unsigned int>();
-	appCard->name = (*it)["name"].as<std::string>();
-	appCard->description = (*it)["description"].as<std::string>();
+	try {
+	  field = "id";
+	  appCard->id = (*it)[field].as<unsigned int>();
+
+	  field = "number";
+	  appCard->number = (*it)[field].as<unsigned int>();
+
+	  field = "crate_id";
+	  appCard->crateId = (*it)[field].as<unsigned int>();
+
+	  field = "slot_number";
+	  appCard->slotNumber = (*it)[field].as<unsigned int>();
+
+	  field = "type_id";
+	  appCard->applicationTypeId = (*it)[field].as<unsigned int>();
+
+	  field = "global_id";
+	  appCard->globalId = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  appCard->name = (*it)[field].as<std::string>();
+
+	  field = "description";
+	  appCard->description = (*it)[field].as<std::string>();
+	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for ApplicationCard.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationCard (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationCard (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbApplicationCardPtr>(appCard->id,
 							 DbApplicationCardPtr(appCard)));
@@ -141,16 +212,33 @@ namespace YAML {
       }
 
       DbChannelMap *channels = new DbChannelMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbChannelMapPtr(channels);
 
       for (YAML::Node::const_iterator it = node[key].begin();
 	   it != node[key].end(); ++it) {
 	DbChannel *channel = new DbChannel();
 	
-	channel->id = (*it)["id"].as<unsigned int>();
-	channel->name = (*it)["name"].as<std::string>();
-	channel->number = (*it)["number"].as<unsigned int>();
-	channel->cardId = (*it)["card_id"].as<unsigned int>();
+	try {
+	  field = "id";
+	  channel->id = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  channel->name = (*it)[field].as<std::string>();
+
+	  field = "number";
+	  channel->number = (*it)[field].as<unsigned int>();
+	  
+	  field = "card_id";
+	  channel->cardId = (*it)[field].as<unsigned int>();
+	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for " << key << ".";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for " << key << " (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbChannelPtr>(channel->id, DbChannelPtr(channel)));
       }
@@ -168,14 +256,30 @@ namespace YAML {
     struct convert<DbDeviceTypeMapPtr> {
     static bool decode(const Node &node, DbDeviceTypeMapPtr &rhs) {
       DbDeviceTypeMap *deviceTypes = new DbDeviceTypeMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbDeviceTypeMapPtr(deviceTypes);
 
       for (YAML::Node::const_iterator it = node["DeviceType"].begin();
 	   it != node["DeviceType"].end(); ++it) {
 	DbDeviceType *deviceType = new DbDeviceType();
-	
-	deviceType->id = (*it)["id"].as<unsigned int>();
-	deviceType->name = (*it)["name"].as<std::string>();
+
+	try {
+	  field = "id";
+	  deviceType->id = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  deviceType->name = (*it)[field].as<std::string>();
+	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for DeviceType.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceType (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceType (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbDeviceTypePtr>(deviceType->id,
 						    DbDeviceTypePtr(deviceType)));
@@ -196,17 +300,39 @@ namespace YAML {
     struct convert<DbDeviceStateMapPtr> {
     static bool decode(const Node &node, DbDeviceStateMapPtr &rhs) {
       DbDeviceStateMap *deviceStates = new DbDeviceStateMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbDeviceStateMapPtr(deviceStates);
 
       for (YAML::Node::const_iterator it = node["DeviceState"].begin();
 	   it != node["DeviceState"].end(); ++it) {
 	DbDeviceState *	deviceState = new DbDeviceState();
 	
-	deviceState->id = (*it)["id"].as<unsigned int>();
-	deviceState->value = (*it)["value"].as<unsigned int>();
-	deviceState->mask = (*it)["mask"].as<uint32_t>();
-	deviceState->deviceTypeId = (*it)["device_type_id"].as<unsigned int>();
-	deviceState->name = (*it)["name"].as<std::string>();
+	try {
+	  field = "id";
+	  deviceState->id = (*it)[field].as<unsigned int>();
+
+	  field = "value";
+	  deviceState->value = (*it)[field].as<unsigned int>();
+
+	  field = "mask";
+	  deviceState->mask = (*it)[field].as<uint32_t>();
+
+	  field = "device_type_id";
+	  deviceState->deviceTypeId = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  deviceState->name = (*it)[field].as<std::string>();
+ 	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for DeviceState.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceState (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceState (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbDeviceStatePtr>(deviceState->id,
 						     DbDeviceStatePtr(deviceState)));
@@ -225,20 +351,44 @@ namespace YAML {
     struct convert<DbDigitalDeviceMapPtr> {
     static bool decode(const Node &node, DbDigitalDeviceMapPtr &rhs) {
       DbDigitalDeviceMap *digitalDevices = new DbDigitalDeviceMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbDigitalDeviceMapPtr(digitalDevices);
 
       for (YAML::Node::const_iterator it = node["DigitalDevice"].begin();
 	   it != node["DigitalDevice"].end(); ++it) {
 	DbDigitalDevice *digitalDevice = new DbDigitalDevice();
 	
-	digitalDevice->id = (*it)["id"].as<unsigned int>();
-	digitalDevice->deviceTypeId = (*it)["device_type_id"].as<unsigned int>();
-	digitalDevice->name = (*it)["name"].as<std::string>();
-	digitalDevice->description = (*it)["description"].as<std::string>();
-	digitalDevice->zPosition = (*it)["z_position"].as<float>();
-	digitalDevice->evaluation = (*it)["evaluation"].as<unsigned int>();
-	digitalDevice->cardId = (*it)["card_id"].as<unsigned int>();
-	digitalDevice->value = 0;
+	try {
+	  field = "id";
+	  digitalDevice->id = (*it)[field].as<unsigned int>();
+
+	  field = "device_type_id";
+	  digitalDevice->deviceTypeId = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  digitalDevice->name = (*it)[field].as<std::string>();
+
+	  field = "description";
+	  digitalDevice->description = (*it)[field].as<std::string>();
+
+	  field = "evaluation";
+	  digitalDevice->evaluation = (*it)[field].as<unsigned int>();
+
+	  field = "card_id";
+	  digitalDevice->cardId = (*it)[field].as<unsigned int>();
+
+	  digitalDevice->value = 0;
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for DigitalDevice.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DigitalDevice (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DigitalDevice (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbDigitalDevicePtr>(digitalDevice->id,
 						       DbDigitalDevicePtr(digitalDevice)));
@@ -260,18 +410,38 @@ namespace YAML {
     struct convert<DbDeviceInputMapPtr> {
     static bool decode(const Node &node, DbDeviceInputMapPtr &rhs) {
       DbDeviceInputMap *deviceInputs = new DbDeviceInputMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbDeviceInputMapPtr(deviceInputs);
 
       for (YAML::Node::const_iterator it = node["DeviceInput"].begin();
 	   it != node["DeviceInput"].end(); ++it) {
 	DbDeviceInput *deviceInput = new DbDeviceInput();
 	
-	deviceInput->id = (*it)["id"].as<unsigned int>();
-	deviceInput->bitPosition = (*it)["bit_position"].as<unsigned int>();
-	deviceInput->faultValue = (*it)["fault_value"].as<unsigned int>();
-	deviceInput->digitalDeviceId = (*it)["digital_device_id"].as<unsigned int>();
-	deviceInput->channelId = (*it)["channel_id"].as<unsigned int>();
-	deviceInput->value = 0;
+	try {
+	  field = "id";
+	  deviceInput->id = (*it)[field].as<unsigned int>();
+
+	  field = "bit_position";
+	  deviceInput->bitPosition = (*it)[field].as<unsigned int>();
+
+	  field = "fault_value";
+	  deviceInput->faultValue = (*it)[field].as<unsigned int>();
+
+	  field = "digital_device_id";
+	  deviceInput->digitalDeviceId = (*it)[field].as<unsigned int>();
+
+	  field = "channel_id";
+	  deviceInput->channelId = (*it)[field].as<unsigned int>();
+
+	  deviceInput->value = 0;
+ 	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for DeviceInput.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceInput (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbDeviceInputPtr>(deviceInput->id,
 						     DbDeviceInputPtr(deviceInput)));
@@ -292,16 +462,36 @@ namespace YAML {
     struct convert<DbConditionMapPtr> {
     static bool decode(const Node &node, DbConditionMapPtr &rhs) {
       DbConditionMap *conditions = new DbConditionMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbConditionMapPtr(conditions);
 
       for (YAML::Node::const_iterator it = node["Condition"].begin();
 	   it != node["Condition"].end(); ++it) {
 	DbCondition *condition = new DbCondition();
 	
-	condition->id = (*it)["id"].as<unsigned int>();
-	condition->name = (*it)["name"].as<std::string>();
-	condition->description = (*it)["description"].as<std::string>();
-	condition->mask = (*it)["value"].as<unsigned int>();
+	try {
+	  field = "id";
+	  condition->id = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  condition->name = (*it)[field].as<std::string>();
+
+	  field = "description";
+	  condition->description = (*it)[field].as<std::string>();
+
+	  field = "value";
+	  condition->mask = (*it)[field].as<unsigned int>();
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for Condition.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Condition (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Condition (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbConditionPtr>(condition->id, DbConditionPtr(condition)));
       }
@@ -320,15 +510,30 @@ namespace YAML {
     struct convert<DbIgnoreConditionMapPtr> {
     static bool decode(const Node &node, DbIgnoreConditionMapPtr &rhs) {
       DbIgnoreConditionMap *ignoreConditions = new DbIgnoreConditionMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbIgnoreConditionMapPtr(ignoreConditions);
 
       for (YAML::Node::const_iterator it = node["IgnoreCondition"].begin();
 	   it != node["IgnoreCondition"].end(); ++it) {
 	DbIgnoreCondition *ignoreCondition = new DbIgnoreCondition();
-	
-	ignoreCondition->id = (*it)["id"].as<unsigned int>();
-	ignoreCondition->faultStateId = (*it)["fault_state_id"].as<unsigned int>();
-	ignoreCondition->conditionId = (*it)["condition_id"].as<unsigned int>();
+
+	try {
+	  field = "id";
+	  ignoreCondition->id = (*it)[field].as<unsigned int>();
+
+	  field = "fault_state_id";
+	  ignoreCondition->faultStateId = (*it)[field].as<unsigned int>();
+
+	  field = "condition_id";
+	  ignoreCondition->conditionId = (*it)[field].as<unsigned int>();
+ 	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for IgnoreCondition.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for IgnoreCondition (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbIgnoreConditionPtr>(ignoreCondition->id, DbIgnoreConditionPtr(ignoreCondition)));
       }
@@ -348,16 +553,33 @@ namespace YAML {
     struct convert<DbConditionInputMapPtr> {
     static bool decode(const Node &node, DbConditionInputMapPtr &rhs) {
       DbConditionInputMap *conditionInputs = new DbConditionInputMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbConditionInputMapPtr(conditionInputs);
 
       for (YAML::Node::const_iterator it = node["ConditionInput"].begin();
 	   it != node["ConditionInput"].end(); ++it) {
 	DbConditionInput *conditionInput = new DbConditionInput();
 	
-	conditionInput->id = (*it)["id"].as<unsigned int>();
-	conditionInput->bitPosition = (*it)["bit_position"].as<unsigned int>();
-	conditionInput->faultStateId = (*it)["fault_state_id"].as<unsigned int>();
-	conditionInput->conditionId = (*it)["condition_id"].as<unsigned int>();
+	try {
+	  field = "id";
+	  conditionInput->id = (*it)[field].as<unsigned int>();
+
+	  field = "bit_position";
+	  conditionInput->bitPosition = (*it)[field].as<unsigned int>();
+
+	  field = "fault_state_id";
+	  conditionInput->faultStateId = (*it)[field].as<unsigned int>();
+
+	  field = "condition_id";
+	  conditionInput->conditionId = (*it)[field].as<unsigned int>();
+ 	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for ConditionInput.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ConditionInput (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbConditionInputPtr>(conditionInput->id, DbConditionInputPtr(conditionInput)));
       }
@@ -376,16 +598,34 @@ namespace YAML {
     struct convert<DbFaultMapPtr> {
     static bool decode(const Node &node, DbFaultMapPtr &rhs) {
       DbFaultMap *faults = new DbFaultMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbFaultMapPtr(faults);
 
       for (YAML::Node::const_iterator it = node["Fault"].begin();
 	   it != node["Fault"].end(); ++it) {
 	DbFault *fault = new DbFault();
-	
-	fault->id = (*it)["id"].as<unsigned int>();
-	fault->name = (*it)["name"].as<std::string>();
-	fault->description = (*it)["description"].as<std::string>();
-	fault->value = 0;
+
+	try {
+	  field = "id";
+	  fault->id = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  fault->name = (*it)[field].as<std::string>();
+
+	  field = "description";
+	  fault->description = (*it)[field].as<std::string>();
+	  fault->value = 0;
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for Fault.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbFaultPtr>(fault->id, DbFaultPtr(fault)));
       }
@@ -405,17 +645,35 @@ namespace YAML {
     struct convert<DbFaultInputMapPtr> {
     static bool decode(const Node &node, DbFaultInputMapPtr &rhs) {
       DbFaultInputMap *faultInputs = new DbFaultInputMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbFaultInputMapPtr(faultInputs);
 
       for (YAML::Node::const_iterator it = node["FaultInput"].begin();
 	   it != node["FaultInput"].end(); ++it) {
 	DbFaultInput *faultInput = new DbFaultInput();
 	
-	faultInput->id = (*it)["id"].as<unsigned int>();
-	faultInput->bitPosition = (*it)["bit_position"].as<unsigned int>();
-	faultInput->deviceId = (*it)["device_id"].as<unsigned int>();
-	faultInput->faultId = (*it)["fault_id"].as<unsigned int>();
-	faultInput->value = 0;
+	try {
+	  field = "id";
+	  faultInput->id = (*it)[field].as<unsigned int>();
+
+	  field = "bit_position";
+	  faultInput->bitPosition = (*it)[field].as<unsigned int>();
+
+	  field = "device_id";
+	  faultInput->deviceId = (*it)[field].as<unsigned int>();
+
+	  field = "fault_id";
+	  faultInput->faultId = (*it)[field].as<unsigned int>();
+
+	  faultInput->value = 0;
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for FaultInput.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultInput (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbFaultInputPtr>(faultInput->id,
 						    DbFaultInputPtr(faultInput)));
@@ -436,16 +694,36 @@ namespace YAML {
     struct convert<DbFaultStateMapPtr> {
     static bool decode(const Node &node, DbFaultStateMapPtr &rhs) {
       DbFaultStateMap *faultStates = new DbFaultStateMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbFaultStateMapPtr(faultStates);
 
       for (YAML::Node::const_iterator it = node["FaultState"].begin();
 	   it != node["FaultState"].end(); ++it) {
 	DbFaultState *faultState = new DbFaultState();
 	
-	faultState->id = (*it)["id"].as<unsigned int>();
-	faultState->faultId = (*it)["fault_id"].as<unsigned int>();
-	faultState->deviceStateId = (*it)["device_state_id"].as<unsigned int>();
-	faultState->defaultState = (*it)["default"].as<bool>();
+	try {
+	  field = "id";
+	  faultState->id = (*it)[field].as<unsigned int>();
+
+	  field = "fault_id";
+	  faultState->faultId = (*it)[field].as<unsigned int>();
+
+	  field = "device_state_id";
+	  faultState->deviceStateId = (*it)[field].as<unsigned int>();
+
+	  field = "default";
+	  faultState->defaultState = (*it)[field].as<bool>();
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for FaultState.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<bool> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected bool).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbFaultStatePtr>(faultState->id,
 						    DbFaultStatePtr(faultState)));
@@ -465,21 +743,46 @@ namespace YAML {
     struct convert<DbAnalogDeviceMapPtr> {
     static bool decode(const Node &node, DbAnalogDeviceMapPtr &rhs) {
       DbAnalogDeviceMap *analogDevices = new DbAnalogDeviceMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbAnalogDeviceMapPtr(analogDevices);
 
       for (YAML::Node::const_iterator it = node["AnalogDevice"].begin();
 	   it != node["AnalogDevice"].end(); ++it) {
 	DbAnalogDevice *analogDevice = new DbAnalogDevice();
 	
-	analogDevice->id = (*it)["id"].as<unsigned int>();
-	analogDevice->deviceTypeId = (*it)["device_type_id"].as<unsigned int>();
-	analogDevice->channelId = (*it)["channel_id"].as<unsigned int>();
-	analogDevice->name = (*it)["name"].as<std::string>();
-	analogDevice->description = (*it)["description"].as<std::string>();
-	analogDevice->zPosition = (*it)["z_position"].as<float>();
-	analogDevice->evaluation = (*it)["evaluation"].as<unsigned int>();
-	analogDevice->cardId = (*it)["card_id"].as<unsigned int>();
-	analogDevice->value = 0;
+	try {
+	  field = "id";
+	  analogDevice->id = (*it)[field].as<unsigned int>();
+
+	  field = "device_type_id";
+	  analogDevice->deviceTypeId = (*it)[field].as<unsigned int>();
+
+	  field = "channed_id";
+	  analogDevice->channelId = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  analogDevice->name = (*it)[field].as<std::string>();
+
+	  field = "description";
+	  analogDevice->description = (*it)[field].as<std::string>();
+
+	  field = "evaluation";
+	  analogDevice->evaluation = (*it)[field].as<unsigned int>();
+
+	  field = "card_id";
+	  analogDevice->cardId = (*it)[field].as<unsigned int>();
+	  analogDevice->value = 0;
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for AnalogDevice.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for AnalogDevice (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for AnalogDevice (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbAnalogDevicePtr>(analogDevice->id,
 						      DbAnalogDevicePtr(analogDevice)));
@@ -499,15 +802,36 @@ namespace YAML {
     struct convert<DbMitigationDeviceMapPtr> {
     static bool decode(const Node &node, DbMitigationDeviceMapPtr &rhs) {
       DbMitigationDeviceMap *mitigationDevices = new DbMitigationDeviceMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbMitigationDeviceMapPtr(mitigationDevices);
 
       for (YAML::Node::const_iterator it = node["MitigationDevice"].begin();
 	   it != node["MitigationDevice"].end(); ++it) {
 	DbMitigationDevice *mitigationDevice = new DbMitigationDevice();
-	
-	mitigationDevice->id = (*it)["id"].as<unsigned int>();
-	mitigationDevice->name = (*it)["name"].as<std::string>();
-	mitigationDevice->destinationMask = (*it)["destination_mask"].as<short>();
+
+	try {
+	  field = "id";
+	  mitigationDevice->id = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  mitigationDevice->name = (*it)[field].as<std::string>();
+
+	  field = "destination_mask";
+	  mitigationDevice->destinationMask = (*it)[field].as<short>();
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for MitigationDevice.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for MitigationDevice (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<short> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for MitigationDevice (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for MitigationDevice (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbMitigationDevicePtr>(mitigationDevice->id, 
 							  DbMitigationDevicePtr(mitigationDevice)));
@@ -528,19 +852,45 @@ namespace YAML {
     struct convert<DbBeamClassMapPtr> {
     static bool decode(const Node &node, DbBeamClassMapPtr &rhs) {
       DbBeamClassMap *beamClasses = new DbBeamClassMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbBeamClassMapPtr(beamClasses);
 
       for (YAML::Node::const_iterator it = node["BeamClass"].begin();
 	   it != node["BeamClass"].end(); ++it) {
 	DbBeamClass *beamClass = new DbBeamClass();
-	
-	beamClass->id = (*it)["id"].as<unsigned int>();
-	beamClass->name = (*it)["name"].as<std::string>();
-	beamClass->number = (*it)["number"].as<unsigned int>();
-	beamClass->minPeriod = (*it)["min_period"].as<unsigned int>();
-	beamClass->integrationWindow = (*it)["integration_window"].as<unsigned int>();
-	beamClass->totalCharge = (*it)["total_charge"].as<unsigned int>();
-	beamClass->description = (*it)["description"].as<std::string>();
+
+	try {
+	  field = "id";
+	  beamClass->id = (*it)[field].as<unsigned int>();
+
+	  field = "name";
+	  beamClass->name = (*it)[field].as<std::string>();
+
+	  field = "number";
+	  beamClass->number = (*it)[field].as<unsigned int>();
+
+	  field = "min_period";
+	  beamClass->minPeriod = (*it)[field].as<unsigned int>();
+
+	  field = "integration_window";
+	  beamClass->integrationWindow = (*it)[field].as<unsigned int>();
+
+	  field = "total_charge";
+	  beamClass->totalCharge = (*it)[field].as<unsigned int>();
+
+	  field = "description";
+	  beamClass->description = (*it)[field].as<std::string>();
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for BeamClass.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbBeamClassPtr>(beamClass->id, DbBeamClassPtr(beamClass)));
       }
@@ -560,16 +910,33 @@ namespace YAML {
     struct convert<DbAllowedClassMapPtr> {
     static bool decode(const Node &node, DbAllowedClassMapPtr &rhs) {
       DbAllowedClassMap *allowedClasses = new DbAllowedClassMap();
+      std::stringstream errorStream;
+      std::string field;
       rhs = DbAllowedClassMapPtr(allowedClasses);
 
       for (YAML::Node::const_iterator it = node["AllowedClass"].begin();
 	   it != node["AllowedClass"].end(); ++it) {
 	DbAllowedClass *allowedClass = new DbAllowedClass();
-	
-	allowedClass->id = (*it)["id"].as<unsigned int>();
-	allowedClass->beamClassId = (*it)["beam_class_id"].as<unsigned int>();
-	allowedClass->faultStateId = (*it)["fault_state_id"].as<unsigned int>();
-	allowedClass->mitigationDeviceId = (*it)["mitigation_device_id"].as<unsigned int>();
+
+	try {
+	  field = "id";
+	  allowedClass->id = (*it)[field].as<unsigned int>();
+	  
+	  field = "beam_class_id";
+	  allowedClass->beamClassId = (*it)[field].as<unsigned int>();
+
+	  field = "fault_state_id";
+	  allowedClass->faultStateId = (*it)[field].as<unsigned int>();
+
+	  field = "mitigation_device_id";
+	  allowedClass->mitigationDeviceId = (*it)[field].as<unsigned int>();
+  	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to recognize field " << field << " for AllowedClass.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for AllowedClass (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
 
 	rhs->insert(std::pair<int, DbAllowedClassPtr>(allowedClass->id,
 						      DbAllowedClassPtr(allowedClass)));
