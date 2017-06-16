@@ -443,6 +443,11 @@ class DbAnalogDevice : public DbEntry {
   DbChannelPtr channel;
 
   // Pointer to the bypass for this input
+  // TODO: change single bypass to an array of them (one for each threshold bit) - 32 max
+  // TODO: the index on the array indicates the threshold bit position
+  // TODO: in the central_node_ioc PVs it must pass the index to access the proper bypass
+  // TODO: need to add a combined bypass value that changes only when there are active bypasses
+  // TODO: so it does not need to be computed on every evaluation cycle
   InputBypassPtr bypass;
 
   /**

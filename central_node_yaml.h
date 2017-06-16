@@ -758,7 +758,7 @@ namespace YAML {
 	  field = "device_type_id";
 	  analogDevice->deviceTypeId = (*it)[field].as<unsigned int>();
 
-	  field = "channed_id";
+	  field = "channel_id";
 	  analogDevice->channelId = (*it)[field].as<unsigned int>();
 
 	  field = "name";

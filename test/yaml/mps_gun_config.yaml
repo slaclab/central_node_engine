@@ -28,6 +28,7 @@ ApplicationCard:
 - id: 1
   number: 1
   area: "GUNB"
+  location: "MP10"
   slot_number: 2
   crate_id: 1
   type_id: 1
@@ -37,6 +38,7 @@ ApplicationCard:
 - id: 2
   number: 2
   area: "GUNB"
+  location: "MP11"
   slot_number: 3
   crate_id: 1
   type_id: 2
@@ -47,17 +49,19 @@ ApplicationCard:
 DigitalChannel:
 - id: 1
   number: 0
-  name: "YAG01_OUT_SWITCH"
+  name: "OUT_LMTSW"
   z_name: "IS_OUT"
   o_name: "NOT_OUT"
   alarm_state: 1
+  debounce: 10
   card_id: 1
 - id: 2
   number: 1
-  name: "YAG01_IN_SWITCH"
+  name: "IN_LMTSW"
   z_name: "IS_IN"
   o_name: "NOT_IN"
   alarm_state: 1
+  debounce: 10
   card_id: 1
 - id: 3
   number: 2
@@ -65,6 +69,7 @@ DigitalChannel:
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
+  debounce: 10
   card_id: 1
 - id: 4
   number: 3
@@ -72,6 +77,7 @@ DigitalChannel:
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
+  debounce: 10
   card_id: 1
 - id: 5
   number: 4
@@ -79,6 +85,7 @@ DigitalChannel:
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
+  debounce: 10
   card_id: 1
 - id: 6
   number: 5
@@ -86,6 +93,7 @@ DigitalChannel:
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
+  debounce: 10
   card_id: 1
 - id: 7
   number: 6
@@ -93,6 +101,7 @@ DigitalChannel:
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
+  debounce: 10
   card_id: 1
 - id: 8
   number: 7
@@ -100,6 +109,7 @@ DigitalChannel:
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
+  debounce: 10
   card_id: 1
 - id: 9
   number: 8
@@ -107,6 +117,7 @@ DigitalChannel:
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
+  debounce: 10
   card_id: 1
 ---
 AnalogChannel:
@@ -183,148 +194,100 @@ DeviceState:
   mask: 4294967295
   device_type_id: 3
 - id: 9
-  name: "X_THRSLD0"
+  name: "X_T0"
   description: "None"
   value: 1
   mask: 1
   device_type_id: 4
 - id: 10
-  name: "X_THRSLD1"
+  name: "X_T1"
   description: "None"
   value: 2
   mask: 2
   device_type_id: 4
 - id: 11
-  name: "X_THRSLD2"
+  name: "X_T2"
   description: "None"
   value: 4
   mask: 4
   device_type_id: 4
 - id: 12
-  name: "X_THRSLD3"
+  name: "X_T3"
   description: "None"
   value: 8
   mask: 8
   device_type_id: 4
 - id: 13
-  name: "X_THRSLD4"
+  name: "X_T4"
   description: "None"
   value: 16
   mask: 16
   device_type_id: 4
 - id: 14
-  name: "X_THRSLD5"
+  name: "X_T5"
   description: "None"
   value: 32
   mask: 32
   device_type_id: 4
 - id: 15
-  name: "X_THRSLD6"
+  name: "X_T6"
   description: "None"
   value: 64
   mask: 64
   device_type_id: 4
 - id: 16
-  name: "X_THRSLD7"
+  name: "X_T7"
   description: "None"
   value: 128
   mask: 128
   device_type_id: 4
 - id: 17
-  name: "Y_THRSLD0"
+  name: "Y_T0"
   description: "None"
   value: 256
   mask: 256
   device_type_id: 4
 - id: 18
-  name: "Y_THRSLD1"
+  name: "Y_T1"
   description: "None"
   value: 512
   mask: 512
   device_type_id: 4
 - id: 19
-  name: "Y_THRSLD2"
+  name: "Y_T2"
   description: "None"
   value: 1024
   mask: 1024
   device_type_id: 4
 - id: 20
-  name: "Y_THRSLD3"
+  name: "Y_T3"
   description: "None"
   value: 2048
   mask: 2048
   device_type_id: 4
 - id: 21
-  name: "Y_THRSLD4"
+  name: "T_T0"
   description: "None"
   value: 4096
   mask: 4096
   device_type_id: 4
 - id: 22
-  name: "Y_THRSLD5"
+  name: "T_T1"
   description: "None"
   value: 8192
   mask: 8192
   device_type_id: 4
 - id: 23
-  name: "Y_THRSLD6"
+  name: "T_T2"
   description: "None"
   value: 16384
   mask: 16384
   device_type_id: 4
 - id: 24
-  name: "Y_THRSLD7"
+  name: "T_T3"
   description: "None"
   value: 32768
   mask: 32768
-  device_type_id: 4
-- id: 25
-  name: "T_THRSLD0"
-  description: "None"
-  value: 65536
-  mask: 65536
-  device_type_id: 4
-- id: 26
-  name: "T_THRSLD1"
-  description: "None"
-  value: 131072
-  mask: 131072
-  device_type_id: 4
-- id: 27
-  name: "T_THRSLD2"
-  description: "None"
-  value: 262144
-  mask: 262144
-  device_type_id: 4
-- id: 28
-  name: "T_THRSLD3"
-  description: "None"
-  value: 524288
-  mask: 524288
-  device_type_id: 4
-- id: 29
-  name: "T_THRSLD4"
-  description: "None"
-  value: 1048576
-  mask: 1048576
-  device_type_id: 4
-- id: 30
-  name: "T_THRSLD5"
-  description: "None"
-  value: 2097152
-  mask: 2097152
-  device_type_id: 4
-- id: 31
-  name: "T_THRSLD6"
-  description: "None"
-  value: 4194304
-  mask: 4194304
-  device_type_id: 4
-- id: 32
-  name: "T_THRSLD7"
-  description: "None"
-  value: 8388608
-  mask: 8388608
   device_type_id: 4
 ---
 DigitalDevice:
@@ -332,7 +295,7 @@ DigitalDevice:
   id: 1
   name: "YAG01"
   description: "YAG Screen"
-  z_position: -28.061394
+  position: 855
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -341,7 +304,7 @@ DigitalDevice:
   id: 2
   name: "Gun Temperature"
   description: "Gun Temperature Summary Input"
-  z_position: 0.0
+  position: 100
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -350,7 +313,7 @@ DigitalDevice:
   id: 3
   name: "Waveguide Temperature"
   description: "Waveguide Temperature Summary Input"
-  z_position: 0.0
+  position: 150
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -359,7 +322,7 @@ DigitalDevice:
   id: 4
   name: "Buncher Temperature"
   description: "Buncher Temperature Summary Input"
-  z_position: -30.299721
+  position: 200
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -368,7 +331,7 @@ DigitalDevice:
   id: 5
   name: "SOL01 Temp"
   description: "SOL01 Temperature"
-  z_position: -32.115049
+  position: 400
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -377,7 +340,7 @@ DigitalDevice:
   id: 6
   name: "SOL02 Temp"
   description: "SOL02 Temperature"
-  z_position: -27.538278
+  position: 900
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -386,7 +349,7 @@ DigitalDevice:
   id: 7
   name: "VVR01"
   description: "Vacuum Gate Valve VVR01"
-  z_position: -31.0
+  position: 350
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -395,7 +358,7 @@ DigitalDevice:
   id: 8
   name: "VVR02"
   description: "Vacuum Gate Valve VVR02"
-  z_position: -26.0
+  position: 400
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -474,11 +437,23 @@ Fault:
   name: "VVR02"
   description: "VVR02 Vacuum Valve Fault"
 - id: 9
-  name: "BPM01"
-  description: "BPM01 X/Y/TMIT Threshold Fault"
+  name: "BPM01_X"
+  description: "BPM01 X Threshold Fault"
 - id: 10
-  name: "BPM02"
-  description: "BPM02 X/Y/TMIT Threshold Fault"
+  name: "BPM01_Y"
+  description: "BPM01 Y Threshold Fault"
+- id: 11
+  name: "BPM01_T"
+  description: "BPM01 TMIT Threshold Fault"
+- id: 12
+  name: "BPM02_X"
+  description: "BPM02 X Threshold Fault"
+- id: 13
+  name: "BPM02_Y"
+  description: "BPM02 Y Threshold Fault"
+- id: 14
+  name: "BPM02_T"
+  description: "BPM02 TMIT Threshold Fault"
 ---
 FaultInput:
 - id: 1
@@ -519,6 +494,22 @@ FaultInput:
   device_id: 9
 - id: 10
   fault_id: 10
+  bit_position: 0
+  device_id: 9
+- id: 11
+  fault_id: 11
+  bit_position: 0
+  device_id: 9
+- id: 12
+  fault_id: 12
+  bit_position: 0
+  device_id: 10
+- id: 13
+  fault_id: 13
+  bit_position: 0
+  device_id: 10
+- id: 14
+  fault_id: 14
   bit_position: 0
   device_id: 10
 ---
@@ -581,180 +572,84 @@ FaultState:
   device_state_id: 12
 - id: 15
   default: False
-  fault_id: 9
-  device_state_id: 13
+  fault_id: 10
+  device_state_id: 17
 - id: 16
   default: False
-  fault_id: 9
-  device_state_id: 14
+  fault_id: 10
+  device_state_id: 18
 - id: 17
   default: False
-  fault_id: 9
-  device_state_id: 15
+  fault_id: 10
+  device_state_id: 19
 - id: 18
   default: False
-  fault_id: 9
-  device_state_id: 16
+  fault_id: 10
+  device_state_id: 20
 - id: 19
   default: False
-  fault_id: 9
-  device_state_id: 17
+  fault_id: 11
+  device_state_id: 21
 - id: 20
   default: False
-  fault_id: 9
-  device_state_id: 18
+  fault_id: 11
+  device_state_id: 22
 - id: 21
   default: False
-  fault_id: 9
-  device_state_id: 19
+  fault_id: 11
+  device_state_id: 23
 - id: 22
   default: False
-  fault_id: 9
-  device_state_id: 20
+  fault_id: 11
+  device_state_id: 24
 - id: 23
   default: False
-  fault_id: 9
-  device_state_id: 21
+  fault_id: 12
+  device_state_id: 9
 - id: 24
   default: False
-  fault_id: 9
-  device_state_id: 22
+  fault_id: 12
+  device_state_id: 10
 - id: 25
   default: False
-  fault_id: 9
-  device_state_id: 23
+  fault_id: 12
+  device_state_id: 11
 - id: 26
   default: False
-  fault_id: 9
-  device_state_id: 24
+  fault_id: 12
+  device_state_id: 12
 - id: 27
   default: False
-  fault_id: 9
-  device_state_id: 25
+  fault_id: 13
+  device_state_id: 17
 - id: 28
   default: False
-  fault_id: 9
-  device_state_id: 26
+  fault_id: 13
+  device_state_id: 18
 - id: 29
   default: False
-  fault_id: 9
-  device_state_id: 27
+  fault_id: 13
+  device_state_id: 19
 - id: 30
   default: False
-  fault_id: 9
-  device_state_id: 28
+  fault_id: 13
+  device_state_id: 20
 - id: 31
   default: False
-  fault_id: 9
-  device_state_id: 29
+  fault_id: 14
+  device_state_id: 21
 - id: 32
   default: False
-  fault_id: 9
-  device_state_id: 30
+  fault_id: 14
+  device_state_id: 22
 - id: 33
   default: False
-  fault_id: 9
-  device_state_id: 31
+  fault_id: 14
+  device_state_id: 23
 - id: 34
   default: False
-  fault_id: 9
-  device_state_id: 32
-- id: 35
-  default: False
-  fault_id: 10
-  device_state_id: 9
-- id: 36
-  default: False
-  fault_id: 10
-  device_state_id: 10
-- id: 37
-  default: False
-  fault_id: 10
-  device_state_id: 11
-- id: 38
-  default: False
-  fault_id: 10
-  device_state_id: 12
-- id: 39
-  default: False
-  fault_id: 10
-  device_state_id: 13
-- id: 40
-  default: False
-  fault_id: 10
-  device_state_id: 14
-- id: 41
-  default: False
-  fault_id: 10
-  device_state_id: 15
-- id: 42
-  default: False
-  fault_id: 10
-  device_state_id: 16
-- id: 43
-  default: False
-  fault_id: 10
-  device_state_id: 17
-- id: 44
-  default: False
-  fault_id: 10
-  device_state_id: 18
-- id: 45
-  default: False
-  fault_id: 10
-  device_state_id: 19
-- id: 46
-  default: False
-  fault_id: 10
-  device_state_id: 20
-- id: 47
-  default: False
-  fault_id: 10
-  device_state_id: 21
-- id: 48
-  default: False
-  fault_id: 10
-  device_state_id: 22
-- id: 49
-  default: False
-  fault_id: 10
-  device_state_id: 23
-- id: 50
-  default: False
-  fault_id: 10
+  fault_id: 14
   device_state_id: 24
-- id: 51
-  default: False
-  fault_id: 10
-  device_state_id: 25
-- id: 52
-  default: False
-  fault_id: 10
-  device_state_id: 26
-- id: 53
-  default: False
-  fault_id: 10
-  device_state_id: 27
-- id: 54
-  default: False
-  fault_id: 10
-  device_state_id: 28
-- id: 55
-  default: False
-  fault_id: 10
-  device_state_id: 29
-- id: 56
-  default: False
-  fault_id: 10
-  device_state_id: 30
-- id: 57
-  default: False
-  fault_id: 10
-  device_state_id: 31
-- id: 58
-  default: False
-  fault_id: 10
-  device_state_id: 32
 ---
 AnalogDevice:
 - id: 9
@@ -762,7 +657,7 @@ AnalogDevice:
   id: 9
   name: "BPM01"
   description: "BPM01"
-  z_position: -31.349744
+  position: 201
   area: "GUNB"
   evaluation: 1
   card_id: 2
@@ -772,7 +667,7 @@ AnalogDevice:
   id: 10
   name: "BPM02"
   description: "BPM02"
-  z_position: -26.772972
+  position: 601
   area: "GUNB"
   evaluation: 1
   card_id: 2
@@ -1040,198 +935,6 @@ AllowedClass:
   beam_class_id: 1
 - id: 58
   fault_state_id: 34
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 59
-  fault_state_id: 35
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 60
-  fault_state_id: 35
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 61
-  fault_state_id: 36
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 62
-  fault_state_id: 36
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 63
-  fault_state_id: 37
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 64
-  fault_state_id: 37
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 65
-  fault_state_id: 38
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 66
-  fault_state_id: 38
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 67
-  fault_state_id: 39
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 68
-  fault_state_id: 39
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 69
-  fault_state_id: 40
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 70
-  fault_state_id: 40
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 71
-  fault_state_id: 41
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 72
-  fault_state_id: 41
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 73
-  fault_state_id: 42
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 74
-  fault_state_id: 42
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 75
-  fault_state_id: 43
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 76
-  fault_state_id: 43
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 77
-  fault_state_id: 44
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 78
-  fault_state_id: 44
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 79
-  fault_state_id: 45
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 80
-  fault_state_id: 45
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 81
-  fault_state_id: 46
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 82
-  fault_state_id: 46
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 83
-  fault_state_id: 47
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 84
-  fault_state_id: 47
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 85
-  fault_state_id: 48
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 86
-  fault_state_id: 48
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 87
-  fault_state_id: 49
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 88
-  fault_state_id: 49
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 89
-  fault_state_id: 50
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 90
-  fault_state_id: 50
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 91
-  fault_state_id: 51
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 92
-  fault_state_id: 51
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 93
-  fault_state_id: 52
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 94
-  fault_state_id: 52
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 95
-  fault_state_id: 53
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 96
-  fault_state_id: 53
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 97
-  fault_state_id: 54
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 98
-  fault_state_id: 54
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 99
-  fault_state_id: 55
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 100
-  fault_state_id: 55
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 101
-  fault_state_id: 56
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 102
-  fault_state_id: 56
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 103
-  fault_state_id: 57
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 104
-  fault_state_id: 57
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 105
-  fault_state_id: 58
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 106
-  fault_state_id: 58
   mitigation_device_id: 2
   beam_class_id: 1
 ---
