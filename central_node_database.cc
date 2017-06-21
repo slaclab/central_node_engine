@@ -720,12 +720,15 @@ void MpsDb::showFault(DbFaultPtr fault) {
 	    std::cout << "WARNING: NO BYPASS INFO]";
 	  }
 	  else {
-	    if ((*analogDevice).second->bypass->status == BYPASS_VALID) {
-	      std::cout << "VALID]";
+	    for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
+	      if ((*analogDevice).second->bypass[i]->status == BYPASS_VALID) {
+		std::cout << "V";
+	      }
+	      else {
+		std::cout << "E";
+	      }
 	    }
-	    else {
-	      std::cout << "EXPIRED]";
-	    }
+	    std::cout << "]";
 	  }
 	  std::cout << std::endl;
 	}

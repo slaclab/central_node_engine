@@ -36,6 +36,9 @@ class BypassManager {
   void createBypassMap(MpsDbPtr db);
   void assignBypass(MpsDbPtr db);
   void checkBypassQueue(time_t testTime = 0);
+  void setThresholdBypass(MpsDbPtr db, BypassType bypassType,
+			  uint32_t deviceId, uint32_t value, time_t bypassUntil,
+			  int thresholdIndex, bool test = false);
   void setBypass(MpsDbPtr db, BypassType bypassType, uint32_t deviceId,
 		 uint32_t value, time_t bypassUntil, bool test = false);
   void printBypassQueue();

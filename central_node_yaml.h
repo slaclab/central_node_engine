@@ -773,6 +773,7 @@ namespace YAML {
 	  field = "card_id";
 	  analogDevice->cardId = (*it)[field].as<unsigned int>();
 	  analogDevice->value = 0;
+	  analogDevice->bypassMask = 0xFFFFFFFF;
   	} catch(YAML::InvalidNode e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for AnalogDevice.";
 	  throw(DbException(errorStream.str()));

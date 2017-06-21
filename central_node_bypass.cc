@@ -46,6 +46,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
     bypass->status = BYPASS_EXPIRED;
+    bypass->index = 0;
 
     bypassId++;
     
@@ -55,18 +56,22 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
 
   for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
        analogInput != db->analogDevices->end(); ++analogInput) {
-    InputBypass *bypass = new InputBypass();
-    bypass->id = bypassId;
-    bypass->deviceId = (*analogInput).second->id;
-    bypass->type = BYPASS_ANALOG;
-    bypass->until = 0; // time is seconds since 1970, this gets set later
-    // this field will get set later when bypasses start to be monitored
-    bypass->status = BYPASS_EXPIRED;
+    // Create one InputBypass for each threshold bit (max of 32 threshold bits)
+    for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
+      InputBypass *bypass = new InputBypass();
+      bypass->id = bypassId;
+      bypass->deviceId = (*analogInput).second->id;
+      bypass->type = BYPASS_ANALOG;
+      bypass->until = 0; // time is seconds since 1970, this gets set later
+      // this field will get set later when bypasses start to be monitored
+      bypass->status = BYPASS_EXPIRED;
+      bypass->index = i;
 
-    bypassId++;
+      bypassId++;
     
-    InputBypassPtr bypassPtr = InputBypassPtr(bypass);
-    bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
+      InputBypassPtr bypassPtr = InputBypassPtr(bypass);
+      bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
+    }
   }
 }
 
@@ -104,7 +109,7 @@ void BypassManager::assignBypass(MpsDbPtr db) {
 	throw(CentralNodeException(errorStream.str()));
       }
       else {
-	(*analogInput).second->bypass = (*bypass).second;
+	(*analogInput).second->bypass[(*bypass).second->index] = (*bypass).second;
       }
     }
   }
@@ -216,6 +221,7 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 	if (top.second->status != BYPASS_VALID) {
 	  LOG_TRACE("BYPASS", "Found BYPASS_EXPIRED status, setting back to BYPASS_VALID"
 		    << " and returning error");
+	  top.second->status = BYPASS_VALID;
 	  return false;
 	}
 	else {
@@ -271,8 +277,15 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
 			      uint32_t deviceId, uint32_t value, time_t bypassUntil,
 			      bool test) {
+  setThresholdBypass(db, bypassType, deviceId, value, bypassUntil, -1, test);
+}
+
+void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
+				       uint32_t deviceId, uint32_t value, time_t bypassUntil,
+				       int thresholdIndex, bool test) {
   InputBypassPtr bypass;
   std::stringstream errorStream;
+  uint32_t *bypassMask = NULL;
 
   // Find the device and its bypass - all devices must have a bypass assigned.
   // The assignment must be after the BypassManager is created.
@@ -292,7 +305,8 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
 		  << "] while setting bypass";
       throw(CentralNodeException(errorStream.str()));
     }
-    bypass = (*analogInput).second->bypass;
+    bypass = (*analogInput).second->bypass[thresholdIndex];
+    bypassMask = &(*analogInput).second->bypassMask;
   }
 
   BypassQueueEntry newEntry;
@@ -303,6 +317,13 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
   if (bypassUntil == 0) {
     bypass->status = BYPASS_EXPIRED;
     bypass->until = 0;
+
+    // If analog/threshold bypass, change bypassMask - set threshold bit to 1 (not-bypassed)
+    if (thresholdIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
+      uint32_t m = 1 << thresholdIndex; // clear bypassed threshold
+      *bypassMask |= m;
+    }
+
     LOG_TRACE("BYPASS", "Set bypass EXPIRED for device [" << deviceId << "], "
 	      << "type=" << bypassType);
   }
@@ -328,6 +349,13 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
       bypass->until = bypassUntil;
       bypass->status = BYPASS_VALID;
       bypass->value = value;
+
+      // If analog/threshold bypass, change bypassMask - set threshold bit to 0 (bypassed)
+      if (thresholdIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
+	uint32_t m = ~(1 << thresholdIndex); // zero the bypassed threshold bit
+	*bypassMask &= m;
+      }
+
       bypassQueue.push(newEntry);
       ret = pthread_mutex_unlock(&mutex);
       if (0 != ret) {

@@ -128,6 +128,8 @@ void Engine::setAllowedBeamClass() {
  * Second updates the FaultStates for each Fault.
  * At the end of this method all Digital Faults will have updated values,
  * i.e. the field 'faulted' gets updated based on the current machine state. 
+ *
+ * TODO: bypass mask and values accessed by multiple threads
  */
 void Engine::evaluateFaults() {
   std::stringstream errorStream;
@@ -181,15 +183,10 @@ void Engine::evaluateFaults() {
       }
       else {
 	// Check if there is an active bypass for analog device
-	if ((*input).second->analogDevice->bypass->status == BYPASS_VALID) {
-	  inputValue = (*input).second->analogDevice->bypass->value;
-	  LOG_TRACE("ENGINE", (*input).second->analogDevice->name << " bypassing input value to "
-		    << (*input).second->analogDevice->bypass->value << " (actual value is "
-		    << (*input).second->analogDevice->value << ")");
-	}
-	else {
-	  inputValue = (*input).second->analogDevice->value;
-	}
+	LOG_TRACE("ENGINE", (*input).second->analogDevice->name << " bypassMask=" << std::hex <<
+		  (*input).second->analogDevice->bypassMask << ", value=" <<
+		  (*input).second->analogDevice->value << std::dec);
+	inputValue = (*input).second->analogDevice->value & (*input).second->analogDevice->bypassMask;
       }
       faultValue |= (inputValue << (*input).second->bitPosition);
       LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue

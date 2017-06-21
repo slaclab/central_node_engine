@@ -45,6 +45,11 @@ class InputBypass {
   // should be used.
   BypassStatus status;
 
+  // This index is used only for bypasses of AnalogDevices, more specifically
+  // it defines which threshold bit is bypassed. Each AnalogDevice has up to
+  // 32 InputBypass - each threshold can be bypassed individually
+  uint16_t index;
+
  InputBypass() : id(0), deviceId(0), value(0),
     type(BYPASS_DIGITAL), until(0), status(BYPASS_EXPIRED) {
   }

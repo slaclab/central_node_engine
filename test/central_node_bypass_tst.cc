@@ -59,8 +59,11 @@ class BypassTest {
       Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
 				       1 /* bypass value */, 110 /* until*/, true);
       
-      // BPM01
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 11, 7, 300, true);
+      // BPM01 - Threshold 0 for X (thresholdIndex = 0)
+      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 9, 0, 300, 0, true);
+
+      // BPM02 - Threshold 0 for Y (thresholdIndex = 8)
+      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 10, 0, 300, 8, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
@@ -68,8 +71,11 @@ class BypassTest {
 
   void cancelBypass() {
     try {
-      // BPM
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 11, 7, 0, true);
+       // BPM01
+      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 9, 0, 0, 0, true);
+
+       // BPM02
+      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 10, 0, 0, 8, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
@@ -192,7 +198,12 @@ class BypassTest {
 	  return 1;
 	}
 	*/
-	Engine::getInstance().mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	try {
+	  Engine::getInstance().mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	} catch (std::exception e) {
+	  std::cerr << "Bad deviceId " << deviceId << "." << std::endl;
+	  exit(-1);
+	}
       }
     }
 

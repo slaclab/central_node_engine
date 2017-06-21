@@ -442,13 +442,17 @@ class DbAnalogDevice : public DbEntry {
   // Pointer to the Channel connected to the device
   DbChannelPtr channel;
 
-  // Pointer to the bypass for this input
-  // TODO: change single bypass to an array of them (one for each threshold bit) - 32 max
-  // TODO: the index on the array indicates the threshold bit position
-  // TODO: in the central_node_ioc PVs it must pass the index to access the proper bypass
-  // TODO: need to add a combined bypass value that changes only when there are active bypasses
-  // TODO: so it does not need to be computed on every evaluation cycle
-  InputBypassPtr bypass;
+  // Array of pointer to bypasses, one for each threshold (max of 32 thresholds).
+  // The bypasses are managed by the BypassManager class, when a bypass is added or
+  // expires the bypassMask for the AnalogDevice is updated.
+  InputBypassPtr bypass[ANALOG_DEVICE_NUM_THRESHOLDS];
+
+  // Bypass mask composed from all active threshold bypasses. This value gets updated
+  // whenever a threshold bypass becomes valid or expires. The BypassManager changes this 
+  // mask directly. The Engine always does a bitwise AND between this mask and the value read
+  // from firmware. If a threshold is bypassed the bypassMask is 0 at the threshold position,
+  // and 1 otherwise.
+  uint32_t bypassMask;
 
   /**
    * These fields get populated when the database is loaded, they are
@@ -465,7 +469,7 @@ class DbAnalogDevice : public DbEntry {
   // Pointer to shared bitset buffer containing updates for all inputs from
   // the same application card
   ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
-
+  
   DbAnalogDevice();
   void update(uint32_t v);
   void update();

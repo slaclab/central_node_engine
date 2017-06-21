@@ -57,7 +57,7 @@ void DbDeviceInput::update() {
   }
 }
 
-DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0) {
+DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0), bypassMask(0xFFFFFFFF) {
   for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
   }
