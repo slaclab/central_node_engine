@@ -816,6 +816,7 @@ class DbFault : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
     os << "id[" << fault->id << "]; "
        << "name[" << fault->name << "]; "
+       << "value[" << fault->value << "]; "
        << "faulted[" << fault->faulted << "]; "
        << "ignored[" << fault->ignored << "]; "
        << "description[" << fault->description << "]";

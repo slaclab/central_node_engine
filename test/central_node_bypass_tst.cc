@@ -37,8 +37,38 @@ class BypassTest {
   bool digital;
   bool analog;
 
+  DbFaultPtr bpm01XFault;
+  DbFaultPtr bpm02YFault;
+
   void checkBypass(time_t t) {
     Engine::getInstance().bypassManager->checkBypassQueue(t);
+  }
+
+  void checkFaultState(bool bpm01XFaulted, bool bpm02YFaulted, bool verbose = false) {
+    Engine::getInstance().checkFaults();
+
+    if (!bpm01XFault) {
+      bpm01XFault = Engine::getInstance().mpsDb->faults->at(9);
+    }
+
+    if (!bpm02YFault) {
+      bpm02YFault = Engine::getInstance().mpsDb->faults->at(13);
+    }
+
+    if (bpm01XFault->faulted != bpm01XFaulted) {
+      std::cerr << "ERROR: BPM01_X faulted=" << bpm01XFault->faulted << ", expected " << bpm01XFaulted << std::endl;
+      exit(-1);
+    }
+
+    if (bpm02YFault->faulted != bpm02YFaulted) {
+      std::cerr << "ERROR: BPM02_Y faulted=" << bpm02YFault->faulted << ", expected " << bpm02YFaulted << std::endl;
+      exit(-1);
+    }
+
+    if (verbose) {
+      std::cout << bpm01XFault << std::endl;
+      std::cout << bpm02YFault << std::endl;
+    }
   }
 
   void addBypass() {
@@ -71,10 +101,10 @@ class BypassTest {
 
   void cancelBypass() {
     try {
-       // BPM01
+       // BPM01 X T0
       Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 9, 0, 0, 0, true);
 
-       // BPM02
+       // BPM02 Y T0
       Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 10, 0, 0, 8, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
@@ -294,7 +324,7 @@ int main(int argc, char **argv) {
 
   // First four updates without bypass
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -303,7 +333,7 @@ int main(int argc, char **argv) {
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -312,7 +342,7 @@ int main(int argc, char **argv) {
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -321,7 +351,7 @@ int main(int argc, char **argv) {
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
   }
@@ -337,7 +367,7 @@ int main(int argc, char **argv) {
 
   // Next four updates with bypass VALID
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -346,7 +376,7 @@ int main(int argc, char **argv) {
   t->checkBypass(91);
 
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -355,7 +385,7 @@ int main(int argc, char **argv) {
   //t->showFaults();
 
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -364,21 +394,24 @@ int main(int argc, char **argv) {
   //t->showFaults();
   
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
   }
 
   // Check bypass expiration - bypass should expire now
-  Engine::getInstance().getBypassManager()->printBypassQueue();
+  if (verbose) {
+    Engine::getInstance().getBypassManager()->printBypassQueue();
+  }
   t->checkBypass(200);
   if (verbose) {
-    std::cout << "### BYPASS EXPIRED" << std::endl;
+    std::cout << "### DIGITAL BYPASSES EXPIRED" << std::endl;
+    Engine::getInstance().getBypassManager()->printBypassQueue();
   }
  
-  // Next four updates with bypass EXPIRED
+  // Next four updates with digital bypass EXPIRED
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -387,7 +420,7 @@ int main(int argc, char **argv) {
   t->checkBypass(201);
 
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -397,11 +430,11 @@ int main(int argc, char **argv) {
   //t->showFaults();
 
   if (verbose) {
-    std::cout << "### CANCEL BPM01 BYPASS" << std::endl;
+    std::cout << "### CANCEL BPM01_X/BPM02_Y BYPASS" << std::endl;
   }
   t->cancelBypass();
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     Engine::getInstance().showMitigationDevices();
@@ -413,7 +446,7 @@ int main(int argc, char **argv) {
   }
 
   t->updateInputsFromTestFile(verbose);
-  Engine::getInstance().checkFaults();
+  t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
     std::cout << "-------------------------" << std::endl;
