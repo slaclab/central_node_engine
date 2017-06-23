@@ -72,7 +72,6 @@ CROSS_linuxRT_x86_64=$(call BR_PATH,x86_64)
 
 # 
 BOOST_VERSION=1.57.0
-
 BOOST_PATH=/afs/slac/g/lcls/package/boost/$(BOOST_VERSION)
 
 boost_DIR_linux_x86_64  =$(BOOST_PATH)/linux-x86_64
@@ -89,6 +88,13 @@ YAML_CPP_PATH            = /afs/slac/g/lcls/package/yaml-cpp/$(YAML_CPP_VERSION)
 
 yaml_cpp_DIR_linux_x86_64  =$(YAML_CPP_PATH)/rhel6-x86_64
 yaml_cpp_DIR_linuxRT_x86_64=$(YAML_CPP_PATH)/buildroot-2015.02-x86_64
+
+# CPSW
+CPSW_VERSION = R3.5.4
+CPSW_PATH    = /afs/slac/g/lcls/package/cpsw/framework/$(CPSW_VERSION)
+
+cpsw_DIR_linux_x86_64 = $(CPSW_PATH)/rhel6-x86_64
+cpsw_DIR_linuxRT_x86_64 = $(CPSW_PATH)/buildroot-2015.02-x86_64
 
 EASYLOGGINGPP_VERSION=easyloggingpp-8.91
 EASYLOGGINGPP_PATH=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)

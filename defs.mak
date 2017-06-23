@@ -54,6 +54,7 @@ ARCHSPECIFIC_LIBVARS+=yaml_cpp
 ARCHSPECIFIC_LIBVARS+=boost
 ARCHSPECIFIC_LIBVARS+=easyloggingpp
 ARCHSPECIFIC_LIBVARS+=py
+ARCHSPECIFIC_LIBVARS+=cpsw
 
 $(foreach var,$(ARCHSPECIFIC_VARS),$(eval $(call arch2var,$(var))))
 
@@ -79,6 +80,7 @@ CXXFLAGS+= $(OPT_CXXFLAGS)
 CXXFLAGS+= $(USR_CXXFLAGS)
 # Log can't be enabled when building for linuxRT
 CXXFLAGS+= -DLOG_ENABLED
+CXXFLAGS+= -DFW_ENABLED
 CFLAGS  += $(OPT_CFLAGS)
 CFLAGS  += $(USR_CFLAGS)
 
@@ -94,12 +96,12 @@ RUN_OPTS=''
 
 # colon separated dirlist
 # Note: += adds a whitespace
-central_nodeinc_DIRS=$(CENTRAL_NODE_DIR)$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))$(addprefix :,$(easyloggingppinc_DIR))
+central_nodeinc_DIRS=$(CENTRAL_NODE_DIR)$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))$(addprefix :,$(easyloggingppinc_DIR))$(addprefix :,$(cpswinc_DIR))
 # colon separated dirlist
-central_nodelib_DIRS=$(addsuffix /O.$(TARCH),$(CENTRAL_NODE_DIR))$(addprefix :,$(boostlib_DIR))$(addprefix :,$(yaml_cpplib_DIR))
+central_nodelib_DIRS=$(addsuffix /O.$(TARCH),$(CENTRAL_NODE_DIR))$(addprefix :,$(boostlib_DIR))$(addprefix :,$(yaml_cpplib_DIR))$(addprefix :,$(cpswlib_DIR))
 
 # Libraries CENTRAL_NODE requires -- must be added to application's <prog>_LIBS variable
-CENTRAL_NODE_LIBS   = central_node_engine yaml-cpp pthread rt dl
+CENTRAL_NODE_LIBS   = central_node_engine yaml-cpp cpsw pthread rt dl
 
 STATIC_LIBRARIES=$(STATIC_LIBRARIES_$(WITH_STATIC_LIBRARIES))
 SHARED_LIBRARIES=$(SHARED_LIBRARIES_$(WITH_SHARED_LIBRARIES))
