@@ -4,6 +4,7 @@
 
 #include <central_node_yaml.h>
 #include <central_node_database.h>
+#include <central_node_firmware.h>
 
 #include <iostream>
 #include <sstream>
@@ -14,7 +15,7 @@
 using namespace easyloggingpp;
 static Logger *databaseLogger;
 
-MpsDb::MpsDb() : inputUpdateTime(5, "Input update time") {
+MpsDb::MpsDb() : inputUpdateTime(5, "Input update time"), _updateCounter(0) {
   databaseLogger = Loggers::getLogger("DATABASE");
 }
 #else
@@ -34,11 +35,20 @@ MpsDb::~MpsDb() {
  */
 void MpsDb::updateInputs() {
   inputUpdateTime.start();
-  DbApplicationCardMap::iterator applicationCardIt;
-  for (applicationCardIt = applicationCards->begin();
-       applicationCardIt != applicationCards->end();
-       ++applicationCardIt) {
-    (*applicationCardIt).second->updateInputs();
+  if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
+					       NUM_APPLICATIONS *
+					       APPLICATION_UPDATE_BUFFER_SIZE_BYTES,
+					       20000000)) {
+    DbApplicationCardMap::iterator applicationCardIt;
+    for (applicationCardIt = applicationCards->begin();
+	 applicationCardIt != applicationCards->end();
+	 ++applicationCardIt) {
+      (*applicationCardIt).second->updateInputs();
+    }
+    _updateCounter++;
+  }
+  else {
+    std::cerr << "ERROR: updateInputs failed" << std::endl;
   }
   inputUpdateTime.end();
 }
@@ -496,8 +506,8 @@ void MpsDb::configureApplicationCards() {
 
   // Set the address of the firmware configuration location for each application card; and
   // the address of the firmware input update location for each application card
-  char *configBuffer = 0;
-  char *updateBuffer = 0;
+  uint8_t *configBuffer = 0;
+  uint8_t *updateBuffer = 0;
   DbApplicationCardPtr aPtr;
   DbApplicationCardMap::iterator applicationCardIt;
   for (applicationCardIt = applicationCards->begin(); applicationCardIt != applicationCards->end();
@@ -590,6 +600,9 @@ void MpsDb::writeFirmwareConfiguration() {
   for (DbApplicationCardMap::iterator card = applicationCards->begin();
        card != applicationCards->end(); ++card) {
     (*card).second->writeConfiguration();
+    Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
+					(*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
+					APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
   }
 }
 

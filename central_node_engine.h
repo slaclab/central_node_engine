@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <pthread.h>
 #include <boost/shared_ptr.hpp>
 
 #include <central_node_exception.h>
@@ -36,6 +37,7 @@ class Engine {
   Engine(Engine const &);
   void operator=(Engine const &);
   bool initialized;
+  pthread_t _engineThread;
 
  public:
   int loadConfig(std::string yamlFileName);
@@ -44,6 +46,7 @@ class Engine {
 
   friend class EngineTest;
   friend class BypassTest;
+  friend class FirmwareTest;
   
   void showFaults();
   void showStats();
@@ -77,6 +80,9 @@ class Engine {
     static Engine instance;
     return instance;
   }
+
+  void startUpdateThread();
+  static void *engineThread(void *arg);
 };
 
 typedef shared_ptr<Engine> EnginePtr;

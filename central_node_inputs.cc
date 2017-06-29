@@ -4,6 +4,7 @@
 
 #include <central_node_yaml.h>
 #include <central_node_database.h>
+#include <central_node_firmware.h>
 
 #include <iostream>
 #include <sstream>
@@ -239,6 +240,8 @@ void DbApplicationCard::writeDigitalConfiguration() {
   }
   // Print bitset in string format
   //  std::cout << *applicationConfigBuffer << std::endl;
+
+  //  Firmware::getInstance().writeConfig(globalId);
 }
 
 // Analog input configuration (total size = 1152 bits):

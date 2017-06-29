@@ -21,8 +21,10 @@ const uint32_t FAST_EVALUATION = 1;
 // Definition of number of applications and memory space for
 // the hardware (fast) configuration
 const uint32_t NUM_APPLICATIONS = 1024;
-const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bits
+const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bits - not all bits are used
 const uint32_t APPLICATION_CONFIG_BUFFER_SIZE_BYTES = APPLICATION_CONFIG_BUFFER_SIZE / 8;
+const uint32_t APPLICATION_CONFIG_BUFFER_USED_SIZE = 1344; // 1344 bits for digital, 1152 bits for analog
+const uint32_t APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES = APPLICATION_CONFIG_BUFFER_USED_SIZE / 8; // 1344 bits for digital, 1152 bits for analog
 const uint32_t APPLICATION_UPDATE_BUFFER_SIZE = 384; // in bits, which is 48 bytes
 const uint32_t APPLICATION_UPDATE_BUFFER_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_SIZE / 8;
 
@@ -991,16 +993,18 @@ class MpsDb {
    * configuration takes 1343 bits and the analog configuration takes
    * 1151 bits.
    */
-  char fastConfigurationBuffer[NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE_BYTES];
+  uint8_t fastConfigurationBuffer[NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE_BYTES];
 
   /**
    * Memory that receives input updates from firmware/hardware. There are
    * up to 384 inputs bits per application, 2-bit per input indicating 
    * a 'was low' and 'was high' status.
    */
-  char fastUpdateBuffer[NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_SIZE_BYTES];
+  uint8_t fastUpdateBuffer[NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_SIZE_BYTES];
 
   TimeAverage inputUpdateTime;
+
+  uint32_t _updateCounter;
 
  public:
   DbCrateMapPtr crates;
@@ -1023,6 +1027,8 @@ class MpsDb {
   DbIgnoreConditionMapPtr ignoreConditions;
   DbConditionInputMapPtr conditionInputs;
 
+  friend class FirmwareTest;
+
   // Name of the loaded YAML file
   std::string name;
 
@@ -1040,7 +1046,7 @@ class MpsDb {
   void writeFirmwareConfiguration();
   void updateInputs();
 
-  char *getFastUpdateBuffer() {
+  uint8_t *getFastUpdateBuffer() {
     return &fastUpdateBuffer[0];
   }
   

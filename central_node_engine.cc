@@ -1,5 +1,10 @@
 #include <central_node_engine.h>
+#include <central_node_firmware.h>
+
+#include <stdio.h>
 #include <stdint.h>
+#include <sched.h>
+
 #include <log.h>
 #include <log_wrapper.h>
 
@@ -383,5 +388,29 @@ void Engine::showDeviceInputs() {
   for (DbDeviceInputMap::iterator input = mpsDb->deviceInputs->begin();
        input != mpsDb->deviceInputs->end(); ++input) {
     std::cout << (*input).second << std::endl;
+  }
+}
+
+void Engine::startUpdateThread() {
+  if (pthread_create(&_engineThread, 0, Engine::engineThread, 0)) {
+    throw(EngineException("ERROR: Failed to start update thread"));
+  }
+}
+
+void *Engine::engineThread(void *arg) {
+  struct sched_param  param;
+
+  std::cout << "Engine: update thread started." << std::endl;
+  // Declare as real time task
+  param.sched_priority = 49;
+  if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
+    perror("Set priority");
+    std::cerr << "ERROR: Setting thread RT priority failed." << std::endl;
+    //    exit(-1);
+  }
+
+  while(true) {
+    Engine::getInstance().mpsDb->updateInputs();
+    Engine::getInstance().checkFaults();
   }
 }
