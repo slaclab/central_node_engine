@@ -17,8 +17,7 @@ class TestFailed {};
 static void usage(const char *nm) {
   std::cerr << "Usage: " << nm << " -f <file> -i <file>" << std::endl;
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
-  std::cerr << "       -i <file>   :  digital input test file" << std::endl;
-  std::cerr << "       -a <file>   :  analog input test file" << std::endl;
+  std::cerr << "       -w <file>   :  central node firmware YAML config file" << std::endl;
   std::cerr << "       -r <n>      :  number evaluation cycles" << std::endl;
   std::cerr << "       -v          :  verbose output" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
@@ -43,6 +42,9 @@ public:
 	std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
 	return 1;
       }
+      if (verbose) {
+	std::cout << "INFO: Loaded MPS configuration (" << mpsFileName << ")" << std::endl;
+      }
     } catch (DbException ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
@@ -51,11 +53,20 @@ public:
   }
 
   int writeFirmwareConfig() {
+    if (verbose) {
+      std::cout << "INFO: Writing MPS configuration to firmware... ";
+    }
     Engine::getInstance().mpsDb->writeFirmwareConfiguration();
+    if (verbose) {
+      std::cout << "done." << std::endl;
+    }
     return 0;
   }
 
   int readFirmwareConfig() {
+    if (verbose) {
+      std::cout << "INFO: Reading back MPS configuration from firmware... ";
+    }
     uint32_t appFwConfig[APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4];
     
     for (int appId = 0; appId < 2; ++appId) {
@@ -73,16 +84,33 @@ public:
       }
     }
 
+    if (verbose) {
+      std::cout << "done." << std::endl;
+    }
+
     return 0;
   }
 
   int getUpdates() {
-    Engine::getInstance().startUpdateThread();
-    //    Firmware::getInstance().softwareClear();
+    if (verbose) {
+      std::cout << "INFO: Enabling MPS";
+    }
+    Firmware::getInstance().enable();
+    if (verbose) {
+      std::cout << ".";
+    }
+    Firmware::getInstance().softwareClear();
+    if (verbose) {
+      std::cout << ".";
+    }
     Firmware::getInstance().softwareEnable();
-    sleep(3);
+    if (verbose) {
+      std::cout << ". done." << std::endl;
+    }
+    Engine::getInstance().startUpdateThread();
+    sleep(5);
     Firmware::getInstance().softwareDisable();
-    std::cout << Engine::getInstance().mpsDb->_updateCounter << std::endl;
+    //    std::cout << Engine::getInstance().mpsDb->_updateCounter << std::endl;
   }
 
 protected:

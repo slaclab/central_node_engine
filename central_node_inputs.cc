@@ -34,23 +34,34 @@ void DbDeviceInput::update(uint32_t v) {
 void DbDeviceInput::update() {
   uint32_t wasLow;
   uint32_t wasHigh;
+  uint32_t newValue;
   
   if (applicationUpdateBuffer) {
     wasLow = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE];
     wasHigh = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE + 1];
     if (wasLow + wasHigh == 0) {
+      invalidValueCount++;
+      /*
       std::stringstream errorStream;
       errorStream << "ERROR: Read wasLow=0 and wasHigh=0 for digital channel " << channel->name;
       throw(DbException(errorStream.str())); 
+      */
     }
     else if (wasLow + wasHigh == 2) {
       value = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
     }
     else if (wasLow > 0) {
-      value = 1;
+      newValue = 1;
     }
     else {
-      value = 0;
+      newValue = 0;
+    }
+
+    value = newValue;
+  
+    // Latch new value if this is a fault
+    if (newValue == faultValue) {
+      latchedValue = faultValue;
     }
   }
   else {
@@ -58,7 +69,8 @@ void DbDeviceInput::update() {
   }
 }
 
-DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1), value(0), latchedValue(0), bypassMask(0xFFFFFFFF) {
+DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
+				   value(0), invalidValueCount(0), bypassMask(0xFFFFFFFF) {
   for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
   }
@@ -92,24 +104,30 @@ void DbAnalogDevice::update() {
   uint32_t wasLow;
   uint32_t wasHigh;
   uint32_t newValue = 0;
+  uint32_t newLatchedValue = latchedValue;
   
   if (applicationUpdateBuffer) {
     for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
       wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
       if (wasLow + wasHigh == 0) {
+	invalidValueCount++;
+	/*
 	std::stringstream errorStream;
 	errorStream << "ERROR: Read wasLow=0 and wasHigh=0 for analog channel " << channel->name;
 	throw(DbException(errorStream.str())); 
+	*/
       }
       else if (wasLow + wasHigh == 2) {
-	newValue = (newValue << 1) | 1; // If signal was both low and high during the 2.7ms set threshold crossed
+	newValue |= (1 << i); // If signal was both low and high during the 2.7ms set threshold crossed
+	latchedValue |= (1 << i);
       }
       else if (wasLow > 0) {
-	value = (newValue << 1) | 1; // Threshold exceeded
+	newValue |= (1 << i); // Threshold exceeded
+	latchedValue |= (1 << i);
       }
       else {
-	value = (newValue << 1); // No threshold crossed
+	newValue &= ~(1 << i); // No threshold crossed
       }
     }
   }

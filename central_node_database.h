@@ -25,7 +25,9 @@ const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bits - not all bits 
 const uint32_t APPLICATION_CONFIG_BUFFER_SIZE_BYTES = APPLICATION_CONFIG_BUFFER_SIZE / 8;
 const uint32_t APPLICATION_CONFIG_BUFFER_USED_SIZE = 1344; // 1344 bits for digital, 1152 bits for analog
 const uint32_t APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES = APPLICATION_CONFIG_BUFFER_USED_SIZE / 8; // 1344 bits for digital, 1152 bits for analog
-const uint32_t APPLICATION_UPDATE_BUFFER_SIZE = 384; // in bits, which is 48 bytes
+const uint32_t APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE = 128;
+const uint32_t APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE / 8;
+const uint32_t APPLICATION_UPDATE_BUFFER_SIZE = APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE + 384; // in bits, which is 64 bytes
 const uint32_t APPLICATION_UPDATE_BUFFER_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_SIZE / 8;
 
 const uint32_t POWER_CLASS_BIT_SIZE = 4;
@@ -318,6 +320,9 @@ class DbDeviceInput : public DbEntry {
   // Latched value
   uint32_t latchedValue;
 
+  // Count 'was high'=0 & 'was low'=0 
+  uint32_t invalidValueCount;
+
   // Pouint32_ter to the bypass for this input
   InputBypassPtr bypass;
 
@@ -329,7 +334,8 @@ class DbDeviceInput : public DbEntry {
   ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
 
  DbDeviceInput() : DbEntry(), 
-    bitPosition(-1), channelId(-1), faultValue(0), digitalDeviceId(-1), applicationUpdateBuffer(0) {
+    bitPosition(-1), channelId(-1), faultValue(0), digitalDeviceId(-1), value(0),
+    latchedValue(0), invalidValueCount(0), applicationUpdateBuffer(0) {
   }
 
   void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
@@ -438,6 +444,9 @@ class DbAnalogDevice : public DbEntry {
 
   // Latched value
   uint32_t latchedValue;
+
+  // Count 'was high'=0 & 'was low'=0 
+  uint32_t invalidValueCount;
 
   DbDeviceTypePtr deviceType;
 
@@ -1040,6 +1049,7 @@ class MpsDb {
   int load(std::string yamlFile);
   void configure();
 
+  void showFastUpdateBuffer(uint32_t begin, uint32_t size);
   void showFaults();
   void showFault(DbFaultPtr fault);
 

@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 #include <log_wrapper.h>
 
@@ -25,6 +26,7 @@ MpsDb::MpsDb() : inputUpdateTime(5, "Input update time") {
 
 MpsDb::~MpsDb() {
   inputUpdateTime.show();
+  std::cout << "Update counter: " << _updateCounter << std::endl;
 }
 
 
@@ -39,6 +41,7 @@ void MpsDb::updateInputs() {
 					       NUM_APPLICATIONS *
 					       APPLICATION_UPDATE_BUFFER_SIZE_BYTES,
 					       20000000)) {
+    //    showFastUpdateBuffer(0, 64);
     DbApplicationCardMap::iterator applicationCardIt;
     for (applicationCardIt = applicationCards->begin();
 	 applicationCardIt != applicationCards->end();
@@ -516,7 +519,8 @@ void MpsDb::configureApplicationCards() {
     configBuffer = fastConfigurationBuffer + aPtr->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES;
     aPtr->applicationConfigBuffer = reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
 
-    updateBuffer = fastUpdateBuffer + aPtr->globalId * APPLICATION_UPDATE_BUFFER_SIZE_BYTES;
+    updateBuffer = fastUpdateBuffer + aPtr->globalId * APPLICATION_UPDATE_BUFFER_SIZE_BYTES +
+      APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE_BYTES;
     aPtr->applicationUpdateBuffer = reinterpret_cast<ApplicationUpdateBufferBitSet *>(updateBuffer);
 
     LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
@@ -708,6 +712,23 @@ void MpsDb::showFaults() {
     showFault((*fault).second);
   }
   std::cout << "+-------------------------------------------------------" << std::endl;
+}
+
+void MpsDb::showFastUpdateBuffer(uint32_t begin, uint32_t size) {
+  for (int address = begin; address < begin + size; ++address) {
+    if (address % 16 == 0) {
+      std::cout << std::endl;
+      std::cout << std::setw(5) << std::hex << address << std::dec << " ";
+    }
+
+    std::cout << " ";
+
+    char c1 = fastUpdateBuffer[address] & 0x0F;
+    char c2 = (fastUpdateBuffer[address] & 0xF0) >> 4;
+    if (c1 <= 9) c1 += 0x30; else c1 = 0x61 + (c1 - 10);
+    if (c2 <= 9) c2 += 0x30; else c2 = 0x61 + (c2 - 10);
+    std::cout << c1 << c2;
+  }
 }
 
 void MpsDb::showFault(DbFaultPtr fault) {

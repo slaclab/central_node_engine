@@ -410,6 +410,7 @@ void *Engine::engineThread(void *arg) {
   }
 
   while(true) {
+    Firmware::getInstance().heartbeat();
     Engine::getInstance().mpsDb->updateInputs();
     Engine::getInstance().checkFaults();
   }

@@ -41,6 +41,8 @@ class Firmware {
   ScalVal    _swClearSV;
   Stream     _updateStream;
 
+  uint8_t _heartbeat;
+
  public:
   uint64_t fpgaVersion;
   uint8_t buildStamp[100];
@@ -48,6 +50,7 @@ class Firmware {
 
   void enable();
   void disable();
+  void heartbeat();
   void softwareEnable();
   void softwareDisable();
   void softwareClear();

@@ -10,7 +10,7 @@ static Logger *firmwareLogger;
 
 #ifdef FW_ENABLED
 Firmware::Firmware() :
-  initialized(false) {
+  initialized(false), _heartbeat(0) {
 #ifdef LOG_ENABLED
   firmwareLogger = Loggers::getLogger("FIRMWARE");
   LOG_TRACE("FIRMWARE", "Created Firmware");
@@ -35,6 +35,7 @@ int Firmware::loadConfig(std::string yamlFileName) {
   _heartbeatSV   = IScalVal::create   (_path->findByName((base + cn  + "/SoftwareWdHeartbeat").c_str()));
   _enableSV      = IScalVal::create   (_path->findByName((base + cn  + "/Enable").c_str()));
   _swEnableSV    = IScalVal::create   (_path->findByName((base + cn  + "/SoftwareEnable").c_str()));
+  _swClearSV     = IScalVal::create   (_path->findByName((base + cn  + "/SoftwareClear").c_str()));
   _swLossErrorSV = IScalVal_RO::create(_path->findByName((base + cn  + "/SoftwareLossError").c_str()));
   _swLossCntSV   = IScalVal_RO::create(_path->findByName((base + cn  + "/SoftwareLossCnt").c_str()));
   _updateStream  = IStream::create    (_path->findByName("/Stream0"));
@@ -77,6 +78,10 @@ void Firmware::softwareDisable() {
 void Firmware::softwareClear() {
   _swClearSV->setVal((uint64_t) 1);
   _swClearSV->setVal((uint64_t) 0);
+}
+
+void Firmware::heartbeat() {
+  _heartbeatSV->setVal((uint64_t)(_heartbeat^=1));
 }
 
 void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
