@@ -339,7 +339,7 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     // This handles cases #1 and #2, for new and modified bypasses.
     if (bypassUntil > now) {
       LOG_TRACE("BYPASS", "New bypass for device [" << deviceId << "], "
-		<< "type=" << bypassType
+		<< "type=" << bypassType << ", index=" << thresholdIndex
 		<< ", until=" << bypassUntil << " sec"
 		<< ", now=" << now << " sec");
       int ret = pthread_mutex_lock(&mutex);
@@ -381,7 +381,10 @@ void BypassManager::printBypassQueue() {
     char buf[40];
     ptr = localtime(&copy.top().first);
     strftime(buf, 40, "%x %X", ptr);
-    std::cout << buf << " (" << copy.top().first << "): " << copy.top().second->deviceId;
+    std::cout << buf << " (" << copy.top().first << "): deviceId=" << copy.top().second->deviceId;
+    if (copy.top().second->type == BYPASS_ANALOG) {
+      std::cout << " threshold " << copy.top().second->index;
+    }
     if (copy.top().second->status == BYPASS_VALID) {
       std::cout << " [VALID]" << std::endl;
     }

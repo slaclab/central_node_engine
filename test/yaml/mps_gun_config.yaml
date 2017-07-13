@@ -368,12 +368,12 @@ DeviceInput:
 - id: 1
   digital_device_id: 1
   bit_position: 0
-  fault_value: 0
+  fault_value: 1
   channel_id: 1
 - id: 2
   digital_device_id: 1
   bit_position: 1
-  fault_value: 0
+  fault_value: 1
   channel_id: 2
 - id: 3
   digital_device_id: 2

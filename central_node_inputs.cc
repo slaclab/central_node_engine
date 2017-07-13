@@ -58,7 +58,7 @@ void DbDeviceInput::update() {
     }
 
     value = newValue;
-  
+
     // Latch new value if this is a fault
     if (newValue == faultValue) {
       latchedValue = faultValue;

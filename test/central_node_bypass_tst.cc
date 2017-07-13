@@ -94,6 +94,9 @@ class BypassTest {
 
       // BPM02 - Threshold 0 for Y (thresholdIndex = 8)
       Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 10, 0, 300, 8, true);
+
+      Engine::getInstance().bypassManager->printBypassQueue();
+      
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
