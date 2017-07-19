@@ -7,6 +7,17 @@
 
 #include <cpsw_api_user.h>
 
+#ifndef FW_ENABLED
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif
+
 using boost::shared_ptr;
 
 const uint32_t FW_NUM_APPLICATIONS = 8;
@@ -42,6 +53,10 @@ class Firmware {
   Stream     _updateStream;
 
   uint8_t _heartbeat;
+
+#ifndef FW_ENABLED
+  int _sockfd; /* socket */
+#endif
 
  public:
   uint64_t fpgaVersion;

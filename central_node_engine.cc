@@ -328,6 +328,10 @@ void Engine::mitigate() {
 }
 
 int Engine::checkFaults() {
+  if (!mpsDb) {
+    return 0;
+  }
+
   // must first get updated input values
   checkFaultTime.start();
 
@@ -409,9 +413,14 @@ void *Engine::engineThread(void *arg) {
     //    exit(-1);
   }
 
+#ifndef FW_ENABLED
   while(true) {
-    Firmware::getInstance().heartbeat();
-    Engine::getInstance().mpsDb->updateInputs();
-    Engine::getInstance().checkFaults();
+    //    Firmware::getInstance().heartbeat();
+    if (Engine::getInstance().mpsDb) {
+      Engine::getInstance().mpsDb->updateInputs();
+      Engine::getInstance().checkFaults();
+    }
+    sleep(3);
   }
+#endif
 }

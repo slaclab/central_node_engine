@@ -110,6 +110,8 @@ void DbAnalogDevice::update() {
     for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
       wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
+      std::cout << "INFO: Read wasLow=" << wasLow << " and wasHigh=" << wasHigh << " for analog channel "
+		<< channel->name << std::endl;
       if (wasLow + wasHigh == 0) {
 	invalidValueCount++;
 	/*
@@ -129,6 +131,7 @@ void DbAnalogDevice::update() {
       else {
 	newValue &= ~(1 << i); // No threshold crossed
       }
+      value = newValue;
     }
   }
   else {

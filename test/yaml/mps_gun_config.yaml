@@ -413,8 +413,8 @@ DeviceInput:
 ---
 Fault:
 - id: 1
-  name: "YAG01"
-  description: "YAG01 Profile Monitor Fault"
+  name: "TGT"
+  description: "YAG01 Profile Monitor Screen Fault"
 - id: 2
   name: "GUN_TEMP"
   description: "Gun Temperature Fault"
@@ -675,10 +675,12 @@ AnalogDevice:
 ---
 MitigationDevice:
 - id: 1
-  name: "Shutter"
+  name: "MS"
+  description: "Mechanical Shutter"
   destination_mask: 1
 - id: 2
   name: "AOM"
+  description: "AOM"
   destination_mask: 2
 ---
 BeamClass:

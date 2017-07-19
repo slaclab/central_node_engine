@@ -1,4 +1,5 @@
 #include <central_node_firmware.h>
+#include <central_node_exception.h>
 #include <stdint.h>
 #include <log_wrapper.h>
 #include <stdio.h>
@@ -99,9 +100,53 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
 
 #else
 #warning "Code compiled without CPSW - NO FIRMWARE"
-Firmware::Firmware(){};
+
+//
+// If firmware is not used an UDP socket server is created to receive
+// simulated link node updates
+//
+Firmware::Firmware() {
+  _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (_sockfd < 0) {
+    throw(CentralNodeException("ERROR: Failed to open socket for simulated firmware inputs"));
+  }
+  
+  int optval = 1;
+  setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR,
+             (const void *) &optval , sizeof(int));
+
+  struct sockaddr_in serveraddr;
+  bzero((char *) &serveraddr, sizeof(serveraddr));
+  serveraddr.sin_family = AF_INET;
+  serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  serveraddr.sin_port = htons((unsigned short)4356);
+
+  if (bind(_sockfd, (struct sockaddr *) &serveraddr,
+           sizeof(serveraddr)) < 0) {
+    throw(CentralNodeException("ERROR: Failed to open socket for simulated firmaware inputs"));
+  }
+};
+
 int Firmware::loadConfig(std::string yamlFileName) {return 0;};
 void Firmware::enable() {};
 void Firmware::disable() {};
 void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {};
+
+uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
+  struct sockaddr_in clientaddr;
+  socklen_t clientlen = sizeof(clientaddr);
+
+  std::cout << "INFO: waiting for simulated data..." << std::endl;
+  int n = recvfrom(_sockfd, buffer, size, 0,
+		   (struct sockaddr *) &clientaddr, &clientlen);
+  if (n < 0) {
+    std::cerr << "ERROR: Failed to receive simulated firmware data" << std::endl;
+    return 0;
+  }
+  else {
+    std::cout << "INFO: Received " << n << " bytes." <<std::endl;
+  }
+
+ return n;
+};
 #endif
