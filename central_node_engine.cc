@@ -22,6 +22,10 @@ Engine::Engine() :
 #endif
 }
 
+Engine::~Engine() {
+  checkFaultTime.show();
+}
+
 MpsDbPtr Engine::getCurrentDb() {
   return mpsDb;
 }

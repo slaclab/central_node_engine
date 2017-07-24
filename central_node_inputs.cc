@@ -110,8 +110,8 @@ void DbAnalogDevice::update() {
     for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
       wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
-      std::cout << "INFO: Read wasLow=" << wasLow << " and wasHigh=" << wasHigh << " for analog channel "
-		<< channel->name << std::endl;
+      //      std::cout << "INFO: Read wasLow=" << wasLow << " and wasHigh=" << wasHigh << " for analog channel "
+      //		<< channel->name << std::endl;
       if (wasLow + wasHigh == 0) {
 	invalidValueCount++;
 	/*
@@ -172,6 +172,12 @@ void DbApplicationCard::configureUpdateBuffers() {
  * update each digital/analog device with the new values.
  */
 void DbApplicationCard::updateInputs() {
+  std::cout << "Card #" << globalId << ": ";
+  for (int i = 0; i < 20; ++i) {
+    std::cout << (*applicationUpdateBuffer)[i] << " ";
+  }
+  std::cout << std::endl;
+
   if (digitalDevices) {
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {

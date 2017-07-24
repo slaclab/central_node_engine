@@ -35,6 +35,7 @@ class Engine {
  private:
   Engine();
   Engine(Engine const &);
+  ~Engine();
   void operator=(Engine const &);
   bool initialized;
   pthread_t _engineThread;

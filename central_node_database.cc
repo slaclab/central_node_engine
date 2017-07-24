@@ -36,11 +36,11 @@ MpsDb::~MpsDb() {
  * digital/analog inputs.
  */
 void MpsDb::updateInputs() {
-  inputUpdateTime.start();
   if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
 					       NUM_APPLICATIONS *
 					       APPLICATION_UPDATE_BUFFER_SIZE_BYTES,
 					       20000000)) {
+    inputUpdateTime.start();
     //    showFastUpdateBuffer(0, 64);
     DbApplicationCardMap::iterator applicationCardIt;
     for (applicationCardIt = applicationCards->begin();
@@ -49,11 +49,11 @@ void MpsDb::updateInputs() {
       (*applicationCardIt).second->updateInputs();
     }
     _updateCounter++;
+    inputUpdateTime.end();
   }
   else {
     std::cerr << "ERROR: updateInputs failed" << std::endl;
   }
-  inputUpdateTime.end();
 }
 
 void MpsDb::configureAllowedClasses() {
@@ -513,6 +513,9 @@ void MpsDb::configureApplicationCards() {
   uint8_t *updateBuffer = 0;
   DbApplicationCardPtr aPtr;
   DbApplicationCardMap::iterator applicationCardIt;
+
+  std::cout << "Ptr[x]: " << std::hex << &fastUpdateBuffer << std::endl; int i = 0;
+  
   for (applicationCardIt = applicationCards->begin(); applicationCardIt != applicationCards->end();
        ++applicationCardIt) {
     aPtr = (*applicationCardIt).second;
@@ -521,6 +524,7 @@ void MpsDb::configureApplicationCards() {
 
     updateBuffer = fastUpdateBuffer + aPtr->globalId * APPLICATION_UPDATE_BUFFER_SIZE_BYTES +
       APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE_BYTES;
+    std::cout << "Ptr[" << i << "]: " << std::hex << (long long int) updateBuffer << std::dec << std::endl; i++;
     aPtr->applicationUpdateBuffer = reinterpret_cast<ApplicationUpdateBufferBitSet *>(updateBuffer);
 
     LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
