@@ -219,6 +219,7 @@ void Engine::evaluateFaults() {
       if ((*state).second->deviceState->value == maskedValue) {
 	(*state).second->faulted = true; // Set input faulted field
 	(*fault).second->faulted = true; // Set fault faulted field
+	(*fault).second->faultLatched = true;
 	faulted = true; // Signal that at least one state is faulted
 	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
 		  << faultValue << ", masked=" << maskedValue

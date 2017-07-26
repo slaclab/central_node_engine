@@ -618,6 +618,7 @@ class DbFaultInput : public DbEntry {
 
   // Values calculated at run time
   uint32_t value; // Fault value calculated from the DeviceInputs
+
   // A fault input may come from a digital device or analog device threshold fault bits
   DbAnalogDevicePtr analogDevice;
   DbDigitalDevicePtr digitalDevice;
@@ -810,6 +811,7 @@ class DbFault : public DbEntry {
 
   // Configured after loading the YAML file
   bool faulted;
+  bool faultLatched;
   bool ignored;
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
@@ -817,7 +819,7 @@ class DbFault : public DbEntry {
   DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active
                                                    // the default state not necessarily is a real fault
 
- DbFault() : DbEntry(), name(""), description(""), faulted(true), ignored(false) {
+ DbFault() : DbEntry(), name(""), description(""), faulted(true), faultLatched(true), ignored(false) {
   }
 
   void update(uint32_t v) {
@@ -1055,6 +1057,7 @@ class MpsDb {
 
   void writeFirmwareConfiguration();
   void updateInputs();
+  void unlatchAll();
 
   uint8_t *getFastUpdateBuffer() {
     return &fastUpdateBuffer[0];

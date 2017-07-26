@@ -12,7 +12,7 @@ ApplicationType:
 - id: 1
   number: 0
   name: "Digital Card"
-  analog_channel_count: 4
+  analog_channel_count: 0
   analog_channel_size: 1
   digital_channel_count: 9
   digital_channel_size: 1
@@ -23,28 +23,70 @@ ApplicationType:
   analog_channel_size: 1
   digital_channel_count: 0
   digital_channel_size: 1
+- id: 3
+  number: 2
+  name: "AMC Analog Card"
+  analog_channel_count: 3
+  analog_channel_size: 1
+  digital_channel_count: 0
+  digital_channel_size: 1
 ---
 ApplicationCard:
 - id: 1
-  number: 1
+  number: 100
   area: "GUNB"
   location: "MP10"
   slot_number: 2
+  amc: 0
   crate_id: 1
   type_id: 1
   global_id: 0
-  name: "EIC Digital"
+  name: "EIC Digital Inputs"
   description: "EIC Digital Status"
 - id: 2
-  number: 2
+  number: 104
   area: "GUNB"
   location: "MP11"
+  slot_number: 2
+  amc: 1
+  crate_id: 1
+  type_id: 3
+  global_id: 1
+  name: "EIC Analog Inputs"
+  description: "EIC Digital Status"
+- id: 3
+  number: 101
+  area: "GUNB"
+  location: "MP12"
   slot_number: 3
+  amc: 0
   crate_id: 1
   type_id: 2
-  global_id: 1
-  name: "EIC BPM"
+  global_id: 2
+  name: "EIC BPM01/BPM02"
   description: "EIC BPM Status"
+- id: 4
+  number: 102
+  area: "GUNB"
+  location: "MP13"
+  slot_number: 6
+  amc: 0
+  crate_id: 1
+  type_id: 3
+  global_id: 3
+  name: "EIC IM01"
+  description: "EIC IM Status"
+- id: 5
+  number: 103
+  area: "GUNB"
+  location: "MP14"
+  slot_number: 7
+  amc: 0
+  crate_id: 1
+  type_id: 3
+  global_id: 4
+  name: "EIC FC01"
+  description: "EIC Faraday Cup Status"
 ---
 DigitalChannel:
 - id: 1
@@ -123,12 +165,28 @@ DigitalChannel:
 AnalogChannel:
 - id: 1
   number: 0
-  name: "BPM01"
-  card_id: 2
+  name: "IM01 Charge"
+  card_id: 4
 - id: 2
+  number: 0
+  name: "Faraday Cup Current"
+  card_id: 5
+- id: 3
+  number: 0
+  name: "SOL01 Current"
+  card_id: 2
+- id: 4
+  number: 1
+  name: "SOL02 Current"
+  card_id: 2
+- id: 5
+  number: 0
+  name: "BPM01"
+  card_id: 3
+- id: 6
   number: 1
   name: "BPM02"
-  card_id: 2
+  card_id: 3
 ---
 DeviceType:
 - id: 1
@@ -141,6 +199,15 @@ DeviceType:
   name: "VVPR"
   description: "Vacuum Pneumatic Rouhing Valve Status"
 - id: 4
+  name: "TORO"
+  description: "Toroid"
+- id: 5
+  name: "FARC"
+  description: "Faraday Cup"
+- id: 6
+  name: "SOLN"
+  description: "Solenoid"
+- id: 7
   name: "BPMS"
   description: "Beam Position Monitor"
 ---
@@ -198,96 +265,432 @@ DeviceState:
   description: "None"
   value: 1
   mask: 1
-  device_type_id: 4
+  device_type_id: 7
 - id: 10
   name: "X_T1"
   description: "None"
   value: 2
   mask: 2
-  device_type_id: 4
+  device_type_id: 7
 - id: 11
   name: "X_T2"
   description: "None"
   value: 4
   mask: 4
-  device_type_id: 4
+  device_type_id: 7
 - id: 12
   name: "X_T3"
   description: "None"
   value: 8
   mask: 8
-  device_type_id: 4
+  device_type_id: 7
 - id: 13
   name: "X_T4"
   description: "None"
   value: 16
   mask: 16
-  device_type_id: 4
+  device_type_id: 7
 - id: 14
   name: "X_T5"
   description: "None"
   value: 32
   mask: 32
-  device_type_id: 4
+  device_type_id: 7
 - id: 15
   name: "X_T6"
   description: "None"
   value: 64
   mask: 64
-  device_type_id: 4
+  device_type_id: 7
 - id: 16
   name: "X_T7"
   description: "None"
   value: 128
   mask: 128
-  device_type_id: 4
+  device_type_id: 7
 - id: 17
   name: "Y_T0"
   description: "None"
   value: 256
   mask: 256
-  device_type_id: 4
+  device_type_id: 7
 - id: 18
   name: "Y_T1"
   description: "None"
   value: 512
   mask: 512
-  device_type_id: 4
+  device_type_id: 7
 - id: 19
   name: "Y_T2"
   description: "None"
   value: 1024
   mask: 1024
-  device_type_id: 4
+  device_type_id: 7
 - id: 20
   name: "Y_T3"
   description: "None"
   value: 2048
   mask: 2048
-  device_type_id: 4
+  device_type_id: 7
 - id: 21
   name: "T_T0"
   description: "None"
   value: 4096
   mask: 4096
-  device_type_id: 4
+  device_type_id: 7
 - id: 22
   name: "T_T1"
   description: "None"
   value: 8192
   mask: 8192
-  device_type_id: 4
+  device_type_id: 7
 - id: 23
   name: "T_T2"
   description: "None"
   value: 16384
   mask: 16384
-  device_type_id: 4
+  device_type_id: 7
 - id: 24
   name: "T_T3"
   description: "None"
   value: 32768
   mask: 32768
+  device_type_id: 7
+- id: 25
+  name: "INT1_T0"
+  description: "None"
+  value: 1
+  mask: 1
+  device_type_id: 4
+- id: 26
+  name: "INT1_T0"
+  description: "None"
+  value: 1
+  mask: 1
+  device_type_id: 4
+- id: 27
+  name: "INT1_T0"
+  description: "None"
+  value: 1
+  mask: 1
+  device_type_id: 4
+- id: 28
+  name: "INT1_T0"
+  description: "None"
+  value: 1
+  mask: 1
+  device_type_id: 4
+- id: 29
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 30
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 31
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 32
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 33
+  name: "INT1_T2"
+  description: "None"
+  value: 4
+  mask: 4
+  device_type_id: 4
+- id: 34
+  name: "INT1_T2"
+  description: "None"
+  value: 4
+  mask: 4
+  device_type_id: 4
+- id: 35
+  name: "INT1_T2"
+  description: "None"
+  value: 4
+  mask: 4
+  device_type_id: 4
+- id: 36
+  name: "INT1_T2"
+  description: "None"
+  value: 4
+  mask: 4
+  device_type_id: 4
+- id: 37
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 38
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 39
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 40
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 41
+  name: "INT1_T4"
+  description: "None"
+  value: 16
+  mask: 16
+  device_type_id: 4
+- id: 42
+  name: "INT1_T4"
+  description: "None"
+  value: 16
+  mask: 16
+  device_type_id: 4
+- id: 43
+  name: "INT1_T4"
+  description: "None"
+  value: 16
+  mask: 16
+  device_type_id: 4
+- id: 44
+  name: "INT1_T4"
+  description: "None"
+  value: 16
+  mask: 16
+  device_type_id: 4
+- id: 45
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 46
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 47
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 48
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 49
+  name: "INT1_T6"
+  description: "None"
+  value: 64
+  mask: 64
+  device_type_id: 4
+- id: 50
+  name: "INT1_T6"
+  description: "None"
+  value: 64
+  mask: 64
+  device_type_id: 4
+- id: 51
+  name: "INT1_T6"
+  description: "None"
+  value: 64
+  mask: 64
+  device_type_id: 4
+- id: 52
+  name: "INT1_T6"
+  description: "None"
+  value: 64
+  mask: 64
+  device_type_id: 4
+- id: 53
+  name: "INT1_T7"
+  description: "None"
+  value: 128
+  mask: 128
+  device_type_id: 4
+- id: 54
+  name: "INT1_T7"
+  description: "None"
+  value: 128
+  mask: 128
+  device_type_id: 4
+- id: 55
+  name: "INT1_T7"
+  description: "None"
+  value: 128
+  mask: 128
+  device_type_id: 4
+- id: 56
+  name: "INT1_T7"
+  description: "None"
+  value: 128
+  mask: 128
+  device_type_id: 4
+- id: 57
+  name: "INT2_T0"
+  description: "None"
+  value: 256
+  mask: 256
+  device_type_id: 4
+- id: 58
+  name: "INT2_T1"
+  description: "None"
+  value: 512
+  mask: 512
+  device_type_id: 4
+- id: 59
+  name: "INT2_T2"
+  description: "None"
+  value: 1024
+  mask: 1024
+  device_type_id: 4
+- id: 60
+  name: "INT2_T3"
+  description: "None"
+  value: 2048
+  mask: 2048
+  device_type_id: 4
+- id: 61
+  name: "INT2_T4"
+  description: "None"
+  value: 4096
+  mask: 4096
+  device_type_id: 4
+- id: 62
+  name: "INT2_T5"
+  description: "None"
+  value: 8192
+  mask: 8192
+  device_type_id: 4
+- id: 63
+  name: "INT2_T6"
+  description: "None"
+  value: 16384
+  mask: 16384
+  device_type_id: 4
+- id: 64
+  name: "INT2_T7"
+  description: "None"
+  value: 32768
+  mask: 32768
+  device_type_id: 4
+- id: 65
+  name: "INT3_T0"
+  description: "None"
+  value: 65536
+  mask: 65536
+  device_type_id: 4
+- id: 66
+  name: "INT3_T1"
+  description: "None"
+  value: 131072
+  mask: 131072
+  device_type_id: 4
+- id: 67
+  name: "INT3_T2"
+  description: "None"
+  value: 262144
+  mask: 262144
+  device_type_id: 4
+- id: 68
+  name: "INT3_T3"
+  description: "None"
+  value: 524288
+  mask: 524288
+  device_type_id: 4
+- id: 69
+  name: "INT3_T4"
+  description: "None"
+  value: 1048576
+  mask: 1048576
+  device_type_id: 4
+- id: 70
+  name: "INT3_T5"
+  description: "None"
+  value: 2097152
+  mask: 2097152
+  device_type_id: 4
+- id: 71
+  name: "INT3_T6"
+  description: "None"
+  value: 4194304
+  mask: 4194304
+  device_type_id: 4
+- id: 72
+  name: "INT3_T7"
+  description: "None"
+  value: 8388608
+  mask: 8388608
+  device_type_id: 4
+- id: 73
+  name: "INT4_T0"
+  description: "None"
+  value: 16777216
+  mask: 16777216
+  device_type_id: 4
+- id: 74
+  name: "INT4_T1"
+  description: "None"
+  value: 33554432
+  mask: 33554432
+  device_type_id: 4
+- id: 75
+  name: "INT4_T2"
+  description: "None"
+  value: 67108864
+  mask: 67108864
+  device_type_id: 4
+- id: 76
+  name: "INT4_T3"
+  description: "None"
+  value: 134217728
+  mask: 134217728
+  device_type_id: 4
+- id: 77
+  name: "INT4_T4"
+  description: "None"
+  value: 268435456
+  mask: 268435456
+  device_type_id: 4
+- id: 78
+  name: "INT4_T5"
+  description: "None"
+  value: 536870912
+  mask: 536870912
+  device_type_id: 4
+- id: 79
+  name: "INT4_T6"
+  description: "None"
+  value: 1073741824
+  mask: 1073741824
+  device_type_id: 4
+- id: 80
+  name: "INT4_T7"
+  description: "None"
+  value: 2147483648
+  mask: 2147483648
   device_type_id: 4
 ---
 DigitalDevice:
@@ -454,6 +857,27 @@ Fault:
 - id: 14
   name: "BPM02_T"
   description: "BPM02 TMIT Threshold Fault"
+- id: 15
+  name: "IM01_I1"
+  description: "IM01 Integrator #1 Fault"
+- id: 16
+  name: "IM01_I2"
+  description: "IM01 Integrator #2 Fault"
+- id: 17
+  name: "IM01_I3"
+  description: "IM01 Integrator #3 Fault"
+- id: 18
+  name: "IM01_I4"
+  description: "IM01 Integrator #4 Fault"
+- id: 19
+  name: "SOL01_I1"
+  description: "SOL01 Integrator #1 Fault"
+- id: 20
+  name: "SOL02_I1"
+  description: "SOL01 Integrator #1 Fault"
+- id: 21
+  name: "FC_I1"
+  description: "FC01 Integrator #1 Fault"
 ---
 FaultInput:
 - id: 1
@@ -512,6 +936,34 @@ FaultInput:
   fault_id: 14
   bit_position: 0
   device_id: 10
+- id: 15
+  fault_id: 15
+  bit_position: 0
+  device_id: 11
+- id: 16
+  fault_id: 16
+  bit_position: 0
+  device_id: 11
+- id: 17
+  fault_id: 17
+  bit_position: 0
+  device_id: 11
+- id: 18
+  fault_id: 18
+  bit_position: 0
+  device_id: 11
+- id: 19
+  fault_id: 19
+  bit_position: 0
+  device_id: 13
+- id: 20
+  fault_id: 20
+  bit_position: 0
+  device_id: 14
+- id: 21
+  fault_id: 21
+  bit_position: 0
+  device_id: 12
 ---
 FaultState:
 - id: 1
@@ -650,28 +1102,124 @@ FaultState:
   default: False
   fault_id: 14
   device_state_id: 24
+- id: 35
+  default: False
+  fault_id: 15
+  device_state_id: 25
+- id: 36
+  default: False
+  fault_id: 15
+  device_state_id: 29
+- id: 37
+  default: False
+  fault_id: 16
+  device_state_id: 57
+- id: 38
+  default: False
+  fault_id: 16
+  device_state_id: 58
+- id: 39
+  default: False
+  fault_id: 17
+  device_state_id: 65
+- id: 40
+  default: False
+  fault_id: 17
+  device_state_id: 66
+- id: 41
+  default: False
+  fault_id: 18
+  device_state_id: 73
+- id: 42
+  default: False
+  fault_id: 18
+  device_state_id: 74
+- id: 43
+  default: False
+  fault_id: 19
+  device_state_id: 26
+- id: 44
+  default: False
+  fault_id: 20
+  device_state_id: 27
+- id: 45
+  default: False
+  fault_id: 21
+  device_state_id: 28
+- id: 46
+  default: False
+  fault_id: 19
+  device_state_id: 30
+- id: 47
+  default: False
+  fault_id: 20
+  device_state_id: 31
+- id: 48
+  default: False
+  fault_id: 21
+  device_state_id: 32
 ---
 AnalogDevice:
 - id: 9
-  channel_id: 1
+  channel_id: 5
   id: 9
   name: "BPM01"
   description: "BPM01"
   position: 201
   area: "GUNB"
   evaluation: 1
-  card_id: 2
-  device_type_id: 4
+  card_id: 3
+  device_type_id: 7
 - id: 10
-  channel_id: 2
+  channel_id: 6
   id: 10
   name: "BPM02"
   description: "BPM02"
   position: 601
   area: "GUNB"
   evaluation: 1
-  card_id: 2
+  card_id: 3
+  device_type_id: 7
+- id: 11
+  channel_id: 1
+  id: 11
+  name: "IM01"
+  description: "Toroid, ICT Charge"
+  position: 650
+  area: "GUNB"
+  evaluation: 1
+  card_id: 4
   device_type_id: 4
+- id: 12
+  channel_id: 2
+  id: 12
+  name: "FC"
+  description: "Faraday Cup Current"
+  position: 900
+  area: "GUNB"
+  evaluation: 1
+  card_id: 5
+  device_type_id: 5
+- id: 13
+  channel_id: 3
+  id: 13
+  name: "SOL01"
+  description: "SOL01 Current"
+  position: 400
+  area: "GUNB"
+  evaluation: 1
+  card_id: 2
+  device_type_id: 6
+- id: 14
+  channel_id: 4
+  id: 14
+  name: "SOL02"
+  description: "SOL02 Current"
+  position: 900
+  area: "GUNB"
+  evaluation: 1
+  card_id: 2
+  device_type_id: 6
 ---
 MitigationDevice:
 - id: 1
@@ -937,6 +1485,118 @@ AllowedClass:
   beam_class_id: 1
 - id: 58
   fault_state_id: 34
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 59
+  fault_state_id: 35
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 60
+  fault_state_id: 35
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 61
+  fault_state_id: 36
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 62
+  fault_state_id: 36
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 63
+  fault_state_id: 37
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 64
+  fault_state_id: 37
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 65
+  fault_state_id: 38
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 66
+  fault_state_id: 38
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 67
+  fault_state_id: 39
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 68
+  fault_state_id: 39
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 69
+  fault_state_id: 40
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 70
+  fault_state_id: 40
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 71
+  fault_state_id: 41
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 72
+  fault_state_id: 41
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 73
+  fault_state_id: 42
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 74
+  fault_state_id: 42
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 75
+  fault_state_id: 43
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 76
+  fault_state_id: 43
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 77
+  fault_state_id: 46
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 78
+  fault_state_id: 46
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 79
+  fault_state_id: 44
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 80
+  fault_state_id: 44
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 81
+  fault_state_id: 47
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 82
+  fault_state_id: 47
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 83
+  fault_state_id: 45
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 84
+  fault_state_id: 45
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 85
+  fault_state_id: 48
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 86
+  fault_state_id: 48
   mitigation_device_id: 2
   beam_class_id: 1
 ---

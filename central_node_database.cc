@@ -29,6 +29,25 @@ MpsDb::~MpsDb() {
   std::cout << "Update counter: " << _updateCounter << std::endl;
 }
 
+void MpsDb::unlatchAll() {
+  LOG_TRACE("DATABASE", "Unlatching all faults");
+  for (DbAnalogDeviceMap::iterator it = analogDevices->begin();
+       it != analogDevices->end(); ++it) {
+    (*it).second->latchedValue = 0; // Clear all threshold faults
+  }
+
+  for (DbDeviceInputMap::iterator it = deviceInputs->begin();
+       it != deviceInputs->end(); ++it) {
+    uint32_t faultValue = (*it).second->faultValue;
+    faultValue == 0? faultValue = 1 : faultValue = 0; // Flip faultValue and assign to latchedValue
+    (*it).second->latchedValue = faultValue;
+  }
+
+  for (DbFaultMap::iterator it = faults->begin();
+       it != faults->end(); ++it) {
+    (*it).second->faultLatched = false;
+  }
+}
 
 /**
  * This method must be called after the input updates are read from

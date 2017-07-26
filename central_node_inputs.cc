@@ -99,6 +99,9 @@ void DbAnalogDevice::update(uint32_t v) {
  * status read from firmware. An analog device has up to 4 integrators, with 8 
  * comparators each, resulting in 32-bit thresholds masks. In the update buffer
  * each bit is represented by 2 bits (was High/was Low).
+ *
+ * 'was Low' : threshold comparison is within limits, no faults
+ * 'was High': threshold comparison outside limits, generate fault
  */
 void DbAnalogDevice::update() {
   uint32_t wasLow;
@@ -124,7 +127,7 @@ void DbAnalogDevice::update() {
 	newValue |= (1 << i); // If signal was both low and high during the 2.7ms set threshold crossed
 	latchedValue |= (1 << i);
       }
-      else if (wasLow > 0) {
+      else if (wasHigh > 0) { 
 	newValue |= (1 << i); // Threshold exceeded
 	latchedValue |= (1 << i);
       }
