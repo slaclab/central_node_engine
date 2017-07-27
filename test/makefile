@@ -21,6 +21,10 @@ central_node_engine_tst_SRCS       = central_node_engine_tst.cc
 central_node_engine_tst_LIBS       = $(CENTRAL_NODE_LIBS)
 TESTPROGRAMS            += central_node_engine_tst
 
+central_node_engine_server_SRCS       = central_node_engine_server.cc
+central_node_engine_server_LIBS       = $(CENTRAL_NODE_LIBS)
+TESTPROGRAMS            += central_node_engine_server
+
 central_node_firmware_tst_SRCS       = central_node_firmware_tst.cc
 central_node_firmware_tst_LIBS       = $(CENTRAL_NODE_LIBS)
 TESTPROGRAMS            += central_node_firmware_tst

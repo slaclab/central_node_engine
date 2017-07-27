@@ -32,6 +32,7 @@ const uint32_t APPLICATION_UPDATE_BUFFER_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_
 
 const uint32_t POWER_CLASS_BIT_SIZE = 4;
 const uint32_t DESTINATION_MASK_BIT_SIZE = 16;
+const uint32_t NUM_DESTINATIONS = 16;
 
 // Constants for application cards
 const uint32_t APP_CARD_MAX_ANALOG_CHANNELS = 6;
@@ -695,7 +696,18 @@ class DbMitigationDevice : public DbEntry {
   DbBeamClassPtr allowedBeamClass; // allowed beam class after evaluating faults
   DbBeamClassPtr tentativeBeamClass; // used while faults are being evaluated
   
- DbMitigationDevice() : DbEntry(), name("") {
+  // Memory location where the allowed beam class for this device
+  // is written and sent to firmware
+  uint32_t *softwareMitigationBuffer;
+  uint8_t softwareMitigationBufferIndex;
+  uint8_t bitShift; // define if mitigation uses high/low 4-bits in the softwareMitigationBuffer
+
+ DbMitigationDevice() : DbEntry(), name(""), softwareMitigationBufferIndex(0) {
+  }
+
+  void setAllowedBeamClass() {
+    allowedBeamClass = tentativeBeamClass;
+    softwareMitigationBuffer[softwareMitigationBufferIndex] |= ((allowedBeamClass->number & 0xF) << bitShift);
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
@@ -996,6 +1008,7 @@ class MpsDb {
   void configureAnalogDevices();
   void configureIgnoreConditions();
   void configureApplicationCards();
+  void configureMitigationDevices();
 
   /**
    * Memory that holds the firmware/hardware database configuration.
@@ -1012,6 +1025,11 @@ class MpsDb {
    * a 'was low' and 'was high' status.
    */
   uint8_t fastUpdateBuffer[NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_SIZE_BYTES];
+
+  /** 
+   * Each destination takes 4-bits for the allowed power class.
+   */
+  uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
 
   TimeAverage inputUpdateTime;
 
@@ -1058,6 +1076,8 @@ class MpsDb {
   void writeFirmwareConfiguration();
   void updateInputs();
   void unlatchAll();
+  void clearMitigationBuffer();
+  void mitigate();
 
   uint8_t *getFastUpdateBuffer() {
     return &fastUpdateBuffer[0];

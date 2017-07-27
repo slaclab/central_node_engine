@@ -175,12 +175,13 @@ void DbApplicationCard::configureUpdateBuffers() {
  * update each digital/analog device with the new values.
  */
 void DbApplicationCard::updateInputs() {
+  /*
   std::cout << "Card #" << globalId << ": ";
   for (int i = 0; i < 20; ++i) {
     std::cout << (*applicationUpdateBuffer)[i] << " ";
   }
   std::cout << std::endl;
-
+  */
   if (digitalDevices) {
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {

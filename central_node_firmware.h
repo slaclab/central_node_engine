@@ -55,7 +55,8 @@ class Firmware {
   uint8_t _heartbeat;
 
 #ifndef FW_ENABLED
-  int _sockfd; /* socket */
+  int _updateSock;
+  struct sockaddr_in clientaddr;
 #endif
 
  public:
@@ -73,6 +74,7 @@ class Firmware {
   // size in bytes (not in uint32_t units)
   void writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size);
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
+  void writeMitigation(uint32_t *mitigation);
 
   static Firmware &getInstance() {
     static Firmware instance;

@@ -98,30 +98,43 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
   return _updateStream->read(buffer, size, CTimeout(timeout));
 }
 
+void Firmware::writeMitigation(uint32_t *mitigation) {
+}
+
 #else
 #warning "Code compiled without CPSW - NO FIRMWARE"
+
+#include <cstdlib>
 
 //
 // If firmware is not used an UDP socket server is created to receive
 // simulated link node updates
 //
 Firmware::Firmware() {
-  _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (_sockfd < 0) {
+  char *portString = getenv("CENTRAL_NODE_TEST_PORT");
+  unsigned short port = 4356;
+  if (portString != NULL) {
+    port = atoi(portString);
+    std::cout << "INFO: Server waiting on test data using port " << port << "." << std::endl;
+  }
+
+
+  _updateSock = socket(AF_INET, SOCK_DGRAM, 0);
+  if (_updateSock < 0) {
     throw(CentralNodeException("ERROR: Failed to open socket for simulated firmware inputs"));
   }
   
   int optval = 1;
-  setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR,
+  setsockopt(_updateSock, SOL_SOCKET, SO_REUSEADDR,
              (const void *) &optval , sizeof(int));
 
   struct sockaddr_in serveraddr;
   bzero((char *) &serveraddr, sizeof(serveraddr));
   serveraddr.sin_family = AF_INET;
   serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  serveraddr.sin_port = htons((unsigned short)4356);
+  serveraddr.sin_port = htons(port);
 
-  if (bind(_sockfd, (struct sockaddr *) &serveraddr,
+  if (bind(_updateSock, (struct sockaddr *) &serveraddr,
            sizeof(serveraddr)) < 0) {
     throw(CentralNodeException("ERROR: Failed to open socket for simulated firmaware inputs"));
   }
@@ -131,13 +144,15 @@ int Firmware::loadConfig(std::string yamlFileName) {return 0;};
 void Firmware::enable() {};
 void Firmware::disable() {};
 void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {};
+void Firmware::softwareEnable() {};
+void Firmware::softwareDisable() {};
+void Firmware::softwareClear() {};
 
 uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
-  struct sockaddr_in clientaddr;
   socklen_t clientlen = sizeof(clientaddr);
 
   std::cout << "INFO: waiting for simulated data..." << std::endl;
-  int n = recvfrom(_sockfd, buffer, size, 0,
+  int n = recvfrom(_updateSock, buffer, size, 0,
 		   (struct sockaddr *) &clientaddr, &clientlen);
   if (n < 0) {
     std::cerr << "ERROR: Failed to receive simulated firmware data" << std::endl;
@@ -149,4 +164,18 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
 
  return n;
 };
+
+void Firmware::writeMitigation(uint32_t *mitigation) {
+  socklen_t clientlen = sizeof(clientaddr);
+  /*
+  for (int i = 0; i < 2; ++i) {
+    uint32_t powerClass = mitigation[i];
+    for (int j = 0; j < 32; j = j + 4) {
+      std::cout << "Destination[" << i * 8 + j/4<< "]: Class[" << ((powerClass >> j) & 0xF) << "]" << std::endl; 
+    }
+  }
+  */
+  int n = sendto(_updateSock, mitigation, 2*sizeof(uint32_t), 0, reinterpret_cast<struct sockaddr *>(&clientaddr), clientlen);
+}
+
 #endif

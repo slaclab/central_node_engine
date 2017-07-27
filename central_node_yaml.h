@@ -820,6 +820,30 @@ namespace YAML {
 
 	  field = "destination_mask";
 	  mitigationDevice->destinationMask = (*it)[field].as<short>();
+
+	  // Find the device position in the softwareMitigationBuffer (32-bit array)
+	  // Each mitigation device defines has a 4-bit power class, the 
+	  // position tells in which byte it falls based on the
+	  // destination mask
+	  mitigationDevice->softwareMitigationBufferIndex = 0;
+	  mitigationDevice->bitShift = 0;
+	  uint16_t mask = mitigationDevice->destinationMask;
+	  if ((mask & 0xFFFF0000) > 0) {
+	    mitigationDevice->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
+	    mask >>= 8;
+	  }
+
+	  for (int i = 0; i < 8; ++i) {
+	    if (mask & 1) { 
+	      mask = 0;
+	    }
+	    else {
+	      if (mask > 0) {
+		mitigationDevice->bitShift += 4;
+		mask >>= 1;
+	      }
+	    }
+	  }
   	} catch(YAML::InvalidNode e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for MitigationDevice.";
 	  throw(DbException(errorStream.str()));

@@ -533,8 +533,6 @@ void MpsDb::configureApplicationCards() {
   DbApplicationCardPtr aPtr;
   DbApplicationCardMap::iterator applicationCardIt;
 
-  std::cout << "Ptr[x]: " << std::hex << &fastUpdateBuffer << std::endl; int i = 0;
-  
   for (applicationCardIt = applicationCards->begin(); applicationCardIt != applicationCards->end();
        ++applicationCardIt) {
     aPtr = (*applicationCardIt).second;
@@ -543,7 +541,6 @@ void MpsDb::configureApplicationCards() {
 
     updateBuffer = fastUpdateBuffer + aPtr->globalId * APPLICATION_UPDATE_BUFFER_SIZE_BYTES +
       APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE_BYTES;
-    std::cout << "Ptr[" << i << "]: " << std::hex << (long long int) updateBuffer << std::dec << std::endl; i++;
     aPtr->applicationUpdateBuffer = reinterpret_cast<ApplicationUpdateBufferBitSet *>(updateBuffer);
 
     LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
@@ -604,6 +601,19 @@ void MpsDb::configureApplicationCards() {
   }
 }
 
+void MpsDb::configureMitigationDevices() {
+  for (DbMitigationDeviceMap::iterator it = mitigationDevices->begin();
+       it != mitigationDevices->end(); ++it) {
+    (*it).second->softwareMitigationBuffer = &softwareMitigationBuffer[0];
+  }
+}
+
+void MpsDb::clearMitigationBuffer() {
+  for (int i = 0; i < NUM_DESTINATIONS / 8; ++i) {
+    softwareMitigationBuffer[i] = 0;
+  }
+}
+
 /**
  * After the YAML database file is loaded this method must be called to resolve
  * references between tables. In the YAML table entries there is a reference to
@@ -621,6 +631,7 @@ void MpsDb::configure() {
   configureAnalogDevices();
   configureIgnoreConditions();
   configureApplicationCards();
+  configureMitigationDevices();
 }
 
 void MpsDb::writeFirmwareConfiguration() {
@@ -631,6 +642,13 @@ void MpsDb::writeFirmwareConfiguration() {
 					(*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
 					APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
   }
+}
+
+/**
+ * Send mitigation to firmware
+ */
+void MpsDb::mitigate() {
+  Firmware::getInstance().writeMitigation(&softwareMitigationBuffer[0]);
 }
 
 void MpsDb::setName(std::string yamlFileName) {

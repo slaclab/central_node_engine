@@ -126,7 +126,8 @@ void Engine::setTentativeBeamClass() {
 void Engine::setAllowedBeamClass() {
   for (DbMitigationDeviceMap::iterator it = mpsDb->mitigationDevices->begin(); 
        it != mpsDb->mitigationDevices->end(); ++it) {
-    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
+    (*it).second->setAllowedBeamClass();
+    //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
     LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
 	      << (*it).second->allowedBeamClass->number);
   }
@@ -341,6 +342,7 @@ int Engine::checkFaults() {
   checkFaultTime.start();
 
   LOG_TRACE("ENGINE", "Checking faults");
+  mpsDb->clearMitigationBuffer();
   setTentativeBeamClass();
   evaluateFaults();
   evaluateIgnoreConditions();
@@ -424,6 +426,7 @@ void *Engine::engineThread(void *arg) {
     if (Engine::getInstance().mpsDb) {
       Engine::getInstance().mpsDb->updateInputs();
       Engine::getInstance().checkFaults();
+      Engine::getInstance().mpsDb->mitigate();
     }
     sleep(3);
   }
