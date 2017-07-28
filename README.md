@@ -77,6 +77,9 @@ defined the server uses that port number.
 
 	$ export CENTRAL_NODE_TEST_PORT 5566
 
+Important: in order to use the test port for receiving inputs the flag CXXFLAGS+=-DFW_ENABLED must 
+be disabled/commented out in the defs.mak file.
+
 Once the test server is running the ./test/updateReceive.py script can be used to send 
 input status, receive mitigation from the server and check against expected mitigation values.
 
