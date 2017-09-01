@@ -25,28 +25,75 @@ int Firmware::loadConfig(std::string yamlFileName) {
 
   _path = IPath::create(_root);
 
-  std::string base = "/mmio/Kcu105MpsCentralNode";
-  std::string axi = "/AxiVersion";
-  std::string cn = "/MpsCentralNodeCore";
+  std::string base = "/mmio";
+  std::string axi = "/AmcCarrierCore/AxiVersion";
+  std::string mps = "/MpsCentralApplication";
+  std::string core = "/MpsCentralNodeCore";
   std::string config = "/MpsCentralNodeConfig";
 
-  _fpgaVersionSV = IScalVal_RO::create(_path->findByName((base + axi + "/FpgaVersion").c_str()));
-  _buildStampSV  = IScalVal_RO::create(_path->findByName((base + axi + "/BuildStamp").c_str()));
-  _gitHashSV     = IScalVal_RO::create(_path->findByName((base + axi + "/GitHash").c_str()));
-  _heartbeatSV   = IScalVal::create   (_path->findByName((base + cn  + "/SoftwareWdHeartbeat").c_str()));
-  _enableSV      = IScalVal::create   (_path->findByName((base + cn  + "/Enable").c_str()));
-  _swEnableSV    = IScalVal::create   (_path->findByName((base + cn  + "/SoftwareEnable").c_str()));
-  _swClearSV     = IScalVal::create   (_path->findByName((base + cn  + "/SoftwareClear").c_str()));
-  _swLossErrorSV = IScalVal_RO::create(_path->findByName((base + cn  + "/SoftwareLossError").c_str()));
-  _swLossCntSV   = IScalVal_RO::create(_path->findByName((base + cn  + "/SoftwareLossCnt").c_str()));
-  _updateStream  = IStream::create    (_path->findByName("/Stream0"));
+  std::string name;
 
-  // ScalVal for configuration
-  for (int i = 0; i < FW_NUM_APPLICATIONS; ++i) {
-    std::stringstream appId;
-    appId << "/AppId" << i;
-    _configSV[i] = IScalVal::create(_path->findByName((base + config + appId.str()).c_str()));
+  try {
+    name = base + axi +"/FpgaVersion";
+    _fpgaVersionSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + axi +"/BuildStamp";
+    _buildStampSV  = IScalVal_RO::create(_path->findByName(name.c_str()));
+    
+    name = base + axi + "/GitHash";
+    _gitHashSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SoftwareWdHeartbeat";
+    _heartbeatSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/Enable";
+    _enableSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SoftwareEnable";
+    _swEnableSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/SoftwareClear";
+    _swClearSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/SoftwareLossError";
+    _swLossErrorSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/SoftwareLossCnt";
+    _swLossCntSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/BeamIntTime";
+    _beamIntTime = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/BeamMinPeriod";
+    _beamMinPeriod = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/BeamIntCharge";
+    _beamIntCharge = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = "/Stream0";
+    _updateStream = IStream::create(_path->findByName(name.c_str()));
+
+    // ScalVal for configuration
+    for (int i = 0; i < FW_NUM_APPLICATIONS; ++i) {
+      std::stringstream appId;
+      appId << "/AppId" << i;
+      name = base + mps + config + appId.str();
+      _configSV[i] = IScalVal::create(_path->findByName(name.c_str()));
+    }
+  } catch (NotFoundError &e) {
+    throw(CentralNodeException("ERROR: Failed to find " + name));
   }
+
+  if (_beamIntTime->getNelms() != FW_NUM_BEAM_CLASSES) {
+    throw(CentralNodeException("ERROR: Invalid number of beam classes (BeamIntTime)"));
+  }
+  if (_beamMinPeriod->getNelms() != FW_NUM_BEAM_CLASSES) {
+    throw(CentralNodeException("ERROR: Invalid number of beam classes (BeamMinPeriod)"));
+  }
+  if (_beamIntCharge->getNelms() != FW_NUM_BEAM_CLASSES) {
+    throw(CentralNodeException("ERROR: Invalid number of beam classes (BeamIntCharge)"));
+  }
+
 
   // Read some registers that are static
   _fpgaVersionSV->getVal(&fpgaVersion);
@@ -90,8 +137,21 @@ void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
   uint32_t size32 = size / 4;
 
   if (appNumber < FW_NUM_APPLICATIONS) {
-    _configSV[appNumber]->setVal(config32, size);
+    try {
+      _configSV[appNumber]->setVal(config32, size32);
+    } catch (InvalidArgError &e) {
+      throw(CentralNodeException("ERROR: Failed writing app configuration (InvalidArgError)."));
+    } catch (BadStatusError &e) {
+      std::cout << "Info: " << e.getInfo() << std::endl;
+      throw(CentralNodeException("ERROR: Failed writing app configuration (BadStatusError)"));
+    }
   }
+}
+
+void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {
+  _beamIntTime->setVal(time, FW_NUM_BEAM_CLASSES);
+  _beamMinPeriod->setVal(period, FW_NUM_BEAM_CLASSES);
+  _beamIntCharge->setVal(charge, FW_NUM_BEAM_CLASSES);
 }
 
 uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
@@ -102,6 +162,11 @@ void Firmware::writeMitigation(uint32_t *mitigation) {
 }
 
 #else
+
+//====================================================================
+// The following code is for testing the Central Node software 
+// without the Central Node board/firmware.
+//====================================================================
 #warning "Code compiled without CPSW - NO FIRMWARE"
 
 #include <cstdlib>
@@ -138,6 +203,12 @@ Firmware::Firmware() {
            sizeof(serveraddr)) < 0) {
     throw(CentralNodeException("ERROR: Failed to open socket for simulated firmaware inputs"));
   }
+
+  fpgaVersion = 1;
+  for (int i = 0; i < 256; ++i) {
+    buildStamp[i] = 0;
+  }
+  sprintf(gitHashString, "NONE");
 };
 
 int Firmware::loadConfig(std::string yamlFileName) {return 0;};
@@ -147,6 +218,7 @@ void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
 void Firmware::softwareEnable() {};
 void Firmware::softwareDisable() {};
 void Firmware::softwareClear() {};
+void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {}
 
 uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
   socklen_t clientlen = sizeof(clientaddr);

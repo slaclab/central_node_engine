@@ -53,10 +53,13 @@ class Engine {
   void showStats();
   void showMitigationDevices();
   void showDeviceInputs();
+  void showFirmware();
+
   MpsDbPtr getCurrentDb();
   BypassManagerPtr getBypassManager();
 
  protected:
+  void newDb();
   void updateInputs();
   void mitigate();
 

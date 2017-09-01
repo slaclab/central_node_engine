@@ -21,6 +21,12 @@
 using boost::shared_ptr;
 
 const uint32_t FW_NUM_APPLICATIONS = 8;
+const uint32_t FW_NUM_BEAM_CLASSES = 16;
+
+// TODO: There is a status register, beamFaultReason. Bits 15:0 indicate a power
+// class violation for each destination. Bits 31:16 indicate a min period
+// violation for each period. Faults are latched and are cleared with the
+// beamFaultClr register.
 
 /**
  */
@@ -50,6 +56,9 @@ class Firmware {
   ScalVal    _configSV[FW_NUM_APPLICATIONS];
   ScalVal    _swEnableSV;
   ScalVal    _swClearSV;
+  ScalVal    _beamIntTime;
+  ScalVal    _beamMinPeriod;
+  ScalVal    _beamIntCharge;
   Stream     _updateStream;
 
   uint8_t _heartbeat;
@@ -61,7 +70,7 @@ class Firmware {
 
  public:
   uint64_t fpgaVersion;
-  uint8_t buildStamp[100];
+  uint8_t buildStamp[256];
   char gitHashString[21];
 
   void enable();
@@ -75,6 +84,7 @@ class Firmware {
   void writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size);
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
   void writeMitigation(uint32_t *mitigation);
+  void writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]);
 
   static Firmware &getInstance() {
     static Firmware instance;

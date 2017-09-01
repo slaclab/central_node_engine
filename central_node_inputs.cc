@@ -5,6 +5,7 @@
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <central_node_firmware.h>
+#include <central_node_history.h>
 
 #include <iostream>
 #include <sstream>
@@ -22,6 +23,7 @@ void DbDeviceInput::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
 
 // This should update the value from the data read from the central node firmware
 void DbDeviceInput::update(uint32_t v) {
+  previousValue = value;
   value = v;
   
   // Latch new value if this is a fault
@@ -37,6 +39,8 @@ void DbDeviceInput::update() {
   uint32_t newValue;
   
   if (applicationUpdateBuffer) {
+    previousValue = value;
+
     wasLow = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE];
     wasHigh = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE + 1];
     if (wasLow + wasHigh == 0) {
@@ -63,6 +67,10 @@ void DbDeviceInput::update() {
     if (newValue == faultValue) {
       latchedValue = faultValue;
     }
+
+    if (previousValue != value) {
+      History::getInstance().logDeviceInput(id, previousValue, value);
+    }
   }
   else {
     throw(DbException("ERROR: DbDeviceInput::update() - no applicationUpdateBuffer set"));
@@ -70,7 +78,8 @@ void DbDeviceInput::update() {
 }
 
 DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
-				   value(0), invalidValueCount(0), bypassMask(0xFFFFFFFF) {
+				   value(0), previousValue(0), 
+				   invalidValueCount(0), bypassMask(0xFFFFFFFF) {
   for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
   }
@@ -86,6 +95,7 @@ void DbAnalogDevice::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
 
 void DbAnalogDevice::update(uint32_t v) {
   //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
+  previousValue = value;
   value = v;
   
   // Latch new value if this there is a threshold at fault
@@ -110,6 +120,9 @@ void DbAnalogDevice::update() {
   uint32_t newLatchedValue = latchedValue;
   
   if (applicationUpdateBuffer) {
+    previousValue = value;
+
+    value = 0;
     for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
       wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
@@ -134,7 +147,11 @@ void DbAnalogDevice::update() {
       else {
 	newValue &= ~(1 << i); // No threshold crossed
       }
-      value = newValue;
+    }
+    value = newValue;
+    
+    if (previousValue != value) {
+      History::getInstance().logAnalogDevice(id, previousValue, value);
     }
   }
   else {

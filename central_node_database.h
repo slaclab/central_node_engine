@@ -7,9 +7,11 @@
 #include <bitset>
 #include <central_node_exception.h>
 #include <central_node_bypass.h>
+#include <central_node_history.h>
 #include <stdint.h>
 #include <time_util.h>
 
+#include <pthread.h>
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;
@@ -317,6 +319,7 @@ class DbDeviceInput : public DbEntry {
 
   // Device input value must be read from the Central Node Firmware
   uint32_t value;
+  uint32_t previousValue;
 
   // Latched value
   uint32_t latchedValue;
@@ -335,7 +338,7 @@ class DbDeviceInput : public DbEntry {
   ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
 
  DbDeviceInput() : DbEntry(), 
-    bitPosition(-1), channelId(-1), faultValue(0), digitalDeviceId(-1), value(0),
+    bitPosition(-1), channelId(-1), faultValue(0), digitalDeviceId(-1), value(0), previousValue(0),
     latchedValue(0), invalidValueCount(0), applicationUpdateBuffer(0) {
   }
 
@@ -442,6 +445,7 @@ class DbAnalogDevice : public DbEntry {
   // BPM devices: 3 bytes (X, Y, TMIT thresholds)
   // BLM devices: 4 bytes (one byte for each integration window)
   int32_t value; 
+  int32_t previousValue;
 
   // Latched value
   uint32_t latchedValue;
@@ -693,6 +697,7 @@ class DbMitigationDevice : public DbEntry {
   uint16_t destinationMask;
 
   // Used after loading the YAML file
+  DbBeamClassPtr previousAllowedBeamClass; // beam class set previously
   DbBeamClassPtr allowedBeamClass; // allowed beam class after evaluating faults
   DbBeamClassPtr tentativeBeamClass; // used while faults are being evaluated
   
@@ -708,6 +713,12 @@ class DbMitigationDevice : public DbEntry {
   void setAllowedBeamClass() {
     allowedBeamClass = tentativeBeamClass;
     softwareMitigationBuffer[softwareMitigationBufferIndex] |= ((allowedBeamClass->number & 0xF) << bitShift);
+
+    if (previousAllowedBeamClass->number != allowedBeamClass->number) {
+      std::cout << "prev=" << previousAllowedBeamClass->number << ", new=" <<  allowedBeamClass->number<< std::endl;
+      History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
+    }
+
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
@@ -1033,9 +1044,15 @@ class MpsDb {
 
   TimeAverage inputUpdateTime;
 
+  /**
+   * Big lock - prevent multiple database access
+   */
+  pthread_mutex_t mutex;
+
   uint32_t _updateCounter;
 
  public:
+  DbBeamClassPtr lowestBeamClass;
   DbCrateMapPtr crates;
   DbApplicationTypeMapPtr applicationTypes;
   DbApplicationCardMapPtr applicationCards;
@@ -1069,9 +1086,13 @@ class MpsDb {
   int load(std::string yamlFile);
   void configure();
 
+  void lock();
+  void unlock();
+
   void showFastUpdateBuffer(uint32_t begin, uint32_t size);
   void showFaults();
   void showFault(DbFaultPtr fault);
+  void showMitigation();
 
   void writeFirmwareConfiguration();
   void updateInputs();

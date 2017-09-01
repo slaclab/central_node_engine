@@ -131,7 +131,7 @@ DigitalChannel:
   card_id: 1
 - id: 6
   number: 5
-  name: "SOL01_TEMP"
+  name: "TEMP"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -139,7 +139,7 @@ DigitalChannel:
   card_id: 1
 - id: 7
   number: 6
-  name: "SOL02_TEMP"
+  name: "TEMP"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -147,7 +147,7 @@ DigitalChannel:
   card_id: 1
 - id: 8
   number: 7
-  name: "VVR01_VAC"
+  name: "STATUS"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -155,7 +155,7 @@ DigitalChannel:
   card_id: 1
 - id: 9
   number: 8
-  name: "VVR02_VAC"
+  name: "STATUS"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -333,360 +333,408 @@ DeviceState:
   mask: 2048
   device_type_id: 7
 - id: 21
-  name: "T_T0"
+  name: "Y_T4"
   description: "None"
   value: 4096
   mask: 4096
   device_type_id: 7
 - id: 22
-  name: "T_T1"
+  name: "Y_T5"
   description: "None"
   value: 8192
   mask: 8192
   device_type_id: 7
 - id: 23
-  name: "T_T2"
+  name: "Y_T6"
   description: "None"
   value: 16384
   mask: 16384
   device_type_id: 7
 - id: 24
-  name: "T_T3"
+  name: "Y_T7"
   description: "None"
   value: 32768
   mask: 32768
   device_type_id: 7
 - id: 25
-  name: "INT1_T0"
+  name: "T_T0"
   description: "None"
-  value: 1
-  mask: 1
-  device_type_id: 4
+  value: 65536
+  mask: 65536
+  device_type_id: 7
 - id: 26
-  name: "INT1_T0"
+  name: "T_T1"
   description: "None"
-  value: 1
-  mask: 1
-  device_type_id: 4
+  value: 131072
+  mask: 131072
+  device_type_id: 7
 - id: 27
-  name: "INT1_T0"
+  name: "T_T2"
   description: "None"
-  value: 1
-  mask: 1
-  device_type_id: 4
+  value: 262144
+  mask: 262144
+  device_type_id: 7
 - id: 28
+  name: "T_T3"
+  description: "None"
+  value: 524288
+  mask: 524288
+  device_type_id: 7
+- id: 29
+  name: "T_T4"
+  description: "None"
+  value: 1048576
+  mask: 1048576
+  device_type_id: 7
+- id: 30
+  name: "T_T5"
+  description: "None"
+  value: 2097152
+  mask: 2097152
+  device_type_id: 7
+- id: 31
+  name: "T_T6"
+  description: "None"
+  value: 4194304
+  mask: 4194304
+  device_type_id: 7
+- id: 32
+  name: "T_T7"
+  description: "None"
+  value: 8388608
+  mask: 8388608
+  device_type_id: 7
+- id: 33
   name: "INT1_T0"
   description: "None"
   value: 1
   mask: 1
-  device_type_id: 4
-- id: 29
-  name: "INT1_T1"
-  description: "None"
-  value: 2
-  mask: 2
-  device_type_id: 4
-- id: 30
-  name: "INT1_T1"
-  description: "None"
-  value: 2
-  mask: 2
-  device_type_id: 4
-- id: 31
-  name: "INT1_T1"
-  description: "None"
-  value: 2
-  mask: 2
-  device_type_id: 4
-- id: 32
-  name: "INT1_T1"
-  description: "None"
-  value: 2
-  mask: 2
-  device_type_id: 4
-- id: 33
-  name: "INT1_T2"
-  description: "None"
-  value: 4
-  mask: 4
   device_type_id: 4
 - id: 34
-  name: "INT1_T2"
+  name: "INT1_T0"
   description: "None"
-  value: 4
-  mask: 4
+  value: 1
+  mask: 1
   device_type_id: 4
 - id: 35
-  name: "INT1_T2"
+  name: "INT1_T0"
   description: "None"
-  value: 4
-  mask: 4
+  value: 1
+  mask: 1
   device_type_id: 4
 - id: 36
+  name: "INT1_T0"
+  description: "None"
+  value: 1
+  mask: 1
+  device_type_id: 4
+- id: 37
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 38
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 39
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 40
+  name: "INT1_T1"
+  description: "None"
+  value: 2
+  mask: 2
+  device_type_id: 4
+- id: 41
   name: "INT1_T2"
   description: "None"
   value: 4
   mask: 4
   device_type_id: 4
-- id: 37
-  name: "INT1_T3"
-  description: "None"
-  value: 8
-  mask: 8
-  device_type_id: 4
-- id: 38
-  name: "INT1_T3"
-  description: "None"
-  value: 8
-  mask: 8
-  device_type_id: 4
-- id: 39
-  name: "INT1_T3"
-  description: "None"
-  value: 8
-  mask: 8
-  device_type_id: 4
-- id: 40
-  name: "INT1_T3"
-  description: "None"
-  value: 8
-  mask: 8
-  device_type_id: 4
-- id: 41
-  name: "INT1_T4"
-  description: "None"
-  value: 16
-  mask: 16
-  device_type_id: 4
 - id: 42
-  name: "INT1_T4"
+  name: "INT1_T2"
   description: "None"
-  value: 16
-  mask: 16
+  value: 4
+  mask: 4
   device_type_id: 4
 - id: 43
-  name: "INT1_T4"
+  name: "INT1_T2"
   description: "None"
-  value: 16
-  mask: 16
+  value: 4
+  mask: 4
   device_type_id: 4
 - id: 44
+  name: "INT1_T2"
+  description: "None"
+  value: 4
+  mask: 4
+  device_type_id: 4
+- id: 45
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 46
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 47
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 48
+  name: "INT1_T3"
+  description: "None"
+  value: 8
+  mask: 8
+  device_type_id: 4
+- id: 49
   name: "INT1_T4"
   description: "None"
   value: 16
   mask: 16
   device_type_id: 4
-- id: 45
-  name: "INT1_T5"
-  description: "None"
-  value: 32
-  mask: 32
-  device_type_id: 4
-- id: 46
-  name: "INT1_T5"
-  description: "None"
-  value: 32
-  mask: 32
-  device_type_id: 4
-- id: 47
-  name: "INT1_T5"
-  description: "None"
-  value: 32
-  mask: 32
-  device_type_id: 4
-- id: 48
-  name: "INT1_T5"
-  description: "None"
-  value: 32
-  mask: 32
-  device_type_id: 4
-- id: 49
-  name: "INT1_T6"
-  description: "None"
-  value: 64
-  mask: 64
-  device_type_id: 4
 - id: 50
-  name: "INT1_T6"
+  name: "INT1_T4"
   description: "None"
-  value: 64
-  mask: 64
+  value: 16
+  mask: 16
   device_type_id: 4
 - id: 51
-  name: "INT1_T6"
+  name: "INT1_T4"
   description: "None"
-  value: 64
-  mask: 64
+  value: 16
+  mask: 16
   device_type_id: 4
 - id: 52
+  name: "INT1_T4"
+  description: "None"
+  value: 16
+  mask: 16
+  device_type_id: 4
+- id: 53
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 54
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 55
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 56
+  name: "INT1_T5"
+  description: "None"
+  value: 32
+  mask: 32
+  device_type_id: 4
+- id: 57
   name: "INT1_T6"
   description: "None"
   value: 64
   mask: 64
   device_type_id: 4
-- id: 53
+- id: 58
+  name: "INT1_T6"
+  description: "None"
+  value: 64
+  mask: 64
+  device_type_id: 4
+- id: 59
+  name: "INT1_T6"
+  description: "None"
+  value: 64
+  mask: 64
+  device_type_id: 4
+- id: 60
+  name: "INT1_T6"
+  description: "None"
+  value: 64
+  mask: 64
+  device_type_id: 4
+- id: 61
   name: "INT1_T7"
   description: "None"
   value: 128
   mask: 128
   device_type_id: 4
-- id: 54
+- id: 62
   name: "INT1_T7"
   description: "None"
   value: 128
   mask: 128
   device_type_id: 4
-- id: 55
+- id: 63
   name: "INT1_T7"
   description: "None"
   value: 128
   mask: 128
   device_type_id: 4
-- id: 56
+- id: 64
   name: "INT1_T7"
   description: "None"
   value: 128
   mask: 128
   device_type_id: 4
-- id: 57
+- id: 65
   name: "INT2_T0"
   description: "None"
   value: 256
   mask: 256
   device_type_id: 4
-- id: 58
+- id: 66
   name: "INT2_T1"
   description: "None"
   value: 512
   mask: 512
   device_type_id: 4
-- id: 59
+- id: 67
   name: "INT2_T2"
   description: "None"
   value: 1024
   mask: 1024
   device_type_id: 4
-- id: 60
+- id: 68
   name: "INT2_T3"
   description: "None"
   value: 2048
   mask: 2048
   device_type_id: 4
-- id: 61
+- id: 69
   name: "INT2_T4"
   description: "None"
   value: 4096
   mask: 4096
   device_type_id: 4
-- id: 62
+- id: 70
   name: "INT2_T5"
   description: "None"
   value: 8192
   mask: 8192
   device_type_id: 4
-- id: 63
+- id: 71
   name: "INT2_T6"
   description: "None"
   value: 16384
   mask: 16384
   device_type_id: 4
-- id: 64
+- id: 72
   name: "INT2_T7"
   description: "None"
   value: 32768
   mask: 32768
   device_type_id: 4
-- id: 65
+- id: 73
   name: "INT3_T0"
   description: "None"
   value: 65536
   mask: 65536
   device_type_id: 4
-- id: 66
+- id: 74
   name: "INT3_T1"
   description: "None"
   value: 131072
   mask: 131072
   device_type_id: 4
-- id: 67
+- id: 75
   name: "INT3_T2"
   description: "None"
   value: 262144
   mask: 262144
   device_type_id: 4
-- id: 68
+- id: 76
   name: "INT3_T3"
   description: "None"
   value: 524288
   mask: 524288
   device_type_id: 4
-- id: 69
+- id: 77
   name: "INT3_T4"
   description: "None"
   value: 1048576
   mask: 1048576
   device_type_id: 4
-- id: 70
+- id: 78
   name: "INT3_T5"
   description: "None"
   value: 2097152
   mask: 2097152
   device_type_id: 4
-- id: 71
+- id: 79
   name: "INT3_T6"
   description: "None"
   value: 4194304
   mask: 4194304
   device_type_id: 4
-- id: 72
+- id: 80
   name: "INT3_T7"
   description: "None"
   value: 8388608
   mask: 8388608
   device_type_id: 4
-- id: 73
+- id: 81
   name: "INT4_T0"
   description: "None"
   value: 16777216
   mask: 16777216
   device_type_id: 4
-- id: 74
+- id: 82
   name: "INT4_T1"
   description: "None"
   value: 33554432
   mask: 33554432
   device_type_id: 4
-- id: 75
+- id: 83
   name: "INT4_T2"
   description: "None"
   value: 67108864
   mask: 67108864
   device_type_id: 4
-- id: 76
+- id: 84
   name: "INT4_T3"
   description: "None"
   value: 134217728
   mask: 134217728
   device_type_id: 4
-- id: 77
+- id: 85
   name: "INT4_T4"
   description: "None"
   value: 268435456
   mask: 268435456
   device_type_id: 4
-- id: 78
+- id: 86
   name: "INT4_T5"
   description: "None"
   value: 536870912
   mask: 536870912
   device_type_id: 4
-- id: 79
+- id: 87
   name: "INT4_T6"
   description: "None"
   value: 1073741824
   mask: 1073741824
   device_type_id: 4
-- id: 80
+- id: 88
   name: "INT4_T7"
   description: "None"
   value: 2147483648
@@ -703,6 +751,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 1
+  measured_device_type_id: !!int 'None'
 - id: 2
   id: 2
   name: "Gun Temperature"
@@ -712,6 +761,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 2
+  measured_device_type_id: !!int 'None'
 - id: 3
   id: 3
   name: "Waveguide Temperature"
@@ -721,6 +771,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 2
+  measured_device_type_id: !!int 'None'
 - id: 4
   id: 4
   name: "Buncher Temperature"
@@ -730,6 +781,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 2
+  measured_device_type_id: !!int 'None'
 - id: 5
   id: 5
   name: "SOL01 Temp"
@@ -739,6 +791,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 2
+  measured_device_type_id: 6
 - id: 6
   id: 6
   name: "SOL02 Temp"
@@ -748,6 +801,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 2
+  measured_device_type_id: 6
 - id: 7
   id: 7
   name: "VVR01"
@@ -757,6 +811,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 3
+  measured_device_type_id: !!int 'None'
 - id: 8
   id: 8
   name: "VVR02"
@@ -766,6 +821,7 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 3
+  measured_device_type_id: !!int 'None'
 ---
 DeviceInput:
 - id: 1
@@ -840,43 +896,43 @@ Fault:
   name: "VVR02"
   description: "VVR02 Vacuum Valve Fault"
 - id: 9
-  name: "BPM01_X"
+  name: "X"
   description: "BPM01 X Threshold Fault"
 - id: 10
-  name: "BPM01_Y"
+  name: "Y"
   description: "BPM01 Y Threshold Fault"
 - id: 11
-  name: "BPM01_T"
+  name: "T"
   description: "BPM01 TMIT Threshold Fault"
 - id: 12
-  name: "BPM02_X"
+  name: "X"
   description: "BPM02 X Threshold Fault"
 - id: 13
-  name: "BPM02_Y"
+  name: "Y"
   description: "BPM02 Y Threshold Fault"
 - id: 14
-  name: "BPM02_T"
+  name: "T"
   description: "BPM02 TMIT Threshold Fault"
 - id: 15
-  name: "IM01_I1"
+  name: "I1"
   description: "IM01 Integrator #1 Fault"
 - id: 16
-  name: "IM01_I2"
+  name: "I2"
   description: "IM01 Integrator #2 Fault"
 - id: 17
-  name: "IM01_I3"
+  name: "I3"
   description: "IM01 Integrator #3 Fault"
 - id: 18
-  name: "IM01_I4"
+  name: "I4"
   description: "IM01 Integrator #4 Fault"
 - id: 19
-  name: "SOL01_I1"
+  name: "I1"
   description: "SOL01 Integrator #1 Fault"
 - id: 20
-  name: "SOL02_I1"
-  description: "SOL01 Integrator #1 Fault"
+  name: "I1"
+  description: "SOL01 Integrator #2 Fault"
 - id: 21
-  name: "FC_I1"
+  name: "I1"
   description: "FC01 Integrator #1 Fault"
 ---
 FaultInput:
@@ -1016,148 +1072,160 @@ FaultState:
   device_state_id: 10
 - id: 13
   default: False
-  fault_id: 9
-  device_state_id: 11
+  fault_id: 10
+  device_state_id: 17
 - id: 14
   default: False
-  fault_id: 9
-  device_state_id: 12
+  fault_id: 10
+  device_state_id: 18
 - id: 15
   default: False
   fault_id: 10
-  device_state_id: 17
+  device_state_id: 19
 - id: 16
   default: False
-  fault_id: 10
-  device_state_id: 18
+  fault_id: 11
+  device_state_id: 25
 - id: 17
   default: False
-  fault_id: 10
-  device_state_id: 19
+  fault_id: 11
+  device_state_id: 26
 - id: 18
   default: False
-  fault_id: 10
-  device_state_id: 20
+  fault_id: 11
+  device_state_id: 27
 - id: 19
   default: False
   fault_id: 11
-  device_state_id: 21
+  device_state_id: 28
 - id: 20
-  default: False
-  fault_id: 11
-  device_state_id: 22
-- id: 21
-  default: False
-  fault_id: 11
-  device_state_id: 23
-- id: 22
-  default: False
-  fault_id: 11
-  device_state_id: 24
-- id: 23
   default: False
   fault_id: 12
   device_state_id: 9
-- id: 24
+- id: 21
   default: False
   fault_id: 12
   device_state_id: 10
-- id: 25
+- id: 22
   default: False
   fault_id: 12
   device_state_id: 11
-- id: 26
+- id: 23
   default: False
   fault_id: 12
   device_state_id: 12
-- id: 27
+- id: 24
+  default: False
+  fault_id: 12
+  device_state_id: 13
+- id: 25
   default: False
   fault_id: 13
   device_state_id: 17
-- id: 28
+- id: 26
   default: False
   fault_id: 13
   device_state_id: 18
-- id: 29
+- id: 27
   default: False
   fault_id: 13
   device_state_id: 19
-- id: 30
+- id: 28
   default: False
   fault_id: 13
   device_state_id: 20
+- id: 29
+  default: False
+  fault_id: 13
+  device_state_id: 21
+- id: 30
+  default: False
+  fault_id: 13
+  device_state_id: 22
 - id: 31
   default: False
   fault_id: 14
-  device_state_id: 21
+  device_state_id: 25
 - id: 32
   default: False
   fault_id: 14
-  device_state_id: 22
+  device_state_id: 26
 - id: 33
   default: False
   fault_id: 14
-  device_state_id: 23
+  device_state_id: 27
 - id: 34
   default: False
   fault_id: 14
-  device_state_id: 24
+  device_state_id: 28
 - id: 35
   default: False
-  fault_id: 15
-  device_state_id: 25
+  fault_id: 14
+  device_state_id: 29
 - id: 36
   default: False
-  fault_id: 15
-  device_state_id: 29
+  fault_id: 14
+  device_state_id: 30
 - id: 37
   default: False
-  fault_id: 16
-  device_state_id: 57
+  fault_id: 14
+  device_state_id: 31
 - id: 38
   default: False
-  fault_id: 16
-  device_state_id: 58
+  fault_id: 15
+  device_state_id: 33
 - id: 39
   default: False
-  fault_id: 17
-  device_state_id: 65
+  fault_id: 15
+  device_state_id: 37
 - id: 40
   default: False
-  fault_id: 17
-  device_state_id: 66
+  fault_id: 16
+  device_state_id: 65
 - id: 41
   default: False
-  fault_id: 18
-  device_state_id: 73
+  fault_id: 16
+  device_state_id: 66
 - id: 42
   default: False
-  fault_id: 18
-  device_state_id: 74
+  fault_id: 17
+  device_state_id: 73
 - id: 43
   default: False
-  fault_id: 19
-  device_state_id: 26
+  fault_id: 17
+  device_state_id: 74
 - id: 44
   default: False
-  fault_id: 20
-  device_state_id: 27
+  fault_id: 18
+  device_state_id: 81
 - id: 45
   default: False
-  fault_id: 21
-  device_state_id: 28
+  fault_id: 18
+  device_state_id: 82
 - id: 46
   default: False
   fault_id: 19
-  device_state_id: 30
+  device_state_id: 34
 - id: 47
   default: False
   fault_id: 20
-  device_state_id: 31
+  device_state_id: 35
 - id: 48
   default: False
   fault_id: 21
-  device_state_id: 32
+  device_state_id: 36
+- id: 49
+  default: False
+  fault_id: 19
+  device_state_id: 38
+- id: 50
+  default: False
+  fault_id: 20
+  device_state_id: 39
+- id: 51
+  default: False
+  fault_id: 21
+  device_state_id: 40
 ---
 AnalogDevice:
 - id: 9
@@ -1170,6 +1238,7 @@ AnalogDevice:
   evaluation: 1
   card_id: 3
   device_type_id: 7
+  measured_device_type_id: !!int 'None'
 - id: 10
   channel_id: 6
   id: 10
@@ -1180,6 +1249,7 @@ AnalogDevice:
   evaluation: 1
   card_id: 3
   device_type_id: 7
+  measured_device_type_id: !!int 'None'
 - id: 11
   channel_id: 1
   id: 11
@@ -1190,6 +1260,7 @@ AnalogDevice:
   evaluation: 1
   card_id: 4
   device_type_id: 4
+  measured_device_type_id: !!int 'None'
 - id: 12
   channel_id: 2
   id: 12
@@ -1200,6 +1271,7 @@ AnalogDevice:
   evaluation: 1
   card_id: 5
   device_type_id: 5
+  measured_device_type_id: !!int 'None'
 - id: 13
   channel_id: 3
   id: 13
@@ -1210,6 +1282,7 @@ AnalogDevice:
   evaluation: 1
   card_id: 2
   device_type_id: 6
+  measured_device_type_id: !!int 'None'
 - id: 14
   channel_id: 4
   id: 14
@@ -1220,6 +1293,7 @@ AnalogDevice:
   evaluation: 1
   card_id: 2
   device_type_id: 6
+  measured_device_type_id: !!int 'None'
 ---
 MitigationDevice:
 - id: 1
@@ -1560,43 +1634,67 @@ AllowedClass:
   mitigation_device_id: 2
   beam_class_id: 1
 - id: 77
-  fault_state_id: 46
+  fault_state_id: 44
   mitigation_device_id: 1
   beam_class_id: 1
 - id: 78
-  fault_state_id: 46
+  fault_state_id: 44
   mitigation_device_id: 2
   beam_class_id: 1
 - id: 79
-  fault_state_id: 44
+  fault_state_id: 45
   mitigation_device_id: 1
   beam_class_id: 1
 - id: 80
-  fault_state_id: 44
+  fault_state_id: 45
   mitigation_device_id: 2
   beam_class_id: 1
 - id: 81
-  fault_state_id: 47
+  fault_state_id: 46
   mitigation_device_id: 1
   beam_class_id: 1
 - id: 82
-  fault_state_id: 47
+  fault_state_id: 46
   mitigation_device_id: 2
   beam_class_id: 1
 - id: 83
-  fault_state_id: 45
+  fault_state_id: 49
   mitigation_device_id: 1
   beam_class_id: 1
 - id: 84
-  fault_state_id: 45
+  fault_state_id: 49
   mitigation_device_id: 2
   beam_class_id: 1
 - id: 85
-  fault_state_id: 48
+  fault_state_id: 47
   mitigation_device_id: 1
   beam_class_id: 1
 - id: 86
+  fault_state_id: 47
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 87
+  fault_state_id: 50
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 88
+  fault_state_id: 50
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 89
   fault_state_id: 48
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 90
+  fault_state_id: 48
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 91
+  fault_state_id: 51
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 92
+  fault_state_id: 51
   mitigation_device_id: 2
   beam_class_id: 1
 ---

@@ -10,6 +10,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <pthread.h> // MUTEX TEST
+
 using boost::shared_ptr;
 
 class TestFailed {};
@@ -30,14 +32,14 @@ public:
   }
 
   int config(std::string fwFileName, std::string mpsFileName) {
-    Firmware::getInstance().loadConfig(fwFileName);
-
-    if (verbose) {
-      std::cout << &Firmware::getInstance();
-      std::cout << std::endl;
-    }
-
     try {
+      Firmware::getInstance().loadConfig(fwFileName);
+    
+      if (verbose) {
+	std::cout << &Firmware::getInstance();
+	std::cout << std::endl;
+      }
+
       if (Engine::getInstance().loadConfig(mpsFileName) != 0) {
 	std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
 	return 1;
@@ -70,11 +72,16 @@ public:
     uint32_t appFwConfig[APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4];
     
     for (int appId = 0; appId < 2; ++appId) {
-      Firmware::getInstance()._configSV[0]->getVal(&appFwConfig[appId], APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4);
+      try {
+	Firmware::getInstance()._configSV[0]->getVal(&appFwConfig[appId], APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4);
+      } catch (BadStatusError &e) {
+	std::cerr << "BadStatusError reading config... no good" <<std::endl;
+	return -1;
+      }
 
       uint32_t *appConfig = reinterpret_cast<uint32_t *>(Engine::getInstance().mpsDb->fastConfigurationBuffer +
 						       0 * APPLICATION_CONFIG_BUFFER_SIZE_BYTES);
-      for (int i = 0; i < APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4; ++i) {
+    for (int i = 0; i < APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4; ++i) {
 	if (appConfig[i] != appFwConfig[i]) {
 	  std::cerr << "ERROR: Mismatch at word " << i << ". Found "
 		    << std::hex << appFwConfig[i] << ", expected "
@@ -160,7 +167,7 @@ int main(int argc, char **argv) {
   if (t.config(fwFileName, mpsFileName) < 0) {
     return -1;
   }
-  
+
   t.writeFirmwareConfig();
   if (t.readFirmwareConfig() < 0) {
     return -1;

@@ -10,19 +10,26 @@
 #include <sstream>
 #include <iomanip>
 
+#include <stdio.h>
 #include <log_wrapper.h>
 
 #ifdef LOG_ENABLED
 using namespace easyloggingpp;
 static Logger *databaseLogger;
+#endif 
 
 MpsDb::MpsDb() : inputUpdateTime(5, "Input update time"), _updateCounter(0) {
+#ifdef LOG_ENABLED
   databaseLogger = Loggers::getLogger("DATABASE");
-}
-#else
-MpsDb::MpsDb() : inputUpdateTime(5, "Input update time") {
-}
 #endif
+
+  int ret = pthread_mutex_init(&mutex, NULL);
+  if (0 != ret) {
+    throw(DbException("ERROR: MpsDb::lock() failed to initialize mutex."));
+  }
+}
+
+
 
 MpsDb::~MpsDb() {
   inputUpdateTime.show();
@@ -78,6 +85,15 @@ void MpsDb::updateInputs() {
 void MpsDb::configureAllowedClasses() {
   LOG_TRACE("DATABASE", "Configure: AllowedClasses");
   std::stringstream errorStream;
+  int lowestBeamClassNumber = 100;
+  for (DbBeamClassMap::iterator it = beamClasses->begin();
+       it != beamClasses->end(); ++it) {
+    if ((*it).second->number < lowestBeamClassNumber) {
+      lowestBeamClassNumber = (*it).second->number;
+      lowestBeamClass = (*it).second;
+    }
+  }
+
   // Assign BeamClass and MitigationDevice to AllowedClass
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
        it != allowedClasses->end(); ++it) {
@@ -605,6 +621,8 @@ void MpsDb::configureMitigationDevices() {
   for (DbMitigationDeviceMap::iterator it = mitigationDevices->begin();
        it != mitigationDevices->end(); ++it) {
     (*it).second->softwareMitigationBuffer = &softwareMitigationBuffer[0];
+    (*it).second->previousAllowedBeamClass = lowestBeamClass;
+    (*it).second->allowedBeamClass = lowestBeamClass;
   }
 }
 
@@ -635,13 +653,35 @@ void MpsDb::configure() {
 }
 
 void MpsDb::writeFirmwareConfiguration() {
+  int i = 0;
   for (DbApplicationCardMap::iterator card = applicationCards->begin();
        card != applicationCards->end(); ++card) {
     (*card).second->writeConfiguration();
     Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
 					(*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
 					APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
+    i++;
   }
+
+  // TODO: write timing checking parameters for beam classes
+  // These parameters are: beam intensity, integration time and min period
+  uint32_t time[FW_NUM_BEAM_CLASSES];
+  uint32_t period[FW_NUM_BEAM_CLASSES];
+  uint32_t charge[FW_NUM_BEAM_CLASSES];
+
+  for (int i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
+    time[i] = 0;
+    period[i] = 0;
+    charge[i] = 0;
+  }
+  for (DbBeamClassMap::iterator beamClass = beamClasses->begin();
+       beamClass != beamClasses->end(); ++beamClass) {
+    time[(*beamClass).second->number] = (*beamClass).second->integrationWindow;
+    period[(*beamClass).second->number] = (*beamClass).second->minPeriod;
+    charge[(*beamClass).second->number] = (*beamClass).second->totalCharge;
+  }
+
+  Firmware::getInstance().writeTimingChecking(time, period, charge);
 }
 
 /**
@@ -741,6 +781,19 @@ int MpsDb::load(std::string yamlFileName) {
   return 0;
 }
 
+void MpsDb::lock() {
+  int ret = pthread_mutex_lock(&mutex);
+  if (ret != 0) {
+    throw(DbException("ERROR: MpsDb::lock() failed to lock mutex."));
+  }
+}
+
+void MpsDb::unlock() {
+  if (pthread_mutex_unlock(&mutex) != 0) {
+    throw(DbException("ERROR: MpsDb::unlock() failed to unlock mutex."));
+  }
+}
+
 /**
  * Print out the digital/analog inputs (DbFaultInput and DbAnalogDevices)
  */
@@ -748,10 +801,12 @@ void MpsDb::showFaults() {
   std::cout << "+-------------------------------------------------------" << std::endl;
   std::cout << "| Faults: " << std::endl;
   std::cout << "+-------------------------------------------------------" << std::endl;
+  lock();
   for (DbFaultMap::iterator fault = faults->begin(); 
        fault != faults->end(); ++fault) {
     showFault((*fault).second);
   }
+  unlock();
   std::cout << "+-------------------------------------------------------" << std::endl;
 }
 
@@ -832,5 +887,17 @@ void MpsDb::showFault(DbFaultPtr fault) {
       }
     }
   }
+}
+
+void MpsDb::showMitigation() {
+  lock();
+
+  std::cout << "Allowed power classes at mitigation devices:" << std::endl;
+  for (DbMitigationDeviceMap::iterator mitDevice = mitigationDevices->begin();
+       mitDevice != mitigationDevices->end(); ++mitDevice) {
+    std::cout << "  " << (*mitDevice).second->name << ": " << (*mitDevice).second->allowedBeamClass->number << std::endl;
+  }
+
+  unlock();
 }
 

@@ -7,6 +7,8 @@
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <central_node_engine.h>
+#include <central_node_firmware.h>
+#include <central_node_history.h>
 
 #include <boost/shared_ptr.hpp>
 //#include <log.h>
@@ -22,6 +24,9 @@ class TestFailed {};
 static void usage(const char *nm) {
   std::cerr << "Usage: " << nm << " -f <file> -i <file>" << std::endl;
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
+#ifdef FW_ENABLED
+  std::cerr << "       -w <file>   :  central node firmware YAML config file" << std::endl;
+#endif
   std::cerr << "       -v          :  verbose output" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
@@ -33,16 +38,20 @@ void intHandler(int) {
 
 int main(int argc, char **argv) {
   std::string mpsFileName = "";
+  std::string fwFileName = "";
   bool verbose = false;
   bool trace = false;
 
   signal(SIGINT, intHandler);
   
-  for (int opt; (opt = getopt(argc, argv, "tvhf:")) > 0;) {
+  for (int opt; (opt = getopt(argc, argv, "tvhf:w:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
     case 'f' :
       mpsFileName = optarg;
+      break;
+    case 'w':
+      fwFileName = optarg;
       break;
     case 'v':
       verbose = true;
@@ -63,6 +72,15 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+#ifdef FW_ENABLED
+  if (fwFileName == "") {
+    std::cerr << "Missing -w option" << std::endl;
+    usage(argv[0]);
+    return 1;
+  }
+  Firmware::getInstance().loadConfig(fwFileName);
+#endif
+
 #ifdef LOG_ENABLED
   if (!trace) {
     Configurations c;
@@ -81,6 +99,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  History::getInstance().startSenderThread();
   Engine::getInstance().startUpdateThread();
 
   while(1) {

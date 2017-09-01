@@ -1,5 +1,6 @@
 #include <central_node_engine.h>
 #include <central_node_firmware.h>
+#include <central_node_history.h>
 
 #include <stdio.h>
 #include <stdint.h>
@@ -20,6 +21,9 @@ Engine::Engine() :
   engineLogger = Loggers::getLogger("ENGINE");
   LOG_TRACE("ENGINE", "Created Engine");
 #endif
+  //  MpsDb *db = new MpsDb(); // TEMP
+  //  mpsDb = shared_ptr<MpsDb>(db); // TEMP
+  //newDb();
 }
 
 Engine::~Engine() {
@@ -34,14 +38,22 @@ BypassManagerPtr Engine::getBypassManager() {
   return bypassManager;
 }
 
+void Engine::newDb() {
+  MpsDb *db = new MpsDb();
+  mpsDb = shared_ptr<MpsDb>(db);
+}
+
 int Engine::loadConfig(std::string yamlFileName) {
   MpsDb *db = new MpsDb();
   mpsDb = shared_ptr<MpsDb>(db);
+
+  mpsDb->lock();
 
   if (mpsDb->load(yamlFileName) != 0) {
     errorStream.str(std::string());
     errorStream << "ERROR: Failed to load yaml database ("
 		<< yamlFileName << ")";
+    mpsDb->unlock();
     throw(EngineException(errorStream.str()));
   }
 
@@ -83,6 +95,9 @@ int Engine::loadConfig(std::string yamlFileName) {
     }
   }
 
+  mpsDb->writeFirmwareConfiguration();
+  mpsDb->unlock();
+
   LOG_TRACE("ENGINE", "Lowest beam class found: " << lowestBeamClass->number);
   LOG_TRACE("ENGINE", "Highest beam class found: " << highestBeamClass->number);
 
@@ -111,6 +126,7 @@ void Engine::setTentativeBeamClass() {
   for (DbMitigationDeviceMap::iterator device = mpsDb->mitigationDevices->begin();
        device != mpsDb->mitigationDevices->end(); ++device) {
     (*device).second->tentativeBeamClass = highestBeamClass;
+    (*device).second->previousAllowedBeamClass = (*device).second->allowedBeamClass; // for history purposes
     (*device).second->allowedBeamClass = lowestBeamClass;
     LOG_TRACE("ENGINE", (*device).second->name << " tentative class set to: "
 	      << (*device).second->tentativeBeamClass->number
@@ -143,6 +159,7 @@ void Engine::setAllowedBeamClass() {
  */
 void Engine::evaluateFaults() {
   std::stringstream errorStream;
+  uint32_t deviceStateId = 0;
 
   bool faulted = false;
 
@@ -204,6 +221,7 @@ void Engine::evaluateFaults() {
 		<< (*input).second->bitPosition);
     }
     (*fault).second->update(faultValue);
+    bool oldFaultValue = (*fault).second->faulted;
     (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
     LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
@@ -218,6 +236,7 @@ void Engine::evaluateFaults() {
 		<< "masked value is " << std::hex << maskedValue << " (mask="
 		<< (*state).second->deviceState->mask << ")" << std::dec);
       if ((*state).second->deviceState->value == maskedValue) {
+	deviceStateId = (*state).second->deviceState->id;
 	(*state).second->faulted = true; // Set input faulted field
 	(*fault).second->faulted = true; // Set fault faulted field
 	(*fault).second->faultLatched = true;
@@ -236,9 +255,15 @@ void Engine::evaluateFaults() {
     // If there are no faults, then enable the default - if there is one
     if (!faulted && (*fault).second->defaultFaultState) {
       (*fault).second->defaultFaultState->faulted = true;
+      deviceStateId = (*fault).second->defaultFaultState->deviceState->id;
       LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
 		<< faultValue << " (Default) fault state="
 		<< (*fault).second->defaultFaultState->deviceState->name);
+    }
+
+    if (oldFaultValue != (*fault).second->faulted) {
+      History::getInstance().logFault((*fault).second->id, oldFaultValue,
+				      (*fault).second->faulted, deviceStateId);
     }
   }
 }
@@ -342,13 +367,14 @@ int Engine::checkFaults() {
   checkFaultTime.start();
 
   LOG_TRACE("ENGINE", "Checking faults");
+  mpsDb->lock();
   mpsDb->clearMitigationBuffer();
   setTentativeBeamClass();
   evaluateFaults();
   evaluateIgnoreConditions();
   mitigate();
   setAllowedBeamClass();
-
+  mpsDb->unlock();
   checkFaultTime.end();
 
   return 0;
@@ -359,6 +385,7 @@ void Engine::showFaults() {
   bool faults = false;
 
   // Digital Faults
+  mpsDb->lock();
   for (DbFaultMap::iterator fault = mpsDb->faults->begin();
        fault != mpsDb->faults->end(); ++fault) {
     for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
@@ -374,6 +401,7 @@ void Engine::showFaults() {
       }
     }
   }
+  mpsDb->unlock();
   if (!faults) {
     std::cout << "# No faults" << std::endl;
   }
@@ -384,22 +412,30 @@ void Engine::showStats() {
   checkFaultTime.show();
 }
 
+void Engine::showFirmware() {
+  std::cout << &(Firmware::getInstance());
+}
+
 void Engine::showMitigationDevices() {
   std::cout << ">> Mitigation Devices: " << std::endl;
+  mpsDb->lock();
   for (DbMitigationDeviceMap::iterator mitigation = mpsDb->mitigationDevices->begin();
        mitigation != mpsDb->mitigationDevices->end(); ++mitigation) {
     std::cout << (*mitigation).second->name << ":\t Allowed "
 	      << (*mitigation).second->allowedBeamClass->number << "/ Tentative "
 	      << (*mitigation).second->tentativeBeamClass->number << std::endl;
   }
+  mpsDb->unlock();
 }
 
 void Engine::showDeviceInputs() {
   std::cout << "Device Inputs: " << std::endl;
+  mpsDb->lock();
   for (DbDeviceInputMap::iterator input = mpsDb->deviceInputs->begin();
        input != mpsDb->deviceInputs->end(); ++input) {
     std::cout << (*input).second << std::endl;
   }
+  mpsDb->unlock();
 }
 
 void Engine::startUpdateThread() {
