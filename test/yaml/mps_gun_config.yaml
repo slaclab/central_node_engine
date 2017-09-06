@@ -1338,382 +1338,404 @@ AllowedClass:
   mitigation_device_id: 1
   beam_class_id: 1
 - id: 3
+  fault_state_id: 2
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 4
   fault_state_id: 3
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 4
+- id: 5
+  fault_state_id: 3
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 6
   fault_state_id: 4
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 5
+- id: 7
+  fault_state_id: 4
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 8
   fault_state_id: 5
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 6
+- id: 9
+  fault_state_id: 5
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 10
   fault_state_id: 6
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 7
+- id: 11
+  fault_state_id: 6
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 12
   fault_state_id: 7
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 8
+- id: 13
+  fault_state_id: 7
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 14
   fault_state_id: 8
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 9
-  fault_state_id: 9
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 10
-  fault_state_id: 10
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 11
-  fault_state_id: 11
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 12
-  fault_state_id: 11
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 13
-  fault_state_id: 12
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 14
-  fault_state_id: 12
-  mitigation_device_id: 2
-  beam_class_id: 1
 - id: 15
-  fault_state_id: 13
-  mitigation_device_id: 1
+  fault_state_id: 8
+  mitigation_device_id: 2
   beam_class_id: 1
 - id: 16
+  fault_state_id: 9
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 17
+  fault_state_id: 9
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 18
+  fault_state_id: 10
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 19
+  fault_state_id: 10
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 20
+  fault_state_id: 11
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 21
+  fault_state_id: 11
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 22
+  fault_state_id: 12
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 23
+  fault_state_id: 12
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 24
+  fault_state_id: 13
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 25
   fault_state_id: 13
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 17
-  fault_state_id: 14
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 18
-  fault_state_id: 14
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 19
-  fault_state_id: 15
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 20
-  fault_state_id: 15
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 21
-  fault_state_id: 16
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 22
-  fault_state_id: 16
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 23
-  fault_state_id: 17
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 24
-  fault_state_id: 17
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 25
-  fault_state_id: 18
-  mitigation_device_id: 1
-  beam_class_id: 1
 - id: 26
-  fault_state_id: 18
-  mitigation_device_id: 2
+  fault_state_id: 14
+  mitigation_device_id: 1
   beam_class_id: 1
 - id: 27
-  fault_state_id: 19
-  mitigation_device_id: 1
+  fault_state_id: 14
+  mitigation_device_id: 2
   beam_class_id: 1
 - id: 28
+  fault_state_id: 15
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 29
+  fault_state_id: 15
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 30
+  fault_state_id: 16
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 31
+  fault_state_id: 16
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 32
+  fault_state_id: 17
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 33
+  fault_state_id: 17
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 34
+  fault_state_id: 18
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 35
+  fault_state_id: 18
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 36
+  fault_state_id: 19
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 37
   fault_state_id: 19
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 29
-  fault_state_id: 20
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 30
-  fault_state_id: 20
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 31
-  fault_state_id: 21
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 32
-  fault_state_id: 21
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 33
-  fault_state_id: 22
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 34
-  fault_state_id: 22
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 35
-  fault_state_id: 23
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 36
-  fault_state_id: 23
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 37
-  fault_state_id: 24
-  mitigation_device_id: 1
-  beam_class_id: 1
 - id: 38
-  fault_state_id: 24
-  mitigation_device_id: 2
+  fault_state_id: 20
+  mitigation_device_id: 1
   beam_class_id: 1
 - id: 39
-  fault_state_id: 25
-  mitigation_device_id: 1
+  fault_state_id: 20
+  mitigation_device_id: 2
   beam_class_id: 1
 - id: 40
+  fault_state_id: 21
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 41
+  fault_state_id: 21
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 42
+  fault_state_id: 22
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 43
+  fault_state_id: 22
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 44
+  fault_state_id: 23
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 45
+  fault_state_id: 23
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 46
+  fault_state_id: 24
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 47
+  fault_state_id: 24
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 48
+  fault_state_id: 25
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 49
   fault_state_id: 25
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 41
-  fault_state_id: 26
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 42
-  fault_state_id: 26
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 43
-  fault_state_id: 27
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 44
-  fault_state_id: 27
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 45
-  fault_state_id: 28
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 46
-  fault_state_id: 28
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 47
-  fault_state_id: 29
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 48
-  fault_state_id: 29
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 49
-  fault_state_id: 30
-  mitigation_device_id: 1
-  beam_class_id: 1
 - id: 50
-  fault_state_id: 30
-  mitigation_device_id: 2
+  fault_state_id: 26
+  mitigation_device_id: 1
   beam_class_id: 1
 - id: 51
-  fault_state_id: 31
-  mitigation_device_id: 1
+  fault_state_id: 26
+  mitigation_device_id: 2
   beam_class_id: 1
 - id: 52
+  fault_state_id: 27
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 53
+  fault_state_id: 27
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 54
+  fault_state_id: 28
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 55
+  fault_state_id: 28
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 56
+  fault_state_id: 29
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 57
+  fault_state_id: 29
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 58
+  fault_state_id: 30
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 59
+  fault_state_id: 30
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 60
+  fault_state_id: 31
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 61
   fault_state_id: 31
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 53
-  fault_state_id: 32
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 54
-  fault_state_id: 32
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 55
-  fault_state_id: 33
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 56
-  fault_state_id: 33
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 57
-  fault_state_id: 34
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 58
-  fault_state_id: 34
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 59
-  fault_state_id: 35
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 60
-  fault_state_id: 35
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 61
-  fault_state_id: 36
-  mitigation_device_id: 1
-  beam_class_id: 1
 - id: 62
-  fault_state_id: 36
-  mitigation_device_id: 2
+  fault_state_id: 32
+  mitigation_device_id: 1
   beam_class_id: 1
 - id: 63
-  fault_state_id: 37
-  mitigation_device_id: 1
+  fault_state_id: 32
+  mitigation_device_id: 2
   beam_class_id: 1
 - id: 64
+  fault_state_id: 33
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 65
+  fault_state_id: 33
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 66
+  fault_state_id: 34
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 67
+  fault_state_id: 34
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 68
+  fault_state_id: 35
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 69
+  fault_state_id: 35
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 70
+  fault_state_id: 36
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 71
+  fault_state_id: 36
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 72
+  fault_state_id: 37
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 73
   fault_state_id: 37
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 65
-  fault_state_id: 38
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 66
-  fault_state_id: 38
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 67
-  fault_state_id: 39
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 68
-  fault_state_id: 39
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 69
-  fault_state_id: 40
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 70
-  fault_state_id: 40
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 71
-  fault_state_id: 41
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 72
-  fault_state_id: 41
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 73
-  fault_state_id: 42
-  mitigation_device_id: 1
-  beam_class_id: 1
 - id: 74
-  fault_state_id: 42
-  mitigation_device_id: 2
+  fault_state_id: 38
+  mitigation_device_id: 1
   beam_class_id: 1
 - id: 75
-  fault_state_id: 43
-  mitigation_device_id: 1
+  fault_state_id: 38
+  mitigation_device_id: 2
   beam_class_id: 1
 - id: 76
+  fault_state_id: 39
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 77
+  fault_state_id: 39
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 78
+  fault_state_id: 40
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 79
+  fault_state_id: 40
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 80
+  fault_state_id: 41
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 81
+  fault_state_id: 41
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 82
+  fault_state_id: 42
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 83
+  fault_state_id: 42
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 84
+  fault_state_id: 43
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 85
   fault_state_id: 43
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 77
-  fault_state_id: 44
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 78
-  fault_state_id: 44
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 79
-  fault_state_id: 45
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 80
-  fault_state_id: 45
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 81
-  fault_state_id: 46
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 82
-  fault_state_id: 46
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 83
-  fault_state_id: 49
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 84
-  fault_state_id: 49
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 85
-  fault_state_id: 47
-  mitigation_device_id: 1
-  beam_class_id: 1
 - id: 86
-  fault_state_id: 47
-  mitigation_device_id: 2
+  fault_state_id: 44
+  mitigation_device_id: 1
   beam_class_id: 1
 - id: 87
-  fault_state_id: 50
-  mitigation_device_id: 1
+  fault_state_id: 44
+  mitigation_device_id: 2
   beam_class_id: 1
 - id: 88
+  fault_state_id: 45
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 89
+  fault_state_id: 45
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 90
+  fault_state_id: 46
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 91
+  fault_state_id: 46
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 92
+  fault_state_id: 49
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 93
+  fault_state_id: 49
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 94
+  fault_state_id: 47
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 95
+  fault_state_id: 47
+  mitigation_device_id: 2
+  beam_class_id: 1
+- id: 96
+  fault_state_id: 50
+  mitigation_device_id: 1
+  beam_class_id: 1
+- id: 97
   fault_state_id: 50
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 89
+- id: 98
   fault_state_id: 48
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 90
+- id: 99
   fault_state_id: 48
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 91
+- id: 100
   fault_state_id: 51
   mitigation_device_id: 1
   beam_class_id: 1
-- id: 92
+- id: 101
   fault_state_id: 51
   mitigation_device_id: 2
   beam_class_id: 1
 ---
-Condition:
-- id: 1
-  name: "YAG01_IN"
-  description: "YAG01 screen IN"
-  value: 0
+Condition: []
 ---
-IgnoreCondition:
-- id: 1
-  condition_id: 1
-  fault_state_id: 9
-- id: 2
-  condition_id: 1
-  fault_state_id: 10
+IgnoreCondition: []
 ---
-ConditionInput:
-- id: 1
-  bit_position: 0
-  fault_state_id: 1
-  condition_id: 1
+ConditionInput: []

@@ -456,15 +456,17 @@ void *Engine::engineThread(void *arg) {
     //    exit(-1);
   }
 
-#ifndef FW_ENABLED
   while(true) {
+#ifndef FW_ENABLED
     //    Firmware::getInstance().heartbeat();
     if (Engine::getInstance().mpsDb) {
       Engine::getInstance().mpsDb->updateInputs();
       Engine::getInstance().checkFaults();
       Engine::getInstance().mpsDb->mitigate();
     }
-    sleep(3);
-  }
+    sleep(1);
+#else
+    sleep(1);
 #endif
+  }
 }

@@ -108,7 +108,11 @@ int Firmware::loadConfig(std::string yamlFileName) {
 }
 
 void Firmware::enable() {
-  _enableSV->setVal((uint64_t) 1);
+  try {
+    _enableSV->setVal((uint64_t) 1);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on enable" << std::endl;
+  }
 }
 
 void Firmware::disable() {
@@ -116,16 +120,29 @@ void Firmware::disable() {
 }
 
 void Firmware::softwareEnable() {
-  _swEnableSV->setVal((uint64_t) 1);
+  try {
+    _swEnableSV->setVal((uint64_t) 1);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on softwareEnable" << std::endl;
+  }
 }
 
 void Firmware::softwareDisable() {
-  _swEnableSV->setVal((uint64_t) 0);
+  try {
+    _swEnableSV->setVal((uint64_t) 1);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on softwareDisable: " << e.getInfo() << std::endl;
+  }
 }
 
 void Firmware::softwareClear() {
-  _swClearSV->setVal((uint64_t) 1);
-  _swClearSV->setVal((uint64_t) 0);
+  try {
+    _swClearSV->setVal((uint64_t) 1);
+    _swClearSV->setVal((uint64_t) 0);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on softwareClear" << std::endl;
+  }
+
 }
 
 void Firmware::heartbeat() {
@@ -209,6 +226,9 @@ Firmware::Firmware() {
     buildStamp[i] = 0;
   }
   sprintf(gitHashString, "NONE");
+
+
+  std::cout <<  ">>> Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
 };
 
 int Firmware::loadConfig(std::string yamlFileName) {return 0;};

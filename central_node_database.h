@@ -715,7 +715,6 @@ class DbMitigationDevice : public DbEntry {
     softwareMitigationBuffer[softwareMitigationBufferIndex] |= ((allowedBeamClass->number & 0xF) << bitShift);
 
     if (previousAllowedBeamClass->number != allowedBeamClass->number) {
-      std::cout << "prev=" << previousAllowedBeamClass->number << ", new=" <<  allowedBeamClass->number<< std::endl;
       History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
     }
 

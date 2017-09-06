@@ -115,9 +115,7 @@ public:
       std::cout << ". done." << std::endl;
     }
     Engine::getInstance().startUpdateThread();
-    sleep(5);
     Firmware::getInstance().softwareDisable();
-    //    std::cout << Engine::getInstance().mpsDb->_updateCounter << std::endl;
   }
 
 protected:
