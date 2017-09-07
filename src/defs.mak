@@ -1,4 +1,3 @@
-
 # host architecture
 HARCH=host
 # Architectures to build
@@ -34,8 +33,6 @@ endef
 ARCHSPECIFIC_VARS+=CROSS
 ARCHSPECIFIC_VARS+=WITH_SHARED_LIBRARIES
 ARCHSPECIFIC_VARS+=WITH_STATIC_LIBRARIES
-ARCHSPECIFIC_VARS+=WITH_PYCENTRAL_NODE
-ARCHSPECIFIC_VARS+=BOOST_PYTHON_LIB
 ARCHSPECIFIC_VARS+=USR_CPPFLAGS
 ARCHSPECIFIC_VARS+=USR_CXXFLAGS
 ARCHSPECIFIC_VARS+=USR_CFLAGS
@@ -50,11 +47,10 @@ ARCHSPECIFIC_VARS+=USR_LDFLAGS
 #
 # (with $(<var>_DIR) also trying $(<var>_DIR_$(TARNM)), $(<var>_DIR_default))
 #
+ARCHSPECIFIC_LIBVARS+=cpsw
 ARCHSPECIFIC_LIBVARS+=yaml_cpp
 ARCHSPECIFIC_LIBVARS+=boost
-ARCHSPECIFIC_LIBVARS+=easyloggingpp
 ARCHSPECIFIC_LIBVARS+=py
-ARCHSPECIFIC_LIBVARS+=cpsw
 
 $(foreach var,$(ARCHSPECIFIC_VARS),$(eval $(call arch2var,$(var))))
 
@@ -70,17 +66,14 @@ RANLIB =$(CROSS)$(or $(RANLIB_$(TARNM)),$(RANLIB_default),ranlib)
 INSTALL=install -C
 
 # Tool options
-OPT_CXXFLAGS=-g #-Wall -O2
-OPT_CFLAGS  =-g #-Wall -O2
+OPT_CXXFLAGS=-g -Wall -O2
+OPT_CFLAGS  =-g -Wall -O2
 
 CPPFLAGS+= $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
-CPPFLAGS+= $(addprefix -I,$(subst :, ,$(central_nodeinc_DIRS)))
+CPPFLAGS+= $(addprefix -I,$(subst :, ,$(central_node_engineinc_DIRS)))
 CPPFLAGS+= $(USR_CPPFLAGS)
 CXXFLAGS+= $(OPT_CXXFLAGS)
 CXXFLAGS+= $(USR_CXXFLAGS)
-# Log can't be enabled when building for linuxRT
-CXXFLAGS+= -DLOG_ENABLED
-#CXXFLAGS+= -DFW_ENABLED
 CFLAGS  += $(OPT_CFLAGS)
 CFLAGS  += $(USR_CFLAGS)
 
@@ -92,25 +85,23 @@ FILTERED_TBINS=$(filter-out $(DISABLED_TESTPROGRAMS) %.so,$(TESTPROGRAMS))
 
 RUN_OPTS=''
 
-# Libraries currently required by CENTRAL_NODE itself (and thus by anything using it)
+# Libraries currently required by CENTRAL_NODE_ENGINE itself (and thus by anything using it)
 
 # colon separated dirlist
 # Note: += adds a whitespace
-central_nodeinc_DIRS=$(CENTRAL_NODE_DIR)$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))$(addprefix :,$(easyloggingppinc_DIR))$(addprefix :,$(cpswinc_DIR))
+central_node_engineinc_DIRS=$(CENTRAL_NODE_ENGINE_DIR)$(addprefix :,$(cpswinc_DIR))$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))
 # colon separated dirlist
-central_nodelib_DIRS=$(addsuffix /O.$(TARCH),$(CENTRAL_NODE_DIR))$(addprefix :,$(boostlib_DIR))$(addprefix :,$(yaml_cpplib_DIR))$(addprefix :,$(cpswlib_DIR))
+central_node_enginelib_DIRS=$(addsuffix /O.$(TARCH),$(CENTRAL_NODE_ENGINE_DIR))$(addprefix :,$(boostlib_DIR))$(addprefix :,$(yaml_cpplib_DIR))
 
-# Libraries CENTRAL_NODE requires -- must be added to application's <prog>_LIBS variable
-CENTRAL_NODE_LIBS   = central_node_engine yaml-cpp cpsw pthread rt dl
+# Libraries CENTRAL_NODE_ENGINE requires -- must be added to application's <prog>_LIBS variable
+CENTRAL_NODE_ENGINE_LIBS   = central_node_engine cpsw yaml-cpp pthread rt dl
 
 STATIC_LIBRARIES=$(STATIC_LIBRARIES_$(WITH_STATIC_LIBRARIES))
 SHARED_LIBRARIES=$(SHARED_LIBRARIES_$(WITH_SHARED_LIBRARIES))
 
 # Default values -- DO NOT OVERRIDE HERE but in config.mak or config.local.mak
-BOOST_PYTHON_LIB_default     =boost_python
 WITH_SHARED_LIBRARIES_default=YES
 WITH_STATIC_LIBRARIES_default=NO
-WITH_PYCENTRAL_NODE_default          =$(or $(and $(pyinc_DIR),$(WITH_SHARED_LIBRARIES)),NO)
 
 COMMA__:=,
 SPACE__:=
@@ -127,6 +118,6 @@ TOPDIR=$(UPDIR)
 endif
 
 # definitions
-include $(CENTRAL_NODE_DIR)/config.mak
--include $(CENTRAL_NODE_DIR)/config.local.mak
+include $(CENTRAL_NODE_ENGINE_DIR)/../config.mak
+-include $(CENTRAL_NODE_ENGINE_DIR)/../config.local.mak
 -include $(SRCDIR)/local.mak

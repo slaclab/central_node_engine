@@ -1,4 +1,3 @@
-
 # In this file the desired target architectures
 # as well as toolchain paths and prefixes are
 # defined.
@@ -7,33 +6,48 @@
 # arbitrarily but should not characters besides
 # [0-9][a-z][A-Z][.][-][_]
 
+PACKAGE_TOP=/afs/slac/g/lcls/package
+
 # By default the 'host' architecture is built. But
 # you can redefine the name of the host architecture:
 # HARCH = www
-HARCH=linux-x86_64
+#HARCH=linux-x86_64
+HARCH=rhel6-x86_64
 
 # Assuming you also want 'xxx' and 'yyy' then you'd
 # add these to the 'ARCHES' variable:
 
 # ARCHES += xxx yyy
 
-# Uncomment this to build for linuxRT
-#ARCHES += linuxRT-x86_64
+ARCHES += buildroot-2016.11.1-x86_64
+
 
 # Next, you need to define prefixes (which may include
 # absolute paths) so that e.g., $(CROSS_xxx)gcc can be
-# used as a C compiler, e.g.:
-BR_VERSION=2015.02
-
-BR_PATH=/afs/slac/package/linuxRT/buildroot-$(BR_VERSION)/host/$(HARCH)/$(1)/usr/bin/$(1)-linux-
-
+# used as a C compiler e.g.,
+# 
 # CROSS_xxx = path_to_xxx_tools/xxx-
 # CROSS_yyy = path_to_yyy_tools/yyy-
 #
-CROSS_linux_x86_64  =# host build needs no prefix
-CROSS_linuxRT_x86_64=$(call BR_PATH,x86_64)
-
 # (you can override 'gcc' by another compiler by setting CC_<arch>)
+
+# definitions for multiple buildroot targets
+
+BR_HARCH=linux-x86_64
+
+# extract version and target
+BR_VERSN=$(word 2,$(subst -, ,$(TARCH)))
+BR_TARCH=$(word 3,$(subst -, ,$(TARCH)))
+
+# cross compiler path
+BR_CROSS=/afs/slac/package/linuxRT/buildroot-$(BR_VERSN)/host/$(BR_HARCH)/$(BR_TARCH)/usr/bin/$(BR_TARCH)-linux-
+
+# map target arch-name into a make variable name
+BR_ARNAMS=$(subst .,_,$(subst -,_,$(filter buildroot-%,$(ARCHES))))
+
+# for all buildroot targets create
+# CROSS_buildroot_<version>_<target>
+$(foreach brarnam,$(BR_ARNAMS),$(eval CROSS_$(brarnam)=$$(BR_CROSS)))
 
 # CPSW requires 'boost'. If this installed at a non-standard
 # location (where it cannot be found automatically by the tools)
@@ -71,11 +85,10 @@ CROSS_linuxRT_x86_64=$(call BR_PATH,x86_64)
 #
 
 # 
-BOOST_VERSION=1.57.0
-BOOST_PATH=/afs/slac/g/lcls/package/boost/$(BOOST_VERSION)
+BOOST_VERSION=1.63.0
+BOOST_PATH=$(PACKAGE_TOP)/boost/$(BOOST_VERSION)
 
-boost_DIR_linux_x86_64  =$(BOOST_PATH)/linux-x86_64
-boost_DIR_linuxRT_x86_64=$(BOOST_PATH)/linuxRT_glibc-x86_64
+boost_DIR_default=$(BOOST_PATH)/$(TARCH)
 
 # YAML-CPP
 #
@@ -84,39 +97,28 @@ boost_DIR_linuxRT_x86_64=$(BOOST_PATH)/linuxRT_glibc-x86_64
 # the install location of yaml-cpp headers and library.
 # 
 YAML_CPP_VERSION         = yaml-cpp-0.5.3
-YAML_CPP_PATH            = /afs/slac/g/lcls/package/yaml-cpp/$(YAML_CPP_VERSION)
+YAML_CPP_PATH            = $(PACKAGE_TOP)/yaml-cpp/$(YAML_CPP_VERSION)
 
-yaml_cpp_DIR_linux_x86_64  =$(YAML_CPP_PATH)/rhel6-x86_64
-yaml_cpp_DIR_linuxRT_x86_64=$(YAML_CPP_PATH)/buildroot-2015.02-x86_64
+yaml_cpp_DIR_default=$(YAML_CPP_PATH)/$(TARCH)
+
 
 # CPSW
-CPSW_VERSION = R3.5.4
-CPSW_PATH    = /afs/slac/g/lcls/package/cpsw/framework/$(CPSW_VERSION)
+#
+CPSW_VERSION         = R3.5.4
+CPSW_PATH            = $(PACKAGE_TOP)/cpsw/framework/$(CPSW_VERSION)
 
-cpsw_DIR_linux_x86_64 = $(CPSW_PATH)/rhel6-x86_64
-cpsw_DIR_linuxRT_x86_64 = $(CPSW_PATH)/buildroot-2015.02-x86_64
+cpsw_DIR_default=$(CPSW_PATH)/$(TARCH)
 
+# EASYLOGGINGPP
+#
 EASYLOGGINGPP_VERSION=easyloggingpp-8.91
 EASYLOGGINGPP_PATH=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)
 easyloggingppinc_DIR=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)
-
-#easyloggingpp_DIR_linux_x86_64=$(EASYLOGGINGPP_PATH)
-#easyloggingpp_DIR_linuxRT_x86_64=$(EASYLOGGINGPP_PATH)
 
 # Whether to build static libraries (YES/NO)
 WITH_STATIC_LIBRARIES_default=YES
 # Whether to build shared libraries (YES/NO)
 WITH_SHARED_LIBRARIES_default=YES
 
-# Whether to build the python wrapper (this requires boost/python and python >= 2.7).
-# The choice may be target specific, e.g.,
-#
-#WITH_PYCPSW_default   = NO
-# WITH_PYCPSW_host    = YES
-#
-# You may also have to set boost_DIR_<arch> or boostinc_DIR_<arch>
-# and py_DIR_<arch> or pyinc_DIR_<arch> (see above)
-
 # Define an install location
-# INSTALL_DIR=/usr/local
-INSTALL_DIR=/afs/slac.stanford.edu/u/cd/lpiccoli/top/central_node_engine
+INSTALL_DIR=../
