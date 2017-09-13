@@ -113,7 +113,7 @@ cpsw_DIR_default=$(CPSW_PATH)/$(TARCH)
 #
 EASYLOGGINGPP_VERSION=easyloggingpp-8.91
 EASYLOGGINGPP_PATH=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)
-easyloggingppinc_DIR=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)
+easyloggingpp_DIR_default=$(PACKAGE_TOP)/easylogging/$(EASYLOGGINGPP_VERSION)
 
 # Whether to build static libraries (YES/NO)
 WITH_STATIC_LIBRARIES_default=YES

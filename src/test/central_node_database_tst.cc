@@ -11,7 +11,7 @@
 #include <log.h>
 
 using boost::shared_ptr;
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 #endif 
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
   shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb());
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");

@@ -7,6 +7,18 @@ include $(CENTRAL_NODE_ENGINE_DIR)/defs.mak
 STATIC_LIBRARIES_YES+=
 SHARED_LIBRARIES_YES+=
 
+#rate_tst_SRCS       = rate_tst.cc
+#rate_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
+#TESTPROGRAMS            += rate_tst
+
+#rate2_tst_SRCS       = rate2_tst.cc
+#rate2_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
+#TESTPROGRAMS            += rate2_tst
+
+rateFirmware_tst_SRCS       = rateFirmware_tst.cc
+rateFirmware_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS            += rateFirmware_tst
+
 central_node_database_tst_SRCS       = central_node_database_tst.cc
 central_node_database_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS            += central_node_database_tst

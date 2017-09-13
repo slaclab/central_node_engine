@@ -14,7 +14,7 @@
 //#include <log.h>
 #include <log_wrapper.h>
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 #endif 
 using boost::shared_ptr;
@@ -29,10 +29,14 @@ static void usage(const char *nm) {
 #endif
   std::cerr << "       -v          :  verbose output" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
+  std::cerr << "       -c          :  clear firmware - disable MPS" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
 void intHandler(int) {
+  Firmware::getInstance().softwareDisable();
+  Firmware::getInstance().disable();
+
   exit(0);
 }
 
@@ -41,10 +45,11 @@ int main(int argc, char **argv) {
   std::string fwFileName = "";
   bool verbose = false;
   bool trace = false;
+  bool clear = false;
 
   signal(SIGINT, intHandler);
   
-  for (int opt; (opt = getopt(argc, argv, "tvhf:w:")) > 0;) {
+  for (int opt; (opt = getopt(argc, argv, "tvhf:w:c")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
     case 'f' :
@@ -58,6 +63,9 @@ int main(int argc, char **argv) {
       break;
     case 't':
       trace = true;
+      break;
+    case 'c':
+      clear = true;
       break;
     case 'h': usage(argv[0]); return 0;
     default:
@@ -79,15 +87,33 @@ int main(int argc, char **argv) {
     return 1;
   }
   Firmware::getInstance().loadConfig(fwFileName);
+
+  if (clear) {
+    std::cout << &(Firmware::getInstance());
+  }
+
+  Firmware::getInstance().softwareClear();
+  Firmware::getInstance().setSoftwareEnable(false);
+  Firmware::getInstance().setEnable(false);
+  
+  if (clear) {
+    std::cout << &(Firmware::getInstance());
+
+    return 0;
+  }
 #endif
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
   }
 #endif
+
+  //  History::getInstance().startSenderThread();
+
+  //  sleep(5);
 
   try {
     if (Engine::getInstance().loadConfig(mpsFileName) != 0) {
@@ -99,12 +125,27 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  History::getInstance().startSenderThread();
-  Engine::getInstance().startUpdateThread();
+  Firmware::getInstance().enable();
+  Firmware::getInstance().softwareClear();
+  Firmware::getInstance().softwareEnable();
 
-  while(1) {
-    sleep(100);
-  };
+  std::cout << "Streaming stream for 10 seconds ..." << std::endl;
+  Engine::getInstance().startUpdateThread();
+  sleep(10);
+
+  Firmware::getInstance().setSoftwareEnable(false);
+  Engine::getInstance().getCurrentDb()->showInfo();
+  std::cout << "Stopping stream for 10 seconds ..." << std::endl;
+  sleep(10);
+  Engine::getInstance().getCurrentDb()->showInfo();
+  std::cout << "Resuming stream for 10 seconds ..." << std::endl;
+  Firmware::getInstance().setSoftwareEnable(true);
+  sleep(10);
+  Engine::getInstance().threadExit();
+  Firmware::getInstance().setSoftwareEnable(false);
+  Engine::getInstance().getCurrentDb()->showInfo();
+
+  Engine::getInstance().threadJoin();
 
   std::cout << "Done." << std::endl;
 

@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");

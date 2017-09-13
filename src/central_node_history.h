@@ -26,6 +26,8 @@ class History {
   struct sockaddr_in serveraddr;
 
  public:
+  bool enabled;
+
   void startSenderThread();
 
   int log(MessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);

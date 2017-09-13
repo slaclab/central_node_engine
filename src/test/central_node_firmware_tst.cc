@@ -20,9 +20,7 @@ static void usage(const char *nm) {
   std::cerr << "Usage: " << nm << " -f <file> -i <file>" << std::endl;
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
   std::cerr << "       -w <file>   :  central node firmware YAML config file" << std::endl;
-  std::cerr << "       -r <n>      :  number evaluation cycles" << std::endl;
   std::cerr << "       -v          :  verbose output" << std::endl;
-  std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
@@ -71,7 +69,7 @@ public:
     }
     uint32_t appFwConfig[APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4];
     
-    for (int appId = 0; appId < 2; ++appId) {
+    for (uint32_t appId = 0; appId < 2; ++appId) {
       try {
 	Firmware::getInstance()._configSV[0]->getVal(&appFwConfig[appId], APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4);
       } catch (BadStatusError &e) {
@@ -81,7 +79,7 @@ public:
 
       uint32_t *appConfig = reinterpret_cast<uint32_t *>(Engine::getInstance().mpsDb->fastConfigurationBuffer +
 						       0 * APPLICATION_CONFIG_BUFFER_SIZE_BYTES);
-    for (int i = 0; i < APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4; ++i) {
+      for (uint32_t i = 0; i < APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4; ++i) {
 	if (appConfig[i] != appFwConfig[i]) {
 	  std::cerr << "ERROR: Mismatch at word " << i << ". Found "
 		    << std::hex << appFwConfig[i] << ", expected "
@@ -102,10 +100,7 @@ public:
     if (verbose) {
       std::cout << "INFO: Enabling MPS";
     }
-    Firmware::getInstance().enable();
-    if (verbose) {
-      std::cout << ".";
-    }
+    /*
     Firmware::getInstance().softwareClear();
     if (verbose) {
       std::cout << ".";
@@ -114,8 +109,19 @@ public:
     if (verbose) {
       std::cout << ". done." << std::endl;
     }
+    Firmware::getInstance().enable();
+    if (verbose) {
+      std::cout << ".";
+    }
+    */
     Engine::getInstance().startUpdateThread();
+    for (int i = 0; i < 100; ++i) {
+        // heartBeat->setVal((uint64_t)(hb^=1));
+        usleep(500000);
+    }
+
     Firmware::getInstance().softwareDisable();
+    return 0;
   }
 
 protected:
@@ -128,8 +134,6 @@ int main(int argc, char **argv) {
   std::string inputFileName = "";
   std::string analogFileName = "";
   bool verbose = false;
-  bool trace = false;
-  int repeat = 1;
   
   for (int opt; (opt = getopt(argc, argv, "vhf:w:")) > 0;) {
     switch (opt) {
@@ -138,6 +142,9 @@ int main(int argc, char **argv) {
       break;
     case 'w':
       fwFileName = optarg;
+#ifndef FW_ENABLED
+      std::cout << "Library compiled without -DFW_ENABLED option" << std::endl;
+#endif
       break;
     case 'v':
       verbose = true;
@@ -171,7 +178,8 @@ int main(int argc, char **argv) {
     return -1;
   };
 
-  t.getUpdates();
+  // Use the rate2_tst to test updates
+  //  t.getUpdates();
 
   std::cout << "Done." << std::endl;
 

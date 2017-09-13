@@ -9,7 +9,7 @@
 #include <sstream>
 #include <netdb.h> 
 
-History::History() {
+History::History() : enabled (true) {
 }
 
 void History::startSenderThread() {
@@ -43,15 +43,26 @@ void History::startSenderThread() {
 
   if (historyQueue == -1) {
     std::stringstream errorStream;
-    errorStream << "ERROR: Failed to create MPS History Queue (errno="
+    errorStream << "WARN: Failed to create MPS History Queue (errno="
 		<< errno << ")";
     perror("HistoryQueue");
-    throw(CentralNodeException(errorStream.str()));
+    enabled = false;
+    std::cerr << errorStream.str() << ", proceeding without MPS history." << std::endl;
+    //    throw(CentralNodeException(errorStream.str()));
   }
 
-  if (pthread_create(&_senderThread, 0, History::senderThread, 0)) {
-    throw(CentralNodeException("ERROR: Failed to start message history sender thread"));
+  if (enabled) {
+    if (pthread_create(&_senderThread, 0, History::senderThread, 0)) {
+      //      throw(CentralNodeException("ERROR: Failed to start message history sender thread"));
+      std::cerr << "ERROR: Failed to start message history sender thread" 
+		<< ", proceeding without MPS history." << std::endl;
+      enabled = false;
+    }
+    else {
+      std::cout << "INFO: MPS History sender ready" << std::endl;
+    }
   }
+
 }
 
 int History::log(MessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux) {
@@ -89,6 +100,10 @@ int History::logBypassValue(uint32_t id, uint32_t oldValue, uint32_t newValue) {
 }
 
 int History::add(Message &message) {
+  if (!enabled) {
+    return 1;
+  }
+
   int size=sizeof(Message);// - sizeof(int32_t);
   int n = mq_send(historyQueue, reinterpret_cast<char *>(&message), size, 0);
   if (n != 0) {
@@ -102,32 +117,41 @@ int History::add(Message &message) {
 }
 
 int History::send(Message &message) {
+  if (!enabled) {
+    return 1;
+  }
+
   int n = sendto(sock, &message, sizeof(Message), 0,
 		 reinterpret_cast<struct sockaddr *>(&serveraddr), serverlen);
   if (n != sizeof(Message)) {
     perror("HistorySend");
     std::cerr << "ERROR: Failed to send history message (returned " << n << ")" << std::endl;
   }
+  
+  return 0;
 }
 
 void *History::senderThread(void *arg) {
-  Message message;
-  unsigned int priority;
+  if (History::getInstance().enabled) {
+    Message message;
+    unsigned int priority;
 
-  std::cout << "INFO: History sender thread ready." << std::endl;
+    std::cout << "INFO: History sender thread ready." << std::endl;
 
-  while (true) {
-    int n = mq_receive(History::getInstance().historyQueue, reinterpret_cast<char *>(&message),
-		       sizeof(Message), &priority);
-    if (n == sizeof(Message)) {
-      History::getInstance().send(message);
-    }
-    else {
-      if (n == -1 && errno != EAGAIN) {
-	perror("mq_receive");
+    while (true) {
+      int n = mq_receive(History::getInstance().historyQueue, reinterpret_cast<char *>(&message),
+			 sizeof(Message), &priority);
+      if (n == sizeof(Message)) {
+	History::getInstance().send(message);
       }
-      usleep(100);
-      //sleep(1);
+      else {
+	if (n == -1 && errno != EAGAIN) {
+	  perror("mq_receive");
+	}
+	usleep(100);
+	//sleep(1);
+      }
     }
   }
+  return NULL;
 }

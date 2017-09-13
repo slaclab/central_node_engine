@@ -5,28 +5,51 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sched.h>
+#include <sys/mman.h>
 
 #include <log.h>
 #include <log_wrapper.h>
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *engineLogger;
 #endif 
 
+pthread_mutex_t Engine::_engineMutex;
+pthread_cond_t Engine::_engineCondition;
+bool Engine::_evaluate;
+bool Engine::_exitThread;
+
 Engine::Engine() :
-  checkFaultTime(5, "Evaluation time"),
-  initialized(false) {
-#ifdef LOG_ENABLED
+  _initialized(false),
+  checkFaultTime(5, "Evaluation time") {
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   engineLogger = Loggers::getLogger("ENGINE");
   LOG_TRACE("ENGINE", "Created Engine");
 #endif
-  //  MpsDb *db = new MpsDb(); // TEMP
-  //  mpsDb = shared_ptr<MpsDb>(db); // TEMP
-  //newDb();
+
+  Engine::_evaluate = false;
+  Engine::_exitThread = false;
+  int ret = pthread_mutex_init(&Engine::_engineMutex, NULL);
+  if (0 != ret) {
+    throw(DbException("ERROR: Engine::Engine() failed to initialize engine mutex."));
+  }
+  ret = pthread_cond_init(&Engine::_engineCondition, NULL);
+  if (0 != ret) {
+    throw(DbException("ERROR: Engine::Engine() failed to initialize engine condition variable."));
+  }
+
+  // Lock memory
+  if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
+    perror("mlockall failed");
+    std::cerr << "WARN: Engine::Engine() mlockall failed." << std::endl;
+  }
 }
 
 Engine::~Engine() {
+#if defined(LOG_ENABLED)
+  //  Firmware::getInstance().showStats();
+#endif
   checkFaultTime.show();
 }
 
@@ -44,6 +67,10 @@ void Engine::newDb() {
 }
 
 int Engine::loadConfig(std::string yamlFileName) {
+  pthread_mutex_lock(&_engineMutex);
+
+  _evaluate = false;
+
   MpsDb *db = new MpsDb();
   mpsDb = shared_ptr<MpsDb>(db);
 
@@ -54,6 +81,7 @@ int Engine::loadConfig(std::string yamlFileName) {
     errorStream << "ERROR: Failed to load yaml database ("
 		<< yamlFileName << ")";
     mpsDb->unlock();
+    pthread_mutex_unlock(&_engineMutex);
     throw(EngineException(errorStream.str()));
   }
 
@@ -72,6 +100,7 @@ int Engine::loadConfig(std::string yamlFileName) {
     mpsDb->configure();
   } catch (DbException e) {
     delete db;
+    pthread_mutex_unlock(&_engineMutex);
     throw e;
   }
 
@@ -101,7 +130,11 @@ int Engine::loadConfig(std::string yamlFileName) {
   LOG_TRACE("ENGINE", "Lowest beam class found: " << lowestBeamClass->number);
   LOG_TRACE("ENGINE", "Highest beam class found: " << highestBeamClass->number);
 
-  initialized = true;
+  _initialized = true;
+
+  _evaluate = true;
+  pthread_cond_signal(&_engineCondition);
+  pthread_mutex_unlock(&_engineMutex);
 
   return 0;
 }
@@ -111,7 +144,7 @@ void Engine::updateInputs() {
 }
 
 bool Engine::isInitialized() {
-  return initialized;
+  return _initialized;
 }
 
 /**
@@ -381,6 +414,10 @@ int Engine::checkFaults() {
 }
 
 void Engine::showFaults() {
+  if (!isInitialized()) {
+    return;
+  }
+
   // Print current faults
   bool faults = false;
 
@@ -408,8 +445,13 @@ void Engine::showFaults() {
 }
 
 void Engine::showStats() {
-  std::cout << ">> Engine Stats:" << std::endl;
-  checkFaultTime.show();
+  if (isInitialized()) {
+    std::cout << ">> Engine Stats:" << std::endl;
+    checkFaultTime.show();
+  }
+  else {
+    std::cout << "MPS not initialized - no database" << std::endl;
+  }
 }
 
 void Engine::showFirmware() {
@@ -417,18 +459,35 @@ void Engine::showFirmware() {
 }
 
 void Engine::showMitigationDevices() {
+  if (!isInitialized()) {
+    std::cout << "MPS not initialized - no database" << std::endl;
+    return;
+  }
+
   std::cout << ">> Mitigation Devices: " << std::endl;
   mpsDb->lock();
   for (DbMitigationDeviceMap::iterator mitigation = mpsDb->mitigationDevices->begin();
        mitigation != mpsDb->mitigationDevices->end(); ++mitigation) {
-    std::cout << (*mitigation).second->name << ":\t Allowed "
-	      << (*mitigation).second->allowedBeamClass->number << "/ Tentative "
-	      << (*mitigation).second->tentativeBeamClass->number << std::endl;
+    std::cout << (*mitigation).second->name;
+    if ((*mitigation).second->allowedBeamClass &&
+	(*mitigation).second->tentativeBeamClass) {
+      std::cout << ":\t Allowed " << (*mitigation).second->allowedBeamClass->number
+		<< "/ Tentative " << (*mitigation).second->tentativeBeamClass->number
+		<< std::endl;
+    }
+    else {
+      std::cout << ":\t ERROR -> no beam class assigned (is MPS disabled?)" << std::endl;
+    }
   }
   mpsDb->unlock();
 }
 
 void Engine::showDeviceInputs() {
+  if (!isInitialized()) {
+    std::cout << "MPS not initialized - no database" << std::endl;
+    return;
+  }
+
   std::cout << "Device Inputs: " << std::endl;
   mpsDb->lock();
   for (DbDeviceInputMap::iterator input = mpsDb->deviceInputs->begin();
@@ -438,12 +497,49 @@ void Engine::showDeviceInputs() {
   mpsDb->unlock();
 }
 
+void Engine::showDatabaseInfo() {
+  if (!isInitialized()) {
+    std::cout << "MPS not initialized - no database" << std::endl;
+    return;
+  }
+  mpsDb->showInfo();
+}
+
 void Engine::startUpdateThread() {
   if (pthread_create(&_engineThread, 0, Engine::engineThread, 0)) {
     throw(EngineException("ERROR: Failed to start update thread"));
   }
 }
 
+void Engine::startUpdateThread2() {
+  if (pthread_create(&_engineThread2, 0, Engine::engineThread2, 0)) {
+    throw(EngineException("ERROR: Failed to start update thread (2)"));
+  }
+}
+
+#define MAX_SAFE_STACK (8*1024) /* The maximum stack size which is
+                                   guaranteed safe to access without
+                                   faulting */
+
+void stack_prefault(void) {
+    unsigned char dummy[MAX_SAFE_STACK];
+
+    memset(dummy, 0, MAX_SAFE_STACK);
+    return;
+}
+
+void Engine::threadExit() {
+  _exitThread = true;
+}
+
+void Engine::threadJoin() {
+  pthread_join(_engineThread, NULL);
+}
+ 
+void Engine::threadJoin2() {
+  pthread_join(_engineThread2, NULL);
+}
+ 
 void *Engine::engineThread(void *arg) {
   struct sched_param  param;
 
@@ -452,21 +548,92 @@ void *Engine::engineThread(void *arg) {
   param.sched_priority = 49;
   if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
     perror("Set priority");
-    std::cerr << "ERROR: Setting thread RT priority failed." << std::endl;
+    std::cerr << "WARN: Setting thread RT priority failed." << std::endl;
     //    exit(-1);
   }
 
-  while(true) {
-#ifndef FW_ENABLED
-    //    Firmware::getInstance().heartbeat();
+  // Lock memory
+  if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
+    perror("mlockall failed");
+    std::cerr << "WARN: mlockall failed." << std::endl;
+  }
+
+  // Pre-fault our stack
+  stack_prefault();
+
+  bool done = false;
+  while(!done) {
+    pthread_mutex_lock(&_engineMutex);
+
+    Firmware::getInstance().heartbeat();
+
+    if (_evaluate) {
+      if (Engine::getInstance().mpsDb) {
+	Engine::getInstance().mpsDb->updateInputs();
+	Engine::getInstance().checkFaults();
+	Engine::getInstance().mpsDb->mitigate();
+      }
+    }
+    else {
+      LOG_TRACE("ENGINE", "EngineThread: waiting...");
+      std::cout << "EngineThread: Stopped..." << std::endl;
+      pthread_cond_wait(&_engineCondition, &_engineMutex);
+      LOG_TRACE("ENGINE", "EngineThread: Resuming...");
+      std::cout << "EngineThread: Resuming..." << std::endl;
+
+      Firmware::getInstance().enable();
+      Firmware::getInstance().softwareClear();
+      Firmware::getInstance().softwareEnable();
+
+      std::cout << &(Firmware::getInstance()) << std::endl;
+    }
+
+    if (_exitThread) {
+      done = true;
+    }
+
+    pthread_mutex_unlock(&_engineMutex);
+  }
+
+  std::cout << "EngineThread: Exiting..." << std::endl;
+  pthread_exit(0);
+}
+
+void *Engine::engineThread2(void *arg) {
+  struct sched_param  param;
+
+  std::cout << "Engine: update thread started." << std::endl;
+  // Declare as real time task
+  param.sched_priority = 49;
+  if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
+    perror("Set priority");
+    std::cerr << "WARN: Setting thread RT priority failed." << std::endl;
+    //    exit(-1);
+  }
+
+  // Lock memory
+  if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
+    perror("mlockall failed");
+    std::cerr << "WARN: mlockall failed." << std::endl;
+  }
+
+  // Pre-fault our stack
+  stack_prefault();
+
+  while(_evaluate) {
+    pthread_mutex_lock(&_engineMutex);
+
+    Firmware::getInstance().heartbeat();
+
     if (Engine::getInstance().mpsDb) {
       Engine::getInstance().mpsDb->updateInputs();
       Engine::getInstance().checkFaults();
       Engine::getInstance().mpsDb->mitigate();
     }
-    sleep(1);
-#else
-    sleep(1);
-#endif
+
+    pthread_mutex_unlock(&_engineMutex);
   }
+
+  std::cout << "EngineThread: Exiting..." << std::endl;
+  pthread_exit(0);
 }

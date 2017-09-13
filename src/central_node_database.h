@@ -503,11 +503,11 @@ class DbAnalogDevice : public DbEntry {
 
     if (analogDevice->evaluation == FAST_EVALUATION) {
       os << "; destinationMasks[";
-      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+      for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
 	os << std::hex << analogDevice->fastDestinationMask[i] << ", " << std::dec;
       }
       os << "]; powerClasses[";
-      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+      for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
 	os << analogDevice->fastPowerClass[i] << ", ";
       }
       os << "]";
@@ -1044,7 +1044,7 @@ class MpsDb {
   TimeAverage inputUpdateTime;
 
   /**
-   * Big lock - prevent multiple database access
+   * Mutex to prevent multiple database access
    */
   pthread_mutex_t mutex;
 
@@ -1092,6 +1092,7 @@ class MpsDb {
   void showFaults();
   void showFault(DbFaultPtr fault);
   void showMitigation();
+  void showInfo();
 
   void writeFirmwareConfiguration();
   void updateInputs();

@@ -11,7 +11,7 @@
 //#include <log.h>
 #include <log_wrapper.h>
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 #endif 
 using boost::shared_ptr;
@@ -175,7 +175,9 @@ int main(int argc, char **argv) {
   std::string inputFileName = "";
   std::string analogFileName = "";
   bool verbose = false;
+#ifdef LOG_ENABLED
   bool trace = false;
+#endif
   int repeat = 1;
   
   for (int opt; (opt = getopt(argc, argv, "tvhf:i:a:r:")) > 0;) {
@@ -193,9 +195,11 @@ int main(int argc, char **argv) {
     case 'v':
       verbose = true;
       break;
+#ifdef LOG_ENABLED
     case 't':
       trace = true;
       break;
+#endif
     case 'r':
       repeat = atoi(optarg);
       break;
@@ -218,7 +222,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");

@@ -12,7 +12,7 @@
 
 #include <log_wrapper.h>
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *databaseLogger ;
 #endif
@@ -36,7 +36,7 @@ void DbDeviceInput::update(uint32_t v) {
 void DbDeviceInput::update() {
   uint32_t wasLow;
   uint32_t wasHigh;
-  uint32_t newValue;
+  uint32_t newValue = 0;
   
   if (applicationUpdateBuffer) {
     previousValue = value;
@@ -55,10 +55,10 @@ void DbDeviceInput::update() {
       value = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
     }
     else if (wasLow > 0) {
-      newValue = 1;
+      newValue = 0;
     }
     else {
-      newValue = 0;
+      newValue = 1;
     }
 
     value = newValue;
@@ -80,11 +80,11 @@ void DbDeviceInput::update() {
 DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
 				   value(0), previousValue(0), 
 				   invalidValueCount(0), bypassMask(0xFFFFFFFF) {
-  for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+  for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
   }
   
-  for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+  for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
     fastPowerClass[i] = 0;
   }
 }
@@ -99,7 +99,7 @@ void DbAnalogDevice::update(uint32_t v) {
   value = v;
   
   // Latch new value if this there is a threshold at fault
-  if (value | latchedValue != latchedValue) {
+  if ((value | latchedValue) != latchedValue) {
     latchedValue |= value;
   }
 }
@@ -117,13 +117,12 @@ void DbAnalogDevice::update() {
   uint32_t wasLow;
   uint32_t wasHigh;
   uint32_t newValue = 0;
-  uint32_t newLatchedValue = latchedValue;
   
   if (applicationUpdateBuffer) {
     previousValue = value;
 
     value = 0;
-    for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
+    for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
       wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
       //      std::cout << "INFO: Read wasLow=" << wasLow << " and wasHigh=" << wasHigh << " for analog channel "
@@ -266,14 +265,14 @@ void DbApplicationCard::writeDigitalConfiguration() {
 
 	// Write the destination mask (index 4 through 19)
 	offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
-	for (int i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
+	for (uint32_t i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
 	  applicationConfigBuffer->set(channelOffset + offset + i,
 				 ((*digitalDevice).second->fastDestinationMask >> i) & 0x01);
 	}
 
 	// Write the beam power class (index 0 through 3)
 	offset = DIGITAL_CHANNEL_POWER_CLASS_OFFSET;
-	for (int i = 0; i < POWER_CLASS_BIT_SIZE; ++i) {
+	for (uint32_t i = 0; i < POWER_CLASS_BIT_SIZE; ++i) {
 	  applicationConfigBuffer->set(channelOffset + offset + i,
 				 ((*digitalDevice).second->fastPowerClass >> i) & 0x01);
 	}
@@ -286,10 +285,6 @@ void DbApplicationCard::writeDigitalConfiguration() {
       }
     }
   }
-  // Print bitset in string format
-  //  std::cout << *applicationConfigBuffer << std::endl;
-
-  //  Firmware::getInstance().writeConfig(globalId);
 }
 
 // Analog input configuration (total size = 1152 bits):
@@ -329,9 +324,9 @@ void DbApplicationCard::writeAnalogConfiguration() {
       // Write power classes for each threshold bit
       uint32_t powerClassOffset = channelNumber *
 	ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * POWER_CLASS_BIT_SIZE;
-      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL *
+      for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL *
 	     ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
-	for (int j = 0; j < POWER_CLASS_BIT_SIZE; ++j) {
+	for (uint32_t j = 0; j < POWER_CLASS_BIT_SIZE; ++j) {
 	  applicationConfigBuffer->set(powerClassOffset + j,
 				 ((*analogDevice).second->fastPowerClass[i] >> j) & 0x01);
 	}
@@ -341,8 +336,8 @@ void DbApplicationCard::writeAnalogConfiguration() {
       // Write the destination mask for each integrator
       int offset = ANALOG_CHANNEL_DESTINATION_MASK_BASE +
 	channelNumber * ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * DESTINATION_MASK_BIT_SIZE;
-      for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
-	for (int j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) {
+      for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+	for (uint32_t j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) {
 	  applicationConfigBuffer->set(offset + j,
 				 ((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01);
 	}

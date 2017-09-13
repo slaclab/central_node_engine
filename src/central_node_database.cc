@@ -13,19 +13,19 @@
 #include <stdio.h>
 #include <log_wrapper.h>
 
-#ifdef LOG_ENABLED
-using namespace easyloggingpp;
-static Logger *databaseLogger;
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
+  using namespace easyloggingpp;
+  static Logger *databaseLogger;
 #endif 
 
 MpsDb::MpsDb() : inputUpdateTime(5, "Input update time"), _updateCounter(0) {
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
 
   int ret = pthread_mutex_init(&mutex, NULL);
   if (0 != ret) {
-    throw(DbException("ERROR: MpsDb::lock() failed to initialize mutex."));
+    throw(DbException("ERROR: MpsDb::MpsDb() failed to initialize mutex."));
   }
 }
 
@@ -57,9 +57,8 @@ void MpsDb::unlatchAll() {
 }
 
 /**
- * This method must be called after the input updates are read from
- * the central node firmware. It updates the status of all
- * digital/analog inputs.
+ * This method reads input states from the central node firmware
+ * and updates the status of all digital/analog inputs.
  */
 void MpsDb::updateInputs() {
   if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
@@ -85,7 +84,7 @@ void MpsDb::updateInputs() {
 void MpsDb::configureAllowedClasses() {
   LOG_TRACE("DATABASE", "Configure: AllowedClasses");
   std::stringstream errorStream;
-  int lowestBeamClassNumber = 100;
+  uint32_t lowestBeamClassNumber = 100;
   for (DbBeamClassMap::iterator it = beamClasses->begin();
        it != beamClasses->end(); ++it) {
     if ((*it).second->number < lowestBeamClassNumber) {
@@ -249,11 +248,11 @@ void MpsDb::configureFaultInputs() {
 	    // The destination masks for the thresholds for the same integrator
 	    // must be and'ed together.
 	    
-	    for (int i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+	    for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
 	      (*aDeviceIt).second->fastDestinationMask[i] = 0;
 	    }
 	    
-	    for (int i = 0;
+	    for (uint32_t i = 0;
 		 i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
 	      (*aDeviceIt).second->fastPowerClass[i] = 0xFF;
 	    }
@@ -271,7 +270,7 @@ void MpsDb::configureFaultInputs() {
 	      if (value & 0x00FF0000) integratorIndex = 2;
 	      if (value & 0xFF000000) integratorIndex = 3;
 
-	      int thresholdIndex = 0;
+	      uint32_t thresholdIndex = 0;
 	      bool isSet = false;
 	      while (!isSet) {
 		if (value & 0x01) {
@@ -303,7 +302,7 @@ void MpsDb::configureFaultInputs() {
 		}
 	      }
 	    }
-	    for (int i = 0;
+	    for (uint32_t i = 0;
 		 i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
 	      if ((*aDeviceIt).second->fastPowerClass[i] == 0xFF) {
 		(*aDeviceIt).second->fastPowerClass[i] = 0;
@@ -627,7 +626,7 @@ void MpsDb::configureMitigationDevices() {
 }
 
 void MpsDb::clearMitigationBuffer() {
-  for (int i = 0; i < NUM_DESTINATIONS / 8; ++i) {
+  for (uint32_t i = 0; i < NUM_DESTINATIONS / 8; ++i) {
     softwareMitigationBuffer[i] = 0;
   }
 }
@@ -653,6 +652,8 @@ void MpsDb::configure() {
 }
 
 void MpsDb::writeFirmwareConfiguration() {
+  // Write configuration for each application in the system
+  LOG_TRACE("DATABASE", "Writing config to firmware, num applications: " << applicationCards->size());
   int i = 0;
   for (DbApplicationCardMap::iterator card = applicationCards->begin();
        card != applicationCards->end(); ++card) {
@@ -663,13 +664,12 @@ void MpsDb::writeFirmwareConfiguration() {
     i++;
   }
 
-  // TODO: write timing checking parameters for beam classes
-  // These parameters are: beam intensity, integration time and min period
+  // Write the timing verifying parameters for each beam class
   uint32_t time[FW_NUM_BEAM_CLASSES];
   uint32_t period[FW_NUM_BEAM_CLASSES];
   uint32_t charge[FW_NUM_BEAM_CLASSES];
 
-  for (int i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
+  for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
     time[i] = 0;
     period[i] = 0;
     charge[i] = 0;
@@ -811,7 +811,7 @@ void MpsDb::showFaults() {
 }
 
 void MpsDb::showFastUpdateBuffer(uint32_t begin, uint32_t size) {
-  for (int address = begin; address < begin + size; ++address) {
+  for (uint32_t address = begin; address < begin + size; ++address) {
     if (address % 16 == 0) {
       std::cout << std::endl;
       std::cout << std::setw(5) << std::hex << address << std::dec << " ";
@@ -850,7 +850,7 @@ void MpsDb::showFault(DbFaultPtr fault) {
 	    std::cout << "WARNING: NO BYPASS INFO]";
 	  }
 	  else {
-	    for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
+	    for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
 	      if ((*analogDevice).second->bypass[i]->status == BYPASS_VALID) {
 		std::cout << "V";
 	      }
@@ -901,3 +901,14 @@ void MpsDb::showMitigation() {
   unlock();
 }
 
+void MpsDb::showInfo() {
+  lock();
+
+  std::cout << "Current database information:" << std::endl;
+  std::cout << "File: " << name << std::endl;
+  std::cout << "Update counter: " << _updateCounter << std::endl;
+  
+  inputUpdateTime.show();
+
+  unlock();
+}

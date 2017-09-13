@@ -77,6 +77,11 @@ CXXFLAGS+= $(USR_CXXFLAGS)
 CFLAGS  += $(OPT_CFLAGS)
 CFLAGS  += $(USR_CFLAGS)
 
+# Log can't be enabled when building for linuxRT
+#CXXFLAGS+= -DLOG_ENABLED
+#CXXFLAGS+= -DLOG_STDOUT
+CXXFLAGS+= -DFW_ENABLED
+
 LDFLAGS += $(USR_LDFLAGS)
 
 VPATH=$(SRCDIR)
@@ -89,7 +94,7 @@ RUN_OPTS=''
 
 # colon separated dirlist
 # Note: += adds a whitespace
-central_node_engineinc_DIRS=$(CENTRAL_NODE_ENGINE_DIR)$(addprefix :,$(cpswinc_DIR))$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))
+central_node_engineinc_DIRS=$(CENTRAL_NODE_ENGINE_DIR)$(addprefix :,$(cpswinc_DIR))$(addprefix :,$(easyloggingppinc_DIR))$(addprefix :,$(boostinc_DIR))$(addprefix :,$(yaml_cppinc_DIR))
 # colon separated dirlist
 central_node_enginelib_DIRS=$(addsuffix /O.$(TARCH),$(CENTRAL_NODE_ENGINE_DIR))$(addprefix :,$(boostlib_DIR))$(addprefix :,$(yaml_cpplib_DIR))
 

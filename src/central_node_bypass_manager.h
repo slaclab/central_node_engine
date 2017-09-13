@@ -30,6 +30,7 @@ class BypassManager {
   bool checkBypassQueueTop(time_t now);
 
   pthread_mutex_t mutex;
+  bool initialized;
   
  public:
   BypassManager();
@@ -42,6 +43,7 @@ class BypassManager {
   void setBypass(MpsDbPtr db, BypassType bypassType, uint32_t deviceId,
 		 uint32_t value, time_t bypassUntil, bool test = false);
   void printBypassQueue();
+  bool isInitialized();
   
   friend class BypassTest;
 };

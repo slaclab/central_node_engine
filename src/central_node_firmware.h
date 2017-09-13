@@ -34,6 +34,7 @@ class Firmware {
  private:
   Firmware();
   Firmware(Firmware const &);
+  ~Firmware();
   void operator=(Firmware const &);
   bool initialized;
 
@@ -53,13 +54,16 @@ class Firmware {
   ScalVal    _enableSV;
   ScalVal_RO _swLossErrorSV;
   ScalVal_RO _swLossCntSV;
+  ScalVal_RO _txClkCntSV; 
   ScalVal    _configSV[FW_NUM_APPLICATIONS];
   ScalVal    _swEnableSV;
   ScalVal    _swClearSV;
-  ScalVal    _beamIntTime;
-  ScalVal    _beamMinPeriod;
-  ScalVal    _beamIntCharge;
-  Stream     _updateStream;
+  ScalVal    _beamIntTimeSV;
+  ScalVal    _beamMinPeriodSV;
+  ScalVal    _beamIntChargeSV;
+  ScalVal_RO _beamFaultReasonSV;
+  ScalVal    _beamFaultEnSV;
+  Stream     _updateStreamSV;
 
   uint8_t _heartbeat;
 
@@ -78,8 +82,22 @@ class Firmware {
   void heartbeat();
   void softwareEnable();
   void softwareDisable();
+
+  void setEnable(bool enable);
+  void setSoftwareEnable(bool enable);
+  bool getEnable();
+  bool getSoftwareEnable();
+
   void softwareClear();
+  void enableTimingCheck();
+  void disableTimingCheck();
+  uint32_t getFaultReason();
+  void showStats();
   
+  uint8_t getSoftwareLossError();
+  uint32_t getSoftwareLossCount();
+  uint32_t getSoftwareClockCount();
+
   // size in bytes (not in uint32_t units)
   void writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size);
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
@@ -96,9 +114,20 @@ class Firmware {
     os << "FPGA version=" << firmware->fpgaVersion << std::endl;
     os << "Build stamp=\"" << firmware->buildStamp << "\"" << std::endl;
     os << "Git hash=\"" << firmware->gitHashString << "\"" << std::endl;
+
+    try {
+      uint32_t value;
+      firmware->_enableSV->getVal(&value);
+      os << "Enable=" << value << std::endl;
+      firmware->_swEnableSV->getVal(&value);
+      os << "Sw Enable=" << value << std::endl;
+    } catch (IOError &e) {
+      std::cout << "Exception Info: " << e.getInfo() << std::endl;
+      //      firmware->showStats();
+    }
+
     /*
     os << "Heartbeat=" << firmware->heartbeat << std::endl;
-    os << "Enable=" << firmware->enable << std::endl;
     os << "SW loss error=" << firmware->swLossError << std::endl;
     os << "SW loss count=" << firmware->swLossCnt << std::endl;
     */

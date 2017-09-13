@@ -8,13 +8,14 @@
 #include <central_node_exception.h>
 #include <log_wrapper.h>
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *bypassLogger;
 #endif
 
-BypassManager::BypassManager() {
-#ifdef LOG_ENABLED
+BypassManager::BypassManager() :
+  initialized(false) {
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   bypassLogger = Loggers::getLogger("BYPASS");
   LOG_TRACE("BYPASS", "Created BypassManager");
 #endif
@@ -23,6 +24,10 @@ BypassManager::BypassManager() {
     throw("ERROR: BypassManager::BypassManager() failed to init mutex.");
   }
 } 
+
+bool BypassManager::isInitialized() {
+  return initialized;
+}
 
 /**
  * This creates bypasses for all digital/analog inputs. Should be invoked
@@ -57,7 +62,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
   for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
        analogInput != db->analogDevices->end(); ++analogInput) {
     // Create one InputBypass for each threshold bit (max of 32 threshold bits)
-    for (int i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
+    for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       InputBypass *bypass = new InputBypass();
       bypass->id = bypassId;
       bypass->deviceId = (*analogInput).second->id;
@@ -147,6 +152,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   if (error) {
     throw(CentralNodeException(errorStream.str()));
   }
+
+  initialized = true;
 }
 
 /**
@@ -366,6 +373,10 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 }
 
 void BypassManager::printBypassQueue() {
+  if (!isInitialized()) {
+    std::cout << "MPS not initialized - no database" << std::endl;
+  }
+
   int ret = pthread_mutex_lock(&mutex);
   if (0 != ret) {
     throw("ERROR: BypassManager::printBypassQueue() failed to lock mutex.");

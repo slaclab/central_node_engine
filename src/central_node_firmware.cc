@@ -4,7 +4,7 @@
 #include <log_wrapper.h>
 #include <stdio.h>
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *firmwareLogger;
 #endif 
@@ -12,12 +12,18 @@ static Logger *firmwareLogger;
 #ifdef FW_ENABLED
 Firmware::Firmware() :
   initialized(false), _heartbeat(0) {
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   firmwareLogger = Loggers::getLogger("FIRMWARE");
   LOG_TRACE("FIRMWARE", "Created Firmware");
 #endif
 }
 
+Firmware::~Firmware() {
+  setSoftwareEnable(false);
+  setEnable(false);
+}
+
+// TODO: separate yaml loading and scalval creation into two funcs - so can call yamlloader
 int Firmware::loadConfig(std::string yamlFileName) {
   uint8_t gitHash[21];
 
@@ -61,20 +67,29 @@ int Firmware::loadConfig(std::string yamlFileName) {
     name = base + mps + core  + "/SoftwareLossCnt";
     _swLossCntSV = IScalVal_RO::create(_path->findByName(name.c_str()));
 
+    name = base + mps + core + "/SoftwareBwidthCnt";
+    _txClkCntSV = IScalVal_RO::create (_path->findByName(name.c_str()));
+
     name = base + mps + core  + "/BeamIntTime";
-    _beamIntTime = IScalVal::create(_path->findByName(name.c_str()));
+    _beamIntTimeSV = IScalVal::create(_path->findByName(name.c_str()));
 
     name = base + mps + core  + "/BeamMinPeriod";
-    _beamMinPeriod = IScalVal::create(_path->findByName(name.c_str()));
+    _beamMinPeriodSV = IScalVal::create(_path->findByName(name.c_str()));
 
     name = base + mps + core  + "/BeamIntCharge";
-    _beamIntCharge = IScalVal::create(_path->findByName(name.c_str()));
+    _beamIntChargeSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/BeamFaultReason";
+    _beamFaultReasonSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/BeamFaultEn";
+    _beamFaultEnSV = IScalVal::create(_path->findByName(name.c_str()));
 
     name = "/Stream0";
-    _updateStream = IStream::create(_path->findByName(name.c_str()));
+    _updateStreamSV = IStream::create(_path->findByName(name.c_str()));
 
     // ScalVal for configuration
-    for (int i = 0; i < FW_NUM_APPLICATIONS; ++i) {
+    for (uint32_t i = 0; i < FW_NUM_APPLICATIONS; ++i) {
       std::stringstream appId;
       appId << "/AppId" << i;
       name = base + mps + config + appId.str();
@@ -84,13 +99,13 @@ int Firmware::loadConfig(std::string yamlFileName) {
     throw(CentralNodeException("ERROR: Failed to find " + name));
   }
 
-  if (_beamIntTime->getNelms() != FW_NUM_BEAM_CLASSES) {
+  if (_beamIntTimeSV->getNelms() != FW_NUM_BEAM_CLASSES) {
     throw(CentralNodeException("ERROR: Invalid number of beam classes (BeamIntTime)"));
   }
-  if (_beamMinPeriod->getNelms() != FW_NUM_BEAM_CLASSES) {
+  if (_beamMinPeriodSV->getNelms() != FW_NUM_BEAM_CLASSES) {
     throw(CentralNodeException("ERROR: Invalid number of beam classes (BeamMinPeriod)"));
   }
-  if (_beamIntCharge->getNelms() != FW_NUM_BEAM_CLASSES) {
+  if (_beamIntChargeSV->getNelms() != FW_NUM_BEAM_CLASSES) {
     throw(CentralNodeException("ERROR: Invalid number of beam classes (BeamIntCharge)"));
   }
 
@@ -119,20 +134,114 @@ void Firmware::disable() {
   _enableSV->setVal((uint64_t) 0);
 }
 
+void Firmware::setEnable(bool enable) {
+  try {
+    uint64_t value = 0;
+    if (enable) value = 1;
+    _enableSV->setVal(value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on setEnable()" << std::endl;
+  }
+}
+
+bool Firmware::getEnable() {
+  uint64_t value;
+  try {
+    _enableSV->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getEnable()" << std::endl;
+    return false;
+  }
+
+  if (value == 0) return false; else return true;
+}
+
+uint32_t Firmware::getSoftwareClockCount() {
+  uint32_t value = 0;
+  try {
+    _txClkCntSV->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getSoftwareClockCount()" << std::endl;
+    return 0;
+  }
+  return value;
+}
+
+uint8_t Firmware::getSoftwareLossError() {
+  uint8_t value = 0;
+  try {
+    _swLossErrorSV->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getSoftwareLossError()" << std::endl;
+    return 0;
+  }
+  return value;
+}
+
+uint32_t Firmware::getSoftwareLossCount() {
+  uint32_t value = 0;
+  try {
+    _swLossCntSV->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getSoftwareLossCount()" << std::endl;
+    return 0;
+  }
+  return value;
+}
+
+void Firmware::enableTimingCheck() {
+  try {
+    _beamFaultEnSV->setVal((uint64_t) 1);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on enableTimingCheck" << std::endl;
+  }
+}
+
+void Firmware::disableTimingCheck() {
+  try {
+    _beamFaultEnSV->setVal((uint64_t) 0);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on disableTimingCheck" << std::endl;
+  }
+}
+
+
 void Firmware::softwareEnable() {
   try {
     _swEnableSV->setVal((uint64_t) 1);
   } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on softwareEnable" << std::endl;
+    std::cerr << "ERROR: CPSW I/O Error on softwareEnable()" << std::endl;
   }
 }
 
 void Firmware::softwareDisable() {
   try {
-    _swEnableSV->setVal((uint64_t) 1);
+    _swEnableSV->setVal((uint64_t) 0);
   } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on softwareDisable: " << e.getInfo() << std::endl;
+    std::cerr << "ERROR: CPSW I/O Error on softwareDisable(): " << e.getInfo() << std::endl;
   }
+}
+
+void Firmware::setSoftwareEnable(bool enable) {
+  try {
+    uint64_t value = 0;
+    if (enable) value = 1;
+    _swEnableSV->setVal(value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on setSoftwareEnable()" << std::endl;
+  }
+}
+
+bool Firmware::getSoftwareEnable() {
+  uint64_t value;
+  try {
+    _swEnableSV->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getSoftwareEnable()" << std::endl;
+    return false;
+  }
+
+  if (value == 0) return false; else return true;
 }
 
 void Firmware::softwareClear() {
@@ -145,6 +254,15 @@ void Firmware::softwareClear() {
 
 }
 
+uint32_t Firmware::getFaultReason() {
+  uint32_t reason;
+  try {
+    _beamFaultReasonSV->getVal(&reason);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getFaultReason()" << std::endl;
+  }
+}
+
 void Firmware::heartbeat() {
   _heartbeatSV->setVal((uint64_t)(_heartbeat^=1));
 }
@@ -155,27 +273,48 @@ void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
 
   if (appNumber < FW_NUM_APPLICATIONS) {
     try {
+      LOG_TRACE("FIRMWARE", "Writing configuration for application number #" << appNumber << " data size=" << size32);
       _configSV[appNumber]->setVal(config32, size32);
     } catch (InvalidArgError &e) {
       throw(CentralNodeException("ERROR: Failed writing app configuration (InvalidArgError)."));
     } catch (BadStatusError &e) {
-      std::cout << "Info: " << e.getInfo() << std::endl;
+      std::cout << "Exception Info: " << e.getInfo() << std::endl;
       throw(CentralNodeException("ERROR: Failed writing app configuration (BadStatusError)"));
+    } catch (IOError &e) {
+      std::cout << "Exception Info: " << e.getInfo() << std::endl;
+      showStats();
+      throw(CentralNodeException("ERROR: Failed writing app configuration (IOError)"));
     }
   }
 }
 
 void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {
-  _beamIntTime->setVal(time, FW_NUM_BEAM_CLASSES);
-  _beamMinPeriod->setVal(period, FW_NUM_BEAM_CLASSES);
-  _beamIntCharge->setVal(charge, FW_NUM_BEAM_CLASSES);
+  _beamIntTimeSV->setVal(time, FW_NUM_BEAM_CLASSES);
+  _beamMinPeriodSV->setVal(period, FW_NUM_BEAM_CLASSES);
+  _beamIntChargeSV->setVal(charge, FW_NUM_BEAM_CLASSES);
 }
 
 uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
-  return _updateStream->read(buffer, size, CTimeout(timeout));
+  uint64_t val = 0;
+  try {
+    val = _updateStreamSV->read(buffer, size, CTimeout(timeout));
+  } catch (IOError &e) {
+    std::cout << "Failed to read update stream exception: " << e.getInfo() << std::endl;
+    val = 0;
+  }
+  return val;
 }
 
 void Firmware::writeMitigation(uint32_t *mitigation) {
+}
+
+void Firmware::showStats() {
+  Children rootsChildren = _path->origin()->getChildren();
+  std::vector<Child>::const_iterator it;
+
+  for ( it = rootsChildren->begin(); it != rootsChildren->end(); ++it ) {
+    (*it)->dump();
+  }
 }
 
 #else
@@ -231,14 +370,61 @@ Firmware::Firmware() {
   std::cout <<  ">>> Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
 };
 
-int Firmware::loadConfig(std::string yamlFileName) {return 0;};
-void Firmware::enable() {};
-void Firmware::disable() {};
-void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {};
-void Firmware::softwareEnable() {};
-void Firmware::softwareDisable() {};
-void Firmware::softwareClear() {};
-void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {}
+int Firmware::loadConfig(std::string yamlFileName) {
+  std::cout << ">>> Firmware::loadConfig(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+  return 0;
+};
+
+void Firmware::enable() {
+  std::cout << ">>> Firmware::enable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+};
+
+void Firmware::disable() {
+  std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+};
+
+void Firmware::setEnable(bool enable) {
+  std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+}
+
+void Firmware::setSoftwareEnable(bool enable) {
+  std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+}
+
+void Firmware::getEnable() {
+  std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+  return false;
+}
+
+
+void Firmware::getSoftwareEnable() {
+  std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+  return false;
+}
+
+void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
+  std::cout << ">>> Firmware::writeConfig(" << appNumber << "): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+};
+
+void Firmware::softwareEnable()  {
+  std::cout << ">>>  Firmware::softwareEnable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+};
+
+void Firmware::softwareDisable()  {
+  std::cout << ">>> Firmware::softwareDisable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+};
+
+void Firmware::softwareClear() {
+  std::cout << ">>>  Firmware::softwareClear(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+};
+
+void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {
+  std::cout << ">>> Firmware::writeTimingChecking(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+};
+
+void Firmware::showStats() {
+  std::cout << ">>> Firmware::showStats(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
+}
 
 uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
   socklen_t clientlen = sizeof(clientaddr);
