@@ -122,145 +122,87 @@ int Firmware::loadConfig(std::string yamlFileName) {
   return 0;
 }
 
-void Firmware::enable() {
+void Firmware::setBoolU64(ScalVal reg, bool enable) {
   try {
-    _enableSV->setVal((uint64_t) 1);
+    uint64_t value = 0;
+    if (enable) value = 1;
+    reg->setVal(value);
   } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on enable" << std::endl;
+    std::cerr << "ERROR: CPSW I/O Error setBoolU64(reg, bool)" << std::endl;
   }
 }
 
-void Firmware::disable() {
-  _enableSV->setVal((uint64_t) 0);
+bool Firmware::getBoolU64(ScalVal reg) {
+  uint64_t value;
+  try {
+    reg->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getBoolU64(reg)" << std::endl;
+    return false;
+  }
+
+  if (value == 0) return false; else return true;
+}
+
+uint32_t Firmware::getUInt32(ScalVal_RO reg) {
+  uint32_t value = 0;
+  try {
+    reg->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getUInt32(reg)" << std::endl;
+  }
+  return value;
+}
+
+uint8_t Firmware::getUInt8(ScalVal_RO reg) {
+  uint8_t value = 0;
+  try {
+    reg->getVal(&value);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getUInt8(reg)" << std::endl;
+  }
+  return value;
 }
 
 void Firmware::setEnable(bool enable) {
-  try {
-    uint64_t value = 0;
-    if (enable) value = 1;
-    _enableSV->setVal(value);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on setEnable()" << std::endl;
-  }
+  setBoolU64(_enableSV, enable);
 }
 
 bool Firmware::getEnable() {
-  uint64_t value;
-  try {
-    _enableSV->getVal(&value);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on getEnable()" << std::endl;
-    return false;
-  }
-
-  if (value == 0) return false; else return true;
+  return getBoolU64(_enableSV);
 }
 
 uint32_t Firmware::getSoftwareClockCount() {
-  uint32_t value = 0;
-  try {
-    _txClkCntSV->getVal(&value);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on getSoftwareClockCount()" << std::endl;
-    return 0;
-  }
-  return value;
+  return getUInt32(_txClkCntSV);
 }
 
 uint8_t Firmware::getSoftwareLossError() {
-  uint8_t value = 0;
-  try {
-    _swLossErrorSV->getVal(&value);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on getSoftwareLossError()" << std::endl;
-    return 0;
-  }
-  return value;
+  return getUInt8(_swLossErrorSV);
 }
 
 uint32_t Firmware::getSoftwareLossCount() {
-  uint32_t value = 0;
-  try {
-    _swLossCntSV->getVal(&value);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on getSoftwareLossCount()" << std::endl;
-    return 0;
-  }
-  return value;
+  return getUInt32(_swLossCntSV);
 }
 
-void Firmware::enableTimingCheck() {
-  try {
-    _beamFaultEnSV->setVal((uint64_t) 1);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on enableTimingCheck" << std::endl;
-  }
-}
-
-void Firmware::disableTimingCheck() {
-  try {
-    _beamFaultEnSV->setVal((uint64_t) 0);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on disableTimingCheck" << std::endl;
-  }
-}
-
-
-void Firmware::softwareEnable() {
-  try {
-    _swEnableSV->setVal((uint64_t) 1);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on softwareEnable()" << std::endl;
-  }
-}
-
-void Firmware::softwareDisable() {
-  try {
-    _swEnableSV->setVal((uint64_t) 0);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on softwareDisable(): " << e.getInfo() << std::endl;
-  }
+void Firmware::setTimingCheckEnable(bool enable) {
+  setBoolU64(_beamFaultEnSV, enable);
 }
 
 void Firmware::setSoftwareEnable(bool enable) {
-  try {
-    uint64_t value = 0;
-    if (enable) value = 1;
-    _swEnableSV->setVal(value);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on setSoftwareEnable()" << std::endl;
-  }
+  setBoolU64(_swEnableSV, enable);
 }
 
 bool Firmware::getSoftwareEnable() {
-  uint64_t value;
-  try {
-    _swEnableSV->getVal(&value);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on getSoftwareEnable()" << std::endl;
-    return false;
-  }
-
-  if (value == 0) return false; else return true;
+  getBoolU64(_swEnableSV);
 }
 
 void Firmware::softwareClear() {
-  try {
-    _swClearSV->setVal((uint64_t) 1);
-    _swClearSV->setVal((uint64_t) 0);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on softwareClear" << std::endl;
-  }
-
+  setBoolU64(_swClearSV, true);
+  setBoolU64(_swClearSV, false);
 }
 
 uint32_t Firmware::getFaultReason() {
-  uint32_t reason;
-  try {
-    _beamFaultReasonSV->getVal(&reason);
-  } catch (IOError &e) {
-    std::cerr << "ERROR: CPSW I/O Error on getFaultReason()" << std::endl;
-  }
+  return getUInt32(_beamFaultReasonSV);
 }
 
 void Firmware::heartbeat() {

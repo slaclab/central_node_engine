@@ -34,8 +34,8 @@ static void usage(const char *nm) {
 }
 
 void intHandler(int) {
-  Firmware::getInstance().softwareDisable();
-  Firmware::getInstance().disable();
+  Firmware::getInstance().setSoftwareEnable(false);
+  Firmware::getInstance().setEnable(false);
 
   exit(0);
 }
@@ -125,9 +125,9 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  Firmware::getInstance().enable();
+  Firmware::getInstance().setEnable(true);
   Firmware::getInstance().softwareClear();
-  Firmware::getInstance().softwareEnable();
+  Firmware::getInstance().setSoftwareEnable(true);
 
   std::cout << "Streaming stream for 10 seconds ..." << std::endl;
   Engine::getInstance().startUpdateThread();

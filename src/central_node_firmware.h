@@ -67,6 +67,11 @@ class Firmware {
 
   uint8_t _heartbeat;
 
+  void setBoolU64(ScalVal reg, bool enable);
+  bool getBoolU64(ScalVal reg);
+  uint32_t getUInt32(ScalVal_RO reg);
+  uint8_t getUInt8(ScalVal_RO reg);
+
 #ifndef FW_ENABLED
   int _updateSock;
   struct sockaddr_in clientaddr;
@@ -77,20 +82,15 @@ class Firmware {
   uint8_t buildStamp[256];
   char gitHashString[21];
 
-  void enable();
-  void disable();
   void heartbeat();
-  void softwareEnable();
-  void softwareDisable();
 
   void setEnable(bool enable);
   void setSoftwareEnable(bool enable);
+  void setTimingCheckEnable(bool enable);
   bool getEnable();
   bool getSoftwareEnable();
-
+ 
   void softwareClear();
-  void enableTimingCheck();
-  void disableTimingCheck();
   uint32_t getFaultReason();
   void showStats();
   

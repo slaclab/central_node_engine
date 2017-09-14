@@ -581,9 +581,9 @@ void *Engine::engineThread(void *arg) {
       LOG_TRACE("ENGINE", "EngineThread: Resuming...");
       std::cout << "EngineThread: Resuming..." << std::endl;
 
-      Firmware::getInstance().enable();
+      Firmware::getInstance().setEnable(true);
       Firmware::getInstance().softwareClear();
-      Firmware::getInstance().softwareEnable();
+      Firmware::getInstance().setSoftwareEnable(true);
 
       std::cout << &(Firmware::getInstance()) << std::endl;
     }

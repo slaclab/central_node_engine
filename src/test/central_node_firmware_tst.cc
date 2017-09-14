@@ -120,7 +120,7 @@ public:
         usleep(500000);
     }
 
-    Firmware::getInstance().softwareDisable();
+    Firmware::getInstance().setSoftwareEnable(false);
     return 0;
   }
 
