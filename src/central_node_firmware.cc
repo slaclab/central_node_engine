@@ -85,6 +85,15 @@ int Firmware::loadConfig(std::string yamlFileName) {
     name = base + mps + core  + "/BeamFaultEn";
     _beamFaultEnSV = IScalVal::create(_path->findByName(name.c_str()));
 
+    name = base + mps + core + "/EvaluationSwPowerLevel";
+    _swMitigationSV = IScalVal::create(_path->findByName(name.c_str()));
+    
+    name = base + mps + core + "/EvaluationFwPowerLevel";
+    _fwMitigationSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+    
+    name = base + mps + core + "/EvaluationPowerLevel";
+    _mitigationSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+    
     name = "/Stream0";
     _updateStreamSV = IStream::create(_path->findByName(name.c_str()));
 
@@ -193,7 +202,11 @@ void Firmware::setSoftwareEnable(bool enable) {
 }
 
 bool Firmware::getSoftwareEnable() {
-  getBoolU64(_swEnableSV);
+  return getBoolU64(_swEnableSV);
+}
+
+bool Firmware::getTimingCheckEnable() {
+  return getBoolU64(_beamFaultEnSV);
 }
 
 void Firmware::softwareClear() {
@@ -203,6 +216,14 @@ void Firmware::softwareClear() {
 
 uint32_t Firmware::getFaultReason() {
   return getUInt32(_beamFaultReasonSV);
+}
+
+void Firmware::getFirmwareMitigation(uint32_t *fwMitigation) {
+  _fwMitigationSV->getVal(fwMitigation, 2);
+}
+
+void Firmware::getMitigation(uint32_t *mitigation) {
+  _mitigationSV->getVal(mitigation, 2);
 }
 
 void Firmware::heartbeat() {
@@ -248,6 +269,7 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
 }
 
 void Firmware::writeMitigation(uint32_t *mitigation) {
+  _swMitigationSV->setVal(mitigation, 2);
 }
 
 void Firmware::showStats() {
@@ -317,14 +339,6 @@ int Firmware::loadConfig(std::string yamlFileName) {
   return 0;
 };
 
-void Firmware::enable() {
-  std::cout << ">>> Firmware::enable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
-};
-
-void Firmware::disable() {
-  std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
-};
-
 void Firmware::setEnable(bool enable) {
   std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
 }
@@ -332,12 +346,6 @@ void Firmware::setEnable(bool enable) {
 void Firmware::setSoftwareEnable(bool enable) {
   std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
 }
-
-void Firmware::getEnable() {
-  std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;
-  return false;
-}
-
 
 void Firmware::getSoftwareEnable() {
   std::cout << ">>>  Firmware::disable(): Code compiled without CPSW - NO FIRMWARE <<<" << std::endl;

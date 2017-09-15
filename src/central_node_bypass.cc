@@ -6,6 +6,7 @@
 #include <central_node_bypass_manager.h>
 #include <central_node_bypass.h>
 #include <central_node_exception.h>
+#include <central_node_history.h>
 #include <log_wrapper.h>
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -236,6 +237,13 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 	}
       }
       else if (top.second->until <= top.first) {
+	if (top.second->type == BYPASS_ANALOG) {
+	  History::getInstance().logBypassState(top.second->deviceId, top.second->status, BYPASS_EXPIRED, top.second->index);
+	}
+	else {
+	  History::getInstance().logBypassState(top.second->deviceId, top.second->status, BYPASS_EXPIRED, BYPASS_DIGITAL_INDEX);
+	}
+
 	top.second->status = BYPASS_EXPIRED;
 	LOG_TRACE("BYPASS", "Setting status to BYPASS_EXPIRED");
       }
@@ -322,6 +330,13 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 
   // This handles case #3 - cancel bypass  
   if (bypassUntil == 0) {
+    if (bypass->type == BYPASS_ANALOG) {
+      History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_EXPIRED, bypass->index);
+    }
+    else {
+      History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_EXPIRED, BYPASS_DIGITAL_INDEX);
+    }
+
     bypass->status = BYPASS_EXPIRED;
     bypass->until = 0;
 
@@ -345,6 +360,12 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     
     // This handles cases #1 and #2, for new and modified bypasses.
     if (bypassUntil > now) {
+      if (bypass->type == BYPASS_ANALOG) {
+	History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_VALID, bypass->index);
+      }
+      else {
+	History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_VALID, BYPASS_DIGITAL_INDEX);
+      }
       LOG_TRACE("BYPASS", "New bypass for device [" << deviceId << "], "
 		<< "type=" << bypassType << ", index=" << thresholdIndex
 		<< ", until=" << bypassUntil << " sec"

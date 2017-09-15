@@ -43,13 +43,11 @@ void DbDeviceInput::update() {
 
     wasLow = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE];
     wasHigh = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE + 1];
+
+    // If both are zero the Central Node has not received messages from the device, assume fault
     if (wasLow + wasHigh == 0) {
       invalidValueCount++;
-      /*
-      std::stringstream errorStream;
-      errorStream << "ERROR: Read wasLow=0 and wasHigh=0 for digital channel " << channel->name;
-      throw(DbException(errorStream.str())); 
-      */
+      value = faultValue;
     }
     else if (wasLow + wasHigh == 2) {
       value = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
@@ -125,15 +123,12 @@ void DbAnalogDevice::update() {
     for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
       wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
-      //      std::cout << "INFO: Read wasLow=" << wasLow << " and wasHigh=" << wasHigh << " for analog channel "
-      //		<< channel->name << std::endl;
+
+      // If both are zero the Central Node has not received messages from the device, assume fault
       if (wasLow + wasHigh == 0) {
 	invalidValueCount++;
-	/*
-	std::stringstream errorStream;
-	errorStream << "ERROR: Read wasLow=0 and wasHigh=0 for analog channel " << channel->name;
-	throw(DbException(errorStream.str())); 
-	*/
+	newValue |= (1 << i); // Threshold exceeded
+	latchedValue |= (1 << i);
       }
       else if (wasLow + wasHigh == 2) {
 	newValue |= (1 << i); // If signal was both low and high during the 2.7ms set threshold crossed
@@ -191,13 +186,6 @@ void DbApplicationCard::configureUpdateBuffers() {
  * update each digital/analog device with the new values.
  */
 void DbApplicationCard::updateInputs() {
-  /*
-  std::cout << "Card #" << globalId << ": ";
-  for (int i = 0; i < 20; ++i) {
-    std::cout << (*applicationUpdateBuffer)[i] << " ";
-  }
-  std::cout << std::endl;
-  */
   if (digitalDevices) {
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {

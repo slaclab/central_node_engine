@@ -39,11 +39,11 @@ class Engine {
   void operator=(Engine const &);
   bool _initialized;
   pthread_t _engineThread;
-  pthread_t _engineThread2;
   static pthread_mutex_t _engineMutex;
-  static pthread_cond_t _engineCondition;
   static bool _evaluate;
-  static bool _exitThread;
+  static uint32_t _rate;
+  static uint32_t _updateCounter;
+  static time_t _startTime;
 
  public:
   int loadConfig(std::string yamlFileName);
@@ -51,8 +51,8 @@ class Engine {
   bool isInitialized();
 
   void threadExit();
+  //  void threadJoin();
   void threadJoin();
-  void threadJoin2();
 
   friend class EngineTest;
   friend class BypassTest;
@@ -64,6 +64,9 @@ class Engine {
   void showDeviceInputs();
   void showFirmware();
   void showDatabaseInfo();
+  uint32_t getUpdateRate();
+  uint32_t getUpdateCounter();
+  time_t getStartTime();
 
   MpsDbPtr getCurrentDb();
   BypassManagerPtr getBypassManager();
@@ -97,9 +100,6 @@ class Engine {
 
   void startUpdateThread();
   static void *engineThread(void *arg);
-
-  void startUpdateThread2();
-  static void *engineThread2(void *arg);
 };
 
 typedef shared_ptr<Engine> EnginePtr;

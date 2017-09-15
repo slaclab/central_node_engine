@@ -60,7 +60,7 @@ void MpsDb::unlatchAll() {
  * This method reads input states from the central node firmware
  * and updates the status of all digital/analog inputs.
  */
-void MpsDb::updateInputs() {
+bool MpsDb::updateInputs() {
   if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
 					       NUM_APPLICATIONS *
 					       APPLICATION_UPDATE_BUFFER_SIZE_BYTES,
@@ -78,7 +78,9 @@ void MpsDb::updateInputs() {
   }
   else {
     std::cerr << "ERROR: updateInputs failed" << std::endl;
+    return false;
   }
+  return true;
 }
 
 void MpsDb::configureAllowedClasses() {

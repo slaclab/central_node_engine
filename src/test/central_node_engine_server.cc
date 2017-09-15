@@ -125,14 +125,8 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  Firmware::getInstance().setEnable(true);
-  Firmware::getInstance().softwareClear();
-  Firmware::getInstance().setSoftwareEnable(true);
-
   std::cout << "Streaming stream for 10 seconds ..." << std::endl;
-  Engine::getInstance().startUpdateThread();
   sleep(10);
-
   Firmware::getInstance().setSoftwareEnable(false);
   Engine::getInstance().getCurrentDb()->showInfo();
   std::cout << "Stopping stream for 10 seconds ..." << std::endl;

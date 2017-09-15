@@ -1095,7 +1095,7 @@ class MpsDb {
   void showInfo();
 
   void writeFirmwareConfiguration();
-  void updateInputs();
+  bool updateInputs();
   void unlatchAll();
   void clearMitigationBuffer();
   void mitigate();

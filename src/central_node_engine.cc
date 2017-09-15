@@ -16,9 +16,10 @@ static Logger *engineLogger;
 #endif 
 
 pthread_mutex_t Engine::_engineMutex;
-pthread_cond_t Engine::_engineCondition;
-bool Engine::_evaluate;
-bool Engine::_exitThread;
+bool            Engine::_evaluate;
+uint32_t        Engine::_rate;
+uint32_t        Engine::_updateCounter;
+time_t          Engine::_startTime;
 
 Engine::Engine() :
   _initialized(false),
@@ -29,14 +30,13 @@ Engine::Engine() :
 #endif
 
   Engine::_evaluate = false;
-  Engine::_exitThread = false;
+  Engine::_rate = 0;
+  Engine::_updateCounter = 0;
+  Engine::_startTime = 0;
+
   int ret = pthread_mutex_init(&Engine::_engineMutex, NULL);
   if (0 != ret) {
     throw(DbException("ERROR: Engine::Engine() failed to initialize engine mutex."));
-  }
-  ret = pthread_cond_init(&Engine::_engineCondition, NULL);
-  if (0 != ret) {
-    throw(DbException("ERROR: Engine::Engine() failed to initialize engine condition variable."));
   }
 
   // Lock memory
@@ -68,6 +68,14 @@ void Engine::newDb() {
 
 int Engine::loadConfig(std::string yamlFileName) {
   pthread_mutex_lock(&_engineMutex);
+
+  // If updateThread active, then stop it first
+  if (_evaluate) {
+    _evaluate = false;
+    pthread_mutex_unlock(&_engineMutex);
+    threadJoin();
+    pthread_mutex_lock(&_engineMutex);
+  }
 
   _evaluate = false;
 
@@ -133,8 +141,10 @@ int Engine::loadConfig(std::string yamlFileName) {
   _initialized = true;
 
   _evaluate = true;
-  pthread_cond_signal(&_engineCondition);
+  //  pthread_cond_signal(&_engineCondition);
   pthread_mutex_unlock(&_engineMutex);
+
+  startUpdateThread();
 
   return 0;
 }
@@ -298,6 +308,7 @@ void Engine::evaluateFaults() {
       History::getInstance().logFault((*fault).second->id, oldFaultValue,
 				      (*fault).second->faulted, deviceStateId);
     }
+    deviceStateId = 0;
   }
 }
 
@@ -448,6 +459,9 @@ void Engine::showStats() {
   if (isInitialized()) {
     std::cout << ">> Engine Stats:" << std::endl;
     checkFaultTime.show();
+    std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
+    std::cout << "Counter: " << Engine::_updateCounter << std::endl;
+    std::cout << "Started at " << ctime(&Engine::_startTime) << std::endl;
   }
   else {
     std::cout << "MPS not initialized - no database" << std::endl;
@@ -511,10 +525,24 @@ void Engine::startUpdateThread() {
   }
 }
 
-void Engine::startUpdateThread2() {
-  if (pthread_create(&_engineThread2, 0, Engine::engineThread2, 0)) {
-    throw(EngineException("ERROR: Failed to start update thread (2)"));
-  }
+uint32_t Engine::getUpdateRate() {
+  return Engine::_rate;
+}
+
+uint32_t Engine::getUpdateCounter() {
+  return Engine::_updateCounter;
+}
+
+time_t Engine::getStartTime() {
+  return Engine::_startTime;
+}
+
+void Engine::threadExit() {
+  _evaluate = false;
+}
+
+void Engine::threadJoin() {
+  pthread_join(_engineThread, NULL);
 }
 
 #define MAX_SAFE_STACK (8*1024) /* The maximum stack size which is
@@ -528,18 +556,6 @@ void stack_prefault(void) {
     return;
 }
 
-void Engine::threadExit() {
-  _exitThread = true;
-}
-
-void Engine::threadJoin() {
-  pthread_join(_engineThread, NULL);
-}
- 
-void Engine::threadJoin2() {
-  pthread_join(_engineThread2, NULL);
-}
- 
 void *Engine::engineThread(void *arg) {
   struct sched_param  param;
 
@@ -561,64 +577,16 @@ void *Engine::engineThread(void *arg) {
   // Pre-fault our stack
   stack_prefault();
 
-  bool done = false;
-  while(!done) {
-    pthread_mutex_lock(&_engineMutex);
+  Firmware::getInstance().setEnable(true);
+  Firmware::getInstance().softwareClear();
+  Firmware::getInstance().setSoftwareEnable(true);
+  Firmware::getInstance().setTimingCheckEnable(true);
 
-    Firmware::getInstance().heartbeat();
-
-    if (_evaluate) {
-      if (Engine::getInstance().mpsDb) {
-	Engine::getInstance().mpsDb->updateInputs();
-	Engine::getInstance().checkFaults();
-	Engine::getInstance().mpsDb->mitigate();
-      }
-    }
-    else {
-      LOG_TRACE("ENGINE", "EngineThread: waiting...");
-      std::cout << "EngineThread: Stopped..." << std::endl;
-      pthread_cond_wait(&_engineCondition, &_engineMutex);
-      LOG_TRACE("ENGINE", "EngineThread: Resuming...");
-      std::cout << "EngineThread: Resuming..." << std::endl;
-
-      Firmware::getInstance().setEnable(true);
-      Firmware::getInstance().softwareClear();
-      Firmware::getInstance().setSoftwareEnable(true);
-
-      std::cout << &(Firmware::getInstance()) << std::endl;
-    }
-
-    if (_exitThread) {
-      done = true;
-    }
-
-    pthread_mutex_unlock(&_engineMutex);
-  }
-
-  std::cout << "EngineThread: Exiting..." << std::endl;
-  pthread_exit(0);
-}
-
-void *Engine::engineThread2(void *arg) {
-  struct sched_param  param;
-
-  std::cout << "Engine: update thread started." << std::endl;
-  // Declare as real time task
-  param.sched_priority = 49;
-  if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
-    perror("Set priority");
-    std::cerr << "WARN: Setting thread RT priority failed." << std::endl;
-    //    exit(-1);
-  }
-
-  // Lock memory
-  if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
-    perror("mlockall failed");
-    std::cerr << "WARN: mlockall failed." << std::endl;
-  }
-
-  // Pre-fault our stack
-  stack_prefault();
+  time_t before = time(0);
+  time_t now;
+  _startTime = before;
+  _updateCounter = 0;
+  uint32_t counter = 0;
 
   while(_evaluate) {
     pthread_mutex_lock(&_engineMutex);
@@ -626,9 +594,27 @@ void *Engine::engineThread2(void *arg) {
     Firmware::getInstance().heartbeat();
 
     if (Engine::getInstance().mpsDb) {
-      Engine::getInstance().mpsDb->updateInputs();
-      Engine::getInstance().checkFaults();
-      Engine::getInstance().mpsDb->mitigate();
+      _updateCounter++;
+      counter++;
+      now = time(0);
+      if (now > before) {
+	time_t diff = now - before; 
+	before = now;
+	_rate = counter / diff;
+	counter = 0;
+      }
+
+      if (Engine::getInstance().mpsDb->updateInputs()) {
+	Engine::getInstance().checkFaults();
+	Engine::getInstance().mpsDb->mitigate();
+      }
+      else {
+	_rate = 0;
+      }
+    }
+    else {
+      _rate = 0;
+      sleep(1);
     }
 
     pthread_mutex_unlock(&_engineMutex);

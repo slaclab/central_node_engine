@@ -12,7 +12,7 @@
 History::History() : enabled (true) {
 }
 
-void History::startSenderThread() {
+void History::startSenderThread(std::string serverName, int port) {
   struct hostent *server;
 
   sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -21,7 +21,7 @@ void History::startSenderThread() {
     throw(CentralNodeException("ERROR: Failed to create socket for MPS history sender."));
   }
 
-  server = gethostbyname("lcls-dev3");
+  server = gethostbyname(serverName.c_str());
   if (server == NULL) {
     throw(CentralNodeException("ERROR: Failed to create socket for MPS history sender."));
   }
@@ -30,7 +30,7 @@ void History::startSenderThread() {
   serveraddr.sin_family = AF_INET;
   bcopy((char *)server->h_addr, 
 	(char *)&serveraddr.sin_addr.s_addr, server->h_length);
-  serveraddr.sin_port = htons(3356);
+  serveraddr.sin_port = htons(port);
   serverlen = sizeof(serveraddr);
 
   struct mq_attr attr;
@@ -65,7 +65,7 @@ void History::startSenderThread() {
 
 }
 
-int History::log(MessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux) {
+int History::log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux) {
   message.id = id;
   message.oldValue = oldValue;
   message.newValue = newValue;
@@ -91,8 +91,8 @@ int History::logAnalogDevice(uint32_t id, uint32_t oldValue, uint32_t newValue) 
   return log(AnalogDeviceType, id, oldValue, newValue, 0);
 }
 
-int History::logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue) {
-  return log(BypassStateType, id, oldValue, newValue, 0);
+int History::logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue, uint16_t index) {
+  return log(BypassStateType, id, oldValue, newValue, index);
 }
 
 int History::logBypassValue(uint32_t id, uint32_t oldValue, uint32_t newValue) {

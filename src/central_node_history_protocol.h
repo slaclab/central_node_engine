@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-enum MessageType {
+enum HistoryMessageType {
   FaultStateType = 1, // Fault change state (Faulted/Not Faulted)
   BypassStateType,    // Bypass expired/crated/cancelled
   BypassValueType,    // Bypass value changed
@@ -13,7 +13,7 @@ enum MessageType {
 };
 
 typedef struct {
-  MessageType type;
+  HistoryMessageType type;
   uint32_t id;        // MPS database ID for the Fault/Input/Mitigation
   uint32_t oldValue;
   uint32_t newValue;

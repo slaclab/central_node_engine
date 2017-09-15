@@ -28,15 +28,15 @@ class History {
  public:
   bool enabled;
 
-  void startSenderThread();
+  void startSenderThread(std::string serverName = "lcls-dev3", int port = 3356);
 
-  int log(MessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);
+  int log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);
 
   int logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t faultStateId);
   int logMitigation(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logDeviceInput(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logAnalogDevice(uint32_t id, uint32_t oldValue, uint32_t newValue);
-  int logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue);
+  int logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue, uint16_t index);
   int logBypassValue(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int add(Message &message);
   int send(Message &message);

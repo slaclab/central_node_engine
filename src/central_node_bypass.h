@@ -18,6 +18,8 @@ enum BypassStatus {
   BYPASS_EXPIRED
 };
 
+static const int BYPASS_DIGITAL_INDEX = 100;
+
 /**
  * Each DeviceInput and AnalogDevice have a pointer to a instance of InputBypass.
  */

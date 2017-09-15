@@ -63,6 +63,9 @@ class Firmware {
   ScalVal    _beamIntChargeSV;
   ScalVal_RO _beamFaultReasonSV;
   ScalVal    _beamFaultEnSV;
+  ScalVal    _swMitigationSV;
+  ScalVal_RO _fwMitigationSV;
+  ScalVal_RO _mitigationSV;
   Stream     _updateStreamSV;
 
   uint8_t _heartbeat;
@@ -87,8 +90,10 @@ class Firmware {
   void setEnable(bool enable);
   void setSoftwareEnable(bool enable);
   void setTimingCheckEnable(bool enable);
+
   bool getEnable();
   bool getSoftwareEnable();
+  bool getTimingCheckEnable();
  
   void softwareClear();
   uint32_t getFaultReason();
@@ -97,6 +102,8 @@ class Firmware {
   uint8_t getSoftwareLossError();
   uint32_t getSoftwareLossCount();
   uint32_t getSoftwareClockCount();
+  void getFirmwareMitigation(uint32_t *fwMitigation);
+  void getMitigation(uint32_t *mitigation);
 
   // size in bytes (not in uint32_t units)
   void writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size);
