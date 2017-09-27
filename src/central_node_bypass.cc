@@ -418,11 +418,30 @@ void BypassManager::printBypassQueue() {
       std::cout << " threshold " << copy.top().second->index;
     }
     if (copy.top().second->status == BYPASS_VALID) {
-      std::cout << " [VALID]" << std::endl;
+      std::cout << " [VALID]";
     }
     else {
-      std::cout << " [EXPIRED]" << std::endl;
+      std::cout << " [EXPIRED]";
     }
+    std::cout << " BYPV=" << copy.top().second->value << std::endl;
+
     copy.pop();
   }
 }
+
+void BypassManager::startBypassThread() {
+  if (pthread_create(&_bypassThread, 0, BypassManager::bypassThread, 0)) {
+    //    throw(EngineException("ERROR: Failed to start bypass thread"));
+    return;
+  }
+}
+
+void *BypassManager::bypassThread(void *arg) {
+  while(true) {
+    sleep(1);
+  }
+
+  std::cout << "bypassThread exiting..." << std::endl;
+  pthread_exit(0);
+}
+

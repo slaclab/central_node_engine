@@ -171,10 +171,27 @@ void MpsDb::configureDeviceInputs() {
       throw(DbException(errorStream.str()));
     }
 
+    // Check if digitalDevice is evaluated in firmaware, set deviceInput->fastEvaluation
+    if ((*deviceIt).second->evaluation == FAST_EVALUATION) {
+      (*it).second->fastEvaluation = true;
+    }
+    else {
+      (*it).second->fastEvaluation = false;
+    }
+
     // Create a map to hold deviceInput for the digitalDevice
     if (!(*deviceIt).second->inputDevices) {
       DbDeviceInputMap *deviceInputs = new DbDeviceInputMap();
       (*deviceIt).second->inputDevices = DbDeviceInputMapPtr(deviceInputs);
+    }
+    else {
+      // Extra check to make sure the digitalDevice has only one input, if 
+      // it has evaluation set to FAST
+      if ((*deviceIt).second->evaluation == FAST_EVALUATION) {
+	errorStream << "ERROR: Failed to configure database, found DigitalDevice ("
+		    << id << ") set for FAST_EVALUATION with multiple inputs. Must have single input.";
+	throw(DbException(errorStream.str()));
+      }
     }
     (*deviceIt).second->inputDevices->insert(std::pair<int, DbDeviceInputPtr>((*it).second->id,
 									      (*it).second));
@@ -242,23 +259,16 @@ void MpsDb::configureFaultInputs() {
 			  << ") for FaultInput (" << (*it).second->id << ")";
 	      throw(DbException(errorStream.str()));
 	    }
+
 	    // There is one DbFaultState per threshold bit, for BPMs there are
 	    // 24 bits (8 for X, 8 for Y and 8 for TMIT). Other analog devices
-	    // have 32 bits (4 integrators).
-
-	    // There is a unique power class for each threshold bit (DbFaultState)
+	    // have 32 bits (4 integrators) - there is on destination mask per integrator	    
+	    
+	    // There is a unique power class for each threshold bit (each DbFaultState)
 	    // The destination masks for the thresholds for the same integrator
 	    // must be and'ed together.
-	    
-	    for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
-	      (*aDeviceIt).second->fastDestinationMask[i] = 0;
-	    }
-	    
-	    for (uint32_t i = 0;
-		 i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
-	      (*aDeviceIt).second->fastPowerClass[i] = 0xFF;
-	    }
 
+	    // Go through the DbFaultStates for this DbFault, i.e. the individual threshold bits
 	    for (DbFaultStateMap::iterator faultState = (*faultIt).second->faultStates->begin();
 		 faultState != (*faultIt).second->faultStates->end(); ++faultState) {
 	      // The DbDeviceState value defines which integrator the fault belongs to.
@@ -271,6 +281,14 @@ void MpsDb::configureFaultInputs() {
 	      if (value & 0x0000FF00) integratorIndex = 1;
 	      if (value & 0x00FF0000) integratorIndex = 2;
 	      if (value & 0xFF000000) integratorIndex = 3;
+
+	      if (integratorIndex >= 4) {
+		errorStream << "ERROR: Invalid deviceState value Fault (" << (*faultIt).second->id
+			    << "), FaultInput (" << (*it).second->id << "), DeviceState ("
+			    << (*faultState).second->deviceState->id << "), value=0x"
+			    << std::hex << (*faultState).second->deviceState->value << std::dec;
+		throw(DbException(errorStream.str()));
+	      }
 
 	      uint32_t thresholdIndex = 0;
 	      bool isSet = false;
@@ -383,6 +401,34 @@ void MpsDb::configureFaultInputs() {
     (*faultIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*it).second->id,
 									   (*it).second));
   }
+
+  // Assign an evaluation to a Fault based on the inputs to its FaultInputs
+  // Faults whose inputs are all evaluated in firmware should be only handled
+  // by the firmware.
+  // TODO: set DbFault.evaluation
+  for (DbFaultMap::iterator faultIt = faults->begin(); faultIt != faults->end(); ++faultIt) {
+    bool slowEvaluation = false;
+    for (DbFaultInputMap::iterator inputIt = (*faultIt).second->faultInputs->begin();
+	 inputIt != (*faultIt).second->faultInputs->end(); ++inputIt) {
+      if ((*inputIt).second->analogDevice) {
+	if ((*inputIt).second->analogDevice->evaluation == SLOW_EVALUATION) {
+	  slowEvaluation = true;
+	}
+      }
+      else if ((*inputIt).second->digitalDevice) {
+	if ((*inputIt).second->digitalDevice->evaluation == SLOW_EVALUATION) {
+	  slowEvaluation = true;
+	}
+      }
+    }
+    if (slowEvaluation) {
+      (*faultIt).second->evaluation = SLOW_EVALUATION;
+    }
+    else {
+      (*faultIt).second->evaluation = FAST_EVALUATION;
+    }
+  }
+
 }
 
 void MpsDb::configureFaultStates() {
@@ -579,7 +625,6 @@ void MpsDb::configureApplicationCards() {
       }
       // Once the map is there, add the digital device
       aPtr->digitalDevices->insert(std::pair<int, DbDigitalDevicePtr>(dPtr->id, dPtr));
-      //      std::cout << "AppCard[" << aPtr->number << "] <- digital " << dPtr->name << std::endl;
       LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], DigitalDevice: " << dPtr->name);
     }
   }
@@ -672,10 +717,15 @@ void MpsDb::writeFirmwareConfiguration() {
   uint32_t charge[FW_NUM_BEAM_CLASSES];
 
   for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
-    time[i] = 0;
-    period[i] = 0;
-    charge[i] = 0;
+    time[i] = 0;//111;
+    period[i] = 0;//222;
+    charge[i] = 0;//333;
   }
+  // Problem: values writen/read back are wrong:
+  //  BeamIntTime=[111, 222, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333]
+  //  BeamMinPeriod=[222, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333]
+  //  BeamIntCharge=[333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333]
+
   for (DbBeamClassMap::iterator beamClass = beamClasses->begin();
        beamClass != beamClasses->end(); ++beamClass) {
     time[(*beamClass).second->number] = (*beamClass).second->integrationWindow;

@@ -36,14 +36,33 @@ int Firmware::loadConfig(std::string yamlFileName) {
   std::string mps = "/MpsCentralApplication";
   std::string core = "/MpsCentralNodeCore";
   std::string config = "/MpsCentralNodeConfig";
+  std::string pgp2bAxi = "/Pgp2bAxi";
 
   std::string name;
 
   try {
-    name = base + axi +"/FpgaVersion";
+    name = base + mps + pgp2bAxi + "/RxPhyReady";
+    _rxPhyReadySV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + pgp2bAxi + "/TxPhyReady";
+    _txPhyReadySV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + pgp2bAxi + "/RxLocalLinkReady";
+    _rxLocalLinkReadySV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + pgp2bAxi + "/RxRemLinkReady";
+    _rxRemLinkReadySV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + pgp2bAxi + "/RxFrameCount";
+    _rxFrameCountSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + pgp2bAxi + "/RxFrameErrorCoumt";
+    _rxFrameErrorCountSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + axi + "/FpgaVersion";
     _fpgaVersionSV = IScalVal_RO::create(_path->findByName(name.c_str()));
 
-    name = base + axi +"/BuildStamp";
+    name = base + axi + "/BuildStamp";
     _buildStampSV  = IScalVal_RO::create(_path->findByName(name.c_str()));
     
     name = base + axi + "/GitHash";
@@ -51,6 +70,12 @@ int Firmware::loadConfig(std::string yamlFileName) {
 
     name = base + mps + core + "/SoftwareWdHeartbeat";
     _heartbeatSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/SwHeartbeat";
+    _swHeartbeatCmd = ICommand::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/EvalLatchClear";
+    _evalLatchClearCmd = ICommand::create(_path->findByName(name.c_str()));
 
     name = base + mps + core  + "/Enable";
     _enableSV = IScalVal::create(_path->findByName(name.c_str()));
@@ -85,15 +110,108 @@ int Firmware::loadConfig(std::string yamlFileName) {
     name = base + mps + core  + "/BeamFaultEn";
     _beamFaultEnSV = IScalVal::create(_path->findByName(name.c_str()));
 
+    name = base + mps + core  + "/EvalLatchClear";
+    _evalLatchClearCmd = ICommand::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/MonErrClear";
+    _monErrClearCmd = ICommand::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/SwErrClear";
+    _swErrClearCmd = ICommand::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core  + "/BeamFaultClr";
+    _beamFaultClrSV = IScalVal::create(_path->findByName(name.c_str()));
+
     name = base + mps + core + "/EvaluationSwPowerLevel";
     _swMitigationSV = IScalVal::create(_path->findByName(name.c_str()));
     
     name = base + mps + core + "/EvaluationFwPowerLevel";
     _fwMitigationSV = IScalVal_RO::create(_path->findByName(name.c_str()));
     
+    name = base + mps + core + "/EvaluationLatchedPowerLevel";
+    _latchedMitigationSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+    
     name = base + mps + core + "/EvaluationPowerLevel";
     _mitigationSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/EvaluationLatchedPowerLevel";
+    _latchedMitigationSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SwitchConfig";
+    _switchConfigCmd = ICommand::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/ToErrClear";
+    _toErrClearCmd = ICommand::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/MoConcErrClear";
+    _moConcErrClearCmd = ICommand::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/MonitorReady";
+    _monitorReadySV = IScalVal_RO::create(_path->findByName(name.c_str()));
     
+    name = base + mps + core + "/MonitorRxErrCnt";
+    _monitorRxErrorCntSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+    
+    name = base + mps + core + "/MonitorPauseCnt";
+    _monitorPauseCntSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/MonitorOvflCnt";
+    _monitorOvflCntSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/MonitorDropCnt";
+    _monitorDropCntSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/MonitorConcWdErr"; 
+    _monitorConcWdErrSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/MonitorConcStallErr"; 
+    _monitorConcStallErrSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/MonitorConcExtRxErr"; 
+    _monitorConcExtRxErrSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/TimeoutEnable"; 
+    _timeoutEnableSV = IScalVal::create(_path->findByName(name.c_str()));
+    
+    name = base + mps + core + "/TimeoutClear"; 
+    _timeoutClearSV = IScalVal::create(_path->findByName(name.c_str()));
+    
+    name = base + mps + core + "/TimeoutTime"; 
+    _timeoutTimeSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/TimeoutMask"; 
+    _timeoutMaskSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/TimeoutErrStatus"; 
+    _timeoutErrStatusSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/TimeoutErrIndex"; 
+    _timeoutErrIndexSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/TimeoutMsgVer"; 
+    _timeoutMsgVerSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/EvaluationEnable";
+    _evaluationEnableSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/EvaluationTimeStamp";
+    _evaluationTimeStampSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SoftwareWdTime"; 
+    _swWdTimeSV = IScalVal::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SoftwareBusy"; 
+    _swBusySV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SoftwarePause"; 
+    _swPauseSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SoftwareWdError"; 
+    _swWdErrorSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
+    name = base + mps + core + "/SoftwareOvflCnt"; 
+    _swOvflCntSV = IScalVal_RO::create(_path->findByName(name.c_str()));
+
     name = "/Stream0";
     _updateStreamSV = IStream::create(_path->findByName(name.c_str()));
 
@@ -103,9 +221,11 @@ int Firmware::loadConfig(std::string yamlFileName) {
       appId << "/AppId" << i;
       name = base + mps + config + appId.str();
       _configSV[i] = IScalVal::create(_path->findByName(name.c_str()));
-    }
+    } 
   } catch (NotFoundError &e) {
     throw(CentralNodeException("ERROR: Failed to find " + name));
+  } catch (InterfaceNotImplementedError &e) {
+    throw(CentralNodeException("ERROR: Wrong interface for " + name));
   }
 
   if (_beamIntTimeSV->getNelms() != FW_NUM_BEAM_CLASSES) {
@@ -193,6 +313,22 @@ uint32_t Firmware::getSoftwareLossCount() {
   return getUInt32(_swLossCntSV);
 }
 
+void Firmware::setEvaluationEnable(bool enable) {
+  setBoolU64(_evaluationEnableSV, enable);
+}
+
+bool Firmware::getEvaluationEnable() {
+  return getBoolU64(_evaluationEnableSV);
+}
+
+void Firmware::setTimeoutEnable(bool enable) {
+  setBoolU64(_timeoutEnableSV, enable);
+}
+
+bool Firmware::getTimeoutEnable() {
+  return getBoolU64(_timeoutEnableSV);
+}
+
 void Firmware::setTimingCheckEnable(bool enable) {
   setBoolU64(_beamFaultEnSV, enable);
 }
@@ -222,12 +358,30 @@ void Firmware::getFirmwareMitigation(uint32_t *fwMitigation) {
   _fwMitigationSV->getVal(fwMitigation, 2);
 }
 
+void Firmware::getSoftwareMitigation(uint32_t *swMitigation) {
+  _swMitigationSV->getVal(swMitigation, 2);
+}
+
 void Firmware::getMitigation(uint32_t *mitigation) {
   _mitigationSV->getVal(mitigation, 2);
 }
 
+void Firmware::getLatchedMitigation(uint32_t *latchedMitigation) {
+  _latchedMitigationSV->getVal(latchedMitigation, 2);
+}
+
+void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
+  for (int i = 0; i < 8; ++i) {
+    expanded[i] = (uint8_t)((compressed[0] >> (4 * i)) & 0xF);
+  }
+
+  for (int i = 0; i < 8; ++i) {
+    expanded[i+8] = (uint8_t)((compressed[1] >> (4 * i)) & 0xF);
+  }
+}
+
 void Firmware::heartbeat() {
-  _heartbeatSV->setVal((uint64_t)(_heartbeat^=1));
+  _swHeartbeatCmd->execute();
 }
 
 void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
@@ -249,6 +403,33 @@ void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
       throw(CentralNodeException("ERROR: Failed writing app configuration (IOError)"));
     }
   }
+
+  // Hit the switch register to enable now configuration
+  switchConfig();
+}
+
+void Firmware::switchConfig() {
+  _switchConfigCmd->execute();
+}
+
+void Firmware::evalLatchClear() {
+  _evalLatchClearCmd->execute();
+}
+
+void Firmware::monErrClear() {
+  _monErrClearCmd->execute();
+}
+
+void Firmware::swErrClear() {
+  _swErrClearCmd->execute();
+}
+
+void Firmware::toErrClear() {
+  _toErrClearCmd->execute();
+}
+
+void Firmware::moConcErrClear() {
+  _moConcErrClearCmd->execute();
 }
 
 void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {

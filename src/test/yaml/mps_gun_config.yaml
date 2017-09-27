@@ -107,7 +107,7 @@ DigitalChannel:
   card_id: 1
 - id: 3
   number: 2
-  name: "GUN_TEMP"
+  name: "TEMP_SUM"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -123,7 +123,7 @@ DigitalChannel:
   card_id: 1
 - id: 5
   number: 4
-  name: "BUNCHER_TEMP"
+  name: "TEMP_SUM"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -131,7 +131,7 @@ DigitalChannel:
   card_id: 1
 - id: 6
   number: 5
-  name: "TEMP"
+  name: "TEMP_SUM"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -139,7 +139,7 @@ DigitalChannel:
   card_id: 1
 - id: 7
   number: 6
-  name: "TEMP"
+  name: "TEMP_SUM"
   z_name: "IS_FAULTED"
   o_name: "IS_OK"
   alarm_state: 0
@@ -196,18 +196,24 @@ DeviceType:
   name: "TEMP"
   description: "Temperature Status"
 - id: 3
-  name: "VVPR"
-  description: "Vacuum Pneumatic Rouhing Valve Status"
+  name: "VVPG"
+  description: "Vacuum Valve Pneumatic Status"
 - id: 4
+  name: "GUN"
+  description: "Gun Device"
+- id: 5
+  name: "CAV"
+  description: "Buncher Cavity Device"
+- id: 6
   name: "TORO"
   description: "Toroid"
-- id: 5
+- id: 7
   name: "FARC"
   description: "Faraday Cup"
-- id: 6
+- id: 8
   name: "SOLN"
   description: "Solenoid"
-- id: 7
+- id: 9
   name: "BPMS"
   description: "Beam Position Monitor"
 ---
@@ -265,488 +271,488 @@ DeviceState:
   description: "None"
   value: 1
   mask: 1
-  device_type_id: 7
+  device_type_id: 9
 - id: 10
   name: "X_T1"
   description: "None"
   value: 2
   mask: 2
-  device_type_id: 7
+  device_type_id: 9
 - id: 11
   name: "X_T2"
   description: "None"
   value: 4
   mask: 4
-  device_type_id: 7
+  device_type_id: 9
 - id: 12
   name: "X_T3"
   description: "None"
   value: 8
   mask: 8
-  device_type_id: 7
+  device_type_id: 9
 - id: 13
   name: "X_T4"
   description: "None"
   value: 16
   mask: 16
-  device_type_id: 7
+  device_type_id: 9
 - id: 14
   name: "X_T5"
   description: "None"
   value: 32
   mask: 32
-  device_type_id: 7
+  device_type_id: 9
 - id: 15
   name: "X_T6"
   description: "None"
   value: 64
   mask: 64
-  device_type_id: 7
+  device_type_id: 9
 - id: 16
   name: "X_T7"
   description: "None"
   value: 128
   mask: 128
-  device_type_id: 7
+  device_type_id: 9
 - id: 17
   name: "Y_T0"
   description: "None"
   value: 256
   mask: 256
-  device_type_id: 7
+  device_type_id: 9
 - id: 18
   name: "Y_T1"
   description: "None"
   value: 512
   mask: 512
-  device_type_id: 7
+  device_type_id: 9
 - id: 19
   name: "Y_T2"
   description: "None"
   value: 1024
   mask: 1024
-  device_type_id: 7
+  device_type_id: 9
 - id: 20
   name: "Y_T3"
   description: "None"
   value: 2048
   mask: 2048
-  device_type_id: 7
+  device_type_id: 9
 - id: 21
   name: "Y_T4"
   description: "None"
   value: 4096
   mask: 4096
-  device_type_id: 7
+  device_type_id: 9
 - id: 22
   name: "Y_T5"
   description: "None"
   value: 8192
   mask: 8192
-  device_type_id: 7
+  device_type_id: 9
 - id: 23
   name: "Y_T6"
   description: "None"
   value: 16384
   mask: 16384
-  device_type_id: 7
+  device_type_id: 9
 - id: 24
   name: "Y_T7"
   description: "None"
   value: 32768
   mask: 32768
-  device_type_id: 7
+  device_type_id: 9
 - id: 25
-  name: "T_T0"
+  name: "TMIT_T0"
   description: "None"
   value: 65536
   mask: 65536
-  device_type_id: 7
+  device_type_id: 9
 - id: 26
-  name: "T_T1"
+  name: "TMIT_T1"
   description: "None"
   value: 131072
   mask: 131072
-  device_type_id: 7
+  device_type_id: 9
 - id: 27
-  name: "T_T2"
+  name: "TMIT_T2"
   description: "None"
   value: 262144
   mask: 262144
-  device_type_id: 7
+  device_type_id: 9
 - id: 28
-  name: "T_T3"
+  name: "TMIT_T3"
   description: "None"
   value: 524288
   mask: 524288
-  device_type_id: 7
+  device_type_id: 9
 - id: 29
-  name: "T_T4"
+  name: "TMIT_T4"
   description: "None"
   value: 1048576
   mask: 1048576
-  device_type_id: 7
+  device_type_id: 9
 - id: 30
-  name: "T_T5"
+  name: "TMIT_T5"
   description: "None"
   value: 2097152
   mask: 2097152
-  device_type_id: 7
+  device_type_id: 9
 - id: 31
-  name: "T_T6"
+  name: "TMIT_T6"
   description: "None"
   value: 4194304
   mask: 4194304
-  device_type_id: 7
+  device_type_id: 9
 - id: 32
-  name: "T_T7"
+  name: "TMIT_T7"
   description: "None"
   value: 8388608
   mask: 8388608
-  device_type_id: 7
+  device_type_id: 9
 - id: 33
-  name: "INT1_T0"
+  name: "I1_T0"
   description: "None"
   value: 1
   mask: 1
-  device_type_id: 4
+  device_type_id: 6
 - id: 34
-  name: "INT1_T0"
+  name: "I1_T0"
   description: "None"
   value: 1
   mask: 1
-  device_type_id: 4
+  device_type_id: 6
 - id: 35
-  name: "INT1_T0"
+  name: "I1_T0"
   description: "None"
   value: 1
   mask: 1
-  device_type_id: 4
+  device_type_id: 6
 - id: 36
-  name: "INT1_T0"
+  name: "I1_T0"
   description: "None"
   value: 1
   mask: 1
-  device_type_id: 4
+  device_type_id: 6
 - id: 37
-  name: "INT1_T1"
+  name: "I1_T1"
   description: "None"
   value: 2
   mask: 2
-  device_type_id: 4
+  device_type_id: 6
 - id: 38
-  name: "INT1_T1"
+  name: "I1_T1"
   description: "None"
   value: 2
   mask: 2
-  device_type_id: 4
+  device_type_id: 6
 - id: 39
-  name: "INT1_T1"
+  name: "I1_T1"
   description: "None"
   value: 2
   mask: 2
-  device_type_id: 4
+  device_type_id: 6
 - id: 40
-  name: "INT1_T1"
+  name: "I1_T1"
   description: "None"
   value: 2
   mask: 2
-  device_type_id: 4
+  device_type_id: 6
 - id: 41
-  name: "INT1_T2"
+  name: "I1_T2"
   description: "None"
   value: 4
   mask: 4
-  device_type_id: 4
+  device_type_id: 6
 - id: 42
-  name: "INT1_T2"
+  name: "I1_T2"
   description: "None"
   value: 4
   mask: 4
-  device_type_id: 4
+  device_type_id: 6
 - id: 43
-  name: "INT1_T2"
+  name: "I1_T2"
   description: "None"
   value: 4
   mask: 4
-  device_type_id: 4
+  device_type_id: 6
 - id: 44
-  name: "INT1_T2"
+  name: "I1_T2"
   description: "None"
   value: 4
   mask: 4
-  device_type_id: 4
+  device_type_id: 6
 - id: 45
-  name: "INT1_T3"
+  name: "I1_T3"
   description: "None"
   value: 8
   mask: 8
-  device_type_id: 4
+  device_type_id: 6
 - id: 46
-  name: "INT1_T3"
+  name: "I1_T3"
   description: "None"
   value: 8
   mask: 8
-  device_type_id: 4
+  device_type_id: 6
 - id: 47
-  name: "INT1_T3"
+  name: "I1_T3"
   description: "None"
   value: 8
   mask: 8
-  device_type_id: 4
+  device_type_id: 6
 - id: 48
-  name: "INT1_T3"
+  name: "I1_T3"
   description: "None"
   value: 8
   mask: 8
-  device_type_id: 4
+  device_type_id: 6
 - id: 49
-  name: "INT1_T4"
+  name: "I1_T4"
   description: "None"
   value: 16
   mask: 16
-  device_type_id: 4
+  device_type_id: 6
 - id: 50
-  name: "INT1_T4"
+  name: "I1_T4"
   description: "None"
   value: 16
   mask: 16
-  device_type_id: 4
+  device_type_id: 6
 - id: 51
-  name: "INT1_T4"
+  name: "I1_T4"
   description: "None"
   value: 16
   mask: 16
-  device_type_id: 4
+  device_type_id: 6
 - id: 52
-  name: "INT1_T4"
+  name: "I1_T4"
   description: "None"
   value: 16
   mask: 16
-  device_type_id: 4
+  device_type_id: 6
 - id: 53
-  name: "INT1_T5"
+  name: "I1_T5"
   description: "None"
   value: 32
   mask: 32
-  device_type_id: 4
+  device_type_id: 6
 - id: 54
-  name: "INT1_T5"
+  name: "I1_T5"
   description: "None"
   value: 32
   mask: 32
-  device_type_id: 4
+  device_type_id: 6
 - id: 55
-  name: "INT1_T5"
+  name: "I1_T5"
   description: "None"
   value: 32
   mask: 32
-  device_type_id: 4
+  device_type_id: 6
 - id: 56
-  name: "INT1_T5"
+  name: "I1_T5"
   description: "None"
   value: 32
   mask: 32
-  device_type_id: 4
+  device_type_id: 6
 - id: 57
-  name: "INT1_T6"
+  name: "I1_T6"
   description: "None"
   value: 64
   mask: 64
-  device_type_id: 4
+  device_type_id: 6
 - id: 58
-  name: "INT1_T6"
+  name: "I1_T6"
   description: "None"
   value: 64
   mask: 64
-  device_type_id: 4
+  device_type_id: 6
 - id: 59
-  name: "INT1_T6"
+  name: "I1_T6"
   description: "None"
   value: 64
   mask: 64
-  device_type_id: 4
+  device_type_id: 6
 - id: 60
-  name: "INT1_T6"
+  name: "I1_T6"
   description: "None"
   value: 64
   mask: 64
-  device_type_id: 4
+  device_type_id: 6
 - id: 61
-  name: "INT1_T7"
+  name: "I1_T7"
   description: "None"
   value: 128
   mask: 128
-  device_type_id: 4
+  device_type_id: 6
 - id: 62
-  name: "INT1_T7"
+  name: "I1_T7"
   description: "None"
   value: 128
   mask: 128
-  device_type_id: 4
+  device_type_id: 6
 - id: 63
-  name: "INT1_T7"
+  name: "I1_T7"
   description: "None"
   value: 128
   mask: 128
-  device_type_id: 4
+  device_type_id: 6
 - id: 64
-  name: "INT1_T7"
+  name: "I1_T7"
   description: "None"
   value: 128
   mask: 128
-  device_type_id: 4
+  device_type_id: 6
 - id: 65
-  name: "INT2_T0"
+  name: "I2_T0"
   description: "None"
   value: 256
   mask: 256
-  device_type_id: 4
+  device_type_id: 6
 - id: 66
-  name: "INT2_T1"
+  name: "I2_T1"
   description: "None"
   value: 512
   mask: 512
-  device_type_id: 4
+  device_type_id: 6
 - id: 67
-  name: "INT2_T2"
+  name: "I2_T2"
   description: "None"
   value: 1024
   mask: 1024
-  device_type_id: 4
+  device_type_id: 6
 - id: 68
-  name: "INT2_T3"
+  name: "I2_T3"
   description: "None"
   value: 2048
   mask: 2048
-  device_type_id: 4
+  device_type_id: 6
 - id: 69
-  name: "INT2_T4"
+  name: "I2_T4"
   description: "None"
   value: 4096
   mask: 4096
-  device_type_id: 4
+  device_type_id: 6
 - id: 70
-  name: "INT2_T5"
+  name: "I2_T5"
   description: "None"
   value: 8192
   mask: 8192
-  device_type_id: 4
+  device_type_id: 6
 - id: 71
-  name: "INT2_T6"
+  name: "I2_T6"
   description: "None"
   value: 16384
   mask: 16384
-  device_type_id: 4
+  device_type_id: 6
 - id: 72
-  name: "INT2_T7"
+  name: "I2_T7"
   description: "None"
   value: 32768
   mask: 32768
-  device_type_id: 4
+  device_type_id: 6
 - id: 73
-  name: "INT3_T0"
+  name: "I3_T0"
   description: "None"
   value: 65536
   mask: 65536
-  device_type_id: 4
+  device_type_id: 6
 - id: 74
-  name: "INT3_T1"
+  name: "I3_T1"
   description: "None"
   value: 131072
   mask: 131072
-  device_type_id: 4
+  device_type_id: 6
 - id: 75
-  name: "INT3_T2"
+  name: "I3_T2"
   description: "None"
   value: 262144
   mask: 262144
-  device_type_id: 4
+  device_type_id: 6
 - id: 76
-  name: "INT3_T3"
+  name: "I3_T3"
   description: "None"
   value: 524288
   mask: 524288
-  device_type_id: 4
+  device_type_id: 6
 - id: 77
-  name: "INT3_T4"
+  name: "I3_T4"
   description: "None"
   value: 1048576
   mask: 1048576
-  device_type_id: 4
+  device_type_id: 6
 - id: 78
-  name: "INT3_T5"
+  name: "I3_T5"
   description: "None"
   value: 2097152
   mask: 2097152
-  device_type_id: 4
+  device_type_id: 6
 - id: 79
-  name: "INT3_T6"
+  name: "I3_T6"
   description: "None"
   value: 4194304
   mask: 4194304
-  device_type_id: 4
+  device_type_id: 6
 - id: 80
-  name: "INT3_T7"
+  name: "I3_T7"
   description: "None"
   value: 8388608
   mask: 8388608
-  device_type_id: 4
+  device_type_id: 6
 - id: 81
-  name: "INT4_T0"
+  name: "I4_T0"
   description: "None"
   value: 16777216
   mask: 16777216
-  device_type_id: 4
+  device_type_id: 6
 - id: 82
-  name: "INT4_T1"
+  name: "I4_T1"
   description: "None"
   value: 33554432
   mask: 33554432
-  device_type_id: 4
+  device_type_id: 6
 - id: 83
-  name: "INT4_T2"
+  name: "I4_T2"
   description: "None"
   value: 67108864
   mask: 67108864
-  device_type_id: 4
+  device_type_id: 6
 - id: 84
-  name: "INT4_T3"
+  name: "I4_T3"
   description: "None"
   value: 134217728
   mask: 134217728
-  device_type_id: 4
+  device_type_id: 6
 - id: 85
-  name: "INT4_T4"
+  name: "I4_T4"
   description: "None"
   value: 268435456
   mask: 268435456
-  device_type_id: 4
+  device_type_id: 6
 - id: 86
-  name: "INT4_T5"
+  name: "I4_T5"
   description: "None"
   value: 536870912
   mask: 536870912
-  device_type_id: 4
+  device_type_id: 6
 - id: 87
-  name: "INT4_T6"
+  name: "I4_T6"
   description: "None"
   value: 1073741824
   mask: 1073741824
-  device_type_id: 4
+  device_type_id: 6
 - id: 88
-  name: "INT4_T7"
+  name: "I4_T7"
   description: "None"
   value: 2147483648
   mask: 2147483648
-  device_type_id: 4
+  device_type_id: 6
 ---
 DigitalDevice:
 - id: 1
   id: 1
-  name: "YAG01"
-  description: "YAG Screen"
-  position: 855
+  name: "YAG01B"
+  description: "YAG01B Screen"
+  position: 753
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -761,12 +767,12 @@ DigitalDevice:
   evaluation: 0
   card_id: 1
   device_type_id: 2
-  measured_device_type_id: !!int 'None'
+  measured_device_type_id: 4
 - id: 3
   id: 3
   name: "Waveguide Temperature"
-  description: "Waveguide Temperature Summary Input"
-  position: 150
+  description: "Waveguide A3/A4 Temperature Summary Input"
+  position: 100
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -774,39 +780,39 @@ DigitalDevice:
   measured_device_type_id: !!int 'None'
 - id: 4
   id: 4
-  name: "Buncher Temperature"
+  name: "BUN1B Buncher Temperature"
   description: "Buncher Temperature Summary Input"
-  position: 200
+  position: 455
   area: "GUNB"
   evaluation: 0
   card_id: 1
   device_type_id: 2
-  measured_device_type_id: !!int 'None'
+  measured_device_type_id: 5
 - id: 5
   id: 5
-  name: "SOL01 Temp"
+  name: "SOL01B Temp"
   description: "SOL01 Temperature"
-  position: 400
+  position: 212
   area: "GUNB"
   evaluation: 0
   card_id: 1
   device_type_id: 2
-  measured_device_type_id: 6
+  measured_device_type_id: 8
 - id: 6
   id: 6
-  name: "SOL02 Temp"
-  description: "SOL02 Temperature"
-  position: 900
+  name: "SOL02B Temp"
+  description: "SOL02B Temperature"
+  position: 823
   area: "GUNB"
   evaluation: 0
   card_id: 1
   device_type_id: 2
-  measured_device_type_id: 6
+  measured_device_type_id: 8
 - id: 7
   id: 7
   name: "VVR01"
   description: "Vacuum Gate Valve VVR01"
-  position: 350
+  position: 100
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -816,7 +822,7 @@ DigitalDevice:
   id: 8
   name: "VVR02"
   description: "Vacuum Gate Valve VVR02"
-  position: 400
+  position: 941
   area: "GUNB"
   evaluation: 0
   card_id: 1
@@ -875,19 +881,19 @@ Fault:
   name: "TGT"
   description: "YAG01 Profile Monitor Screen Fault"
 - id: 2
-  name: "GUN_TEMP"
+  name: "TEMP_SUM"
   description: "Gun Temperature Fault"
 - id: 3
   name: "WG_TEMP"
   description: "Waveguide Temperature Fault"
 - id: 4
-  name: "BUNCH_TEMP"
+  name: "TEMP_SUM"
   description: "Buncher Temperature Fault"
 - id: 5
-  name: "SOL01_TEMP"
+  name: "TEMP_SUM"
   description: "SOL01 Temperature Fault"
 - id: 6
-  name: "SOL02_TEMP"
+  name: "TEMP_SUM"
   description: "SOL02 Temperature Fault"
 - id: 7
   name: "VVR01"
@@ -1231,68 +1237,68 @@ AnalogDevice:
 - id: 9
   channel_id: 5
   id: 9
-  name: "BPM01"
-  description: "BPM01"
-  position: 201
+  name: "BPM1B"
+  description: "BPM1B"
+  position: 314
   area: "GUNB"
   evaluation: 1
   card_id: 3
-  device_type_id: 7
+  device_type_id: 9
   measured_device_type_id: !!int 'None'
 - id: 10
   channel_id: 6
   id: 10
-  name: "BPM02"
-  description: "BPM02"
-  position: 601
+  name: "BPM2B"
+  description: "BPM2B"
+  position: 925
   area: "GUNB"
   evaluation: 1
   card_id: 3
-  device_type_id: 7
+  device_type_id: 9
   measured_device_type_id: !!int 'None'
 - id: 11
   channel_id: 1
   id: 11
-  name: "IM01"
+  name: "IM01B"
   description: "Toroid, ICT Charge"
-  position: 650
+  position: 360
   area: "GUNB"
   evaluation: 1
   card_id: 4
-  device_type_id: 4
+  device_type_id: 6
   measured_device_type_id: !!int 'None'
 - id: 12
   channel_id: 2
   id: 12
-  name: "FC"
+  name: "FCDG0DU"
   description: "Faraday Cup Current"
-  position: 900
-  area: "GUNB"
+  position: 1414
+  area: "DIAG"
   evaluation: 1
   card_id: 5
-  device_type_id: 5
+  device_type_id: 7
   measured_device_type_id: !!int 'None'
 - id: 13
   channel_id: 3
   id: 13
-  name: "SOL01"
+  name: "SOL1B"
   description: "SOL01 Current"
-  position: 400
+  position: 212
   area: "GUNB"
   evaluation: 1
   card_id: 2
-  device_type_id: 6
+  device_type_id: 8
   measured_device_type_id: !!int 'None'
 - id: 14
   channel_id: 4
   id: 14
-  name: "SOL02"
+  name: "SOL2B"
   description: "SOL02 Current"
-  position: 900
+  position: 823
   area: "GUNB"
   evaluation: 1
   card_id: 2
-  device_type_id: 6
+  device_type_id: 8
   measured_device_type_id: !!int 'None'
 ---
 MitigationDevice:

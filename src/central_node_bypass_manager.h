@@ -29,6 +29,7 @@ class BypassManager {
 
   bool checkBypassQueueTop(time_t now);
 
+  pthread_t _bypassThread;
   pthread_mutex_t mutex;
   bool initialized;
   
@@ -45,6 +46,9 @@ class BypassManager {
   void printBypassQueue();
   bool isInitialized();
   
+  void startBypassThread();
+  static void *bypassThread(void *arg);
+
   friend class BypassTest;
 };
 

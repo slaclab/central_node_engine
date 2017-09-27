@@ -125,6 +125,7 @@ void DbAnalogDevice::update() {
       wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
 
       // If both are zero the Central Node has not received messages from the device, assume fault
+      // Both zeroes also mean no messages from application card in the last 360Hz period
       if (wasLow + wasHigh == 0) {
 	invalidValueCount++;
 	newValue |= (1 << i); // Threshold exceeded
@@ -186,6 +187,15 @@ void DbApplicationCard::configureUpdateBuffers() {
  * update each digital/analog device with the new values.
  */
 void DbApplicationCard::updateInputs() {
+  // Check if first two bits are zero - if both are then application card has not send updated
+  // status during the past 360Hz period
+  if (applicationUpdateBuffer[0] == 0 && applicationUpdateBuffer[1] == 0) {
+    online = false;
+  }
+  else {
+    online = true;
+  }
+
   if (digitalDevices) {
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {
@@ -240,7 +250,9 @@ void DbApplicationCard::writeDigitalConfiguration() {
   std::stringstream errorStream;
   for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
        digitalDevice != digitalDevices->end(); ++digitalDevice) {
-    // Only configure firmware for devices/faults that require fast evaluation
+    // Only configure firmware for devices/faults that require fast evaluation -
+    // A DigitalDevice with evaluation set to FAST_EVALUATION *must* have only
+    // one InputDevice.
     if ((*digitalDevice).second->evaluation == FAST_EVALUATION) {
       if ((*digitalDevice).second->inputDevices->size() == 1) {
 	DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
@@ -306,7 +318,7 @@ void DbApplicationCard::writeAnalogConfiguration() {
     // Only configure firmware for devices/faults that require fast evaluation
     if ((*analogDevice).second->evaluation == FAST_EVALUATION) {
       LOG_TRACE("DATABASE", "AnalogConfig: " << (*analogDevice).second->name);
-      //      std::cout << (*analogDevice).second << std::endl;
+
       int channelNumber = (*analogDevice).second->channel->number;
 
       // Write power classes for each threshold bit
@@ -316,7 +328,10 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	     ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
 	for (uint32_t j = 0; j < POWER_CLASS_BIT_SIZE; ++j) {
 	  applicationConfigBuffer->set(powerClassOffset + j,
-				 ((*analogDevice).second->fastPowerClass[i] >> j) & 0x01);
+				       ((*analogDevice).second->fastPowerClass[i] >> j) & 0x01);
+	  if (((*analogDevice).second->fastPowerClass[i] >> j) & 0x01) {
+	    std::cout << (*analogDevice).second->name << ": power offset " << powerClassOffset+j << std::endl;
+	  }
 	}
 	powerClassOffset += POWER_CLASS_BIT_SIZE;
       }
@@ -326,8 +341,11 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	channelNumber * ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * DESTINATION_MASK_BIT_SIZE;
       for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
 	for (uint32_t j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) {
-	  applicationConfigBuffer->set(offset + j,
-				 ((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01);
+	  bool bitValue = false;
+	  if (((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01) {
+	    bitValue = true;
+	  }
+	  applicationConfigBuffer->set(offset + j, bitValue);
 	}
 	offset += DESTINATION_MASK_BIT_SIZE;
       }
@@ -335,6 +353,28 @@ void DbApplicationCard::writeAnalogConfiguration() {
   }
   // Print bitset in string format
   //  std::cout << *applicationConfigBuffer << std::endl;
+}
+
+void DbApplicationCard::printAnalogConfiguration() {
+  /*
+  // First print the 24 destination masks
+  std::cout << "Destination Masks:" << std::endl;
+  for (int i = 0; i < 24; ++i) {
+    std::cout << i << "\t";
+  }
+  std::cout << std::endl;
+  int index=0;
+  for (int i = 0; i < 24; ++i) {
+    int16_t mask = 0;
+    for (uint32_t j = 0; j < FW_NUM_MITIGATION_DEVICES; ++j) {
+      mask <<= 1;
+      mask |= ((*applicationConfigBuffer)[index] & 1);
+      index++;
+    }
+    std::cout << "0x" << std::hex << mask << std::dec << "\t";
+  }
+  std::cout << std::endl;
+  */
 }
 
 bool DbApplicationCard::isAnalog() {

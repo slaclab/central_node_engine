@@ -333,13 +333,16 @@ class DbDeviceInput : public DbEntry {
   // Pointer to the Channel connected to the device
   DbChannelPtr channel;
 
+  // Set true if this input is used by a fast evaluated device (must be the only input to device)
+  bool fastEvaluation;
+
   // Pointer to shared bitset buffer containing updates for all inputs from
   // the same application card
   ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
 
  DbDeviceInput() : DbEntry(), 
     bitPosition(-1), channelId(-1), faultValue(0), digitalDeviceId(-1), value(0), previousValue(0),
-    latchedValue(0), invalidValueCount(0), applicationUpdateBuffer(0) {
+    latchedValue(0), invalidValueCount(0), fastEvaluation(false), applicationUpdateBuffer(0) {
   }
 
   void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
@@ -353,6 +356,12 @@ class DbDeviceInput : public DbEntry {
        << "channelId[" << deviceInput->channelId << "]; "
        << "digitalDeviceId[" << deviceInput->digitalDeviceId << "]; "
        << "value[" << deviceInput->value << "]";
+    if (deviceInput->fastEvaluation) {
+      os << " [in fast device]";
+    }
+    if (deviceInput->bypass->status == BYPASS_VALID) {
+      os << " [Bypassed to " << deviceInput->bypass->value << "]";
+    }
     return os;
   }
 };
@@ -415,7 +424,8 @@ class DbDigitalDevice : public DbEntry {
        << "name[" << digitalDevice->name << "]; "
        << "evaluation[" << digitalDevice->evaluation << "]; "
        << "description[" << digitalDevice->description << "]; "
-       << "cardId[" << digitalDevice->cardId << "]";
+       << "cardId[" << digitalDevice->cardId << "] "
+       << "value[" << digitalDevice->value << "]";
     return os;
   }
 };
@@ -543,6 +553,7 @@ class DbApplicationCard : public DbEntry {
   uint32_t globalId;
   std::string name;
   std::string description;
+  bool online; // True if received non-zero update last 360Hz update period
 
   // Memory containing firmware configuration buffer
   ApplicationConfigBufferBitSet *applicationConfigBuffer;
@@ -558,12 +569,14 @@ class DbApplicationCard : public DbEntry {
   DbDigitalDeviceMapPtr digitalDevices;
 
  DbApplicationCard() : DbEntry(), 
-  number(-1), slotNumber(-1), crateId(-1), applicationTypeId(-1) {
+    number(-1), slotNumber(-1), crateId(-1), applicationTypeId(-1), online(false) {
   }
 
   void writeConfiguration();
   void writeDigitalConfiguration();
   void writeAnalogConfiguration();
+
+  void printAnalogConfiguration();
 
   void configureUpdateBuffers();
   void updateInputs();
@@ -723,7 +736,19 @@ class DbMitigationDevice : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
     os << "id[" << mitigationDevice->id << "]; "
        << "name[" << mitigationDevice->name << "]; "
-       << "destinationMask[" << mitigationDevice->destinationMask << "]";
+       << "destinationMask[" << mitigationDevice->destinationMask << "]; "
+       << "bufIndex[" << (int)mitigationDevice->softwareMitigationBufferIndex << "]; "
+       << "shift[" << (int)mitigationDevice->bitShift << "]";
+    if (mitigationDevice->allowedBeamClass) {
+      os << "; Allowed[" << mitigationDevice->allowedBeamClass->number << "]";
+    }
+    if (mitigationDevice->tentativeBeamClass) {
+      os << "; Tentative[" << mitigationDevice->tentativeBeamClass->number << "]";
+    }
+    if (mitigationDevice->previousAllowedBeamClass) {
+      os << "; PrevAllowed["
+	 << mitigationDevice->previousAllowedBeamClass->number << "]";
+    }
     return os;
   }
 };
@@ -835,13 +860,14 @@ class DbFault : public DbEntry {
   bool faulted;
   bool faultLatched;
   bool ignored;
+  uint32_t evaluation; // Set according to the input device types
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
   DbFaultStateMapPtr faultStates; // Map of fault states for this fault
   DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active
                                                    // the default state not necessarily is a real fault
 
- DbFault() : DbEntry(), name(""), description(""), faulted(true), faultLatched(true), ignored(false) {
+ DbFault() : DbEntry(), name(""), description(""), faulted(true), faultLatched(true), ignored(false), evaluation(SLOW_EVALUATION) {
   }
 
   void update(uint32_t v) {
@@ -854,6 +880,7 @@ class DbFault : public DbEntry {
        << "value[" << fault->value << "]; "
        << "faulted[" << fault->faulted << "]; "
        << "ignored[" << fault->ignored << "]; "
+       << "evaluation[" << fault->evaluation << "]; "
        << "description[" << fault->description << "]";
 
     if (fault->faultInputs) {

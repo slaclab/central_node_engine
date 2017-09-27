@@ -97,6 +97,13 @@ int Engine::loadConfig(std::string yamlFileName) {
 
   // When the first yaml configuration file is loaded the bypassMap
   // must be created.  
+  //
+  // TODO/Database/Important: the bypasses are created for each device input and
+  // analog channel in the database, this happens for the first time
+  // a database is loaded. If there are subsequent database changes
+  // they must have the same device inputs and analog channels.
+  // Currently if the number of channels differ between the loaded
+  // databases the central node engine must be restarted.
   if (!bypassManager) {
     bypassManager = BypassManagerPtr(new BypassManager());
     bypassManager->createBypassMap(mpsDb);
@@ -354,46 +361,48 @@ void Engine::mitigate() {
   // Update digital Fault values and MitigationDevice allowed class
   for (DbFaultMap::iterator fault = mpsDb->faults->begin();
        fault != mpsDb->faults->end(); ++fault) {
-
-    for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-	 state != (*fault).second->faultStates->end(); ++state) {
-      if ((*state).second->faulted && !(*state).second->ignored) {
-	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
-		  << (*fault).second->value
-		  << " (fault state="
-		  << (*state).second->deviceState->name
-		  << ", value=" << (*state).second->deviceState->value << ")");
-	if ((*state).second->allowedClasses) {
-	  for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
-	       allowed != (*state).second->allowedClasses->end(); ++allowed) {
-	    if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
-		(*allowed).second->beamClass->number) {
-	      (*allowed).second->mitigationDevice->tentativeBeamClass =
-		(*allowed).second->beamClass;
-	      LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
-			<< (*allowed).second->beamClass->number);
+    // Mitigate only those faults that are the result of slow evaluation
+    if ((*fault).second->evaluation == SLOW_EVALUATION) {
+      for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+	   state != (*fault).second->faultStates->end(); ++state) {
+	if ((*state).second->faulted && !(*state).second->ignored) {
+	  LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		    << (*fault).second->value
+		    << " (fault state="
+		    << (*state).second->deviceState->name
+		    << ", value=" << (*state).second->deviceState->value << ")");
+	  if ((*state).second->allowedClasses) {
+	    for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
+		 allowed != (*state).second->allowedClasses->end(); ++allowed) {
+	      if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
+		  (*allowed).second->beamClass->number) {
+		(*allowed).second->mitigationDevice->tentativeBeamClass =
+		  (*allowed).second->beamClass;
+		LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+			  << (*allowed).second->beamClass->number);
+	      }
 	    }
 	  }
 	}
       }
-    }
 
-    // If there are no faults, then enable the default - if there is one
-    if ((*fault).second->defaultFaultState) {
-      if ((*fault).second->defaultFaultState->faulted &&
-	  !(*fault).second->defaultFaultState->ignored) {
-	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
-		  << (*fault).second->value << " (Default) fault state="
-		  << (*fault).second->defaultFaultState->deviceState->name);
-	if ((*fault).second->defaultFaultState->allowedClasses) {
-	  for (DbAllowedClassMap::iterator allowed = (*fault).second->defaultFaultState->allowedClasses->begin();
-	       allowed != (*fault).second->defaultFaultState->allowedClasses->end(); ++allowed) {
-	    if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
-		(*allowed).second->beamClass->number) {
-	      (*allowed).second->mitigationDevice->tentativeBeamClass =
-		(*allowed).second->beamClass;
-	      LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
-			<< (*allowed).second->beamClass->number);
+      // If there are no faults, then enable the default - if there is one
+      if ((*fault).second->defaultFaultState) {
+	if ((*fault).second->defaultFaultState->faulted &&
+	    !(*fault).second->defaultFaultState->ignored) {
+	  LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+		    << (*fault).second->value << " (Default) fault state="
+		    << (*fault).second->defaultFaultState->deviceState->name);
+	  if ((*fault).second->defaultFaultState->allowedClasses) {
+	    for (DbAllowedClassMap::iterator allowed = (*fault).second->defaultFaultState->allowedClasses->begin();
+		 allowed != (*fault).second->defaultFaultState->allowedClasses->end(); ++allowed) {
+	      if ((*allowed).second->mitigationDevice->tentativeBeamClass->number >
+		  (*allowed).second->beamClass->number) {
+		(*allowed).second->mitigationDevice->tentativeBeamClass =
+		  (*allowed).second->beamClass;
+		LOG_TRACE("ENGINE", (*allowed).second->mitigationDevice->name << " tentative class set to "
+			  << (*allowed).second->beamClass->number);
+	      }
 	    }
 	  }
 	}
