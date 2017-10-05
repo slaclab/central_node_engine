@@ -165,7 +165,8 @@ int main(int argc, char const *argv[])
     stack_prefault();
     
     printf("Loading YAML description...\n");
-    Firmware::getInstance().loadConfig("./CentralNodeYAML/000TopLevel.yaml");
+    Firmware::getInstance().createRoot("./CentralNodeYAML/000TopLevel.yaml");
+    Firmware::getInstance().createRegisters();
 
     std::cout << &(Firmware::getInstance());
 

@@ -7,12 +7,15 @@
 #include <central_node_bypass.h>
 #include <central_node_exception.h>
 #include <central_node_history.h>
+#include <central_node_engine.h>
 #include <log_wrapper.h>
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *bypassLogger;
 #endif
+
+bool BypassManager::refreshFirmwareConfiguration = false;
 
 BypassManager::BypassManager() :
   initialized(false) {
@@ -53,6 +56,9 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     // this field will get set later when bypasses start to be monitored
     bypass->status = BYPASS_EXPIRED;
     bypass->index = 0;
+    if ((*input).second->fastEvaluation) {
+      bypass->configUpdate = true;
+    }
 
     bypassId++;
     
@@ -62,8 +68,8 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
 
   for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
        analogInput != db->analogDevices->end(); ++analogInput) {
-    // Create one InputBypass for each threshold bit (max of 32 threshold bits)
-    for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
+    // Create one InputBypass for each integrator (max of 4 integrators)
+    for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
       InputBypass *bypass = new InputBypass();
       bypass->id = bypassId;
       bypass->deviceId = (*analogInput).second->id;
@@ -72,6 +78,9 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
       // this field will get set later when bypasses start to be monitored
       bypass->status = BYPASS_EXPIRED;
       bypass->index = i;
+      if ((*analogInput).second->evaluation != 0) {
+	bypass->configUpdate = true;
+      }
 
       bypassId++;
     
@@ -93,12 +102,18 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   std::stringstream errorStream;
   LOG_TRACE("BYPASS", "Assigning bypass slots to MPS database inputs (analog/digital)");
 
+  int ret = pthread_mutex_lock(&mutex);
+  if (0 != ret) {
+    throw("ERROR: BypassManager::assignBypass() failed to lock mutex.");
+  }
+
   for (InputBypassMap::iterator bypass = bypassMap->begin();
        bypass != bypassMap->end(); ++bypass) {
     int inputId = (*bypass).second->deviceId;
     if ((*bypass).second->type == BYPASS_DIGITAL) {
       DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(inputId);
       if (digitalInput == db->deviceInputs->end()) {
+	pthread_mutex_unlock(&mutex);
 	errorStream << "ERROR: Failed to find FaultInput ("
 		    << inputId << ") when assigning bypass";
 	throw(CentralNodeException(errorStream.str()));
@@ -110,12 +125,14 @@ void BypassManager::assignBypass(MpsDbPtr db) {
     else { // BYPASS_ANALOG
       DbAnalogDeviceMap::iterator analogInput = db->analogDevices->find(inputId);
       if (analogInput == db->analogDevices->end()) {
+	pthread_mutex_unlock(&mutex);
 	errorStream << "ERROR: Failed to find FaultInput ("
 		    << inputId << ") when assigning bypass";
 	throw(CentralNodeException(errorStream.str()));
       }
       else {
 	(*analogInput).second->bypass[(*bypass).second->index] = (*bypass).second;
+	(*bypass).second->bypassMask = &((*analogInput).second->bypassMask);
       }
     }
   }
@@ -149,6 +166,11 @@ void BypassManager::assignBypass(MpsDbPtr db) {
     }
   }
   errorStream << "]";
+
+  ret = pthread_mutex_unlock(&mutex);
+  if (0 != ret) {
+    throw("ERROR: BypassManager::assignBypass() failed to unlock mutex.");
+  }
 
   if (error) {
     throw(CentralNodeException(errorStream.str()));
@@ -239,9 +261,20 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
       else if (top.second->until <= top.first) {
 	if (top.second->type == BYPASS_ANALOG) {
 	  History::getInstance().logBypassState(top.second->deviceId, top.second->status, BYPASS_EXPIRED, top.second->index);
+	  // If analog/threshold bypass, change bypassMask - set integrator thresholds bit to 1 (not-bypassed)
+	  uint32_t *bypassMask = top.second->bypassMask;//&((*analogInput).second->bypassMask);
+	  if (top.second->index >= 0 && bypassMask != NULL) {
+	    uint32_t m = 0xFF << (top.second->index * ANALOG_CHANNEL_INTEGRATORS_SIZE); // clear bypassed integrator thresholds
+	    *bypassMask |= m;
+	  }
 	}
 	else {
 	  History::getInstance().logBypassState(top.second->deviceId, top.second->status, BYPASS_EXPIRED, BYPASS_DIGITAL_INDEX);
+	}
+
+	// Check if expired bypass requires firmware configuration update
+	if (top.second->configUpdate) {
+	  refreshFirmwareConfiguration = true;
 	}
 
 	top.second->status = BYPASS_EXPIRED;
@@ -297,7 +330,7 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
 
 void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 				       uint32_t deviceId, uint32_t value, time_t bypassUntil,
-				       int thresholdIndex, bool test) {
+				       int intIndex, bool test) {
   InputBypassPtr bypass;
   std::stringstream errorStream;
   uint32_t *bypassMask = NULL;
@@ -320,7 +353,7 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 		  << "] while setting bypass";
       throw(CentralNodeException(errorStream.str()));
     }
-    bypass = (*analogInput).second->bypass[thresholdIndex];
+    bypass = (*analogInput).second->bypass[intIndex];
     bypassMask = &(*analogInput).second->bypassMask;
   }
 
@@ -340,10 +373,15 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     bypass->status = BYPASS_EXPIRED;
     bypass->until = 0;
 
-    // If analog/threshold bypass, change bypassMask - set threshold bit to 1 (not-bypassed)
-    if (thresholdIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
-      uint32_t m = 1 << thresholdIndex; // clear bypassed threshold
+    // If analog/threshold bypass, change bypassMask - set integrator thresholds bit to 1 (not-bypassed)
+    if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
+      uint32_t m = 0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE); // clear bypassed integrator thresholds
       *bypassMask |= m;
+    }
+
+    // Check if expired bypass requires firmware configuration update
+    if (bypass->configUpdate) {
+      refreshFirmwareConfiguration = true;
     }
 
     LOG_TRACE("BYPASS", "Set bypass EXPIRED for device [" << deviceId << "], "
@@ -367,9 +405,14 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 	History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_VALID, BYPASS_DIGITAL_INDEX);
       }
       LOG_TRACE("BYPASS", "New bypass for device [" << deviceId << "], "
-		<< "type=" << bypassType << ", index=" << thresholdIndex
+		<< "type=" << bypassType << ", index=" << intIndex
 		<< ", until=" << bypassUntil << " sec"
 		<< ", now=" << now << " sec");
+      // Check if expired bypass requires firmware configuration update
+      if (bypass->configUpdate) {
+	refreshFirmwareConfiguration = true;
+      }
+
       int ret = pthread_mutex_lock(&mutex);
       if (0 != ret) {
 	throw("ERROR: BypassManager::setBypass() failed to lock mutex.");
@@ -379,8 +422,8 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
       bypass->value = value;
 
       // If analog/threshold bypass, change bypassMask - set threshold bit to 0 (bypassed)
-      if (thresholdIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
-	uint32_t m = ~(1 << thresholdIndex); // zero the bypassed threshold bit
+      if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
+	uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
 	*bypassMask &= m;
       }
 
@@ -415,7 +458,10 @@ void BypassManager::printBypassQueue() {
     strftime(buf, 40, "%x %X", ptr);
     std::cout << buf << " (" << copy.top().first << "): deviceId=" << copy.top().second->deviceId;
     if (copy.top().second->type == BYPASS_ANALOG) {
-      std::cout << " threshold " << copy.top().second->index;
+      std::cout << " integrator " << copy.top().second->index;
+    }
+    if (copy.top().second->configUpdate) {
+      std::cout << " [FW bypass]";
     }
     if (copy.top().second->status == BYPASS_VALID) {
       std::cout << " [VALID]";
@@ -431,13 +477,19 @@ void BypassManager::printBypassQueue() {
 
 void BypassManager::startBypassThread() {
   if (pthread_create(&_bypassThread, 0, BypassManager::bypassThread, 0)) {
-    //    throw(EngineException("ERROR: Failed to start bypass thread"));
+    throw("ERROR: Failed to start bypass thread");
     return;
   }
 }
 
 void *BypassManager::bypassThread(void *arg) {
   while(true) {
+    Engine::getInstance().getBypassManager()->checkBypassQueue();
+    if (refreshFirmwareConfiguration) {
+      std::cout << "write fw config now!" << std::endl;
+      Engine::getInstance().reloadConfig();
+      refreshFirmwareConfiguration = false;
+    }
     sleep(1);
   }
 

@@ -18,6 +18,16 @@ enum BypassStatus {
   BYPASS_EXPIRED
 };
 
+enum AnalogIntegratorIndex {
+  BPM_X = 0,
+  BPM_Y = 1,
+  BPM_TMIT = 2,
+  INT0 = 0,
+  INT2 = 1,
+  INT3 = 2,
+  INT4 = 3
+};
+
 static const int BYPASS_DIGITAL_INDEX = 100;
 
 /**
@@ -60,10 +70,17 @@ class InputBypass {
   // This index is used only for bypasses of AnalogDevices, more specifically
   // it defines which threshold bit is bypassed. Each AnalogDevice has up to
   // 32 InputBypass - each threshold can be bypassed individually
+  // Analog integrator index (from 0 to 4)
   uint16_t index;
+  uint32_t *bypassMask;
+
+  // Indicates if this bypass requires firmware configuration update - this
+  // is needed for inputs used by the fast rules
+  bool configUpdate;
 
  InputBypass() : id(0), deviceId(0), value(0),
-    type(BYPASS_DIGITAL), until(0), status(BYPASS_EXPIRED) {
+    type(BYPASS_DIGITAL), until(0), status(BYPASS_EXPIRED),
+    configUpdate(false) {
   }
 };
 

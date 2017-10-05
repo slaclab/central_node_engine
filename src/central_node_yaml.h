@@ -9,7 +9,8 @@
 #ifndef CENTRAL_NODE_YAML_H
 #define CENTRAL_NODE_YAML_H
 
-#include <central_node_database.h>
+#include <central_node_database_defs.h>
+#include <central_node_database_tables.h>
 #include <yaml-cpp/yaml.h>
 
 

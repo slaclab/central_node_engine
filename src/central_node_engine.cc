@@ -23,7 +23,7 @@ time_t          Engine::_startTime;
 
 Engine::Engine() :
   _initialized(false),
-  checkFaultTime(5, "Evaluation time") {
+  _checkFaultTime(5, "Evaluation time") {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   engineLogger = Loggers::getLogger("ENGINE");
   LOG_TRACE("ENGINE", "Created Engine");
@@ -50,20 +50,46 @@ Engine::~Engine() {
 #if defined(LOG_ENABLED)
   //  Firmware::getInstance().showStats();
 #endif
-  checkFaultTime.show();
+  _checkFaultTime.show();
 }
 
 MpsDbPtr Engine::getCurrentDb() {
-  return mpsDb;
+  return _mpsDb;
 }
 
 BypassManagerPtr Engine::getBypassManager() {
-  return bypassManager;
+  return _bypassManager;
 }
 
 void Engine::newDb() {
   MpsDb *db = new MpsDb();
-  mpsDb = shared_ptr<MpsDb>(db);
+  _mpsDb = shared_ptr<MpsDb>(db);
+}
+
+int Engine::reloadConfig() {
+  pthread_mutex_lock(&_engineMutex);
+
+  // If updateThread active, then stop it first
+  if (_evaluate) {
+    _evaluate = false;
+    pthread_mutex_unlock(&_engineMutex);
+    threadJoin();
+    pthread_mutex_lock(&_engineMutex);
+  }
+
+  _evaluate = false;
+
+  _mpsDb->lock();
+
+  _mpsDb->writeFirmwareConfiguration();
+  _mpsDb->unlock();
+
+  _evaluate = true;
+  pthread_mutex_unlock(&_engineMutex);
+
+  startUpdateThread();
+
+  return 0;
 }
 
 int Engine::loadConfig(std::string yamlFileName) {
@@ -80,17 +106,17 @@ int Engine::loadConfig(std::string yamlFileName) {
   _evaluate = false;
 
   MpsDb *db = new MpsDb();
-  mpsDb = shared_ptr<MpsDb>(db);
+  _mpsDb = shared_ptr<MpsDb>(db);
 
-  mpsDb->lock();
+  _mpsDb->lock();
 
-  if (mpsDb->load(yamlFileName) != 0) {
-    errorStream.str(std::string());
-    errorStream << "ERROR: Failed to load yaml database ("
+  if (_mpsDb->load(yamlFileName) != 0) {
+    _errorStream.str(std::string());
+    _errorStream << "ERROR: Failed to load yaml database ("
 		<< yamlFileName << ")";
-    mpsDb->unlock();
+    _mpsDb->unlock();
     pthread_mutex_unlock(&_engineMutex);
-    throw(EngineException(errorStream.str()));
+    throw(EngineException(_errorStream.str()));
   }
 
   LOG_TRACE("ENGINE", "YAML Database loaded from " << yamlFileName);
@@ -104,15 +130,16 @@ int Engine::loadConfig(std::string yamlFileName) {
   // they must have the same device inputs and analog channels.
   // Currently if the number of channels differ between the loaded
   // databases the central node engine must be restarted.
-  if (!bypassManager) {
-    bypassManager = BypassManagerPtr(new BypassManager());
-    bypassManager->createBypassMap(mpsDb);
+  if (!_bypassManager) {
+    _bypassManager = BypassManagerPtr(new BypassManager());
+    _bypassManager->createBypassMap(_mpsDb);
+    _bypassManager->startBypassThread();
   }
 
   LOG_TRACE("ENGINE", "BypassManager created");
 
   try {
-    mpsDb->configure();
+    _mpsDb->configure();
   } catch (DbException e) {
     delete db;
     pthread_mutex_unlock(&_engineMutex);
@@ -122,28 +149,28 @@ int Engine::loadConfig(std::string yamlFileName) {
   LOG_TRACE("ENGINE", "MPS Database configured from YAML");
 
   // Assign bypass to each digital/analog input
-  bypassManager->assignBypass(mpsDb);
+  _bypassManager->assignBypass(_mpsDb);
 
   // Find the lowest/highest BeamClasses - used when checking faults
   uint32_t num = 0;
   uint32_t lowNum = 100;
-  for (DbBeamClassMap::iterator beamClass = mpsDb->beamClasses->begin();
-       beamClass != mpsDb->beamClasses->end(); ++beamClass) {
+  for (DbBeamClassMap::iterator beamClass = _mpsDb->beamClasses->begin();
+       beamClass != _mpsDb->beamClasses->end(); ++beamClass) {
     if ((*beamClass).second->number > num) {
-      highestBeamClass = (*beamClass).second;
+      _highestBeamClass = (*beamClass).second;
       num = (*beamClass).second->number;
     }
     if ((*beamClass).second->number < lowNum) {
-      lowestBeamClass = (*beamClass).second;
+      _lowestBeamClass = (*beamClass).second;
       lowNum = (*beamClass).second->number;
     }
   }
 
-  mpsDb->writeFirmwareConfiguration();
-  mpsDb->unlock();
+  _mpsDb->writeFirmwareConfiguration();
+  _mpsDb->unlock();
 
-  LOG_TRACE("ENGINE", "Lowest beam class found: " << lowestBeamClass->number);
-  LOG_TRACE("ENGINE", "Highest beam class found: " << highestBeamClass->number);
+  LOG_TRACE("ENGINE", "Lowest beam class found: " << _lowestBeamClass->number);
+  LOG_TRACE("ENGINE", "Highest beam class found: " << _highestBeamClass->number);
 
   _initialized = true;
 
@@ -172,12 +199,12 @@ bool Engine::isInitialized() {
  * As faults are detected the tentativeBeamClass gets lowered accordingly.
  */
 void Engine::setTentativeBeamClass() {
-  // Assigns highestBeamClass as tentativeBeamClass for all MitigationDevices
-  for (DbMitigationDeviceMap::iterator device = mpsDb->mitigationDevices->begin();
-       device != mpsDb->mitigationDevices->end(); ++device) {
-    (*device).second->tentativeBeamClass = highestBeamClass;
+  // Assigns _highestBeamClass as tentativeBeamClass for all MitigationDevices
+  for (DbMitigationDeviceMap::iterator device = _mpsDb->mitigationDevices->begin();
+       device != _mpsDb->mitigationDevices->end(); ++device) {
+    (*device).second->tentativeBeamClass = _highestBeamClass;
     (*device).second->previousAllowedBeamClass = (*device).second->allowedBeamClass; // for history purposes
-    (*device).second->allowedBeamClass = lowestBeamClass;
+    (*device).second->allowedBeamClass = _lowestBeamClass;
     LOG_TRACE("ENGINE", (*device).second->name << " tentative class set to: "
 	      << (*device).second->tentativeBeamClass->number
 	      << "; allowed class set to: "
@@ -190,8 +217,8 @@ void Engine::setTentativeBeamClass() {
  * allowedBeamClass for the mitigation devices.
  */
 void Engine::setAllowedBeamClass() {
-  for (DbMitigationDeviceMap::iterator it = mpsDb->mitigationDevices->begin(); 
-       it != mpsDb->mitigationDevices->end(); ++it) {
+  for (DbMitigationDeviceMap::iterator it = _mpsDb->mitigationDevices->begin(); 
+       it != _mpsDb->mitigationDevices->end(); ++it) {
     (*it).second->setAllowedBeamClass();
     //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
     LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
@@ -208,7 +235,6 @@ void Engine::setAllowedBeamClass() {
  * TODO: bypass mask and values accessed by multiple threads
  */
 void Engine::evaluateFaults() {
-  std::stringstream errorStream;
   uint32_t deviceStateId = 0;
 
   bool faulted = false;
@@ -217,8 +243,8 @@ void Engine::evaluateFaults() {
   // The individual inputs come from independent digital inputs,
   // this does not apply to analog devices, where the input
   // come from a single channel (with multiple bits in it)
-  for (DbDigitalDeviceMap::iterator device = mpsDb->digitalDevices->begin(); 
-       device != mpsDb->digitalDevices->end(); ++device) {
+  for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin(); 
+       device != _mpsDb->digitalDevices->end(); ++device) {
     uint32_t deviceValue = 0;
     LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
 	      << ", there are " << (*device).second->inputDevices->size()
@@ -246,8 +272,8 @@ void Engine::evaluateFaults() {
   // At this point all digital devices have an updated value
 
   // Update digital & analog Fault values and MitigationDevice allowed class
-  for (DbFaultMap::iterator fault = mpsDb->faults->begin();
-       fault != mpsDb->faults->end(); ++fault) {
+  for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+       fault != _mpsDb->faults->end(); ++fault) {
     LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
 
     // First calculate the digital Fault value from its one or more digital device inputs
@@ -321,8 +347,8 @@ void Engine::evaluateFaults() {
 
 void Engine::evaluateIgnoreConditions() {
   // Calculate state of conditions
-  for (DbConditionMap::iterator condition = mpsDb->conditions->begin();
-       condition != mpsDb->conditions->end(); ++condition) {
+  for (DbConditionMap::iterator condition = _mpsDb->conditions->begin();
+       condition != _mpsDb->conditions->end(); ++condition) {
     uint32_t conditionValue = 0;
     for (DbConditionInputMap::iterator input = (*condition).second->conditionInputs->begin();
 	 input != (*condition).second->conditionInputs->end(); ++input) {
@@ -359,8 +385,8 @@ void Engine::evaluateIgnoreConditions() {
 
 void Engine::mitigate() {
   // Update digital Fault values and MitigationDevice allowed class
-  for (DbFaultMap::iterator fault = mpsDb->faults->begin();
-       fault != mpsDb->faults->end(); ++fault) {
+  for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+       fault != _mpsDb->faults->end(); ++fault) {
     // Mitigate only those faults that are the result of slow evaluation
     if ((*fault).second->evaluation == SLOW_EVALUATION) {
       for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
@@ -412,23 +438,23 @@ void Engine::mitigate() {
 }
 
 int Engine::checkFaults() {
-  if (!mpsDb) {
+  if (!_mpsDb) {
     return 0;
   }
 
   // must first get updated input values
-  checkFaultTime.start();
+  _checkFaultTime.start();
 
   LOG_TRACE("ENGINE", "Checking faults");
-  mpsDb->lock();
-  mpsDb->clearMitigationBuffer();
+  _mpsDb->lock();
+  _mpsDb->clearMitigationBuffer();
   setTentativeBeamClass();
   evaluateFaults();
   evaluateIgnoreConditions();
   mitigate();
   setAllowedBeamClass();
-  mpsDb->unlock();
-  checkFaultTime.end();
+  _mpsDb->unlock();
+  _checkFaultTime.end();
 
   return 0;
 }
@@ -442,9 +468,9 @@ void Engine::showFaults() {
   bool faults = false;
 
   // Digital Faults
-  mpsDb->lock();
-  for (DbFaultMap::iterator fault = mpsDb->faults->begin();
-       fault != mpsDb->faults->end(); ++fault) {
+  _mpsDb->lock();
+  for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+       fault != _mpsDb->faults->end(); ++fault) {
     for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
 	 state != (*fault).second->faultStates->end(); ++state) {
       if ((*state).second->faulted) {
@@ -458,7 +484,7 @@ void Engine::showFaults() {
       }
     }
   }
-  mpsDb->unlock();
+  _mpsDb->unlock();
   if (!faults) {
     std::cout << "# No faults" << std::endl;
   }
@@ -467,7 +493,7 @@ void Engine::showFaults() {
 void Engine::showStats() {
   if (isInitialized()) {
     std::cout << ">> Engine Stats:" << std::endl;
-    checkFaultTime.show();
+    _checkFaultTime.show();
     std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
     std::cout << "Counter: " << Engine::_updateCounter << std::endl;
     std::cout << "Started at " << ctime(&Engine::_startTime) << std::endl;
@@ -488,9 +514,9 @@ void Engine::showMitigationDevices() {
   }
 
   std::cout << ">> Mitigation Devices: " << std::endl;
-  mpsDb->lock();
-  for (DbMitigationDeviceMap::iterator mitigation = mpsDb->mitigationDevices->begin();
-       mitigation != mpsDb->mitigationDevices->end(); ++mitigation) {
+  _mpsDb->lock();
+  for (DbMitigationDeviceMap::iterator mitigation = _mpsDb->mitigationDevices->begin();
+       mitigation != _mpsDb->mitigationDevices->end(); ++mitigation) {
     std::cout << (*mitigation).second->name;
     if ((*mitigation).second->allowedBeamClass &&
 	(*mitigation).second->tentativeBeamClass) {
@@ -502,7 +528,7 @@ void Engine::showMitigationDevices() {
       std::cout << ":\t ERROR -> no beam class assigned (is MPS disabled?)" << std::endl;
     }
   }
-  mpsDb->unlock();
+  _mpsDb->unlock();
 }
 
 void Engine::showDeviceInputs() {
@@ -512,12 +538,12 @@ void Engine::showDeviceInputs() {
   }
 
   std::cout << "Device Inputs: " << std::endl;
-  mpsDb->lock();
-  for (DbDeviceInputMap::iterator input = mpsDb->deviceInputs->begin();
-       input != mpsDb->deviceInputs->end(); ++input) {
+  _mpsDb->lock();
+  for (DbDeviceInputMap::iterator input = _mpsDb->deviceInputs->begin();
+       input != _mpsDb->deviceInputs->end(); ++input) {
     std::cout << (*input).second << std::endl;
   }
-  mpsDb->unlock();
+  _mpsDb->unlock();
 }
 
 void Engine::showDatabaseInfo() {
@@ -525,7 +551,7 @@ void Engine::showDatabaseInfo() {
     std::cout << "MPS not initialized - no database" << std::endl;
     return;
   }
-  mpsDb->showInfo();
+  _mpsDb->showInfo();
 }
 
 void Engine::startUpdateThread() {
@@ -602,7 +628,7 @@ void *Engine::engineThread(void *arg) {
 
     Firmware::getInstance().heartbeat();
 
-    if (Engine::getInstance().mpsDb) {
+    if (Engine::getInstance()._mpsDb) {
       _updateCounter++;
       counter++;
       now = time(0);
@@ -613,9 +639,9 @@ void *Engine::engineThread(void *arg) {
 	counter = 0;
       }
 
-      if (Engine::getInstance().mpsDb->updateInputs()) {
+      if (Engine::getInstance()._mpsDb->updateInputs()) {
 	Engine::getInstance().checkFaults();
-	Engine::getInstance().mpsDb->mitigate();
+	Engine::getInstance()._mpsDb->mitigate();
       }
       else {
 	_rate = 0;
@@ -631,4 +657,12 @@ void *Engine::engineThread(void *arg) {
 
   std::cout << "EngineThread: Exiting..." << std::endl;
   pthread_exit(0);
+}
+
+long Engine::getMaxCheckTime() {
+  return _checkFaultTime.getMax();
+}
+
+long Engine::getAvgCheckTime() {
+  return _checkFaultTime.getAverage();
 }

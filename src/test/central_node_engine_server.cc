@@ -86,7 +86,8 @@ int main(int argc, char **argv) {
     usage(argv[0]);
     return 1;
   }
-  Firmware::getInstance().loadConfig(fwFileName);
+  Firmware::getInstance().createRoot(fwFileName);
+  Firmware::getInstance().createRegisters();
 
   if (clear) {
     std::cout << &(Firmware::getInstance());

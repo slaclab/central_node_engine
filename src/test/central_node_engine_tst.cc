@@ -111,15 +111,15 @@ class EngineTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	
-	int size = Engine::getInstance().mpsDb->deviceInputs->size() + 1;
+	int size = Engine::getInstance()._mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance()._mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
 	try {
-	  Engine::getInstance().mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+	  Engine::getInstance()._mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
 	} catch (std::exception e) {
 	  std::cerr << "ERROR: invalid device input index of " << deviceId << std::endl;
 	  return -1;
@@ -147,24 +147,24 @@ class EngineTest {
 	analogInputFile >> analogValue;
 	/*	
 	std::cout << deviceId << ": " << analogValue << " analogSize: "
-	  	  << Engine::getInstance().mpsDb->analogDevices->size() 
+	  	  << Engine::getInstance()._mpsDb->analogDevices->size() 
 	  	  << " digitalSize: "
-         	  << Engine::getInstance().mpsDb->digitalDevices->size() 
+         	  << Engine::getInstance()._mpsDb->digitalDevices->size() 
 	    	  << std::endl;
 	*/
-	int size = Engine::getInstance().mpsDb->analogDevices->size() + 1 + Engine::getInstance().mpsDb->digitalDevices->size();
+	int size = Engine::getInstance()._mpsDb->analogDevices->size() + 1 + Engine::getInstance()._mpsDb->digitalDevices->size();
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance()._mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
-	Engine::getInstance().mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	Engine::getInstance()._mpsDb->analogDevices->at(deviceId)->update(analogValue);
       }
     }
 
 
-    //    std::cout << Engine::getInstance().mpsDb->deviceInputs->at(1)->value << std::endl;
+    //    std::cout << Engine::getInstance()._mpsDb->deviceInputs->at(1)->value << std::endl;
 
     return 0;
   }

@@ -31,7 +31,8 @@ public:
 
   int config(std::string fwFileName, std::string mpsFileName) {
     try {
-      Firmware::getInstance().loadConfig(fwFileName);
+      Firmware::getInstance().createRoot(fwFileName);
+      Firmware::getInstance().createRegisters();
     
       if (verbose) {
 	std::cout << &Firmware::getInstance();
@@ -56,7 +57,7 @@ public:
     if (verbose) {
       std::cout << "INFO: Writing MPS configuration to firmware... ";
     }
-    Engine::getInstance().mpsDb->writeFirmwareConfiguration();
+    Engine::getInstance()._mpsDb->writeFirmwareConfiguration();
     if (verbose) {
       std::cout << "done." << std::endl;
     }
@@ -77,7 +78,7 @@ public:
 	return -1;
       }
 
-      uint32_t *appConfig = reinterpret_cast<uint32_t *>(Engine::getInstance().mpsDb->fastConfigurationBuffer +
+      uint32_t *appConfig = reinterpret_cast<uint32_t *>(Engine::getInstance()._mpsDb->fastConfigurationBuffer +
 						       0 * APPLICATION_CONFIG_BUFFER_SIZE_BYTES);
       for (uint32_t i = 0; i < APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4; ++i) {
 	if (appConfig[i] != appFwConfig[i]) {

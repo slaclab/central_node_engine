@@ -36,9 +36,11 @@ class Engine {
   Engine();
   Engine(Engine const &);
   ~Engine();
+
   void operator=(Engine const &);
   bool _initialized;
   pthread_t _engineThread;
+
   static pthread_mutex_t _engineMutex;
   static bool _evaluate;
   static uint32_t _rate;
@@ -47,11 +49,11 @@ class Engine {
 
  public:
   int loadConfig(std::string yamlFileName);
+  int reloadConfig();
   int checkFaults();
   bool isInitialized();
 
   void threadExit();
-  //  void threadJoin();
   void threadJoin();
 
   friend class EngineTest;
@@ -64,9 +66,12 @@ class Engine {
   void showDeviceInputs();
   void showFirmware();
   void showDatabaseInfo();
+
   uint32_t getUpdateRate();
   uint32_t getUpdateCounter();
   time_t getStartTime();
+  long getMaxCheckTime();
+  long getAvgCheckTime();
 
   MpsDbPtr getCurrentDb();
   BypassManagerPtr getBypassManager();
@@ -83,14 +88,14 @@ class Engine {
   void evaluateIgnoreConditions();
   void mitgate();
 
-  MpsDbPtr mpsDb;
-  BypassManagerPtr bypassManager;
+  MpsDbPtr _mpsDb;
+  BypassManagerPtr _bypassManager;
 
-  DbBeamClassPtr highestBeamClass;
-  DbBeamClassPtr lowestBeamClass;
+  DbBeamClassPtr _highestBeamClass;
+  DbBeamClassPtr _lowestBeamClass;
 
-  std::stringstream errorStream;
-  TimeAverage checkFaultTime;
+  std::stringstream _errorStream;
+  TimeAverage _checkFaultTime;
 
  public:
   static Engine &getInstance() {

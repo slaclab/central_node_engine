@@ -6,7 +6,9 @@ POSTBUILD_SUBDIRS=test
 
 HEADERS = central_node_bypass.h \
         central_node_bypass_manager.h \
+        central_node_database_tables.h \
         central_node_database.h \
+	central_node_database_defs.h \
         central_node_engine.h \
         central_node_exception.h \
         central_node_yaml.h \
@@ -21,7 +23,8 @@ HEADERS = central_node_bypass.h \
 GENERATED_SRCS += git_version_string.h
 #GENERATED_SRCS += $(DOCS)
 
-central_node_engine_SRCS = central_node_database.cc
+central_node_engine_SRCS = central_node_database_tables.cc
+central_node_engine_SRCS += central_node_database.cc
 central_node_engine_SRCS += central_node_inputs.cc
 central_node_engine_SRCS += central_node_engine.cc
 central_node_engine_SRCS += central_node_bypass.cc

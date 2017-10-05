@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <bitset>
 #include <boost/shared_ptr.hpp>
 
 #include <cpsw_api_user.h>
@@ -24,6 +25,10 @@ const uint32_t FW_NUM_APPLICATIONS = 8;
 const uint32_t FW_NUM_BEAM_CLASSES = 16;
 const uint32_t FW_NUM_MITIGATION_DEVICES = 16;
 const uint32_t FW_NUM_CONNECTIONS = 12;
+const uint32_t FW_NUM_APPLICATION_MASKS = 1024;
+const uint32_t FW_NUM_APPLICATION_MASKS_WORDS = FW_NUM_APPLICATION_MASKS/sizeof(uint32_t);
+
+typedef std::bitset<FW_NUM_APPLICATION_MASKS> ApplicationBitMaskSet;
 
 // TODO: There is a status register, beamFaultReason. Bits 15:0 indicate a power
 // class violation for each destination. Bits 31:16 indicate a min period
@@ -40,21 +45,26 @@ class Firmware {
   Firmware(Firmware const &);
   ~Firmware();
   void operator=(Firmware const &);
-  bool initialized;
+  uint32_t _applicationTimeoutMaskBuffer[FW_NUM_APPLICATION_MASKS_WORDS];
+  ApplicationBitMaskSet *_applicationTimeoutMaskBitSet;
+
+  uint32_t _applicationTimeoutErrorBuffer[FW_NUM_APPLICATION_MASKS_WORDS];
+  ApplicationBitMaskSet *_applicationTimeoutErrorBitSet;
 
  public:
-  int loadConfig(std::string yamlFileName);
+  int createRoot(std::string yamlFileName);
+  void setRoot(Path root);
+  int createRegisters();
+  Path getRoot();
 
   friend class FirmwareTest;
   
  protected:
-  Hub _root;
-  Path _path;
+  Path _root;
 
   ScalVal_RO _fpgaVersionSV;
   ScalVal_RO _buildStampSV;
   ScalVal_RO _gitHashSV;
-  ScalVal    _heartbeatSV;
   ScalVal    _enableSV;
   ScalVal_RO _swLossErrorSV;
   ScalVal_RO _swLossCntSV;
@@ -104,18 +114,11 @@ class Firmware {
   Command    _toErrClearCmd;
   Command    _moConcErrClearCmd;
 
-  ScalVal_RO _rxPhyReadySV;
-  ScalVal_RO _txPhyReadySV;
-  ScalVal_RO _rxLocalLinkReadySV;
-  ScalVal_RO _rxRemLinkReadySV;
-  ScalVal_RO _rxFrameCountSV;
-  ScalVal_RO _rxFrameErrorCountSV;
-
-  uint8_t _heartbeat;
-
   void setBoolU64(ScalVal reg, bool enable);
   bool getBoolU64(ScalVal reg);
+  uint64_t getUInt64(ScalVal_RO reg);
   uint32_t getUInt32(ScalVal_RO reg);
+  uint32_t getUInt32(ScalVal reg);
   uint8_t getUInt8(ScalVal_RO reg);
 
 #ifndef FW_ENABLED
@@ -135,6 +138,8 @@ class Firmware {
   void setTimingCheckEnable(bool enable);
   void setEvaluationEnable(bool enable);
   void setTimeoutEnable(bool enable);
+  void setAppTimeoutEnable(uint32_t appId, bool enable);
+  bool getAppTimeoutStatus(uint32_t appId);
 
   bool getEnable();
   bool getSoftwareEnable();
@@ -145,7 +150,10 @@ class Firmware {
   void softwareClear();
   uint32_t getFaultReason();
   void showStats();
-  
+
+  void writeAppTimeoutMask();
+  void getAppTimeoutStatus();
+
   uint8_t getSoftwareLossError();
   uint32_t getSoftwareLossCount();
   uint32_t getSoftwareClockCount();
@@ -173,235 +181,7 @@ class Firmware {
     return instance;
   }
 
-  friend std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
-    os << "=== MpsCentralNode ===" << std::endl;
-    os << "FPGA version=" << firmware->fpgaVersion << std::endl;
-    os << "Build stamp=\"" << firmware->buildStamp << "\"" << std::endl;
-    os << "Git hash=\"" << firmware->gitHashString << "\"" << std::endl;
-
-    try {
-      os << "Enable=";
-      if (firmware->getEnable()) os << "Enabled"; else os << "Disabled";
-      os << std::endl;
-
-      os << "SwEnable=";
-      if (firmware->getSoftwareEnable()) os << "Enabled"; else os << "Disabled";
-      os << std::endl;
-
-      os << "SwLossCnt=" << firmware->getSoftwareLossCount() << std::endl;
-      os << "SwLossError=" << (int) firmware->getSoftwareLossError() << std::endl;
-      os << "SwBwidthCnt=" << firmware->getSoftwareClockCount() << std::endl;
-
-      uint16_t aux[FW_NUM_BEAM_CLASSES]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-      firmware->_beamIntTimeSV->getVal(aux, FW_NUM_BEAM_CLASSES);
-      os << "BeamIntTime=[";
-      for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
-	os << aux[i];
-	if (i == FW_NUM_BEAM_CLASSES - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) aux[i]=0;
-      firmware->_beamMinPeriodSV->getVal(aux, FW_NUM_BEAM_CLASSES);
-      os << "BeamMinPeriod=[";
-      for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
-	os << aux[i];
-	if (i == FW_NUM_BEAM_CLASSES - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) aux[i]=0;
-      firmware->_beamIntChargeSV->getVal(aux, FW_NUM_BEAM_CLASSES);
-      os << "BeamIntCharge=[";
-      for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
-	os << aux[i];
-	if (i == FW_NUM_BEAM_CLASSES - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      os << "BeamFaultReason=" << std::hex << "0x"
-	 << firmware->getUInt32(firmware->_beamFaultReasonSV) << std::dec << std::endl;
-
-      os << "BeamFaultEnable=";
-      if (firmware->getBoolU64(firmware->_beamFaultEnSV)) os << "Enabled"; else os << "Disabled";
-      os << std::endl;
-
-      uint8_t aux8[FW_NUM_MITIGATION_DEVICES]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-      uint32_t aux32[2]={0,0};
-      firmware->getMitigation(aux32);
-      //      firmware->getMitigation(aux8);
-      firmware->extractMitigation(aux32, aux8);
-      os << "Mitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
-	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      firmware->getFirmwareMitigation(aux32);
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux8[i]=0;      
-      //      firmware->getFirmwareMitigation(aux8);
-      firmware->extractMitigation(aux32, aux8);
-      os << "FirmwareMitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
-	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-      
-      firmware->getSoftwareMitigation(aux32);
-      os << "SoftwareMitigation=[";
-      os << std::hex << "0x" << aux32[0] << " 0x" << aux32[1] << std::dec << "]" << std::endl;
-      
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux8[i]=0;      
-      //      firmware->getSoftwareMitigation(aux8);
-      firmware->extractMitigation(aux32, aux8);
-      os << "SoftwareMitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
-	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-      
-      firmware->getLatchedMitigation(aux32);
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux8[i]=0;      
-      firmware->extractMitigation(aux32, aux8);
-      //      firmware->getLatchedMitigation(aux8);
-      os << "LatchedMitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
-	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      os << "MonitorReady=" << std::hex << "0x"
-	 << firmware->getUInt32(firmware->_monitorReadySV) << std::dec << std::endl;
-
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorRxErrorCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
-      os << "MonitorRxErrorCnt=[";
-      for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
-	os << (int) aux[i];
-	if (i == FW_NUM_CONNECTIONS - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorPauseCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
-      os << "MonitorPauseCnt=[";
-      for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
-	os << (int) aux[i];
-	if (i == FW_NUM_CONNECTIONS - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorOvflCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
-      os << "MonitorOvflCnt=[";
-      for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
-	os << (int) aux[i];
-	if (i == FW_NUM_CONNECTIONS - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorDropCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
-      os << "MonitorDropCnt=[";
-      for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
-	os << (int) aux[i];
-	if (i == FW_NUM_CONNECTIONS - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      os << "MonitorConcWdErrCnt="
-	 << firmware->getUInt32(firmware->_monitorConcWdErrSV) << std::endl;
-
-      os << "MonitorConcStallErrCnt="
-	 << firmware->getUInt32(firmware->_monitorConcStallErrSV) << std::endl;
-
-      os << "MonitorConcExtRxErrCnt="
-	 << firmware->getUInt32(firmware->_monitorConcExtRxErrSV) << std::endl;
-
-      os << "TimeoutErrStatus="
-	 << firmware->getUInt32(firmware->_timeoutErrStatusSV) << std::endl;
-
-      os << "TimeoutEnable=";
-      if (firmware->getBoolU64(firmware->_timeoutEnableSV)) os << "Enabled"; else os << "Disabled";
-      os << std::endl;
-
-      os << "TimeoutTime="
-	 << firmware->getUInt32(firmware->_timeoutTimeSV) << " usec"  << std::endl;
-
-      os << "TimeoutMsgVer="
-	 << firmware->getUInt32(firmware->_timeoutMsgVerSV) << std::endl;
-
-      uint32_t aux32_32[32];
-      for (uint32_t i = 0; i < 32; ++i) aux32_32[i]=0;      
-      firmware->_timeoutErrIndexSV->getVal(aux32_32, 32);
-      for (uint32_t i = 0; i < 32; ++i) {
-	os << "0x" << std::hex << aux32_32[i] << std::dec;
-	if (i == 32 - 1) os << "]"; else os << ", ";
-      }
-      os << std::endl;
-
-      os << "EvaluationEnable=";
-      if (firmware->getBoolU64(firmware->_evaluationEnableSV)) os << "Enabled"; else os << "Disabled";
-      os << std::endl;
-
-      os << "SoftwareWdTime="
-	 << firmware->getUInt32(firmware->_swWdTimeSV) << std::endl;
-
-      os << "SoftwareBusy="
-	 << firmware->getUInt32(firmware->_swBusySV) << std::endl;
-
-      os << "SoftwarePause="
-	 << firmware->getUInt32(firmware->_swPauseSV) << std::endl;
-
-      os << "SoftwareWdError="
-	 << firmware->getUInt32(firmware->_swWdErrorSV) << std::endl;
-
-      os << "SoftwareOvflCnt="
-	 << firmware->getUInt32(firmware->_swOvflCntSV) << std::endl;
-
-      os << "EvaluationTimeStamp="
-	 << firmware->getUInt32(firmware->_evaluationTimeStampSV) << std::endl;
-
-      os << "RxPhyReady="
-	 << firmware->getUInt32(firmware->_rxPhyReadySV) << std::endl;
-
-      os << "TxPhyReady="
-	 << firmware->getUInt32(firmware->_txPhyReadySV) << std::endl;
-      
-      os << "RxLocalLinkReady="
-	 << firmware->getUInt32(firmware->_rxLocalLinkReadySV) << std::endl;
-
-      os << "RxRemLinkReady="
-	 << firmware->getUInt32(firmware->_rxRemLinkReadySV) << std::endl;
-
-      os << "RxFrameCount="
-	 << firmware->getUInt32(firmware->_rxFrameCountSV) << std::endl;
-
-      os << "RxFrameErrorCount="
-	 << firmware->getUInt32(firmware->_rxFrameErrorCountSV) << std::endl;
-
-    } catch (IOError &e) {
-      std::cout << "Exception Info: " << e.getInfo() << std::endl;
-    } catch (InvalidArgError &e) {
-      std::cout << "Exception Info: " << e.getInfo() << std::endl;
-    }
-
-    /*(
-  ScalVal    _timeoutClearSV;
-  ScalVal    _timeoutMaskSV;
-  ScalVal_RO _timeoutErrIndexSV;
-
-  ScalVal    _evaluationClearSV;
-  ScalVal_RO _evaluationTimeStampSV;
-  ScalVal_RO _swOvflCntSV;
-    */
-    return os;
-  }
-
+  friend std::ostream & operator<<(std::ostream &os, Firmware * const firmware);
 };
 
 typedef shared_ptr<Firmware> FirmwarePtr;

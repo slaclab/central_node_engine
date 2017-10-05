@@ -2,6 +2,8 @@
 #include <yaml-cpp/node/parse.h>
 #include <yaml-cpp/node/emit.h>
 
+#include <central_node_database_defs.h>
+#include <central_node_database_tables.h>
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <central_node_firmware.h>
@@ -963,4 +965,75 @@ void MpsDb::showInfo() {
   inputUpdateTime.show();
 
   unlock();
+}
+
+long MpsDb::getMaxUpdateTime() {
+  return inputUpdateTime.getMax();
+}
+
+long MpsDb::getAvgUpdateTime() {
+  return inputUpdateTime.getAverage();
+}
+
+std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
+  os << "Name: " << mpsDb->name << std::endl;
+
+  mpsDb->printMap<DbCrateMapPtr, DbCrateMap::iterator>
+    (os, mpsDb->crates, "Crate");
+
+  mpsDb->printMap<DbApplicationTypeMapPtr, DbApplicationTypeMap::iterator>
+    (os, mpsDb->applicationTypes, "ApplicationType");
+
+  mpsDb->printMap<DbApplicationCardMapPtr, DbApplicationCardMap::iterator>
+    (os, mpsDb->applicationCards, "ApplicationCard");
+
+  mpsDb->printMap<DbChannelMapPtr, DbChannelMap::iterator>
+    (os, mpsDb->digitalChannels, "DigitalChannel");
+
+  mpsDb->printMap<DbChannelMapPtr, DbChannelMap::iterator>
+    (os, mpsDb->analogChannels, "AnalogChannel");
+
+  mpsDb->printMap<DbDeviceTypeMapPtr, DbDeviceTypeMap::iterator>
+    (os, mpsDb->deviceTypes, "DeviceType");
+
+  mpsDb->printMap<DbDeviceStateMapPtr, DbDeviceStateMap::iterator>
+    (os, mpsDb->deviceStates, "DeviceState");
+
+  mpsDb->printMap<DbDigitalDeviceMapPtr, DbDigitalDeviceMap::iterator>
+    (os, mpsDb->digitalDevices, "DigitalDevice");
+
+  mpsDb->printMap<DbDeviceInputMapPtr, DbDeviceInputMap::iterator>
+    (os, mpsDb->deviceInputs, "DeviceInput");
+
+  mpsDb->printMap<DbFaultMapPtr, DbFaultMap::iterator>
+    (os, mpsDb->faults, "Fault");
+
+  mpsDb->printMap<DbFaultInputMapPtr, DbFaultInputMap::iterator>
+    (os, mpsDb->faultInputs, "FaultInput");
+
+  mpsDb->printMap<DbFaultStateMapPtr, DbFaultStateMap::iterator>
+    (os, mpsDb->faultStates, "FaultState");
+
+  mpsDb->printMap<DbAnalogDeviceMapPtr, DbAnalogDeviceMap::iterator>
+    (os, mpsDb->analogDevices, "AnalogDevice");
+
+  mpsDb->printMap<DbMitigationDeviceMapPtr, DbMitigationDeviceMap::iterator>
+    (os, mpsDb->mitigationDevices, "MitigationDevice");
+
+  mpsDb->printMap<DbBeamClassMapPtr, DbBeamClassMap::iterator>
+    (os, mpsDb->beamClasses, "BeamClass");
+
+  mpsDb->printMap<DbAllowedClassMapPtr, DbAllowedClassMap::iterator>
+    (os, mpsDb->allowedClasses, "AllowedClass");
+
+  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>
+    (os, mpsDb->conditions, "Conditions");
+
+  mpsDb->printMap<DbConditionInputMapPtr, DbConditionInputMap::iterator>
+    (os, mpsDb->conditionInputs, "ConditionInputs");
+
+  mpsDb->printMap<DbIgnoreConditionMapPtr, DbIgnoreConditionMap::iterator>
+    (os, mpsDb->ignoreConditions, "IgnoreConditions");
+
+  return os;
 }

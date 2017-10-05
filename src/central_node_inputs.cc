@@ -187,9 +187,9 @@ void DbApplicationCard::configureUpdateBuffers() {
  * update each digital/analog device with the new values.
  */
 void DbApplicationCard::updateInputs() {
-  // Check if first two bits are zero - if both are then application card has not send updated
-  // status during the past 360Hz period
-  if (applicationUpdateBuffer[0] == 0 && applicationUpdateBuffer[1] == 0) {
+  // Check if timeout status bit from firmware is on, if so set online to false
+  Firmware::getInstance().getAppTimeoutStatus();
+  if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
     online = false;
   }
   else {
@@ -229,6 +229,9 @@ void DbApplicationCard::writeConfiguration() {
   else {
     throw(DbException("Can't configure application card - no devices configured"));
   }
+  // Enable application timeout mask
+  Firmware::getInstance().setAppTimeoutEnable(globalId, true);
+  Firmware::getInstance().writeAppTimeoutMask(); // TODO: call this only once, not one time per app
 }
 
 // Digital input configuration (total size = 1344 bits):
@@ -344,6 +347,10 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	  bool bitValue = false;
 	  if (((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01) {
 	    bitValue = true;
+	  }
+	  // If bypass for the integrator is valid, set destination mask to zero - i.e. no mitigation
+	  if ((*analogDevice).second->bypass[i]->status == BYPASS_VALID) {
+	    bitValue = false;
 	  }
 	  applicationConfigBuffer->set(offset + j, bitValue);
 	}

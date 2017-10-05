@@ -1,6 +1,7 @@
 #ifndef CENTRAL_NODE_BYPASS_MANAGER_H
 #define CENTRAL_NODE_BYPASS_MANAGER_H
 
+#include <central_node_database_tables.h>
 #include <central_node_database.h>
 #include <stdint.h>
 #include <pthread.h>
@@ -32,6 +33,7 @@ class BypassManager {
   pthread_t _bypassThread;
   pthread_mutex_t mutex;
   bool initialized;
+  static bool refreshFirmwareConfiguration;
   
  public:
   BypassManager();

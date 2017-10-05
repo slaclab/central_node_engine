@@ -41,18 +41,18 @@ class BypassTest {
   DbFaultPtr bpm02YFault;
 
   void checkBypass(time_t t) {
-    Engine::getInstance().bypassManager->checkBypassQueue(t);
+    Engine::getInstance()._bypassManager->checkBypassQueue(t);
   }
 
   void checkFaultState(bool bpm01XFaulted, bool bpm02YFaulted, bool verbose = false) {
     Engine::getInstance().checkFaults();
 
     if (!bpm01XFault) {
-      bpm01XFault = Engine::getInstance().mpsDb->faults->at(9);
+      bpm01XFault = Engine::getInstance()._mpsDb->faults->at(9);
     }
 
     if (!bpm02YFault) {
-      bpm02YFault = Engine::getInstance().mpsDb->faults->at(13);
+      bpm02YFault = Engine::getInstance()._mpsDb->faults->at(13);
     }
 
     if (bpm01XFault->faulted != bpm01XFaulted) {
@@ -76,26 +76,26 @@ class BypassTest {
       // Now bypass the OTR IN limit switch to 0 and
       // OTR OUT limit switch to 1, i.e. screen is OUT
       // YAG01_OUT - NOT_OUT
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
 				       1 /* bypass value */, 100 /* until */, true);
       // YAG01_IN - IN
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
 				       0 /* bypass value */, 100 /* until*/, true);
       
       // GUN_TEMP - Fault
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
 				       0 /* bypass value */, 110 /* until */, true);
       // Waveguide TEMP Ok
-      Engine::getInstance().bypassManager->setBypass(Engine::getInstance().mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
 				       1 /* bypass value */, 110 /* until*/, true);
       
       // BPM01 - Threshold 0 for X (thresholdIndex = 0)
-      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 9, 0, 300, 0, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 9, 0, 300, 0, true);
 
       // BPM02 - Threshold 0 for Y (thresholdIndex = 8)
-      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 10, 0, 300, 8, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 10, 0, 300, 8, true);
 
-      Engine::getInstance().bypassManager->printBypassQueue();
+      Engine::getInstance()._bypassManager->printBypassQueue();
       
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
@@ -105,17 +105,17 @@ class BypassTest {
   void cancelBypass() {
     try {
        // BPM01 X T0
-      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 9, 0, 0, 0, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 9, 0, 0, 0, true);
 
        // BPM02 Y T0
-      Engine::getInstance().bypassManager->setThresholdBypass(Engine::getInstance().mpsDb, BYPASS_ANALOG, 10, 0, 0, 8, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 10, 0, 0, 8, true);
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
   }
 
   void showFaults() {
-    Engine::getInstance().mpsDb->showFaults();
+    Engine::getInstance()._mpsDb->showFaults();
   }
 
   // type==0 -> digital
@@ -188,15 +188,15 @@ class BypassTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	/* this check is wrong	
-	uint32_t size = Engine::getInstance().mpsDb->deviceInputs->size() + 1;
+	uint32_t size = Engine::getInstance()._mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance()._mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
 	*/
-	Engine::getInstance().mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+	Engine::getInstance()._mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
       }
     }
 
@@ -223,16 +223,16 @@ class BypassTest {
 	
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 	/* this check may not work	
-	uint32_t size = Engine::getInstance().mpsDb->deviceInputs->size() + 1;
+	uint32_t size = Engine::getInstance()._mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << Engine::getInstance().mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance()._mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
 	*/
 	try {
-	  Engine::getInstance().mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	  Engine::getInstance()._mpsDb->analogDevices->at(deviceId)->update(analogValue);
 	} catch (std::exception e) {
 	  std::cerr << "Bad deviceId " << deviceId << "." << std::endl;
 	  exit(-1);
@@ -241,7 +241,7 @@ class BypassTest {
     }
 
 
-    //    std::cout << Engine::getInstance().mpsDb->deviceInputs->at(1)->value << std::endl;
+    //    std::cout << Engine::getInstance()._mpsDb->deviceInputs->at(1)->value << std::endl;
 
     return 0;
   }
