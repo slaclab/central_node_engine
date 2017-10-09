@@ -55,7 +55,8 @@ class MpsDb {
    */
   uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
 
-  TimeAverage inputUpdateTime;
+  TimeAverage _inputUpdateTime;
+  bool _clearUpdateTime;
 
   /**
    * Mutex to prevent multiple database access
@@ -63,7 +64,7 @@ class MpsDb {
   pthread_mutex_t mutex;
 
   uint32_t _updateCounter;
-
+  
  public:
   DbBeamClassPtr lowestBeamClass;
   DbCrateMapPtr crates;
@@ -114,6 +115,7 @@ class MpsDb {
   void clearMitigationBuffer();
   void mitigate();
 
+  void clearUpdateTime();
   long getMaxUpdateTime();
   long getAvgUpdateTime();
 

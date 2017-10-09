@@ -17,6 +17,11 @@ using namespace easyloggingpp;
 static Logger *databaseLogger ;
 #endif
 
+TimeAverage DeviceInputUpdateTime(5, "Device Input update time");
+TimeAverage AnalogDeviceUpdateTime(5, "Analog Device update time");
+TimeAverage AppCardDigitalUpdateTime(5, "Application Card (digital) update time");
+TimeAverage AppCardAnalogUpdateTime(5, "Application Card (analog) update time");
+
 void DbDeviceInput::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
   applicationUpdateBuffer = buffer;
 }
@@ -38,6 +43,8 @@ void DbDeviceInput::update() {
   uint32_t wasHigh;
   uint32_t newValue = 0;
   
+  DeviceInputUpdateTime.start();
+
   if (applicationUpdateBuffer) {
     previousValue = value;
 
@@ -73,6 +80,8 @@ void DbDeviceInput::update() {
   else {
     throw(DbException("ERROR: DbDeviceInput::update() - no applicationUpdateBuffer set"));
   }
+
+  DeviceInputUpdateTime.end();
 }
 
 DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
@@ -116,6 +125,8 @@ void DbAnalogDevice::update() {
   uint32_t wasHigh;
   uint32_t newValue = 0;
   
+  AnalogDeviceUpdateTime.start();
+
   if (applicationUpdateBuffer) {
     previousValue = value;
 
@@ -152,6 +163,8 @@ void DbAnalogDevice::update() {
   else {
     throw(DbException("ERROR: DbAnalogDevice::update() - no applicationUpdateBuffer set"));
   }
+
+  AnalogDeviceUpdateTime.end();
 }
 
 /**
@@ -188,15 +201,17 @@ void DbApplicationCard::configureUpdateBuffers() {
  */
 void DbApplicationCard::updateInputs() {
   // Check if timeout status bit from firmware is on, if so set online to false
-  Firmware::getInstance().getAppTimeoutStatus();
   if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
     online = false;
+    // TODO: set all inputs to faulted if app card is offline!
   }
   else {
     online = true;
   }
 
+
   if (digitalDevices) {
+    AppCardDigitalUpdateTime.start();
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {
       for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
@@ -204,12 +219,16 @@ void DbApplicationCard::updateInputs() {
 	(*deviceInput).second->update();
       }
     }
+    AppCardDigitalUpdateTime.end();
   }
   else if (analogDevices) {
+    AppCardAnalogUpdateTime.start();
+
     for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
 	 analogDevice != analogDevices->end(); ++analogDevice) {
       (*analogDevice).second->update();
     }
+    AppCardAnalogUpdateTime.end();
   }
   else {
     throw(DbException("Can't configure update devices because there are no devices"));

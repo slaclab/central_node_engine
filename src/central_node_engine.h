@@ -70,15 +70,16 @@ class Engine {
   uint32_t getUpdateRate();
   uint32_t getUpdateCounter();
   time_t getStartTime();
+
+  void clearCheckTime();
   long getMaxCheckTime();
   long getAvgCheckTime();
 
   MpsDbPtr getCurrentDb();
   BypassManagerPtr getBypassManager();
 
- protected:
+ private:
   void newDb();
-  void updateInputs();
   void mitigate();
 
   void setTentativeBeamClass();
@@ -96,6 +97,7 @@ class Engine {
 
   std::stringstream _errorStream;
   TimeAverage _checkFaultTime;
+  bool _clearCheckFaultTime;
 
  public:
   static Engine &getInstance() {

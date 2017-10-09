@@ -8,6 +8,7 @@
 #include <central_node_exception.h>
 #include <central_node_history.h>
 #include <central_node_engine.h>
+#include <central_node_firmware.h>
 #include <log_wrapper.h>
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -491,6 +492,10 @@ void *BypassManager::bypassThread(void *arg) {
       refreshFirmwareConfiguration = false;
     }
     sleep(1);
+
+    // Refresh the application timeout status - not really something related
+    // to bypass, but it is done here for convenience
+    Firmware::getInstance().getAppTimeoutStatus();
   }
 
   std::cout << "bypassThread exiting..." << std::endl;

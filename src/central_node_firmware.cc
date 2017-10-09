@@ -1,5 +1,6 @@
 #include <central_node_firmware.h>
 #include <central_node_exception.h>
+#include <central_node_engine.h>
 #include <stdint.h>
 #include <log_wrapper.h>
 #include <stdio.h>

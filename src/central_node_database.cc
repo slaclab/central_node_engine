@@ -20,7 +20,12 @@
   static Logger *databaseLogger;
 #endif 
 
-MpsDb::MpsDb() : inputUpdateTime(5, "Input update time"), _updateCounter(0) {
+extern TimeAverage DeviceInputUpdateTime;
+extern TimeAverage AnalogDeviceUpdateTime;
+extern TimeAverage AppCardDigitalUpdateTime;
+extern TimeAverage AppCardAnalogUpdateTime;
+
+MpsDb::MpsDb() : _inputUpdateTime(5, "Input update time"), _clearUpdateTime(false), _updateCounter(0) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
@@ -34,7 +39,7 @@ MpsDb::MpsDb() : inputUpdateTime(5, "Input update time"), _updateCounter(0) {
 
 
 MpsDb::~MpsDb() {
-  inputUpdateTime.show();
+  _inputUpdateTime.show();
   std::cout << "Update counter: " << _updateCounter << std::endl;
 }
 
@@ -66,9 +71,17 @@ bool MpsDb::updateInputs() {
   if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
 					       NUM_APPLICATIONS *
 					       APPLICATION_UPDATE_BUFFER_SIZE_BYTES,
-					       20000000)) {
-    inputUpdateTime.start();
-    //    showFastUpdateBuffer(0, 64);
+					       500000)) { // 0.5 seconds
+    if (_clearUpdateTime) {
+      _inputUpdateTime.clear();
+      DeviceInputUpdateTime.clear();
+      AnalogDeviceUpdateTime.clear();
+      AppCardDigitalUpdateTime.clear();
+      AppCardAnalogUpdateTime.clear();
+      _clearUpdateTime = false;
+    }
+
+    _inputUpdateTime.start();
     DbApplicationCardMap::iterator applicationCardIt;
     for (applicationCardIt = applicationCards->begin();
 	 applicationCardIt != applicationCards->end();
@@ -76,12 +89,14 @@ bool MpsDb::updateInputs() {
       (*applicationCardIt).second->updateInputs();
     }
     _updateCounter++;
-    inputUpdateTime.end();
+    _inputUpdateTime.end();
+    //    Firmware::getInstance().getAppTimeoutStatus();
   }
   else {
-    std::cerr << "ERROR: updateInputs failed" << std::endl;
+    //    std::cerr << "ERROR: updateInputs failed" << std::endl;
     return false;
   }
+
   return true;
 }
 
@@ -962,17 +977,25 @@ void MpsDb::showInfo() {
   std::cout << "File: " << name << std::endl;
   std::cout << "Update counter: " << _updateCounter << std::endl;
   
-  inputUpdateTime.show();
+  _inputUpdateTime.show();
+  AnalogDeviceUpdateTime.show();
+  DeviceInputUpdateTime.show();
+  AppCardDigitalUpdateTime.show();
+  AppCardAnalogUpdateTime.show();
 
   unlock();
 }
 
+void MpsDb::clearUpdateTime() {
+  _clearUpdateTime = true;
+}
+
 long MpsDb::getMaxUpdateTime() {
-  return inputUpdateTime.getMax();
+  return _inputUpdateTime.getMax();
 }
 
 long MpsDb::getAvgUpdateTime() {
-  return inputUpdateTime.getAverage();
+  return _inputUpdateTime.getAverage();
 }
 
 std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {

@@ -43,14 +43,7 @@ class DbEntry {
 };
 
 /**
- * DbCrate class
- * 
- * Example YAML entry:
- * Crate:
- * - id: '1'
- *   num_slots: '6'
- *   number: '1'
- *   shelf_number: '1'
+ * DbCrate YAML class
  */
 class DbCrate : public DbEntry {
  public:
@@ -67,14 +60,7 @@ typedef std::map<uint32_t, DbCratePtr> DbCrateMap;
 typedef shared_ptr<DbCrateMap> DbCrateMapPtr;
 
 /**
- * ApplicationType:
- * - analog_channel_count: '3'
- *   analog_channel_size: '8'
- *   digital_channel_count: '4'
- *   digital_channel_size: '1'
- *   id: '1'
- *   name: Mixed Mode Link Node
- *   number: '0'
+ * DbApplicationType YAML class
  */
 class DbApplicationType : public DbEntry {
  public:
@@ -94,15 +80,7 @@ typedef std::map<uint32_t, DbApplicationTypePtr> DbApplicationTypeMap;
 typedef shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
 
 /**
- * DigitalChannel:
- * - card_id: '1'
- *   id: '1'
- *   number: '0'
- *
- * AnalogChannel:
- * - card_id: '1'
- *   id: '1'
- *   number: '0'
+ * DbChannel class for DbDigitalChannel and DbAnalogChannel
  */
 class DbChannel : public DbEntry {
  public:
@@ -119,11 +97,7 @@ typedef std::map<uint32_t, DbChannelPtr> DbChannelMap;
 typedef shared_ptr<DbChannelMap> DbChannelMapPtr;
 
 /**
- * DeviceState:
- * - device_type_id: '1'
- *   id: '1'
- *   name: Out
- *   value: '1'
+ * DbDeviceState YAML class
  */
 class DbDeviceState : public DbEntry {
  public:  
@@ -141,9 +115,7 @@ typedef std::map<uint32_t, DbDeviceStatePtr> DbDeviceStateMap;
 typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
 
 /**
- * DeviceType:
- * - id: '1'
- *   name: Insertion Device
+ * DbDeviceType YAML class
  */
 class DbDeviceType : public DbEntry {
  public:
@@ -160,11 +132,7 @@ typedef std::map<uint32_t, DbDeviceTypePtr> DbDeviceTypeMap;
 typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
 
 /**
- * DeviceInput:
- * - bit_position: '0'
- *   channel_id: '1'
- *   digital_device_id: '1'
- *   id: '1'
+ * DbDeviceInput YAML class
  */
 class DbDeviceInput : public DbEntry {
  public:
@@ -215,9 +183,7 @@ typedef std::map<uint32_t, DbFaultStatePtr> DbFaultStateMap;
 typedef shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
 
 /**
- * DigitalDevice:
- * - device_type_id: '1'
- *   id: '1'
+ * DbDigitalDevice YAML class
  */
 class DbDigitalDevice : public DbEntry {
  public:
@@ -263,10 +229,7 @@ typedef shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
 
 
 /**
- * AnalogDevice:
- * - analog_device_type_id: '1'
- *   channel_id: '1'
- *   id: '3'
+ * DbAnalogDevice YAML class
  */
 class DbAnalogDevice : public DbEntry {
  public:
@@ -342,15 +305,7 @@ typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
 
 
 /**
- * ApplicationCard:
- * - crate_id: '1'
- *   id: '1'
- *   number: '1'
- *   slot_number: '2'
- *   type_id: '1'
- *   global_id: 0
- *   name: "EIC Digital"
- *   description: "EIC Digital Status"
+ * DbApplicationCard YAML class
  */
 class DbApplicationCard : public DbEntry {
  public:
@@ -398,11 +353,7 @@ typedef std::map<uint32_t, DbApplicationCardPtr> DbApplicationCardMap;
 typedef shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 
 /**
- * FaultInput:
- * - bit_position: '0'
- *   device_id: '1'
- *   fault_id: '1'
- *   id: '1'
+ * DbFaultInput YAML class
  */
 class DbFaultInput : public DbEntry {
  public:
@@ -434,10 +385,7 @@ typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
 
 
 /**
- * BeamClass:
- * - id: '1'
- *   name: Class 1
- *   number: '1'
+ * DbBeamClass YAML class
  */
 class DbBeamClass : public DbEntry {
  public:
@@ -456,12 +404,8 @@ typedef shared_ptr<DbBeamClass> DbBeamClassPtr;
 typedef std::map<uint32_t, DbBeamClassPtr> DbBeamClassMap;
 typedef shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
 
-
 /**
- * MitigationDevice:
- * - id: '1'
- *   name: Shutter
- *   destination_mask: 1
+ * DbMitigationDevice YAML class
  */
 class DbMitigationDevice : public DbEntry {
  public:
@@ -500,11 +444,7 @@ typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
 
 
 /**
- * AllowedClass:
- * - beam_class_id: '1'
- *   fault_state_id: '1'
- *   id: '1'
- *   mitigation_device_id: '1'
+ * DbAllowedClass YAML class
  */
 class DbAllowedClass : public DbEntry {
  public:
@@ -527,11 +467,7 @@ typedef shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
 
 
 /**
- * FaultState:
- * - fault_id: '1'
- *   id: '1'
- *   name: Out
- *   value: '1'
+ * DbFaultState YAML class
  */
 class DbFaultState : public DbEntry {
  public:
@@ -552,10 +488,7 @@ class DbFaultState : public DbEntry {
 
 
 /** 
- * Fault: (these are digital faults types)
- *  - description: None
- *    id: '1'
- *    name: OTR Fault
+ * DbFault YAML class (these are digital faults types)
  */
 class DbFault : public DbEntry {
  public:
@@ -587,11 +520,7 @@ typedef std::map<uint32_t, DbFaultPtr> DbFaultMap;
 typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
 
 /**
- * ConditionInput:
- * - id: 1
- *   bit_position: 0
- *   fault_state_id: 1
- *   condition_id: 1
+ * DbConditionInput YAML class
  */
 class DbConditionInput : public DbEntry {
  public:
@@ -614,10 +543,7 @@ typedef std::map<uint32_t, DbConditionInputPtr> DbConditionInputMap;
 typedef shared_ptr<DbConditionInputMap> DbConditionInputMapPtr;
 
 /**
- * IgnoreCondition:
- * - id: 1
- *   condition_id: 1
- *   fault_state_id: 14
+ * DbIgnoreCondition YAML class
  */
 class DbIgnoreCondition : public DbEntry {
  public:
@@ -637,11 +563,7 @@ typedef std::map<uint32_t, DbIgnoreConditionPtr> DbIgnoreConditionMap;
 typedef shared_ptr<DbIgnoreConditionMap> DbIgnoreConditionMapPtr;
 
 /** 
- * Condition:
- * - id: 1
- *   name: "YAG01_IN"
- *   description: "YAG01 screen IN"
- *   value: 1
+ * DbCondition YAML class
  */
 class DbCondition : public DbEntry {
  public:

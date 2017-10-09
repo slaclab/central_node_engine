@@ -23,7 +23,8 @@ time_t          Engine::_startTime;
 
 Engine::Engine() :
   _initialized(false),
-  _checkFaultTime(5, "Evaluation time") {
+  _checkFaultTime(5, "Evaluation time"),
+  _clearCheckFaultTime(false) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   engineLogger = Loggers::getLogger("ENGINE");
   LOG_TRACE("ENGINE", "Created Engine");
@@ -181,10 +182,6 @@ int Engine::loadConfig(std::string yamlFileName) {
   startUpdateThread();
 
   return 0;
-}
-
-// Update values from firmware...
-void Engine::updateInputs() {
 }
 
 bool Engine::isInitialized() {
@@ -442,6 +439,11 @@ int Engine::checkFaults() {
     return 0;
   }
 
+  if (_clearCheckFaultTime) {
+    _checkFaultTime.clear();
+    _clearCheckFaultTime = false;
+  }
+
   // must first get updated input values
   _checkFaultTime.start();
 
@@ -657,6 +659,10 @@ void *Engine::engineThread(void *arg) {
 
   std::cout << "EngineThread: Exiting..." << std::endl;
   pthread_exit(0);
+}
+
+void Engine::clearCheckTime() {
+  _clearCheckFaultTime = true;
 }
 
 long Engine::getMaxCheckTime() {
