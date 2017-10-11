@@ -48,6 +48,10 @@ const uint32_t UPDATE_STATUS_BITS = 2; // 2 bits for each status, one for 'was L
 const uint32_t DEVICE_INPUT_UPDATE_SIZE = 2; // in bits (one 'was Low'/'was High' per input)
 const uint32_t ANALOG_DEVICE_NUM_THRESHOLDS = 32; // max number of thresholds per analog channel
 const uint32_t ANALOG_DEVICE_UPDATE_SIZE = ANALOG_DEVICE_NUM_THRESHOLDS * 2; // in bits ('was Low'/'was High')
+const uint32_t UPDATE_WAS_LOW_OFFSET = 0; // First 192 bits have the 'was Low' status
+const uint32_t UPDATE_WAS_HIGH_OFFSET = 192; // Last 192 bits have the 'was High' status
+const uint32_t DIGITAL_UPDATE_WAS_LOW_OFFSET = 64; // TODO: review offset // First 64 bits have the 'was Low' status
+const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Last 64 bits have the 'was High' status
 
 //
 // Each application card has an array of bits for the fast firmware

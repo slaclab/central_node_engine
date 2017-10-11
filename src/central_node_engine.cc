@@ -499,6 +499,7 @@ void Engine::showStats() {
     std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
     std::cout << "Counter: " << Engine::_updateCounter << std::endl;
     std::cout << "Started at " << ctime(&Engine::_startTime) << std::endl;
+    std::cout << &History::getInstance() << std::endl;
   }
   else {
     std::cout << "MPS not initialized - no database" << std::endl;

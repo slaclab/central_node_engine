@@ -142,6 +142,8 @@ class DbDeviceInput : public DbEntry {
   uint32_t digitalDeviceId;
 
   // Device input value must be read from the Central Node Firmware
+  uint32_t wasLowBit;
+  uint32_t wasHighBit;
   uint32_t value;
   uint32_t previousValue;
 

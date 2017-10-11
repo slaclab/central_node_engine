@@ -99,7 +99,7 @@ std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
      << "faultValue[" << deviceInput->faultValue << "]; "
      << "channelId[" << deviceInput->channelId << "]; "
      << "digitalDeviceId[" << deviceInput->digitalDeviceId << "]; "
-     << "value[" << deviceInput->value << "]";
+     << "value[" << deviceInput->value << ", wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]";
   if (deviceInput->fastEvaluation) {
     os << " [in fast device]";
   }

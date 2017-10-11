@@ -48,8 +48,13 @@ void DbDeviceInput::update() {
   if (applicationUpdateBuffer) {
     previousValue = value;
 
-    wasLow = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE];
-    wasHigh = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE + 1];
+    // DEPRECATED
+    //    wasLow = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE];
+    //    wasHigh = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE + 1];
+    wasLow = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_LOW_OFFSET + channel->number];
+    wasHigh = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_HIGH_OFFSET + channel->number];
+    wasLowBit = wasLow;
+    wasHighBit = wasHigh;
 
     // If both are zero the Central Node has not received messages from the device, assume fault
     if (wasLow + wasHigh == 0) {
@@ -132,8 +137,11 @@ void DbAnalogDevice::update() {
 
     value = 0;
     for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
-      wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
-      wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
+      // DEPRECATED
+      //      wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
+      //      wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
+      wasLow = (*applicationUpdateBuffer)[UPDATE_WAS_LOW_OFFSET + channel->number + i];
+      wasHigh = (*applicationUpdateBuffer)[UPDATE_WAS_HIGH_OFFSET + channel->number + i];
 
       // If both are zero the Central Node has not received messages from the device, assume fault
       // Both zeroes also mean no messages from application card in the last 360Hz period

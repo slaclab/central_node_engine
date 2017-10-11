@@ -9,7 +9,7 @@
 #include <sstream>
 #include <netdb.h> 
 
-History::History() : enabled (true) {
+History::History() : _counter(0), enabled (true) {
 }
 
 void History::startSenderThread(std::string serverName, int port) {
@@ -33,22 +33,14 @@ void History::startSenderThread(std::string serverName, int port) {
   serveraddr.sin_port = htons(port);
   serverlen = sizeof(serveraddr);
 
-  struct mq_attr attr;
-  attr.mq_flags = 0;
-  attr.mq_maxmsg = 10;
-  attr.mq_msgsize = sizeof(Message); 
-  attr.mq_curmsgs = 0;
+  int ret = pthread_mutex_init(&_mutex, NULL);
+  if (0 != ret) {
+    throw(CentralNodeException("ERROR: Failed to initialize mutex for MPS history sender."));
+  }
 
-  historyQueue = mq_open("/HistoryQueue", O_CREAT | O_RDWR | O_NONBLOCK, 0666, &attr);
-
-  if (historyQueue == -1) {
-    std::stringstream errorStream;
-    errorStream << "WARN: Failed to create MPS History Queue (errno="
-		<< errno << ")";
-    perror("HistoryQueue");
-    enabled = false;
-    std::cerr << errorStream.str() << ", proceeding without MPS history." << std::endl;
-    //    throw(CentralNodeException(errorStream.str()));
+  ret = pthread_cond_init(&_condition, NULL);
+  if (0 != ret) {
+    throw(CentralNodeException("ERROR: Failed to initialize condition variable for MPS history sender."));
   }
 
   if (enabled) {
@@ -104,16 +96,27 @@ int History::add(Message &message) {
     return 1;
   }
 
-  int size=sizeof(Message);// - sizeof(int32_t);
-  int n = mq_send(historyQueue, reinterpret_cast<char *>(&message), size, 0);
-  if (n != 0) {
-    struct mq_attr attr;
-    mq_getattr(historyQueue, &attr);
-    perror("mq_send");
-    std::cout << "INFO: max size is " << attr.mq_msgsize << ", msgsize is " << size << std::endl;
+  pthread_mutex_lock(&_mutex);
+  if (_histQueue.size() >= HIST_QUEUE_MAX_SIZE) {
+    pthread_mutex_unlock(&_mutex);
     return 1;
   }
+  _histQueue.push_back(message);
+  pthread_cond_signal(&_condition);
+  pthread_mutex_unlock(&_mutex);
+
   return 0;
+}
+
+int History::sendFront() {
+  pthread_mutex_lock(&_mutex);
+  pthread_cond_wait(&_condition, &_mutex);
+  if (_histQueue.size() > 0) {
+    Message message(_histQueue.front());
+    _histQueue.pop_front();
+    send(message);
+  }
+  pthread_mutex_unlock(&_mutex);
 }
 
 int History::send(Message &message) {
@@ -127,6 +130,9 @@ int History::send(Message &message) {
     perror("HistorySend");
     std::cerr << "ERROR: Failed to send history message (returned " << n << ")" << std::endl;
   }
+  else {
+    _counter++;
+  }
   
   return 0;
 }
@@ -137,20 +143,8 @@ void *History::senderThread(void *arg) {
     unsigned int priority;
 
     std::cout << "INFO: History sender thread ready." << std::endl;
-
     while (true) {
-      int n = mq_receive(History::getInstance().historyQueue, reinterpret_cast<char *>(&message),
-			 sizeof(Message), &priority);
-      if (n == sizeof(Message)) {
-	History::getInstance().send(message);
-      }
-      else {
-	if (n == -1 && errno != EAGAIN) {
-	  perror("mq_receive");
-	}
-	usleep(100);
-	//sleep(1);
-      }
+      History::getInstance().sendFront();
     }
   }
   return NULL;

@@ -47,6 +47,9 @@ class MpsDb {
    * Memory that receives input updates from firmware/hardware. There are
    * up to 384 inputs bits per application, 2-bit per input indicating 
    * a 'was low' and 'was high' status.
+   *
+   * The bits from 0 to 191 are the 'was low' status, and bits 192 to 383
+   * are the 'was high' status.
    */
   uint8_t fastUpdateBuffer[NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_SIZE_BYTES];
 
