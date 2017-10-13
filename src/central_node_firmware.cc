@@ -240,9 +240,14 @@ int Firmware::createRegisters() {
 
 
   // Read some registers that are static
-  _fpgaVersionSV->getVal(&fpgaVersion);
-  _buildStampSV->getVal(buildStamp, sizeof(buildStamp)/sizeof(buildStamp[0]));
-  _gitHashSV->getVal(gitHash, sizeof(gitHash)/sizeof(gitHash[0]));
+  try {
+    _fpgaVersionSV->getVal(&fpgaVersion);
+    _buildStampSV->getVal(buildStamp, sizeof(buildStamp)/sizeof(buildStamp[0]));
+    _gitHashSV->getVal(gitHash, sizeof(gitHash)/sizeof(gitHash[0]));
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on createRegisters()" << std::endl;
+  }
+
   for (int i = 0; i < 20; i++) {
     sprintf(&gitHashString[i], "%X", gitHash[i]);
   }
@@ -252,7 +257,11 @@ int Firmware::createRegisters() {
 }
 
 void Firmware::writeAppTimeoutMask() {
-  _timeoutMaskSV->setVal(&_applicationTimeoutMaskBuffer[0], FW_NUM_APPLICATION_MASKS_WORDS); 
+  try {
+    _timeoutMaskSV->setVal(&_applicationTimeoutMaskBuffer[0], FW_NUM_APPLICATION_MASKS_WORDS); 
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on writeAppTimeoutMask()" << std::endl;
+  }
 }
 
 void Firmware::setAppTimeoutEnable(uint32_t appId, bool enable) {
@@ -262,7 +271,12 @@ void Firmware::setAppTimeoutEnable(uint32_t appId, bool enable) {
 }
 
 void Firmware::getAppTimeoutStatus() {
-  _timeoutErrIndexSV->getVal(&_applicationTimeoutErrorBuffer[0], FW_NUM_APPLICATION_MASKS_WORDS);
+  try {
+    _timeoutErrIndexSV->getVal(&_applicationTimeoutErrorBuffer[0], FW_NUM_APPLICATION_MASKS_WORDS);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getAppTimeoutStatus()" << std::endl;
+  }
+
 }
 
 // @return true (bit is set) if there is timeout error, false if not (bit reset)
@@ -397,19 +411,35 @@ uint32_t Firmware::getFaultReason() {
 }
 
 void Firmware::getFirmwareMitigation(uint32_t *fwMitigation) {
-  _fwMitigationSV->getVal(fwMitigation, 2);
+  try {
+    _fwMitigationSV->getVal(fwMitigation, 2);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getFirmwareMitigation()" << std::endl;
+  }
 }
 
 void Firmware::getSoftwareMitigation(uint32_t *swMitigation) {
-  _swMitigationSV->getVal(swMitigation, 2);
+  try {
+    _swMitigationSV->getVal(swMitigation, 2);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getSoftwareMitigation()" << std::endl;
+  }
 }
 
 void Firmware::getMitigation(uint32_t *mitigation) {
-  _mitigationSV->getVal(mitigation, 2);
+  try {
+    _mitigationSV->getVal(mitigation, 2);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getMitigation()" << std::endl;
+  }
 }
 
 void Firmware::getLatchedMitigation(uint32_t *latchedMitigation) {
-  _latchedMitigationSV->getVal(latchedMitigation, 2);
+  try {
+    _latchedMitigationSV->getVal(latchedMitigation, 2);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on getLatchedMitigation()" << std::endl;
+  }
 }
 
 void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
@@ -475,9 +505,13 @@ void Firmware::moConcErrClear() {
 }
 
 void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {
-  _beamIntTimeSV->setVal(time, FW_NUM_BEAM_CLASSES);
-  _beamMinPeriodSV->setVal(period, FW_NUM_BEAM_CLASSES);
-  _beamIntChargeSV->setVal(charge, FW_NUM_BEAM_CLASSES);
+  try {
+    _beamIntTimeSV->setVal(time, FW_NUM_BEAM_CLASSES);
+    _beamMinPeriodSV->setVal(period, FW_NUM_BEAM_CLASSES);
+    _beamIntChargeSV->setVal(charge, FW_NUM_BEAM_CLASSES);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on writeTimingChecking()" << std::endl;
+  }
 }
 
 uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
@@ -492,7 +526,11 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
 }
 
 void Firmware::writeMitigation(uint32_t *mitigation) {
-  _swMitigationSV->setVal(mitigation, 2);
+  try {
+    _swMitigationSV->setVal(mitigation, 2);
+  } catch (IOError &e) {
+    std::cerr << "ERROR: CPSW I/O Error on writeMitigation()" << std::endl;
+  }
 }
 
 void Firmware::showStats() {

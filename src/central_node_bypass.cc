@@ -261,8 +261,12 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
       }
       else if (top.second->until <= top.first) {
 	if (top.second->type == BYPASS_ANALOG) {
-	  History::getInstance().logBypassState(top.second->deviceId, top.second->status, BYPASS_EXPIRED, top.second->index);
-	  // If analog/threshold bypass, change bypassMask - set integrator thresholds bit to 1 (not-bypassed)
+	  History::getInstance().logBypassState(top.second->deviceId,
+						top.second->status, 
+						BYPASS_EXPIRED, 
+						top.second->index);
+	  // If analog/threshold bypass, change bypassMask
+	  // set integrator thresholds bit to 1 (not-bypassed)
 	  uint32_t *bypassMask = top.second->bypassMask;//&((*analogInput).second->bypassMask);
 	  if (top.second->index >= 0 && bypassMask != NULL) {
 	    uint32_t m = 0xFF << (top.second->index * ANALOG_CHANNEL_INTEGRATORS_SIZE); // clear bypassed integrator thresholds
@@ -270,7 +274,10 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 	  }
 	}
 	else {
-	  History::getInstance().logBypassState(top.second->deviceId, top.second->status, BYPASS_EXPIRED, BYPASS_DIGITAL_INDEX);
+	  History::getInstance().logBypassState(top.second->deviceId,
+						top.second->status,
+						BYPASS_EXPIRED,
+						BYPASS_DIGITAL_INDEX);
 	}
 
 	// Check if expired bypass requires firmware configuration update
@@ -365,10 +372,16 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
   // This handles case #3 - cancel bypass  
   if (bypassUntil == 0) {
     if (bypass->type == BYPASS_ANALOG) {
-      History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_EXPIRED, bypass->index);
+      History::getInstance().logBypassState(bypass->deviceId, 
+					    bypass->status,
+					    BYPASS_EXPIRED,
+					    bypass->index);
     }
     else {
-      History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_EXPIRED, BYPASS_DIGITAL_INDEX);
+      History::getInstance().logBypassState(bypass->deviceId,
+					    bypass->status, 
+					    BYPASS_EXPIRED, 
+					    BYPASS_DIGITAL_INDEX);
     }
 
     bypass->status = BYPASS_EXPIRED;
@@ -400,10 +413,16 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     // This handles cases #1 and #2, for new and modified bypasses.
     if (bypassUntil > now) {
       if (bypass->type == BYPASS_ANALOG) {
-	History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_VALID, bypass->index);
+	History::getInstance().logBypassState(bypass->deviceId,
+					      bypass->status,
+					      BYPASS_VALID,
+					      bypass->index);
       }
       else {
-	History::getInstance().logBypassState(bypass->deviceId, bypass->status, BYPASS_VALID, BYPASS_DIGITAL_INDEX);
+	History::getInstance().logBypassState(bypass->deviceId,
+					      bypass->status,
+					      BYPASS_VALID,
+					      BYPASS_DIGITAL_INDEX);
       }
       LOG_TRACE("BYPASS", "New bypass for device [" << deviceId << "], "
 		<< "type=" << bypassType << ", index=" << intIndex

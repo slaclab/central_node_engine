@@ -69,8 +69,9 @@ void MpsDb::unlatchAll() {
  */
 bool MpsDb::updateInputs() {
   if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
+					       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 					       NUM_APPLICATIONS *
-					       APPLICATION_UPDATE_BUFFER_SIZE_BYTES,
+					       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
 					       500000)) { // 0.5 seconds
     if (_clearUpdateTime) {
       _inputUpdateTime.clear();
@@ -616,12 +617,30 @@ void MpsDb::configureApplicationCards() {
   for (applicationCardIt = applicationCards->begin(); applicationCardIt != applicationCards->end();
        ++applicationCardIt) {
     aPtr = (*applicationCardIt).second;
+
+    // Configuration buffer
     configBuffer = fastConfigurationBuffer + aPtr->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES;
     aPtr->applicationConfigBuffer = reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
 
-    updateBuffer = fastUpdateBuffer + aPtr->globalId * APPLICATION_UPDATE_BUFFER_SIZE_BYTES +
-      APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE_BYTES;
+    // Update buffer
+    updateBuffer = fastUpdateBuffer +
+      APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + // Skip header (timestamp + zeroes)
+      aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES; // Jump to correct area according to the globalId
+
+    // For debugging purposes only
     aPtr->applicationUpdateBuffer = reinterpret_cast<ApplicationUpdateBufferBitSet *>(updateBuffer);
+    aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(fastUpdateBuffer);
+
+    // New mapping
+    uint8_t *statusBits = updateBuffer;
+    aPtr->wasHighUpper = reinterpret_cast<ApplicationUpdateBufferBitSetLarge *>(statusBits);
+    statusBits += APPLICATION_UPDATE_BUFFER_128BITS_BYTES; // Skip 128 bits from wasHighUpper
+    aPtr->wasLowUpper = reinterpret_cast<ApplicationUpdateBufferBitSetSmall *>(statusBits);
+    statusBits += APPLICATION_UPDATE_BUFFER_64BITS_BYTES; // Skip 64 bits from wasLowUpper
+    aPtr->wasHighLower = reinterpret_cast<ApplicationUpdateBufferBitSetSmall *>(statusBits);
+    statusBits += APPLICATION_UPDATE_BUFFER_64BITS_BYTES; // Skip 64 bits from wasHighLower
+    aPtr->wasLowLower = reinterpret_cast<ApplicationUpdateBufferBitSetLarge *>(statusBits);
+    
 
     LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
   }

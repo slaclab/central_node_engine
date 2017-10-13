@@ -51,7 +51,8 @@ class MpsDb {
    * The bits from 0 to 191 are the 'was low' status, and bits 192 to 383
    * are the 'was high' status.
    */
-  uint8_t fastUpdateBuffer[NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_SIZE_BYTES];
+  uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + 
+			   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
   /** 
    * Each destination takes 4-bits for the allowed power class.

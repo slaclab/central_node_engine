@@ -14,10 +14,46 @@ const uint32_t APPLICATION_CONFIG_BUFFER_SIZE = 2048; // in bits - not all bits 
 const uint32_t APPLICATION_CONFIG_BUFFER_SIZE_BYTES = APPLICATION_CONFIG_BUFFER_SIZE / 8;
 const uint32_t APPLICATION_CONFIG_BUFFER_USED_SIZE = 1344; // 1344 bits for digital, 1152 bits for analog
 const uint32_t APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES = APPLICATION_CONFIG_BUFFER_USED_SIZE / 8; // 1344 bits for digital, 1152 bits for analog
-const uint32_t APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE = 128;
-const uint32_t APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE / 8;
-const uint32_t APPLICATION_UPDATE_BUFFER_SIZE = APPLICATION_UPDATE_BUFFER_TIMESTAMP_SIZE + 384; // in bits, which is 64 bytes
-const uint32_t APPLICATION_UPDATE_BUFFER_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_SIZE / 8;
+
+//
+// Application update buffer offsets
+// Header
+// [ -64 -   -1] Unknow 64-bit junk (!)
+// [   0 -   64] timestamp
+// [  64 -  127] 0x0000_0000_0000_0000_0000
+// [ 128 -  511] App 0 status
+// [ 512 -  896] App 1 status
+// [ 897 - 1281] App 2 status
+// [    ...    ] ... goes until App 1023
+//
+// App N status format:
+// [   0 -  127] Was high status from bits 64 to 191
+// [ 128 -  191] Was low status from bits 128 to 191
+// [ 192 -  255] Was high status from bits 0 to 63
+// [ 256 -  383] Was low status from bits 0 to 127
+// 
+
+// Header sizes
+const uint32_t APPLICATION_UPDATE_BUFFER_HEADER_ZEROES_SIZE = 64;
+const uint32_t APPLICATION_UPDATE_BUFFER_HEADER_TIMESTAMP_SIZE = 64;
+const uint32_t APPLICATION_UPDATE_BUFFER_HEADER_SIZE =
+  APPLICATION_UPDATE_BUFFER_HEADER_ZEROES_SIZE +
+  APPLICATION_UPDATE_BUFFER_HEADER_TIMESTAMP_SIZE + 64;
+
+const uint32_t APPLICATION_UPDATE_BUFFER_HEADER_ZEROES_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_HEADER_ZEROES_SIZE / 8;
+const uint32_t APPLICATION_UPDATE_BUFFER_HEADER_TIMESTAMP_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_HEADER_TIMESTAMP_SIZE / 8;
+const uint32_t APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES =
+  APPLICATION_UPDATE_BUFFER_HEADER_ZEROES_SIZE_BYTES +
+  APPLICATION_UPDATE_BUFFER_HEADER_TIMESTAMP_SIZE_BYTES + 8;
+
+// Break 'was low'/'was high' bits into two section (small for 64 bits, large for 128 bits)
+const uint32_t APPLICATION_UPDATE_BUFFER_64BITS = 64;
+const uint32_t APPLICATION_UPDATE_BUFFER_128BITS = 128;
+const uint32_t APPLICATION_UPDATE_BUFFER_64BITS_BYTES = 64 / 8;
+const uint32_t APPLICATION_UPDATE_BUFFER_128BITS_BYTES = 128 / 8;
+const uint32_t APPLICATION_UPDATE_BUFFER_INPUTS_SIZE =
+  (APPLICATION_UPDATE_BUFFER_64BITS + APPLICATION_UPDATE_BUFFER_128BITS) * 2;
+const uint32_t APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES = APPLICATION_UPDATE_BUFFER_INPUTS_SIZE / 8;
 
 const uint32_t POWER_CLASS_BIT_SIZE = 4;
 const uint32_t DESTINATION_MASK_BIT_SIZE = 16;
@@ -44,6 +80,10 @@ const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_BASE = // in bits
 //const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_SIZE = DESTINATION_MASK_BIT_SIZE *
 
 // Constants for digital/analog input updates
+// Bits   0 -  63: 0x0000_0000_0000_0000
+// Bits  64 - 127: 64-bit timestamp
+// Bits 128 - 223: 'was low' inputs (or is it 'was high'?)
+// Bits 224 - 319: 'was high' inputs (or is it 'was low'?)
 const uint32_t UPDATE_STATUS_BITS = 2; // 2 bits for each status, one for 'was Low' and one for 'was High'
 const uint32_t DEVICE_INPUT_UPDATE_SIZE = 2; // in bits (one 'was Low'/'was High' per input)
 const uint32_t ANALOG_DEVICE_NUM_THRESHOLDS = 32; // max number of thresholds per analog channel
@@ -92,6 +132,13 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 // 
 typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationConfigBufferBitSet;
 
-typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationUpdateBufferBitSet;
+typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE * 6 +
+                    APPLICATION_UPDATE_BUFFER_HEADER_SIZE> ApplicationUpdateBufferFullBitSet;
+
+// Bit set with the 384 status bits from an application card
+typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE> ApplicationUpdateBufferBitSet;
+
+typedef std::bitset<APPLICATION_UPDATE_BUFFER_128BITS> ApplicationUpdateBufferBitSetLarge;
+typedef std::bitset<APPLICATION_UPDATE_BUFFER_64BITS> ApplicationUpdateBufferBitSetSmall;
 
 #endif

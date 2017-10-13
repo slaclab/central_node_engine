@@ -114,6 +114,22 @@ typedef shared_ptr<DbDeviceState> DbDeviceStatePtr;
 typedef std::map<uint32_t, DbDeviceStatePtr> DbDeviceStateMap;
 typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
 
+class DbApplicationCardInput {
+ public:
+  ApplicationUpdateBufferBitSetLarge *wasHighUpper; // bits 64-127
+  ApplicationUpdateBufferBitSetSmall *wasLowUpper;  // bits 128-191
+  ApplicationUpdateBufferBitSetSmall *wasHighLower; // bits 0-63
+  ApplicationUpdateBufferBitSetLarge *wasLowLower;  // bits 0-127
+
+  void setUpdateBuffers(ApplicationUpdateBufferBitSetLarge *wasHighUpperBuf, // bits 64-127
+			ApplicationUpdateBufferBitSetSmall *wasLowUpperBuf,  // bits 128-191
+			ApplicationUpdateBufferBitSetSmall *wasHighLowerBuf, // bits 0-63
+			ApplicationUpdateBufferBitSetLarge *wasLowLowerBuf);  // bits 0-127
+
+  uint32_t getWasLow(int channel);
+  uint32_t getWasHigh(int channel);
+};
+
 /**
  * DbDeviceType YAML class
  */
@@ -134,7 +150,7 @@ typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
 /**
  * DbDeviceInput YAML class
  */
-class DbDeviceInput : public DbEntry {
+class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
  public:
   uint32_t bitPosition;
   uint32_t channelId;
@@ -169,6 +185,7 @@ class DbDeviceInput : public DbEntry {
   DbDeviceInput();
 
   void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
+
   void update(uint32_t v);
   void update();
 
@@ -233,7 +250,7 @@ typedef shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
 /**
  * DbAnalogDevice YAML class
  */
-class DbAnalogDevice : public DbEntry {
+class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
  public:
   uint32_t deviceTypeId;
   uint32_t channelId;
@@ -325,7 +342,15 @@ class DbApplicationCard : public DbEntry {
   ApplicationConfigBufferBitSet *applicationConfigBuffer;
 
   // Memory containing input updates from firmware
+  ApplicationUpdateBufferBitSetLarge *wasHighUpper; // bits 64-127
+  ApplicationUpdateBufferBitSetSmall *wasLowUpper;  // bits 128-191
+  ApplicationUpdateBufferBitSetSmall *wasHighLower; // bits 0-63
+  ApplicationUpdateBufferBitSetLarge *wasLowLower;  // bits 0-127
+
+  // Input updates - for debugging only
   ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
+  ApplicationUpdateBufferFullBitSet *applicationUpdateBufferFull;
+
 
   // Each application has a list of analog or digital devices.
   // Only the devices that have 'fast' evaluation need

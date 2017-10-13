@@ -22,6 +22,34 @@ TimeAverage AnalogDeviceUpdateTime(5, "Analog Device update time");
 TimeAverage AppCardDigitalUpdateTime(5, "Application Card (digital) update time");
 TimeAverage AppCardAnalogUpdateTime(5, "Application Card (analog) update time");
 
+uint32_t DbApplicationCardInput::getWasLow(int channel) {
+  if (channel < 128) {
+    return (*wasLowLower)[channel]; // wasLowLower contains bits 0-127
+  }
+  else {
+    return (*wasLowUpper)[128 - channel]; // wasLowUpper contains bits 128-191
+  }
+}
+
+uint32_t DbApplicationCardInput::getWasHigh(int channel) {
+  if (channel < 64) {
+    return (*wasHighLower)[channel]; // wasLowLower contains bits 0-63
+  }
+  else {
+    return (*wasHighUpper)[64 - channel]; // wasLowUpper contains bits 64-191
+  }
+}
+
+void DbApplicationCardInput::setUpdateBuffers(ApplicationUpdateBufferBitSetLarge *wasHighUpperBuf, // bits 64-127
+					      ApplicationUpdateBufferBitSetSmall *wasLowUpperBuf,  // bits 128-191
+					      ApplicationUpdateBufferBitSetSmall *wasHighLowerBuf, // bits 0-63
+					      ApplicationUpdateBufferBitSetLarge *wasLowLowerBuf) {// bits 0-127
+  wasHighUpper = wasHighUpperBuf;
+  wasLowUpper = wasLowUpperBuf;
+  wasHighLower = wasHighLowerBuf;
+  wasLowLower = wasLowLowerBuf;
+}
+
 void DbDeviceInput::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
   applicationUpdateBuffer = buffer;
 }
@@ -51,8 +79,14 @@ void DbDeviceInput::update() {
     // DEPRECATED
     //    wasLow = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE];
     //    wasHigh = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE + 1];
-    wasLow = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_LOW_OFFSET + channel->number];
-    wasHigh = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_HIGH_OFFSET + channel->number];
+
+    // Another one DEPRECATED
+    // wasLow = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_LOW_OFFSET + channel->number];
+    //wasHigh = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_HIGH_OFFSET + channel->number];
+    
+    wasLow = getWasLow(channel->number);
+    wasHigh = getWasHigh(channel->number);
+
     wasLowBit = wasLow;
     wasHighBit = wasHigh;
 
@@ -138,10 +172,15 @@ void DbAnalogDevice::update() {
     value = 0;
     for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
       // DEPRECATED
-      //      wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
-      //      wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
-      wasLow = (*applicationUpdateBuffer)[UPDATE_WAS_LOW_OFFSET + channel->number + i];
-      wasHigh = (*applicationUpdateBuffer)[UPDATE_WAS_HIGH_OFFSET + channel->number + i];
+      // wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
+      // wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
+
+      // DEPRECATED
+      //wasLow = (*applicationUpdateBuffer)[UPDATE_WAS_LOW_OFFSET + channel->number + i];
+      //wasHigh = (*applicationUpdateBuffer)[UPDATE_WAS_HIGH_OFFSET + channel->number + i];
+
+      wasLow = getWasLow(channel->number+i);
+      wasHigh = getWasHigh(channel->number+i);
 
       // If both are zero the Central Node has not received messages from the device, assume fault
       // Both zeroes also mean no messages from application card in the last 360Hz period
@@ -188,6 +227,7 @@ void DbApplicationCard::configureUpdateBuffers() {
 	   deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
 	//	std::cout << "D" << (*deviceInput).second->id << " ";
 	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
+	(*deviceInput).second->setUpdateBuffers(wasHighUpper, wasLowUpper, wasHighLower, wasLowLower);
       }
     }
   }
@@ -196,6 +236,7 @@ void DbApplicationCard::configureUpdateBuffers() {
 	 analogDevice != analogDevices->end(); ++analogDevice) {
       //      std::cout << "A" << (*analogDevice).second->id << " ";
       (*analogDevice).second->setUpdateBuffer(applicationUpdateBuffer);
+      (*analogDevice).second->setUpdateBuffers(wasHighUpper, wasLowUpper, wasHighLower, wasLowLower);
     }
   }
   else {

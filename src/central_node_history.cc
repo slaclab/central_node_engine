@@ -111,10 +111,9 @@ int History::add(Message &message) {
 int History::sendFront() {
   pthread_mutex_lock(&_mutex);
   pthread_cond_wait(&_condition, &_mutex);
-  if (_histQueue.size() > 0) {
-    Message message(_histQueue.front());
+  while (_histQueue.size() > 0) {
+    send(_histQueue.front());
     _histQueue.pop_front();
-    send(message);
   }
   pthread_mutex_unlock(&_mutex);
 }

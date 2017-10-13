@@ -632,19 +632,18 @@ void *Engine::engineThread(void *arg) {
     Firmware::getInstance().heartbeat();
 
     if (Engine::getInstance()._mpsDb) {
-      _updateCounter++;
-      counter++;
-      now = time(0);
-      if (now > before) {
-	time_t diff = now - before; 
-	before = now;
-	_rate = counter / diff;
-	counter = 0;
-      }
-
       if (Engine::getInstance()._mpsDb->updateInputs()) {
 	Engine::getInstance().checkFaults();
 	Engine::getInstance()._mpsDb->mitigate();
+	_updateCounter++;
+	counter++;
+	now = time(0);
+	if (now > before) {
+	  time_t diff = now - before; 
+	  before = now;
+	  _rate = counter / diff;
+	  counter = 0;
+	}
       }
       else {
 	_rate = 0;
