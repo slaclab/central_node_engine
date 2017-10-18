@@ -137,6 +137,7 @@ typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE * 6 +
 
 // Bit set with the 384 status bits from an application card
 typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE> ApplicationUpdateBufferBitSet;
+typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE/2> ApplicationUpdateBufferBitSetHalf;
 
 typedef std::bitset<APPLICATION_UPDATE_BUFFER_128BITS> ApplicationUpdateBufferBitSetLarge;
 typedef std::bitset<APPLICATION_UPDATE_BUFFER_64BITS> ApplicationUpdateBufferBitSetSmall;

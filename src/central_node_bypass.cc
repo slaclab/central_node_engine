@@ -116,7 +116,7 @@ void BypassManager::assignBypass(MpsDbPtr db) {
       if (digitalInput == db->deviceInputs->end()) {
 	pthread_mutex_unlock(&mutex);
 	errorStream << "ERROR: Failed to find FaultInput ("
-		    << inputId << ") when assigning bypass";
+		    << inputId << ") when assigning digital bypass";
 	throw(CentralNodeException(errorStream.str()));
       }
       else {
@@ -128,7 +128,7 @@ void BypassManager::assignBypass(MpsDbPtr db) {
       if (analogInput == db->analogDevices->end()) {
 	pthread_mutex_unlock(&mutex);
 	errorStream << "ERROR: Failed to find FaultInput ("
-		    << inputId << ") when assigning bypass";
+		    << inputId << ") when assigning analog bypass";
 	throw(CentralNodeException(errorStream.str()));
       }
       else {

@@ -15,6 +15,14 @@ SHARED_LIBRARIES_YES+=
 #rate2_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
 #TESTPROGRAMS            += rate2_tst
 
+bcast_tst_SRCS = bcast_tst.cc
+bcast_tst_LIBS =
+TESTPROGRAMS  += bcast_tst
+
+ln_tst_SRCS = ln_tst.cc
+ln_tst_LIBS =
+TESTPROGRAMS  += ln_tst
+
 rateFirmware_tst_SRCS       = rateFirmware_tst.cc
 rateFirmware_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS            += rateFirmware_tst

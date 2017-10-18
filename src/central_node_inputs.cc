@@ -23,36 +23,22 @@ TimeAverage AppCardDigitalUpdateTime(5, "Application Card (digital) update time"
 TimeAverage AppCardAnalogUpdateTime(5, "Application Card (analog) update time");
 
 uint32_t DbApplicationCardInput::getWasLow(int channel) {
-  if (channel < 128) {
-    return (*wasLowLower)[channel]; // wasLowLower contains bits 0-127
-  }
-  else {
-    return (*wasLowUpper)[128 - channel]; // wasLowUpper contains bits 128-191
-  }
+  return (*wasLowBuffer)[channel];
 }
 
 uint32_t DbApplicationCardInput::getWasHigh(int channel) {
-  if (channel < 64) {
-    return (*wasHighLower)[channel]; // wasLowLower contains bits 0-63
-  }
-  else {
-    return (*wasHighUpper)[64 - channel]; // wasLowUpper contains bits 64-191
-  }
+  return (*wasHighBuffer)[channel];
 }
 
-void DbApplicationCardInput::setUpdateBuffers(ApplicationUpdateBufferBitSetLarge *wasHighUpperBuf, // bits 64-127
-					      ApplicationUpdateBufferBitSetSmall *wasLowUpperBuf,  // bits 128-191
-					      ApplicationUpdateBufferBitSetSmall *wasHighLowerBuf, // bits 0-63
-					      ApplicationUpdateBufferBitSetLarge *wasLowLowerBuf) {// bits 0-127
-  wasHighUpper = wasHighUpperBuf;
-  wasLowUpper = wasLowUpperBuf;
-  wasHighLower = wasHighLowerBuf;
-  wasLowLower = wasLowLowerBuf;
+void DbApplicationCardInput::setUpdateBuffers(ApplicationUpdateBufferBitSetHalf *wasLowBuf,
+					      ApplicationUpdateBufferBitSetHalf *wasHighBuf) {
+  wasLowBuffer = wasLowBuf;
+  wasHighBuffer = wasHighBuf;
 }
 
-void DbDeviceInput::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
-  applicationUpdateBuffer = buffer;
-}
+// void DbDeviceInput::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
+//   applicationUpdateBuffer = buffer;
+// }
 
 // This should update the value from the data read from the central node firmware
 void DbDeviceInput::update(uint32_t v) {
@@ -73,17 +59,9 @@ void DbDeviceInput::update() {
   
   DeviceInputUpdateTime.start();
 
-  if (applicationUpdateBuffer) {
+  if (wasLowBuffer) {
     previousValue = value;
 
-    // DEPRECATED
-    //    wasLow = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE];
-    //    wasHigh = (*applicationUpdateBuffer)[channel->number * DEVICE_INPUT_UPDATE_SIZE + 1];
-
-    // Another one DEPRECATED
-    // wasLow = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_LOW_OFFSET + channel->number];
-    //wasHigh = (*applicationUpdateBuffer)[DIGITAL_UPDATE_WAS_HIGH_OFFSET + channel->number];
-    
     wasLow = getWasLow(channel->number);
     wasHigh = getWasHigh(channel->number);
 
@@ -135,9 +113,9 @@ DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
   }
 }
 
-void DbAnalogDevice::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
-  applicationUpdateBuffer = buffer;
-}
+// void DbAnalogDevice::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
+//   applicationUpdateBuffer = buffer;
+// }
 
 void DbAnalogDevice::update(uint32_t v) {
   //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
@@ -166,19 +144,11 @@ void DbAnalogDevice::update() {
   
   AnalogDeviceUpdateTime.start();
 
-  if (applicationUpdateBuffer) {
+  if (wasLowBuffer) {
     previousValue = value;
 
     value = 0;
     for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
-      // DEPRECATED
-      // wasLow = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS];
-      // wasHigh = (*applicationUpdateBuffer)[channel->number * ANALOG_DEVICE_UPDATE_SIZE + i * UPDATE_STATUS_BITS + 1];
-
-      // DEPRECATED
-      //wasLow = (*applicationUpdateBuffer)[UPDATE_WAS_LOW_OFFSET + channel->number + i];
-      //wasHigh = (*applicationUpdateBuffer)[UPDATE_WAS_HIGH_OFFSET + channel->number + i];
-
       wasLow = getWasLow(channel->number+i);
       wasHigh = getWasHigh(channel->number+i);
 
@@ -226,8 +196,8 @@ void DbApplicationCard::configureUpdateBuffers() {
       for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
 	   deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
 	//	std::cout << "D" << (*deviceInput).second->id << " ";
-	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
-	(*deviceInput).second->setUpdateBuffers(wasHighUpper, wasLowUpper, wasHighLower, wasLowLower);
+	//	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
+	(*deviceInput).second->setUpdateBuffers(wasLowBuffer, wasHighBuffer);
       }
     }
   }
@@ -235,8 +205,8 @@ void DbApplicationCard::configureUpdateBuffers() {
     for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
 	 analogDevice != analogDevices->end(); ++analogDevice) {
       //      std::cout << "A" << (*analogDevice).second->id << " ";
-      (*analogDevice).second->setUpdateBuffer(applicationUpdateBuffer);
-      (*analogDevice).second->setUpdateBuffers(wasHighUpper, wasLowUpper, wasHighLower, wasLowLower);
+      //(*analogDevice).second->setUpdateBuffer(applicationUpdateBuffer);
+      (*analogDevice).second->setUpdateBuffers(wasLowBuffer, wasHighBuffer);
     }
   }
   else {

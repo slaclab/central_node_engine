@@ -116,15 +116,11 @@ typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
 
 class DbApplicationCardInput {
  public:
-  ApplicationUpdateBufferBitSetLarge *wasHighUpper; // bits 64-127
-  ApplicationUpdateBufferBitSetSmall *wasLowUpper;  // bits 128-191
-  ApplicationUpdateBufferBitSetSmall *wasHighLower; // bits 0-63
-  ApplicationUpdateBufferBitSetLarge *wasLowLower;  // bits 0-127
+  ApplicationUpdateBufferBitSetHalf *wasLowBuffer;
+  ApplicationUpdateBufferBitSetHalf *wasHighBuffer;
 
-  void setUpdateBuffers(ApplicationUpdateBufferBitSetLarge *wasHighUpperBuf, // bits 64-127
-			ApplicationUpdateBufferBitSetSmall *wasLowUpperBuf,  // bits 128-191
-			ApplicationUpdateBufferBitSetSmall *wasHighLowerBuf, // bits 0-63
-			ApplicationUpdateBufferBitSetLarge *wasLowLowerBuf);  // bits 0-127
+  void setUpdateBuffers(ApplicationUpdateBufferBitSetHalf *wasLowBuf,
+			ApplicationUpdateBufferBitSetHalf *wasHighBuf);
 
   uint32_t getWasLow(int channel);
   uint32_t getWasHigh(int channel);
@@ -178,13 +174,9 @@ class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
   // Set true if this input is used by a fast evaluated device (must be the only input to device)
   bool fastEvaluation;
 
-  // Pointer to shared bitset buffer containing updates for all inputs from
-  // the same application card
-  ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
-
   DbDeviceInput();
 
-  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
+  //  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
 
   void update(uint32_t v);
   void update();
@@ -304,16 +296,12 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // 4-bit encoded max beam power class for each integrator threshold
   uint16_t fastPowerClass[ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
 
-  // Pointer to shared bitset buffer containing updates for all inputs from
-  // the same application card
-  ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
-  
   DbAnalogDevice();
 
   void update(uint32_t v);
   void update();
 
-  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
+  //  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
 
   friend std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice);
 };
@@ -341,16 +329,9 @@ class DbApplicationCard : public DbEntry {
   // Memory containing firmware configuration buffer
   ApplicationConfigBufferBitSet *applicationConfigBuffer;
 
-  // Memory containing input updates from firmware
-  ApplicationUpdateBufferBitSetLarge *wasHighUpper; // bits 64-127
-  ApplicationUpdateBufferBitSetSmall *wasLowUpper;  // bits 128-191
-  ApplicationUpdateBufferBitSetSmall *wasHighLower; // bits 0-63
-  ApplicationUpdateBufferBitSetLarge *wasLowLower;  // bits 0-127
-
   // Input updates - for debugging only
   ApplicationUpdateBufferBitSet *applicationUpdateBuffer;
   ApplicationUpdateBufferFullBitSet *applicationUpdateBufferFull;
-
 
   // Each application has a list of analog or digital devices.
   // Only the devices that have 'fast' evaluation need
@@ -358,6 +339,9 @@ class DbApplicationCard : public DbEntry {
   // the firmware logic
   DbAnalogDeviceMapPtr analogDevices;
   DbDigitalDeviceMapPtr digitalDevices;
+
+  ApplicationUpdateBufferBitSetHalf *wasLowBuffer;
+  ApplicationUpdateBufferBitSetHalf *wasHighBuffer;
 
   DbApplicationCard();
 

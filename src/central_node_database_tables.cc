@@ -92,7 +92,7 @@ DbDeviceInput::DbDeviceInput() : DbEntry(),
 				 bitPosition(-1), channelId(-1), faultValue(0),
 				 digitalDeviceId(-1), value(0), previousValue(0),
 				 latchedValue(0), invalidValueCount(0),
-				 fastEvaluation(false), applicationUpdateBuffer(0) {
+				 fastEvaluation(false) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {

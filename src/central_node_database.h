@@ -65,7 +65,8 @@ class MpsDb {
   /**
    * Mutex to prevent multiple database access
    */
-  pthread_mutex_t mutex;
+  static pthread_mutex_t _mutex;
+  static bool _initialized;
 
   uint32_t _updateCounter;
   

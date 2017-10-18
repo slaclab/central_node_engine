@@ -107,15 +107,18 @@ int Engine::loadConfig(std::string yamlFileName) {
   _evaluate = false;
 
   MpsDb *db = new MpsDb();
-  _mpsDb = shared_ptr<MpsDb>(db);
+  shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(db);
 
-  _mpsDb->lock();
+  // Move this for later, so _mpsDb is not overwritten 
+  //  _mpsDb = shared_ptr<MpsDb>(db);
+  //  _mpsDb->lock();
+  mpsDb->lock(); // the database mutex is static - is the same for all instances
 
-  if (_mpsDb->load(yamlFileName) != 0) {
+  if (mpsDb->load(yamlFileName) != 0) {
     _errorStream.str(std::string());
     _errorStream << "ERROR: Failed to load yaml database ("
 		<< yamlFileName << ")";
-    _mpsDb->unlock();
+    mpsDb->unlock();
     pthread_mutex_unlock(&_engineMutex);
     throw(EngineException(_errorStream.str()));
   }
@@ -133,16 +136,16 @@ int Engine::loadConfig(std::string yamlFileName) {
   // databases the central node engine must be restarted.
   if (!_bypassManager) {
     _bypassManager = BypassManagerPtr(new BypassManager());
-    _bypassManager->createBypassMap(_mpsDb);
+    _bypassManager->createBypassMap(mpsDb);
     _bypassManager->startBypassThread();
   }
 
   LOG_TRACE("ENGINE", "BypassManager created");
 
   try {
-    _mpsDb->configure();
+    mpsDb->configure();
   } catch (DbException e) {
-    delete db;
+    mpsDb->unlock();
     pthread_mutex_unlock(&_engineMutex);
     throw e;
   }
@@ -150,7 +153,17 @@ int Engine::loadConfig(std::string yamlFileName) {
   LOG_TRACE("ENGINE", "MPS Database configured from YAML");
 
   // Assign bypass to each digital/analog input
-  _bypassManager->assignBypass(_mpsDb);
+  try {
+    _bypassManager->assignBypass(mpsDb);
+  } catch (CentralNodeException e) {
+    mpsDb->unlock();
+    pthread_mutex_unlock(&_engineMutex);
+    throw e;
+  }
+
+  // Now that the database has been loaded and configured
+  // successfully, assign to _mpsDb shared_ptr
+  _mpsDb = mpsDb;//shared_ptr<MpsDb>(db);
 
   // Find the lowest/highest BeamClasses - used when checking faults
   uint32_t num = 0;
@@ -656,6 +669,9 @@ void *Engine::engineThread(void *arg) {
 
     pthread_mutex_unlock(&_engineMutex);
   }
+
+  Firmware::getInstance().setSoftwareEnable(false);
+  Firmware::getInstance().setEnable(false);
 
   std::cout << "EngineThread: Exiting..." << std::endl;
   pthread_exit(0);

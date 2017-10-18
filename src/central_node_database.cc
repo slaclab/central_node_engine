@@ -25,14 +25,20 @@ extern TimeAverage AnalogDeviceUpdateTime;
 extern TimeAverage AppCardDigitalUpdateTime;
 extern TimeAverage AppCardAnalogUpdateTime;
 
+pthread_mutex_t MpsDb::_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool MpsDb::_initialized = false;
+
 MpsDb::MpsDb() : _inputUpdateTime(5, "Input update time"), _clearUpdateTime(false), _updateCounter(0) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
 
-  int ret = pthread_mutex_init(&mutex, NULL);
-  if (0 != ret) {
-    throw(DbException("ERROR: MpsDb::MpsDb() failed to initialize mutex."));
+  if (!_initialized) {
+    int ret = pthread_mutex_init(&_mutex, NULL);
+    if (0 != ret) {
+      throw(DbException("ERROR: MpsDb::MpsDb() failed to initialize mutex."));
+    }
+    _initialized = true;
   }
 }
 
@@ -628,19 +634,13 @@ void MpsDb::configureApplicationCards() {
       aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES; // Jump to correct area according to the globalId
 
     // For debugging purposes only
-    aPtr->applicationUpdateBuffer = reinterpret_cast<ApplicationUpdateBufferBitSet *>(updateBuffer);
     aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(fastUpdateBuffer);
 
     // New mapping
     uint8_t *statusBits = updateBuffer;
-    aPtr->wasHighUpper = reinterpret_cast<ApplicationUpdateBufferBitSetLarge *>(statusBits);
-    statusBits += APPLICATION_UPDATE_BUFFER_128BITS_BYTES; // Skip 128 bits from wasHighUpper
-    aPtr->wasLowUpper = reinterpret_cast<ApplicationUpdateBufferBitSetSmall *>(statusBits);
-    statusBits += APPLICATION_UPDATE_BUFFER_64BITS_BYTES; // Skip 64 bits from wasLowUpper
-    aPtr->wasHighLower = reinterpret_cast<ApplicationUpdateBufferBitSetSmall *>(statusBits);
-    statusBits += APPLICATION_UPDATE_BUFFER_64BITS_BYTES; // Skip 64 bits from wasHighLower
-    aPtr->wasLowLower = reinterpret_cast<ApplicationUpdateBufferBitSetLarge *>(statusBits);
-    
+    aPtr->wasLowBuffer = reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(statusBits);
+    statusBits += (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2); // Skip 192 bits from wasLow
+    aPtr->wasHighBuffer = reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(statusBits);
 
     LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
   }
@@ -870,14 +870,14 @@ int MpsDb::load(std::string yamlFileName) {
 }
 
 void MpsDb::lock() {
-  int ret = pthread_mutex_lock(&mutex);
+  int ret = pthread_mutex_lock(&_mutex);
   if (ret != 0) {
     throw(DbException("ERROR: MpsDb::lock() failed to lock mutex."));
   }
 }
 
 void MpsDb::unlock() {
-  if (pthread_mutex_unlock(&mutex) != 0) {
+  if (pthread_mutex_unlock(&_mutex) != 0) {
     throw(DbException("ERROR: MpsDb::unlock() failed to unlock mutex."));
   }
 }
