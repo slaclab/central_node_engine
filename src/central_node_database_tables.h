@@ -60,6 +60,24 @@ typedef std::map<uint32_t, DbCratePtr> DbCrateMap;
 typedef shared_ptr<DbCrateMap> DbCrateMapPtr;
 
 /**
+ * DbInfo YAML class
+ */
+class DbInfo {
+ public:
+  std::string source;
+  std::string date;
+  std::string user;
+  std::string md5sum;
+
+  DbInfo();
+  friend std::ostream & operator<<(std::ostream &os, DbInfo * const dbInfo);
+};
+
+typedef shared_ptr<DbInfo> DbInfoPtr;
+typedef std::map<uint32_t, DbInfoPtr> DbInfoMap;
+typedef shared_ptr<DbInfoMap> DbInfoMapPtr;
+
+/**
  * DbApplicationType YAML class
  */
 class DbApplicationType : public DbEntry {

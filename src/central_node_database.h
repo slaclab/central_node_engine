@@ -91,6 +91,7 @@ class MpsDb {
   DbConditionMapPtr conditions;
   DbIgnoreConditionMapPtr ignoreConditions;
   DbConditionInputMapPtr conditionInputs;
+  DbInfoMapPtr databaseInfo;
 
   friend class FirmwareTest;
 

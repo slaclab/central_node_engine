@@ -30,6 +30,16 @@ std::ostream & operator<<(std::ostream &os, DbCrate * const crate) {
   return os;
 }
 
+DbInfo::DbInfo() {};
+
+std::ostream & operator<<(std::ostream &os, DbInfo * const dbInfo) {
+  os << "Source      : " << dbInfo->source << std::endl
+     << "  Generated on: " << dbInfo->date << std::endl
+     << "  User        : " << dbInfo->user << std::endl
+     << "  Db md5sum   : " << dbInfo->md5sum << std::endl;
+  return os;
+}
+
 DbApplicationType::DbApplicationType() : DbEntry(), number(-1),
 					 analogChannelCount(-1), analogChannelSize(-1),
 					 digitalChannelCount(-1), digitalChannelSize(-1),

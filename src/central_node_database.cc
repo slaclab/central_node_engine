@@ -854,6 +854,8 @@ int MpsDb::load(std::string yamlFileName) {
       ignoreConditions = (*node).as<DbIgnoreConditionMapPtr>();
     } else if (nodeName == "ConditionInput") {
       conditionInputs = (*node).as<DbConditionInputMapPtr>();
+    } else if (nodeName == "DatabaseInfo") {
+      databaseInfo = (*node).as<DbInfoMapPtr>();
     } else {
       errorStream << "ERROR: Unknown YAML node name ("
 		  << nodeName << ")";
@@ -996,6 +998,9 @@ void MpsDb::showInfo() {
   std::cout << "File: " << name << std::endl;
   std::cout << "Update counter: " << _updateCounter << std::endl;
   
+  printMap<DbInfoMapPtr, DbInfoMap::iterator>
+    (std::cout, databaseInfo, "DatabaseInfo");
+
   _inputUpdateTime.show();
   AnalogDeviceUpdateTime.show();
   DeviceInputUpdateTime.show();

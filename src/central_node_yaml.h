@@ -63,6 +63,55 @@ namespace YAML {
   };
 
   /**
+   * Info:
+   * - analog_channel_count: '3'
+   *   analog_channel_size: '8'
+   *   digital_channel_count: '4'
+   *   digital_channel_size: '1'
+   *   id: '1'
+   *   name: Mixed Mode Link Node
+   *   number: '0'
+   */
+  template<>
+    struct convert<DbInfoMapPtr> {
+    static bool decode(const Node &node, DbInfoMapPtr &rhs) {
+      DbInfoMap *appTypes = new DbInfoMap();
+      std::stringstream errorStream;
+      std::string field;
+      rhs = DbInfoMapPtr(appTypes);
+
+      for (YAML::Node::const_iterator it = node["DatabaseInfo"].begin();
+	   it != node["DatabaseInfo"].end(); ++it) {
+	DbInfo *dbInfo = new DbInfo();
+
+	try {
+	  field = "source";
+	  dbInfo->source = (*it)[field].as<std::string>();
+
+	  field = "user";
+	  dbInfo->user = (*it)[field].as<std::string>();
+
+	  field = "date";
+	  dbInfo->date = (*it)[field].as<std::string>();
+
+	  field = "md5sum";
+	  dbInfo->md5sum = (*it)[field].as<std::string>();
+	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to find field " << field << " for DatabaseInfo.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<std::string> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DatabaseInfo (expected string).";
+	  throw(DbException(errorStream.str()));
+	}
+
+	rhs->insert(std::pair<int, DbInfoPtr>(0, DbInfoPtr(dbInfo)));
+      }
+
+      return true;
+    }
+  };
+
+  /**
    * ApplicationType:
    * - analog_channel_count: '3'
    *   analog_channel_size: '8'
