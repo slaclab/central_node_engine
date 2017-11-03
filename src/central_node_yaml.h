@@ -568,12 +568,18 @@ namespace YAML {
 	   it != node["IgnoreCondition"].end(); ++it) {
 	DbIgnoreCondition *ignoreCondition = new DbIgnoreCondition();
 
+	ignoreCondition->faultStateId = DbIgnoreCondition::INVALID_ID;
+	ignoreCondition->analogDeviceId = DbIgnoreCondition::INVALID_ID;
+
 	try {
 	  field = "id";
 	  ignoreCondition->id = (*it)[field].as<unsigned int>();
 
 	  field = "fault_state_id";
 	  ignoreCondition->faultStateId = (*it)[field].as<unsigned int>();
+
+	  field = "analog_device_id";
+	  ignoreCondition->analogDeviceId = (*it)[field].as<unsigned int>();
 
 	  field = "condition_id";
 	  ignoreCondition->conditionId = (*it)[field].as<unsigned int>();

@@ -50,6 +50,7 @@ class Engine {
  public:
   int loadConfig(std::string yamlFileName);
   int reloadConfig();
+  int reloadConfigFromIgnore();
   int checkFaults();
   bool isInitialized();
 
@@ -74,6 +75,8 @@ class Engine {
   void clearCheckTime();
   long getMaxCheckTime();
   long getAvgCheckTime();
+  long getMaxEvalTime();
+  long getAvgEvalTime();
 
   MpsDbPtr getCurrentDb();
   BypassManagerPtr getBypassManager();
@@ -86,7 +89,7 @@ class Engine {
   void setAllowedBeamClass();
 
   void evaluateFaults();
-  void evaluateIgnoreConditions();
+  bool evaluateIgnoreConditions();
   void mitgate();
 
   MpsDbPtr _mpsDb;
@@ -99,6 +102,9 @@ class Engine {
   TimeAverage _checkFaultTime;
   bool _clearCheckFaultTime;
 
+  TimeAverage _evaluationCycleTime;
+  bool _clearEvaluationCycleTime;
+
  public:
   static Engine &getInstance() {
     static Engine instance;
@@ -107,6 +113,8 @@ class Engine {
 
   void startUpdateThread();
   static void *engineThread(void *arg);
+
+  friend class MpsDb;
 };
 
 typedef shared_ptr<Engine> EnginePtr;

@@ -54,6 +54,11 @@ class MpsDb {
   uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + 
 			   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
+  uint64_t _fastUpdateTimeStamp;
+  uint64_t _diff;
+  uint64_t _maxDiff;
+  uint32_t _diffCount;
+
   /** 
    * Each destination takes 4-bits for the allowed power class.
    */
@@ -62,6 +67,9 @@ class MpsDb {
   TimeAverage _inputUpdateTime;
   bool _clearUpdateTime;
 
+  TimeAverage _inputDelayTime;
+  bool _clearInputDelayTime;
+
   /**
    * Mutex to prevent multiple database access
    */
@@ -69,6 +77,7 @@ class MpsDb {
   static bool _initialized;
 
   uint32_t _updateCounter;
+  uint32_t _updateTimeoutCounter;
   
  public:
   DbBeamClassPtr lowestBeamClass;
@@ -94,6 +103,7 @@ class MpsDb {
   DbInfoMapPtr databaseInfo;
 
   friend class FirmwareTest;
+  friend class Engine;
 
   // Name of the loaded YAML file
   std::string name;
@@ -124,6 +134,8 @@ class MpsDb {
   void clearUpdateTime();
   long getMaxUpdateTime();
   long getAvgUpdateTime();
+  long getMaxInputDelayTime();
+  long getAvgInputDelayTime();
 
   uint8_t *getFastUpdateBuffer() {
     return &fastUpdateBuffer[0];

@@ -196,6 +196,7 @@ class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
 
   //  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
 
+  void unlatch();
   void update(uint32_t v);
   void update();
 
@@ -282,6 +283,9 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // Count 'was high'=0 & 'was low'=0 
   uint32_t invalidValueCount;
 
+  // Faults from this devices are bypassed when ignored==true
+  bool ignored; 
+
   DbDeviceTypePtr deviceType;
 
   // Pointer to the Channel connected to the device
@@ -316,6 +320,7 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
 
   DbAnalogDevice();
 
+  uint32_t unlatch(uint32_t mask);
   void update(uint32_t v);
   void update();
 
@@ -537,6 +542,7 @@ class DbFault : public DbEntry {
 
   DbFault();
 
+  void unlatch();
   void update(uint32_t v) {
     value = v;
   }
@@ -571,17 +577,23 @@ typedef shared_ptr<DbConditionInput> DbConditionInputPtr;
 typedef std::map<uint32_t, DbConditionInputPtr> DbConditionInputMap;
 typedef shared_ptr<DbConditionInputMap> DbConditionInputMapPtr;
 
+
 /**
  * DbIgnoreCondition YAML class
  */
 class DbIgnoreCondition : public DbEntry {
  public:
-  uint32_t faultStateId;
-  uint32_t conditionId;
+  static const uint32_t INVALID_ID = 0xFFFFFFFF;
 
-  // The DbIgnoreCondition may point to a digital or analog fault state
-  // TODO: this does not look good, these should be a single pointer, can't they?
+  uint32_t conditionId;
+  uint32_t faultStateId;
+  uint32_t analogDeviceId;
+
+  // The ignore condition can be used to ignore a fault state or an analog device
+  // The analog device is used to disable a device when beam is blocked upstream, causing
+  // faults from no beam 
   DbFaultStatePtr faultState;
+  DbAnalogDevicePtr analogDevice;
 
   DbIgnoreCondition();
   friend std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input);

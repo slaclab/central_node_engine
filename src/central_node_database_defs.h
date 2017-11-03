@@ -132,7 +132,7 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 // 
 typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationConfigBufferBitSet;
 
-typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE * 6 +
+typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE * 10 +
                     APPLICATION_UPDATE_BUFFER_HEADER_SIZE> ApplicationUpdateBufferFullBitSet;
 
 // Bit set with the 384 status bits from an application card

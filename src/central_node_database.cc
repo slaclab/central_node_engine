@@ -7,6 +7,7 @@
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <central_node_firmware.h>
+#include <central_node_engine.h>
 
 #include <iostream>
 #include <sstream>
@@ -28,7 +29,17 @@ extern TimeAverage AppCardAnalogUpdateTime;
 pthread_mutex_t MpsDb::_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool MpsDb::_initialized = false;
 
-MpsDb::MpsDb() : _inputUpdateTime(5, "Input update time"), _clearUpdateTime(false), _updateCounter(0) {
+MpsDb::MpsDb() :
+  _fastUpdateTimeStamp(0),
+  _diff(0),
+  _maxDiff(0),
+  _diffCount(0),
+  _inputUpdateTime(5, "Input update time"),
+  _clearUpdateTime(false), 
+  _inputDelayTime(5, "Input delay time (wait for FW)"),
+  _clearInputDelayTime(false), 
+  _updateCounter(0),
+  _updateTimeoutCounter(0) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
@@ -53,19 +64,17 @@ void MpsDb::unlatchAll() {
   LOG_TRACE("DATABASE", "Unlatching all faults");
   for (DbAnalogDeviceMap::iterator it = analogDevices->begin();
        it != analogDevices->end(); ++it) {
-    (*it).second->latchedValue = 0; // Clear all threshold faults
+    (*it).second->latchedValue = (*it).second->value; // Update value for all threshold bits
   }
 
   for (DbDeviceInputMap::iterator it = deviceInputs->begin();
        it != deviceInputs->end(); ++it) {
-    uint32_t faultValue = (*it).second->faultValue;
-    faultValue == 0? faultValue = 1 : faultValue = 0; // Flip faultValue and assign to latchedValue
-    (*it).second->latchedValue = faultValue;
+    (*it).second->unlatch();
   }
 
   for (DbFaultMap::iterator it = faults->begin();
        it != faults->end(); ++it) {
-    (*it).second->faultLatched = false;
+    (*it).second->faultLatched = (*it).second->faulted; // Set latched value to current value
   }
 }
 
@@ -78,7 +87,27 @@ bool MpsDb::updateInputs() {
 					       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 					       NUM_APPLICATIONS *
 					       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
-					       500000)) { // 0.5 seconds
+					       3000)) { // 3 msec
+					       //500000)) { // 0.5 seconds
+    uint64_t *time = reinterpret_cast<uint64_t *>(Engine::getInstance().getCurrentDb()->getFastUpdateBuffer() + 8);
+    uint64_t diff = time[0] - _fastUpdateTimeStamp;
+    _fastUpdateTimeStamp = time[0];
+
+    if (diff > _maxDiff) {
+      _maxDiff = diff;
+    }
+
+    if (diff > 12000000) {
+      _diffCount++;
+    }
+    _diff = diff;
+
+    _inputDelayTime.end();
+    if (_clearInputDelayTime) {
+      _inputDelayTime.clear();
+      _clearInputDelayTime = false;
+    }
+    Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
     if (_clearUpdateTime) {
       _inputUpdateTime.clear();
       DeviceInputUpdateTime.clear();
@@ -100,6 +129,8 @@ bool MpsDb::updateInputs() {
     //    Firmware::getInstance().getAppTimeoutStatus();
   }
   else {
+    _updateTimeoutCounter++;
+    _inputDelayTime.end();
     //    std::cerr << "ERROR: updateInputs failed" << std::endl;
     return false;
   }
@@ -251,6 +282,7 @@ void MpsDb::configureDeviceInputs() {
 void MpsDb::configureFaultInputs() {
   LOG_TRACE("DATABASE", "Configure: FaultInputs");
   std::stringstream errorStream;
+
   // Assign DigitalDevice to FaultInputs
   for (DbFaultInputMap::iterator it = faultInputs->begin();
        it != faultInputs->end(); ++it) {
@@ -404,6 +436,7 @@ void MpsDb::configureFaultInputs() {
       }
     }
   }
+  std::cout << "assigning fault inputs to faults" << std::endl;
 
   // Assing fault inputs to faults
   for (DbFaultInputMap::iterator it = faultInputs->begin();
@@ -426,12 +459,21 @@ void MpsDb::configureFaultInputs() {
 									   (*it).second));
   }
 
+  std::cout << "assign evaluation" << std::endl;
+
   // Assign an evaluation to a Fault based on the inputs to its FaultInputs
   // Faults whose inputs are all evaluated in firmware should be only handled
   // by the firmware.
   // TODO: set DbFault.evaluation
   for (DbFaultMap::iterator faultIt = faults->begin(); faultIt != faults->end(); ++faultIt) {
     bool slowEvaluation = false;
+    if (!(*faultIt).second->faultInputs) {
+      errorStream << "ERROR: Missing faultInputs map for Fault \""
+		  << (*faultIt).second->name << "\": "
+		  << (*faultIt).second->description;
+      throw(DbException(errorStream.str()));
+    }
+
     for (DbFaultInputMap::iterator inputIt = (*faultIt).second->faultInputs->begin();
 	 inputIt != (*faultIt).second->faultInputs->end(); ++inputIt) {
       if ((*inputIt).second->analogDevice) {
@@ -452,7 +494,7 @@ void MpsDb::configureFaultInputs() {
       (*faultIt).second->evaluation = FAST_EVALUATION;
     }
   }
-
+  std::cout << "done with faultInputs" << std::endl;
 }
 
 void MpsDb::configureFaultStates() {
@@ -556,14 +598,35 @@ void MpsDb::configureIgnoreConditions() {
     // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
 
-    DbFaultStateMap::iterator digFaultIt = faultStates->find(faultStateId);
-    if (digFaultIt != faultStates->end()) {
-      (*ignoreCondition).second->faultState = (*digFaultIt).second;
+    if (faultStateId != DbIgnoreCondition::INVALID_ID) {
+      DbFaultStateMap::iterator faultIt = faultStates->find(faultStateId);
+      if (faultIt != faultStates->end()) {
+	(*ignoreCondition).second->faultState = (*faultIt).second;
+      }
+      else {
+	errorStream << "ERROR: Failed to configure database, invalid ID for FaultState ("
+		    << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
+	throw(DbException(errorStream.str()));
+      }
     }
     else {
-      errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
-		  << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
-      throw(DbException(errorStream.str()));
+      uint32_t analogDeviceId = (*ignoreCondition).second->analogDeviceId;
+      if (analogDeviceId != DbIgnoreCondition::INVALID_ID) {
+	DbAnalogDeviceMap::iterator deviceIt = analogDevices->find(analogDeviceId);
+	if (deviceIt != analogDevices->end()) {
+	  (*ignoreCondition).second->analogDevice = (*deviceIt).second;
+	}
+	else {
+	  errorStream << "ERROR: Failed to configure database, invalid ID for AnalogDevice ("
+		      << analogDeviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
+	  throw(DbException(errorStream.str()));
+	}
+      }
+      else {
+	errorStream << "ERROR: Failed to configure database, invalid ID for FaultState and"
+		    << " FaultState for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
+	throw(DbException(errorStream.str()));
+      }
     }
   }
 
@@ -588,12 +651,11 @@ void MpsDb::configureIgnoreConditions() {
       throw(DbException(errorStream.str()));
     }
 
-    // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*conditionInput).second->faultStateId;
 
-    DbFaultStateMap::iterator digFaultIt = faultStates->find(faultStateId);
-    if (digFaultIt != faultStates->end()) {
-      (*conditionInput).second->faultState = (*digFaultIt).second;
+    DbFaultStateMap::iterator faultIt = faultStates->find(faultStateId);
+    if (faultIt != faultStates->end()) {
+      (*conditionInput).second->faultState = (*faultIt).second;
     }
     else {
       errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
@@ -1002,16 +1064,23 @@ void MpsDb::showInfo() {
     (std::cout, databaseInfo, "DatabaseInfo");
 
   _inputUpdateTime.show();
+  _inputDelayTime.show();
   AnalogDeviceUpdateTime.show();
   DeviceInputUpdateTime.show();
   AppCardDigitalUpdateTime.show();
   AppCardAnalogUpdateTime.show();
 
+  std::cout << "Max TimeStamp diff    : " << _maxDiff << std::endl;
+  _maxDiff = 0;
+  std::cout << "Current TimeStamp diff: " << _diff << std::endl;
+  std::cout << "Diff > 12ms count     : " << _diffCount << std::endl;
+  std::cout << "Update timout counter : " << _updateTimeoutCounter << std::endl;
   unlock();
 }
 
 void MpsDb::clearUpdateTime() {
   _clearUpdateTime = true;
+  _clearInputDelayTime = true;
 }
 
 long MpsDb::getMaxUpdateTime() {
@@ -1020,6 +1089,14 @@ long MpsDb::getMaxUpdateTime() {
 
 long MpsDb::getAvgUpdateTime() {
   return _inputUpdateTime.getAverage();
+}
+
+long MpsDb::getMaxInputDelayTime() {
+  return _inputDelayTime.getMax();
+}
+
+long MpsDb::getAvgInputDelayTime() {
+  return _inputDelayTime.getAverage();
 }
 
 std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {

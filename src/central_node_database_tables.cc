@@ -105,6 +105,10 @@ DbDeviceInput::DbDeviceInput() : DbEntry(),
 				 fastEvaluation(false) {
 }
 
+void DbDeviceInput::unlatch() {
+  latchedValue = value;
+}
+
 std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
   os << "id[" << deviceInput->id << "]; " 
      << "bitPosition[" << deviceInput->bitPosition << "]; "
@@ -135,6 +139,21 @@ std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevic
   return os;
 }
 
+/**
+ * Unlatch the bit set in the threshold mask passed as input parameter.
+ *
+ * @return current value for the bit specified by the mask
+ */
+uint32_t DbAnalogDevice::unlatch(uint32_t mask) {
+  // Get the threshold bit from current value
+  uint32_t currentBitValue = (value & mask);
+
+  // Copy the current threshold bit value to the latchedValue 
+  latchedValue &= (currentBitValue & ~mask);
+
+  return currentBitValue;
+}
+
 std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice) {
   os << "id[" << analogDevice->id << "]; "
      << "deviceTypeId[" << analogDevice->deviceTypeId << "]; "
@@ -143,6 +162,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
      << "evaluation[" << analogDevice->evaluation << "]; "
      << "channelId[" << analogDevice->channelId << "]; "
      << "cardId[" << analogDevice->cardId << "]; "
+     << "ignored[" << analogDevice->ignored << "]; "
      << "bypassMask[0x" << std::hex << analogDevice->bypassMask << std::dec << "]";
 
   if (analogDevice->evaluation == FAST_EVALUATION) {
@@ -286,6 +306,10 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
 DbFault::DbFault() : DbEntry(), name(""), description(""), faulted(true), faultLatched(true), ignored(false), evaluation(SLOW_EVALUATION) {
 }
 
+void DbFault::unlatch() {
+  faultLatched = faulted;
+}
+
 std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
   os << "id[" << fault->id << "]; "
      << "name[" << fault->name << "]; "
@@ -348,7 +372,7 @@ std::ostream & operator<<(std::ostream &os, DbConditionInput * const input) {
   return os;
 }
 
-DbIgnoreCondition::DbIgnoreCondition() : DbEntry(), faultStateId(0), conditionId(0) {
+DbIgnoreCondition::DbIgnoreCondition() : DbEntry(), conditionId(0), faultStateId(0), analogDeviceId(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input) {

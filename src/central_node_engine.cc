@@ -23,8 +23,10 @@ time_t          Engine::_startTime;
 
 Engine::Engine() :
   _initialized(false),
-  _checkFaultTime(5, "Evaluation time"),
-  _clearCheckFaultTime(false) {
+  _checkFaultTime(5, "Evaluation only time"),
+  _clearCheckFaultTime(false),
+  _evaluationCycleTime(5, "Evaluation Cycle time"),
+  _clearEvaluationCycleTime(false) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   engineLogger = Loggers::getLogger("ENGINE");
   LOG_TRACE("ENGINE", "Created Engine");
@@ -81,7 +83,6 @@ int Engine::reloadConfig() {
   _evaluate = false;
 
   _mpsDb->lock();
-
   _mpsDb->writeFirmwareConfiguration();
   _mpsDb->unlock();
 
@@ -89,6 +90,22 @@ int Engine::reloadConfig() {
   pthread_mutex_unlock(&_engineMutex);
 
   startUpdateThread();
+
+  return 0;
+}
+
+// This is called when analog devices need to be ignored (and un-ignored)
+int Engine::reloadConfigFromIgnore() {
+  Firmware::getInstance().setSoftwareEnable(false);
+  Firmware::getInstance().setEnable(false);
+
+  _mpsDb->lock();
+  _mpsDb->writeFirmwareConfiguration();
+  _mpsDb->unlock();
+
+  Firmware::getInstance().setEnable(true);
+  Firmware::getInstance().softwareClear();
+  Firmware::getInstance().setSoftwareEnable(true);
 
   return 0;
 }
@@ -355,7 +372,10 @@ void Engine::evaluateFaults() {
   }
 }
 
-void Engine::evaluateIgnoreConditions() {
+// Check if there are valid ignore conditions. If changes in ignore condition
+// requires firmware reconfiguration, then return true.
+bool Engine::evaluateIgnoreConditions() {
+  bool reload = false;
   // Calculate state of conditions
   for (DbConditionMap::iterator condition = _mpsDb->conditions->begin();
        condition != _mpsDb->conditions->end(); ++condition) {
@@ -374,12 +394,11 @@ void Engine::evaluateIgnoreConditions() {
 		<< (*input).second->bitPosition);
     }
     // 'mask' is the condition value that needs to be matched in order to ignore faults
+    bool newConditionState = false;
     if ((*condition).second->mask == conditionValue) {
-      (*condition).second->state = true;
+      newConditionState = true;
     }
-    else {
-      (*condition).second->state = false;
-    }
+    (*condition).second->state = newConditionState;
     LOG_TRACE("ENGINE",  "Condition " << (*condition).second->name << " is " << (*condition).second->state);
 
     for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
@@ -389,8 +408,19 @@ void Engine::evaluateIgnoreConditions() {
 		  << ", state=" << (*condition).second->state);
 	(*ignoreCondition).second->faultState->ignored = (*condition).second->state;
       }
+      else {
+	if ((*ignoreCondition).second->analogDevice) {
+	  LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->analogDeviceId << "]"
+		    << ", state=" << (*condition).second->state);
+	  if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state) {
+	    reload = true; // reload configuration!
+	  }
+	  (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
+	}
+      }
     }
   }
+  return reload;
 }
 
 void Engine::mitigate() {
@@ -465,12 +495,16 @@ int Engine::checkFaults() {
   _mpsDb->clearMitigationBuffer();
   setTentativeBeamClass();
   evaluateFaults();
-  evaluateIgnoreConditions();
+  bool reload = evaluateIgnoreConditions();
   mitigate();
   setAllowedBeamClass();
   _mpsDb->unlock();
   _checkFaultTime.end();
 
+  // If FW configuration needs reloading, return non-zero value
+  if (reload) {
+    return 1;
+  }
   return 0;
 }
 
@@ -509,6 +543,7 @@ void Engine::showStats() {
   if (isInitialized()) {
     std::cout << ">> Engine Stats:" << std::endl;
     _checkFaultTime.show();
+    _evaluationCycleTime.show();
     std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
     std::cout << "Counter: " << Engine::_updateCounter << std::endl;
     std::cout << "Started at " << ctime(&Engine::_startTime) << std::endl;
@@ -612,7 +647,7 @@ void *Engine::engineThread(void *arg) {
 
   std::cout << "Engine: update thread started." << std::endl;
   // Declare as real time task
-  param.sched_priority = 49;
+  param.sched_priority = 70;
   if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
     perror("Set priority");
     std::cerr << "WARN: Setting thread RT priority failed." << std::endl;
@@ -628,6 +663,8 @@ void *Engine::engineThread(void *arg) {
   // Pre-fault our stack
   stack_prefault();
 
+  Engine::getInstance()._evaluationCycleTime.clear();
+
   Firmware::getInstance().setEnable(true);
   Firmware::getInstance().softwareClear();
   Firmware::getInstance().setSoftwareEnable(true);
@@ -638,16 +675,18 @@ void *Engine::engineThread(void *arg) {
   _startTime = before;
   _updateCounter = 0;
   uint32_t counter = 0;
+  bool reload = false;
 
   while(_evaluate) {
     pthread_mutex_lock(&_engineMutex);
 
-    Firmware::getInstance().heartbeat();
-
     if (Engine::getInstance()._mpsDb) {
       if (Engine::getInstance()._mpsDb->updateInputs()) {
-	Engine::getInstance().checkFaults();
-	Engine::getInstance()._mpsDb->mitigate();
+	reload = false;
+	if (Engine::getInstance().checkFaults() > 0) {
+	  reload = true;
+	}
+	Engine::getInstance()._mpsDb->mitigate(); // Write the mitigation to FW
 	_updateCounter++;
 	counter++;
 	now = time(0);
@@ -657,9 +696,21 @@ void *Engine::engineThread(void *arg) {
 	  _rate = counter / diff;
 	  counter = 0;
 	}
+	Firmware::getInstance().heartbeat();
       }
       else {
 	_rate = 0;
+      }
+      Engine::getInstance()._evaluationCycleTime.end();
+      Engine::getInstance()._mpsDb->_inputDelayTime.start();
+
+      if (Engine::getInstance()._clearEvaluationCycleTime) {
+	Engine::getInstance()._evaluationCycleTime.clear();
+	Engine::getInstance()._clearEvaluationCycleTime = false;
+      }
+
+      if (reload) {
+	Engine::getInstance().reloadConfigFromIgnore();
       }
     }
     else {
@@ -679,6 +730,7 @@ void *Engine::engineThread(void *arg) {
 
 void Engine::clearCheckTime() {
   _clearCheckFaultTime = true;
+  _clearEvaluationCycleTime = true;
 }
 
 long Engine::getMaxCheckTime() {
@@ -687,4 +739,12 @@ long Engine::getMaxCheckTime() {
 
 long Engine::getAvgCheckTime() {
   return _checkFaultTime.getAverage();
+}
+
+long Engine::getMaxEvalTime() {
+  return _evaluationCycleTime.getMax();
+}
+
+long Engine::getAvgEvalTime() {
+  return _evaluationCycleTime.getAverage();
 }

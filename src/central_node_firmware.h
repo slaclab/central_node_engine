@@ -131,7 +131,7 @@ class Firmware {
   uint8_t buildStamp[256];
   char gitHashString[21];
 
-  void heartbeat();
+  bool heartbeat();
 
   void setEnable(bool enable);
   void setSoftwareEnable(bool enable);
@@ -165,12 +165,12 @@ class Firmware {
 
   // size in bytes (not in uint32_t units)
   void writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size);
-  void switchConfig();
-  void evalLatchClear();
-  void monErrClear();
-  void swErrClear();
-  void toErrClear();
-  void moConcErrClear();
+  bool switchConfig();
+  bool evalLatchClear();
+  bool monErrClear();
+  bool swErrClear();
+  bool toErrClear();
+  bool moConcErrClear();
 
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
   void writeMitigation(uint32_t *mitigation);

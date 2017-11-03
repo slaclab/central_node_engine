@@ -452,8 +452,14 @@ void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
   }
 }
 
-void Firmware::heartbeat() {
-  _swHeartbeatCmd->execute();
+bool Firmware::heartbeat() {
+  try {
+    _swHeartbeatCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
 }
 
 void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
@@ -480,28 +486,65 @@ void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
   switchConfig();
 }
 
-void Firmware::switchConfig() {
-  _switchConfigCmd->execute();
+bool Firmware::switchConfig() {
+  try {
+    _switchConfigCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
+
 }
 
-void Firmware::evalLatchClear() {
-  _evalLatchClearCmd->execute();
+bool Firmware::evalLatchClear() {
+  try {
+    _evalLatchClearCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
 }
 
-void Firmware::monErrClear() {
-  _monErrClearCmd->execute();
+bool Firmware::monErrClear() {
+  try {
+    _monErrClearCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
 }
 
-void Firmware::swErrClear() {
-  _swErrClearCmd->execute();
+bool Firmware::swErrClear() {
+  try {
+    _swErrClearCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
 }
 
-void Firmware::toErrClear() {
-  _toErrClearCmd->execute();
+bool Firmware::toErrClear() {
+  try {
+    _toErrClearCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
 }
 
-void Firmware::moConcErrClear() {
-  _moConcErrClearCmd->execute();
+bool Firmware::moConcErrClear() {
+  try {
+    _moConcErrClearCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
 }
 
 void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {

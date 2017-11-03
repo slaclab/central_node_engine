@@ -103,7 +103,8 @@ void DbDeviceInput::update() {
 
 DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
 				   value(0), previousValue(0), 
-				   invalidValueCount(0), bypassMask(0xFFFFFFFF) {
+				   invalidValueCount(0), ignored(false),
+				   bypassMask(0xFFFFFFFF) {
   for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
   }
@@ -387,7 +388,9 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	    bitValue = true;
 	  }
 	  // If bypass for the integrator is valid, set destination mask to zero - i.e. no mitigation
-	  if ((*analogDevice).second->bypass[i]->status == BYPASS_VALID) {
+	  // No mitigation also if the analogDevice is currently ignored
+	  if ((*analogDevice).second->bypass[i]->status == BYPASS_VALID ||
+	      (*analogDevice).second->ignored) {
 	    bitValue = false;
 	  }
 	  applicationConfigBuffer->set(offset + j, bitValue);
