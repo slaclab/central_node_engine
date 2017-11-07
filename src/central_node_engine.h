@@ -47,6 +47,8 @@ class Engine {
   static uint32_t _updateCounter;
   static time_t _startTime;
 
+  uint32_t _debugCounter;
+
  public:
   int loadConfig(std::string yamlFileName);
   int reloadConfig();

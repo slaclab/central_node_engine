@@ -382,7 +382,7 @@ std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input) {
   return os;
 }
 
-DbCondition::DbCondition() : DbEntry(), name(""), description(""), mask(0) {
+DbCondition::DbCondition() : DbEntry(), name(""), description(""), mask(0), state(false) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbCondition * const fault) {

@@ -575,12 +575,6 @@ namespace YAML {
 	  field = "id";
 	  ignoreCondition->id = (*it)[field].as<unsigned int>();
 
-	  field = "fault_state_id";
-	  ignoreCondition->faultStateId = (*it)[field].as<unsigned int>();
-
-	  field = "analog_device_id";
-	  ignoreCondition->analogDeviceId = (*it)[field].as<unsigned int>();
-
 	  field = "condition_id";
 	  ignoreCondition->conditionId = (*it)[field].as<unsigned int>();
  	} catch(YAML::InvalidNode e) {
@@ -588,6 +582,37 @@ namespace YAML {
 	  throw(DbException(errorStream.str()));
 	} catch(YAML::TypedBadConversion<unsigned int> e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for IgnoreCondition (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
+	}
+
+	bool found = false;
+	try {
+	  field = "fault_state_id";
+	  ignoreCondition->faultStateId = (*it)[field].as<unsigned int>();
+	  found = true;
+ 	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  // ... just continue, this exception is fine as long an there is an analogDeviceId defined next
+	}
+
+	if (!found) {
+	  try {
+	    field = "analog_device_id";
+	    ignoreCondition->analogDeviceId = (*it)[field].as<unsigned int>();
+	    found = true;
+	  } catch(YAML::InvalidNode e) {
+	    errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
+	    throw(DbException(errorStream.str()));
+	  } catch(YAML::TypedBadConversion<unsigned int> e) {
+	    errorStream << "ERROR: Failed to convert contents of field " << field << " for IgnoreCondition (expected unsigned int).";
+	    throw(DbException(errorStream.str()));
+	  }
+	}
+
+	if (!found) {
+	  errorStream << "ERROR: IgnoreCondition without faultState or analogDevice defined";
 	  throw(DbException(errorStream.str()));
 	}
 

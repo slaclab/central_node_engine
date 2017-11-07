@@ -23,6 +23,7 @@ time_t          Engine::_startTime;
 
 Engine::Engine() :
   _initialized(false),
+  _debugCounter(0),
   _checkFaultTime(5, "Evaluation only time"),
   _clearCheckFaultTime(false),
   _evaluationCycleTime(5, "Evaluation Cycle time"),
@@ -53,6 +54,10 @@ Engine::~Engine() {
 #if defined(LOG_ENABLED)
   //  Firmware::getInstance().showStats();
 #endif
+  // Stop the MPS before quitting
+  Firmware::getInstance().setSoftwareEnable(false);
+  Firmware::getInstance().setEnable(false);
+
   _checkFaultTime.show();
 }
 
@@ -113,13 +118,17 @@ int Engine::reloadConfigFromIgnore() {
 int Engine::loadConfig(std::string yamlFileName) {
   pthread_mutex_lock(&_engineMutex);
 
+  // First stop the MPS
+  Firmware::getInstance().setSoftwareEnable(false);
+  Firmware::getInstance().setEnable(false);
+
   // If updateThread active, then stop it first
   if (_evaluate) {
     _evaluate = false;
     pthread_mutex_unlock(&_engineMutex);
     threadJoin();
     pthread_mutex_lock(&_engineMutex);
-  }
+  }  
 
   _evaluate = false;
 
@@ -382,10 +391,10 @@ bool Engine::evaluateIgnoreConditions() {
     uint32_t conditionValue = 0;
     for (DbConditionInputMap::iterator input = (*condition).second->conditionInputs->begin();
 	 input != (*condition).second->conditionInputs->end(); ++input) {
-      uint32_t inputValue = 1;
+      uint32_t inputValue = 0;
       if ((*input).second->faultState) {
- 	if (!(*input).second->faultState->faulted) {
-	  inputValue = 0;
+ 	if ((*input).second->faultState->faulted) {
+	  inputValue = 1;
 	}
       }
       conditionValue |= (inputValue << (*input).second->bitPosition);
@@ -393,6 +402,8 @@ bool Engine::evaluateIgnoreConditions() {
 		<< ", input value " << inputValue << std::dec << " bit pos "
 		<< (*input).second->bitPosition);
     }
+    
+
     // 'mask' is the condition value that needs to be matched in order to ignore faults
     bool newConditionState = false;
     if ((*condition).second->mask == conditionValue) {
@@ -548,6 +559,7 @@ void Engine::showStats() {
     std::cout << "Counter: " << Engine::_updateCounter << std::endl;
     std::cout << "Started at " << ctime(&Engine::_startTime) << std::endl;
     std::cout << &History::getInstance() << std::endl;
+    _debugCounter = 0;
   }
   else {
     std::cout << "MPS not initialized - no database" << std::endl;
@@ -702,16 +714,18 @@ void *Engine::engineThread(void *arg) {
 	_rate = 0;
       }
       Engine::getInstance()._evaluationCycleTime.end();
-      Engine::getInstance()._mpsDb->_inputDelayTime.start();
 
       if (Engine::getInstance()._clearEvaluationCycleTime) {
 	Engine::getInstance()._evaluationCycleTime.clear();
 	Engine::getInstance()._clearEvaluationCycleTime = false;
       }
 
+      // Reloads FW configuration - cause by ignore logic that 
+      // enables/disables faults based on fast analog devices
       if (reload) {
 	Engine::getInstance().reloadConfigFromIgnore();
       }
+      Engine::getInstance()._mpsDb->_inputDelayTime.start();
     }
     else {
       _rate = 0;
