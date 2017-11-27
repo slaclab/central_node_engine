@@ -7,6 +7,17 @@ import argparse
 import time
 
 #
+# Application update buffer offsets
+# Header
+# [ -64 -   -1] Unknow 64-bit junk (!)
+# [   0 -   64] timestamp
+# [  64 -  127] 0x0000_0000_0000_0000_0000
+# [ 128 -  511] App 0 status
+# [ 512 -  896] App 1 status
+# [ 897 - 1281] App 2 status
+# [    ...    ] ... goes until App 1023
+
+# * WRONG
 # Input line:
 #
 # Input 0 ... Input 1
@@ -24,34 +35,37 @@ import time
 def readFile(f, debug):
     appData = bytearray()
 
-    appCount = 1
+    lineData = bytearray([0, 0, 0, 0, 0, 0, 0, 0, # 32 bits for junk
+                          0, 0, 0, 0, 0, 0, 0, 0, # 32 bits for junk
+                          0, 0, 0, 0, 0, 0, 0, 0, # 32 bits for timestamp
+                          0, 0, 0, 0, 0, 0, 0, 0, # 32 bits for timestamp
+                          0, 0, 0, 0, 0, 0, 0, 0, # Zeroes
+                          0, 0, 0, 0, 0, 0, 0, 0]) # Zeroes
+
+    appData = appData + lineData
+    appCount = 0
+    highLine = True # The first line has the wasHigh values, the second line has the wasLow values
+    numBits = 192    
+
     for line in f:
-        if debug:
+        if debug and highLine:
             print "+---------------------------------------+"
             print "| Global AppId #" + str(appCount) + " "
             print "+---------------------------------------+"
 
-        lineData = bytearray([0, 0, 0, 0, 0, 0, 0, 0, # 32 bits for timestamp
-                              0, 0, 0, 0, 0, 0, 0, 0, # 32 bits for timestamp
-                              0, 0, 0, 0, 0, 0, 0, 0, # Data starts at byte #17
-                              0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0,
+        lineData = bytearray([0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0])
         
-        current = 16
+        current = 0
+        byteIndex = 0
         end = len(lineData)
 
         line.rstrip()
 
-        lineIndex = 0 # points to which char we are in the line
+        bitIndex = 0 # points to which char we are in the line
         inputCount = 1
         
-        if debug:
-            print "| LN Inputs\t| L H | L H | L H | L H |"
-            print "+---------------------------------------+"
-
         while current < end:
             debugOut = ""
             byte = 0
@@ -61,44 +75,31 @@ def readFile(f, debug):
             # One byte has bits for 4 inputs
             debugOut = "| " + str(inputCount).zfill(3) + ".." + str(inputCount+3).zfill(3) + "\t| "
 
-            for i in range(4):
-                wasLowBit = 0
-                wasHighBit = 0
+            for i in range(8): # write out one byte
+                bitValue = 0
 
                 # Read wasLow/wasHigh for input
-                if lineIndex < len(line):
-                    if line[lineIndex] == '1':
-                        wasLowBit = 1
-                    lineIndex = lineIndex + 1
+                if current < len(line):
+                    if line[current] == '1':
+                        bitValue = 1
+                    current = current + 1
 
-                if lineIndex < len(line):
-                    if line[lineIndex] == '1':
-                        wasHighBit = 1
-                    lineIndex = lineIndex + 1
-
-                if debug:
-                    debugOut = debugOut + str(wasLowBit) + " " + str(wasHighBit) + " | "
-
-                byte |= (wasLowBit << bitIndex)
-                bitIndex = bitIndex + 1
-                byte |= (wasHighBit << bitIndex)
+                byte |= (bitValue << bitIndex)
                 bitIndex = bitIndex + 1
 
                 inputCount = inputCount + 1
 
             # end for
-            if debug:
-                if inputCount < 30:
-                    print debugOut
-            lineData[current] = byte
-            current = current + 1
-        # end while
-        if debug:    
-            print "+---------------------------------------+"
-        appData = appData + lineData
-        appCount = appCount + 1
-    # end for line
+            lineData[byteIndex] = byte
+            byteIndex = byteIndex + 1
 
+        # end while
+
+        appData = appData + lineData
+        if highLine == False:
+          appCount = appCount + 1
+        highLine = not highLine
+    # end for line
     return appData
 
 def sendUpdate(sock, file_base, index, host, port, debug):

@@ -50,7 +50,7 @@ class Engine {
   uint32_t _debugCounter;
 
  public:
-  int loadConfig(std::string yamlFileName);
+  int loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout=3500);
   int reloadConfig();
   int reloadConfigFromIgnore();
   int checkFaults();
@@ -84,7 +84,6 @@ class Engine {
   BypassManagerPtr getBypassManager();
 
  private:
-  void newDb();
   void mitigate();
 
   void setTentativeBeamClass();

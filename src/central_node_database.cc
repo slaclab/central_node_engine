@@ -29,11 +29,12 @@ extern TimeAverage AppCardAnalogUpdateTime;
 pthread_mutex_t MpsDb::_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool MpsDb::_initialized = false;
 
-MpsDb::MpsDb() :
+MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _fastUpdateTimeStamp(0),
   _diff(0),
   _maxDiff(0),
   _diffCount(0),
+  _inputUpdateTimeout(inputUpdateTimeout),
   _inputUpdateTime(5, "Input update time"),
   _clearUpdateTime(false), 
   _inputDelayTime(5, "Input delay time (wait for FW)"),
@@ -87,8 +88,7 @@ bool MpsDb::updateInputs() {
 					       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 					       NUM_APPLICATIONS *
 					       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
-					       3000)) { // 3 msec
-					       //500000)) { // 0.5 seconds
+					       _inputUpdateTimeout)) { // 3.5 msec
     uint64_t *time = reinterpret_cast<uint64_t *>(Engine::getInstance().getCurrentDb()->getFastUpdateBuffer() + 8);
     uint64_t diff = time[0] - _fastUpdateTimeStamp;
     _fastUpdateTimeStamp = time[0];
@@ -806,6 +806,18 @@ void MpsDb::writeFirmwareConfiguration() {
     Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
 					(*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
 					APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
+    // DEBUG ONLY - begin
+    /*
+    if ((*card).second->globalId==1) {
+      for (int j = 2; j < 8; ++j) {
+	Firmware::getInstance().writeConfig(j, fastConfigurationBuffer + j *
+					    APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
+					    APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
+      }
+    }
+    */
+    // DEBUG ONLY - end
+
     i++;
   }
 
@@ -832,6 +844,9 @@ void MpsDb::writeFirmwareConfiguration() {
   }
 
   Firmware::getInstance().writeTimingChecking(time, period, charge);
+  
+  // Firmware command to actually switch to the new configuration
+  Firmware::getInstance().switchConfig();
 }
 
 /**
@@ -1059,6 +1074,7 @@ void MpsDb::showInfo() {
   std::cout << "Current database information:" << std::endl;
   std::cout << "File: " << name << std::endl;
   std::cout << "Update counter: " << _updateCounter << std::endl;
+  std::cout << "Input update timeout " << _inputUpdateTimeout << " usec" << std::endl;
   
   printMap<DbInfoMapPtr, DbInfoMap::iterator>
     (std::cout, databaseInfo, "DatabaseInfo");

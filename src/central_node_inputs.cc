@@ -150,8 +150,8 @@ void DbAnalogDevice::update() {
 
     value = 0;
     for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
-      wasLow = getWasLow(channel->number+i);
-      wasHigh = getWasHigh(channel->number+i);
+      wasLow = getWasLow(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS+i);
+      wasHigh = getWasHigh(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS+i);
 
       // If both are zero the Central Node has not received messages from the device, assume fault
       // Both zeroes also mean no messages from application card in the last 360Hz period

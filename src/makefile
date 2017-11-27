@@ -29,6 +29,7 @@ central_node_engine_SRCS += central_node_inputs.cc
 central_node_engine_SRCS += central_node_engine.cc
 central_node_engine_SRCS += central_node_bypass.cc
 central_node_engine_SRCS += central_node_firmware.cc
+central_node_engine_SRCS += central_node_firmware_noop.cc
 central_node_engine_SRCS += central_node_history.cc
 central_node_engine_SRCS += time_util.cc
 

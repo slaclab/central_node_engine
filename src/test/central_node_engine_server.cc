@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
   }
 #endif
 
-  //  History::getInstance().startSenderThread();
+  History::getInstance().startSenderThread();
 
   //  sleep(5);
 
@@ -125,6 +125,7 @@ int main(int argc, char **argv) {
     std::cerr << ex.what() << std::endl;
     return -1;
   }
+/*
 
   std::cout << "Streaming stream for 10 seconds ..." << std::endl;
   sleep(10);
@@ -141,7 +142,9 @@ int main(int argc, char **argv) {
   Engine::getInstance().getCurrentDb()->showInfo();
 
   Engine::getInstance().threadJoin();
+*/
 
+  for (;;) {sleep(1);};
   std::cout << "Done." << std::endl;
 
   return 0;

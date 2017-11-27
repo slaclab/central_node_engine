@@ -201,8 +201,8 @@ void BypassManager::checkBypassQueue(time_t testTime) {
     now = testTime;
   }
 
-  LOG_TRACE("BYPASS", "Checking for expired bypasses (time=" << now
-	    << ", size=" << bypassQueue.size() << ")");
+  //  LOG_TRACE("BYPASS", "Checking for expired bypasses (time=" << now
+  //	    << ", size=" << bypassQueue.size() << ")");
 
   bool expired = true;
   int ret = pthread_mutex_lock(&mutex);

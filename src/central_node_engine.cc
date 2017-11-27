@@ -69,11 +69,6 @@ BypassManagerPtr Engine::getBypassManager() {
   return _bypassManager;
 }
 
-void Engine::newDb() {
-  MpsDb *db = new MpsDb();
-  _mpsDb = shared_ptr<MpsDb>(db);
-}
-
 int Engine::reloadConfig() {
   pthread_mutex_lock(&_engineMutex);
 
@@ -109,13 +104,14 @@ int Engine::reloadConfigFromIgnore() {
   _mpsDb->unlock();
 
   Firmware::getInstance().setEnable(true);
-  Firmware::getInstance().softwareClear();
+  Firmware::getInstance().clearAll();
+  //  Firmware::getInstance().softwareClear();
   Firmware::getInstance().setSoftwareEnable(true);
 
   return 0;
 }
 
-int Engine::loadConfig(std::string yamlFileName) {
+int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout) {
   pthread_mutex_lock(&_engineMutex);
 
   // First stop the MPS
@@ -132,7 +128,7 @@ int Engine::loadConfig(std::string yamlFileName) {
 
   _evaluate = false;
 
-  MpsDb *db = new MpsDb();
+  MpsDb *db = new MpsDb(inputUpdateTimeout);
   shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(db);
 
   // Move this for later, so _mpsDb is not overwritten 
@@ -439,7 +435,12 @@ void Engine::mitigate() {
   for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
        fault != _mpsDb->faults->end(); ++fault) {
     // Mitigate only those faults that are the result of slow evaluation
+#ifdef FAST_SW_EVALUATION
+#warning "Code compiled to evaluate fast rules - FOR TESTING ONLY!"
+    if (true) {
+#else
     if ((*fault).second->evaluation == SLOW_EVALUATION) {
+#endif
       for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
 	   state != (*fault).second->faultStates->end(); ++state) {
 	if ((*state).second->faulted && !(*state).second->ignored) {
@@ -678,7 +679,8 @@ void *Engine::engineThread(void *arg) {
   Engine::getInstance()._evaluationCycleTime.clear();
 
   Firmware::getInstance().setEnable(true);
-  Firmware::getInstance().softwareClear();
+  Firmware::getInstance().clearAll();
+  //  Firmware::getInstance().softwareClear();
   Firmware::getInstance().setSoftwareEnable(true);
   Firmware::getInstance().setTimingCheckEnable(true);
 

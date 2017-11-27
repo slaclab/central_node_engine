@@ -70,6 +70,8 @@ class MpsDb {
   TimeAverage _inputDelayTime;
   bool _clearInputDelayTime;
 
+  uint32_t _inputUpdateTimeout;
+
   /**
    * Mutex to prevent multiple database access
    */
@@ -111,7 +113,7 @@ class MpsDb {
   // This is initialized by the configure() method, after loading the YAML file
   //  DbFaultStateMapPtr faultStates; 
 
-  MpsDb();
+  MpsDb(uint32_t inputUpdateTimeout=3500);
   ~MpsDb();
   int load(std::string yamlFile);
   void configure();
