@@ -78,15 +78,15 @@ CFLAGS  += $(OPT_CFLAGS)
 CFLAGS  += $(USR_CFLAGS)
 
 # Log can't be enabled when building for linuxRT, disable them both for production build
-CXXFLAGS+= -DLOG_ENABLED
-CXXFLAGS+= -DLOG_STDOUT
+#CXXFLAGS+= -DLOG_ENABLED
+#CXXFLAGS+= -DLOG_STDOUT
 
 # Enable this flag to allow CPSW to communicate with firmware, if not enable
 # then the engine will run with inputs from the central_node_test.py script (mps_database package)
-#CXXFLAGS+= -DFW_ENABLED
+CXXFLAGS+= -DFW_ENABLED
 
 # Enable this flag to allow software evaluate the fast rules (USE FOR TESTING ONLY)
-CXXFLAGS+= -DFAST_SW_EVALUATION
+#CXXFLAGS+= -DFAST_SW_EVALUATION
 
 LDFLAGS += $(USR_LDFLAGS)
 
