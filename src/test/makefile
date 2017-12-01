@@ -47,6 +47,10 @@ central_node_firmware_tst_SRCS       = central_node_firmware_tst.cc
 central_node_firmware_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS            += central_node_firmware_tst
 
+central_node_firmware_config_tst_SRCS       = central_node_firmware_config_tst.cc
+central_node_firmware_config_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS            += central_node_firmware_config_tst
+
 central_node_bypass_tst_SRCS       = central_node_bypass_tst.cc
 central_node_bypass_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS            += central_node_bypass_tst

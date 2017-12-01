@@ -175,6 +175,7 @@ int main(int argc, char **argv) {
   }
 
   t.writeFirmwareConfig();
+  Firmware::getInstance().switchConfig();
   if (t.readFirmwareConfig() < 0) {
     return -1;
   };
