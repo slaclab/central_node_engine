@@ -150,7 +150,8 @@ class DbApplicationCardInput {
 class DbDeviceType : public DbEntry {
  public:
   std::string name;
-  
+  uint32_t numIntegrators; // number of 8-bit threshold comparators coming from device
+
   DbDeviceStateMapPtr deviceStates;
 
   DbDeviceType();
@@ -272,6 +273,7 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
 
   // Configured after loading the YAML file
   // Each bit represents a threshold state from the analog device
+  // Analog devices: 1 byte (only one integration window)
   // BPM devices: 3 bytes (X, Y, TMIT thresholds)
   // BLM devices: 4 bytes (one byte for each integration window)
   int32_t value; 
@@ -288,6 +290,11 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
 
   DbDeviceTypePtr deviceType;
 
+  // Number of analog channels in the same card - this information 
+  // comes from the ApplicationCard type (from the cardId attribute),
+  // and it is filled out when the database is loaded and configured
+  uint32_t numChannelsCard;
+
   // Pointer to the Channel connected to the device
   DbChannelPtr channel;
 
@@ -297,7 +304,7 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   //
   // TODO: bypass is possible in HW only per integrator, not by threshold!
   //  InputBypassPtr bypass[ANALOG_DEVICE_NUM_THRESHOLDS]; 
-  InputBypassPtr bypass[ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL];
+  InputBypassPtr bypass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
 
   // Bypass mask composed from all active threshold bypasses. This value gets updated
   // whenever a threshold bypass becomes valid or expires. The BypassManager changes this 
@@ -313,10 +320,12 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
    */
   // 16-bit beam destination mask for fast digital devices/faults
   // there is a destination mask per integrator. 
-  uint16_t fastDestinationMask[ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL];
+  uint16_t fastDestinationMask[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
 
   // 4-bit encoded max beam power class for each integrator threshold
-  uint16_t fastPowerClass[ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
+  // 4 integrators max, each with size of 8-bits - total of 32 elements
+  uint16_t fastPowerClass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
+  uint16_t fastPowerClassInit[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
 
   DbAnalogDevice();
 
@@ -348,6 +357,9 @@ class DbApplicationCard : public DbEntry {
   std::string name;
   std::string description;
   bool online; // True if received non-zero update last 360Hz update period
+
+  // Application Type Card 
+  DbApplicationTypePtr applicationType;
 
   // Memory containing firmware configuration buffer
   ApplicationConfigBufferBitSet *applicationConfigBuffer;

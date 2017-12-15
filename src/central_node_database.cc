@@ -300,6 +300,8 @@ void MpsDb::configureFaultInputs() {
       // Found the DbAnalogDevice, configure it
       else {
 	(*it).second->analogDevice = (*aDeviceIt).second;
+	uint32_t integratorsPerChannel = 4;//(*it).second->analogDevice->deviceType->numIntegrators;
+
 	if ((*aDeviceIt).second->evaluation == FAST_EVALUATION) {
 	  LOG_TRACE("DATABASE", "AnalogDevice " << (*aDeviceIt).second->name
 		    << ": Fast Evaluation");
@@ -318,7 +320,8 @@ void MpsDb::configureFaultInputs() {
 
 	    // There is one DbFaultState per threshold bit, for BPMs there are
 	    // 24 bits (8 for X, 8 for Y and 8 for TMIT). Other analog devices
-	    // have 32 bits (4 integrators) - there is on destination mask per integrator	    
+	    // have up to 32 bits (4 integrators) - there is one destination mask
+	    // per integrator	    
 	    
 	    // There is a unique power class for each threshold bit (each DbFaultState)
 	    // The destination masks for the thresholds for the same integrator
@@ -369,19 +372,24 @@ void MpsDb::configureFaultInputs() {
 		   allowedClass != (*faultState).second->allowedClasses->end(); ++allowedClass) {
 		(*aDeviceIt).second->fastDestinationMask[integratorIndex] |=
 		  (*allowedClass).second->mitigationDevice->destinationMask;
-		LOG_TRACE("DATABASE", "PowerClass: threshold index=" << thresholdIndex
-			  << " power=" << (*allowedClass).second->beamClass->number);
-		if ((*allowedClass).second->beamClass->number <
-		    (*aDeviceIt).second->fastPowerClass[thresholdIndex]) {
+		LOG_TRACE("DATABASE", "PowerClass: integrator=" << integratorIndex
+			  << " threshold index=" << thresholdIndex
+			  << " current power=" << (*aDeviceIt).second->fastPowerClass[thresholdIndex]
+			  << " power=" << (*allowedClass).second->beamClass->number
+			  << " allowedClassId=" << (*allowedClass).second->id
+			  << " destinationMask=0x" << std::hex << (*allowedClass).second->mitigationDevice->destinationMask << std::dec );
+		if ((*aDeviceIt).second->fastPowerClassInit[thresholdIndex] == 1) {
 		  (*aDeviceIt).second->fastPowerClass[thresholdIndex] =
 		    (*allowedClass).second->beamClass->number;
+		  (*aDeviceIt).second->fastPowerClassInit[thresholdIndex] = 0;
 		}
-	      }
-	    }
-	    for (uint32_t i = 0;
-		 i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
-	      if ((*aDeviceIt).second->fastPowerClass[i] == 0xFF) {
-		(*aDeviceIt).second->fastPowerClass[i] = 0;
+		else {
+		  if ((*allowedClass).second->beamClass->number <
+		      (*aDeviceIt).second->fastPowerClass[thresholdIndex]) {
+		    (*aDeviceIt).second->fastPowerClass[thresholdIndex] =
+		      (*allowedClass).second->beamClass->number;
+		  }
+		}
 	      }
 	    }
 	  }
@@ -436,7 +444,7 @@ void MpsDb::configureFaultInputs() {
       }
     }
   }
-  std::cout << "assigning fault inputs to faults" << std::endl;
+  //  std::cout << "assigning fault inputs to faults" << std::endl;
 
   // Assing fault inputs to faults
   for (DbFaultInputMap::iterator it = faultInputs->begin();
@@ -459,7 +467,7 @@ void MpsDb::configureFaultInputs() {
 									   (*it).second));
   }
 
-  std::cout << "assign evaluation" << std::endl;
+  //  std::cout << "assign evaluation" << std::endl;
 
   // Assign an evaluation to a Fault based on the inputs to its FaultInputs
   // Faults whose inputs are all evaluated in firmware should be only handled
@@ -494,7 +502,7 @@ void MpsDb::configureFaultInputs() {
       (*faultIt).second->evaluation = FAST_EVALUATION;
     }
   }
-  std::cout << "done with faultInputs" << std::endl;
+  //  std::cout << "done with faultInputs" << std::endl;
 }
 
 void MpsDb::configureFaultStates() {
@@ -704,6 +712,12 @@ void MpsDb::configureApplicationCards() {
     statusBits += (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2); // Skip 192 bits from wasLow
     aPtr->wasHighBuffer = reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(statusBits);
 
+    // Find the ApplicationType for each card
+    DbApplicationTypeMap::iterator applicationTypeIt = applicationTypes->find(aPtr->applicationTypeId);
+    if (applicationTypeIt != applicationTypes->end()) {
+      aPtr->applicationType = (*applicationTypeIt).second;
+    }
+
     LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
   }
 
@@ -751,6 +765,7 @@ void MpsDb::configureApplicationCards() {
       // Once the map is there, add the analog device
       aPtr->analogDevices->insert(std::pair<int, DbAnalogDevicePtr>(adPtr->id, adPtr));
       LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], AnalogDevice: " << adPtr->name);
+      adPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
     }
   }
 
@@ -789,8 +804,8 @@ void MpsDb::configure() {
   configureDeviceTypes();
   configureDeviceInputs();
   configureFaultStates();
-  configureFaultInputs();
   configureAnalogDevices();
+  configureFaultInputs();
   configureIgnoreConditions();
   configureApplicationCards();
   configureMitigationDevices();

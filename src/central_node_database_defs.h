@@ -71,12 +71,13 @@ const uint32_t DIGITAL_CHANNEL_EXPECTED_STATE_OFFSET = 20; // in bits
 
 // Constants for analog channel configuration
 const uint32_t ANALOG_CHANNEL_INTEGRATORS_SIZE = 8; // in bits
-const uint32_t ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL = 4; // in bits
+const uint32_t ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL = 1; // changed from 4;
+const uint32_t ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL = 4; // max of 4 integrators per channel
 const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_BASE = // in bits
   POWER_CLASS_BIT_SIZE *
   APP_CARD_MAX_ANALOG_CHANNELS *
   ANALOG_CHANNEL_INTEGRATORS_SIZE *
-  ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL;
+  ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL;
 //const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_SIZE = DESTINATION_MASK_BIT_SIZE *
 
 // Constants for digital/analog input updates
@@ -86,8 +87,10 @@ const uint32_t ANALOG_CHANNEL_DESTINATION_MASK_BASE = // in bits
 // Bits 224 - 319: 'was high' inputs (or is it 'was low'?)
 const uint32_t UPDATE_STATUS_BITS = 2; // 2 bits for each status, one for 'was Low' and one for 'was High'
 const uint32_t DEVICE_INPUT_UPDATE_SIZE = 2; // in bits (one 'was Low'/'was High' per input)
-const uint32_t ANALOG_DEVICE_NUM_THRESHOLDS = 32; // max number of thresholds per analog channel
+const uint32_t ANALOG_DEVICE_NUM_THRESHOLDS = 8; // was 32 when there were 4 integrators...; // max number of thresholds per analog channel
+const uint32_t ANALOG_DEVICE_MAX_NUM_THRESHOLDS = 32;
 const uint32_t ANALOG_DEVICE_UPDATE_SIZE = ANALOG_DEVICE_NUM_THRESHOLDS * 2; // in bits ('was Low'/'was High')
+const uint32_t ANALOG_DEVICE_MAX_UPDATE_SIZE = ANALOG_DEVICE_MAX_NUM_THRESHOLDS * 2; // in bits ('was Low'/'was High')
 const uint32_t UPDATE_WAS_LOW_OFFSET = 0; // First 192 bits have the 'was Low' status
 const uint32_t UPDATE_WAS_HIGH_OFFSET = 192; // Last 192 bits have the 'was High' status
 const uint32_t DIGITAL_UPDATE_WAS_LOW_OFFSET = 64; // TODO: review offset // First 64 bits have the 'was Low' status
@@ -129,6 +132,31 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 // 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
 // 8 comparators for each integrator:
 // 8 * 4 * 6 = 192 (M0 through M191)
+//
+// EIC: only one integrator per channel - the configuration for the integrators is contiguous
+// 
+// The order of the integrators/destination masks starts with the first
+// integrators of all channels, then the second integrators, and so on.
+//
+// For analog cards that have only one integrator per channel the order is
+// Byte0 - channel 0, integrator 0
+// Byte1 - channel 1, integrator 0
+// ...
+// Byte5 - channel 5, integrator 0
+//
+// For the BCM card with two channels, that compute the change and differente the order is
+// Byte0 - channel 0, charge
+// Byte1 - channel 1, charge
+// Byte2 - channel 0, diff
+// Byte3 - channel 1, diff
+//
+// For the BPM card, the order is
+// Byte0 - channel 0, X
+// Byte1 - channel 1, X
+// Byte2 - channel 0, Y
+// Byte3 - channel 1, Y
+// Byte4 - channel 0, TMIT
+// Byte5 - channel 1, TMIT
 // 
 typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationConfigBufferBitSet;
 

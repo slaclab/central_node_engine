@@ -85,7 +85,8 @@ DbDeviceType::DbDeviceType() : DbEntry(), name("") {
 
 std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType) {
   os << "id[" << devType->id << "]; "
-     << "name[" << devType->name << "]; ";
+     << "name[" << devType->name << "]; "
+     << "numIntegrators[" << devType->numIntegrators << "]";
 
   if (devType->deviceStates) {
     os << " deviceStates [";
@@ -167,11 +168,13 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
 
   if (analogDevice->evaluation == FAST_EVALUATION) {
     os << "; destinationMasks[";
-    for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+    uint32_t integratorsPerChannel = analogDevice->deviceType->numIntegrators;
+
+    for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
       os << std::hex << analogDevice->fastDestinationMask[i] << ", " << std::dec;
     }
     os << "]; powerClasses[";
-    for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+    for (uint32_t i = 0; i < integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
       os << analogDevice->fastPowerClass[i] << ", ";
     }
     os << "]";

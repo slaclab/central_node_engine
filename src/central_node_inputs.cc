@@ -105,12 +105,14 @@ DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
 				   value(0), previousValue(0), 
 				   invalidValueCount(0), ignored(false),
 				   bypassMask(0xFFFFFFFF) {
-  for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+  for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
   }
   
-  for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+  // Initialize power class to maximum
+  for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
     fastPowerClass[i] = 0;
+    fastPowerClassInit[i] = 1;
   }
 }
 
@@ -135,6 +137,10 @@ void DbAnalogDevice::update(uint32_t v) {
  * comparators each, resulting in 32-bit thresholds masks. In the update buffer
  * each bit is represented by 2 bits (was High/was Low).
  *
+ * The integrators for a given channel are not mapped contigously in update
+ * buffer (see central_node_database_defs.h for more comments on the analog
+ * update buffer format.)
+ *
  * 'was Low' : threshold comparison is within limits, no faults
  * 'was High': threshold comparison outside limits, generate fault
  */
@@ -149,9 +155,39 @@ void DbAnalogDevice::update() {
     previousValue = value;
 
     value = 0;
-    for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS; ++i) {
-      wasLow = getWasLow(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS+i);
-      wasHigh = getWasHigh(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS+i);
+    uint32_t integratorOffset = 0;
+    for (uint32_t i = 0; i < deviceType->numIntegrators; ++i) {
+      integratorOffset = numChannelsCard * ANALOG_DEVICE_NUM_THRESHOLDS * i + channel->number * ANALOG_DEVICE_NUM_THRESHOLDS;
+      for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) {
+	wasLow = getWasLow(integratorOffset + j);
+	wasHigh = getWasHigh(integratorOffset + j);
+	
+	// If both are zero the Central Node has not received messages from the device, assume fault
+	// Both zeroes also mean no messages from application card in the last 360Hz period
+	if (wasLow + wasHigh == 0) {
+	  invalidValueCount++;
+	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
+	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	}
+	else if (wasLow + wasHigh == 2) {
+	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // If signal was both low and high during the 2.7ms set threshold crossed
+	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	}
+	else if (wasHigh > 0) { 
+	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
+	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	}
+	else {
+	  newValue &= ~(1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // No threshold crossed
+	}
+      }
+    }
+
+    /*
+    // TODO: Change the bit mapping - the integrators are not contiguous in memory!
+    for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS * deviceType->numIntegrators; ++i) {
+      wasLow = getWasLow(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
+      wasHigh = getWasHigh(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
 
       // If both are zero the Central Node has not received messages from the device, assume fault
       // Both zeroes also mean no messages from application card in the last 360Hz period
@@ -172,8 +208,10 @@ void DbAnalogDevice::update() {
 	newValue &= ~(1 << i); // No threshold crossed
       }
     }
+    */
     value = newValue;
-    
+    //    std::cout << name << ": " <<  value << std::endl;
+
     if (previousValue != value) {
       History::getInstance().logAnalogDevice(id, previousValue, value);
     }
@@ -348,6 +386,15 @@ void DbApplicationCard::writeDigitalConfiguration() {
 // 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
 // 8 comparators for each integrator:
 // 8 * 4 * 6 = 192 (M0 through M191)
+//
+// The number of integrators vary according to the devices. The
+// DbDeviceType->numIntegrators have the number of integrators
+// defined for the device.
+//
+// ***
+// EIC Version: there is only one integrator per channel, therefore 
+// only B0 though B6 are actually used
+// ***
 void DbApplicationCard::writeAnalogConfiguration() {
   // First set all bits to zero
   applicationConfigBuffer->reset();
@@ -363,26 +410,31 @@ void DbApplicationCard::writeAnalogConfiguration() {
 
       int channelNumber = (*analogDevice).second->channel->number;
 
-      // Write power classes for each threshold bit
-      uint32_t powerClassOffset = channelNumber *
-	ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * POWER_CLASS_BIT_SIZE;
-      for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL *
-	     ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
-	for (uint32_t j = 0; j < POWER_CLASS_BIT_SIZE; ++j) {
-	  applicationConfigBuffer->set(powerClassOffset + j,
-				       ((*analogDevice).second->fastPowerClass[i] >> j) & 0x01);
-	  if (((*analogDevice).second->fastPowerClass[i] >> j) & 0x01) {
-	    std::cout << (*analogDevice).second->name << ": power offset " << powerClassOffset+j << std::endl;
+      // Write power classes for each threshold bit - the integratorsPerChannel for all
+      // devices must be the same
+      uint32_t integratorsPerChannel = (*analogDevice).second->deviceType->numIntegrators;
+      uint32_t powerClassOffset = 0;
+      uint32_t channelsPerCard = (*analogDevice).second->numChannelsCard;
+
+      for (uint32_t i = 0; i < integratorsPerChannel; ++i) { // for each integrator
+	powerClassOffset = channelNumber * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE +
+	  i * channelsPerCard * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE;
+	for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) { // for each threshold
+	  for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
+	    applicationConfigBuffer->set(powerClassOffset + k,
+					 ((*analogDevice).second->fastPowerClass[j] >> k) & 0x01);
 	  }
+	  powerClassOffset += POWER_CLASS_BIT_SIZE;
 	}
-	powerClassOffset += POWER_CLASS_BIT_SIZE;
       }
       
       // Write the destination mask for each integrator
-      int offset = ANALOG_CHANNEL_DESTINATION_MASK_BASE +
-	channelNumber * ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL * DESTINATION_MASK_BIT_SIZE;
-      for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
-	for (uint32_t j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) {
+      uint32_t maskOffset = 0;
+      for (uint32_t i = 0; i < integratorsPerChannel; ++i) { // for each integrator
+	maskOffset = ANALOG_CHANNEL_DESTINATION_MASK_BASE +
+	  channelNumber * DESTINATION_MASK_BIT_SIZE + 
+	  i * channelsPerCard * DESTINATION_MASK_BIT_SIZE;
+	for (uint32_t j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) { // for each threshold
 	  bool bitValue = false;
 	  if (((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01) {
 	    bitValue = true;
@@ -393,13 +445,13 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	      (*analogDevice).second->ignored) {
 	    bitValue = false;
 	  }
-	  applicationConfigBuffer->set(offset + j, bitValue);
+	  applicationConfigBuffer->set(maskOffset + j, bitValue);
 	}
-	offset += DESTINATION_MASK_BIT_SIZE;
       }
     }
   }
   // Print bitset in string format
+  //  std::cout << name << " [" << description << "]: ";
   //  std::cout << *applicationConfigBuffer << std::endl;
 }
 

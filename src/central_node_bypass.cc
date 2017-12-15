@@ -69,8 +69,17 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
 
   for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
        analogInput != db->analogDevices->end(); ++analogInput) {
+    uint32_t integratorsPerChannel = 4;
+    /*
+    if ((*analogInput).second->deviceType) {
+      integratorsPerChannel = (*analogInput).second->deviceType->numIntegrators;
+    }
+    else {
+      std::cout << "What?!?" << std::endl; exit(0);
+    }
+    */
     // Create one InputBypass for each integrator (max of 4 integrators)
-    for (uint32_t i = 0; i < ANALOG_CHANNEL_INTEGRATORS_PER_CHANNEL; ++i) {
+    for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
       InputBypass *bypass = new InputBypass();
       bypass->id = bypassId;
       bypass->deviceId = (*analogInput).second->id;

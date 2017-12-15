@@ -5,6 +5,7 @@ Crate:
   shelf_number: 1
   num_slots: 8
   location: "L2KA00"
+  sector: "LI00"
   rack: "05"
   elevation: 17
 ---
@@ -27,6 +28,13 @@ ApplicationType:
   number: 2
   name: "AMC Analog Card"
   analog_channel_count: 3
+  analog_channel_size: 1
+  digital_channel_count: 0
+  digital_channel_size: 1
+- id: 4
+  number: 3
+  name: "BCM Analog Card"
+  analog_channel_count: 2
   analog_channel_size: 1
   digital_channel_count: 0
   digital_channel_size: 1
@@ -72,8 +80,8 @@ ApplicationCard:
   slot_number: 6
   amc: 0
   crate_id: 1
-  type_id: 3
-  global_id: 0
+  type_id: 4
+  global_id: 6
   name: "EIC IM01B"
   description: "EIC IM Status"
 - id: 5
@@ -83,8 +91,8 @@ ApplicationCard:
   slot_number: 7
   amc: 0
   crate_id: 1
-  type_id: 3
-  global_id: 6
+  type_id: 4
+  global_id: 5
   name: "EIC FC01"
   description: "EIC Faraday Cup Status"
 ---
@@ -192,30 +200,39 @@ DeviceType:
 - id: 1
   name: "PROF"
   description: "Profile Monitor"
+  num_integrators: 0
 - id: 2
   name: "TEMP"
   description: "Temperature Status"
+  num_integrators: 0
 - id: 3
   name: "VVPG"
   description: "Vacuum Valve Pneumatic Status"
+  num_integrators: 0
 - id: 4
   name: "GUN"
   description: "Gun Device"
+  num_integrators: 0
 - id: 5
   name: "CAV"
   description: "Buncher Cavity Device"
+  num_integrators: 0
 - id: 6
   name: "TORO"
   description: "Toroid"
+  num_integrators: 2
 - id: 7
   name: "FARC"
   description: "Faraday Cup"
+  num_integrators: 1
 - id: 8
   name: "SOLN"
   description: "Solenoid"
+  num_integrators: 1
 - id: 9
   name: "BPMS"
   description: "Beam Position Monitor"
+  num_integrators: 3
 ---
 DeviceState:
 - id: 1
@@ -412,241 +429,241 @@ DeviceState:
   device_type_id: 9
 - id: 33
   name: "CHARGE_T0"
-  description: "None"
+  description: "Toroid Charge"
   value: 1
   mask: 1
   device_type_id: 6
 - id: 34
   name: "I0_T0"
-  description: "None"
+  description: "SOL INT1"
   value: 1
   mask: 1
   device_type_id: 6
 - id: 35
   name: "I0_T0"
-  description: "None"
+  description: "SOL2 INT1"
   value: 1
   mask: 1
   device_type_id: 6
 - id: 36
   name: "I0_T0"
-  description: "None"
+  description: "FC INT1"
   value: 1
   mask: 1
   device_type_id: 6
 - id: 37
   name: "CHARGE_T1"
-  description: "None"
+  description: "Toroid Charge"
   value: 2
   mask: 2
   device_type_id: 6
 - id: 38
   name: "I0_T1"
-  description: "None"
+  description: "SOL INT1"
   value: 2
   mask: 2
   device_type_id: 6
 - id: 39
   name: "I0_T1"
-  description: "None"
+  description: "SOL2 INT1"
   value: 2
   mask: 2
   device_type_id: 6
 - id: 40
   name: "I0_T1"
-  description: "None"
+  description: "FC INT1"
   value: 2
   mask: 2
   device_type_id: 6
 - id: 41
   name: "CHARGE_T2"
-  description: "None"
+  description: "Toroid Charge"
   value: 4
   mask: 4
   device_type_id: 6
 - id: 42
   name: "I0_T2"
-  description: "None"
+  description: "SOL INT1"
   value: 4
   mask: 4
   device_type_id: 6
 - id: 43
   name: "I0_T2"
-  description: "None"
+  description: "SOL2 INT1"
   value: 4
   mask: 4
   device_type_id: 6
 - id: 44
   name: "I0_T2"
-  description: "None"
+  description: "FC INT1"
   value: 4
   mask: 4
   device_type_id: 6
 - id: 45
   name: "CHARGE_T3"
-  description: "None"
+  description: "Toroid Charge"
   value: 8
   mask: 8
   device_type_id: 6
 - id: 46
   name: "I0_T3"
-  description: "None"
+  description: "SOL INT1"
   value: 8
   mask: 8
   device_type_id: 6
 - id: 47
   name: "I0_T3"
-  description: "None"
+  description: "SOL2 INT1"
   value: 8
   mask: 8
   device_type_id: 6
 - id: 48
   name: "I0_T3"
-  description: "None"
+  description: "FC INT1"
   value: 8
   mask: 8
   device_type_id: 6
 - id: 49
   name: "CHARGE_T4"
-  description: "None"
+  description: "Toroid Charge"
   value: 16
   mask: 16
   device_type_id: 6
 - id: 50
   name: "I0_T4"
-  description: "None"
+  description: "SOL INT1"
   value: 16
   mask: 16
   device_type_id: 6
 - id: 51
   name: "I0_T4"
-  description: "None"
+  description: "SOL2 INT1"
   value: 16
   mask: 16
   device_type_id: 6
 - id: 52
   name: "I0_T4"
-  description: "None"
+  description: "FC INT1"
   value: 16
   mask: 16
   device_type_id: 6
 - id: 53
   name: "CHARGE_T5"
-  description: "None"
+  description: "Toroid Charge"
   value: 32
   mask: 32
   device_type_id: 6
 - id: 54
   name: "I0_T5"
-  description: "None"
+  description: "SOL INT1"
   value: 32
   mask: 32
   device_type_id: 6
 - id: 55
   name: "I0_T5"
-  description: "None"
+  description: "SOL2 INT1"
   value: 32
   mask: 32
   device_type_id: 6
 - id: 56
   name: "I0_T5"
-  description: "None"
+  description: "FC INT1"
   value: 32
   mask: 32
   device_type_id: 6
 - id: 57
   name: "CHARGE_T6"
-  description: "None"
+  description: "Toroid Charge"
   value: 64
   mask: 64
   device_type_id: 6
 - id: 58
   name: "I0_T6"
-  description: "None"
+  description: "SOL INT1"
   value: 64
   mask: 64
   device_type_id: 6
 - id: 59
   name: "I0_T6"
-  description: "None"
+  description: "SOL2 INT1"
   value: 64
   mask: 64
   device_type_id: 6
 - id: 60
   name: "I0_T6"
-  description: "None"
+  description: "FC INT1"
   value: 64
   mask: 64
   device_type_id: 6
 - id: 61
   name: "CHARGE_T7"
-  description: "None"
+  description: "Toroid Charge"
   value: 128
   mask: 128
   device_type_id: 6
 - id: 62
   name: "I0_T7"
-  description: "None"
+  description: "SOL INT1"
   value: 128
   mask: 128
   device_type_id: 6
 - id: 63
   name: "I0_T7"
-  description: "None"
+  description: "SOL2 INT1"
   value: 128
   mask: 128
   device_type_id: 6
 - id: 64
   name: "I0_T7"
-  description: "None"
+  description: "FC INT1"
   value: 128
   mask: 128
   device_type_id: 6
 - id: 65
   name: "DIFF_T0"
-  description: "None"
+  description: "Toroid Diff"
   value: 256
   mask: 256
   device_type_id: 6
 - id: 66
   name: "DIFF_T1"
-  description: "None"
+  description: "Toroid Diff"
   value: 512
   mask: 512
   device_type_id: 6
 - id: 67
   name: "DIFF_T2"
-  description: "None"
+  description: "Toroid Diff"
   value: 1024
   mask: 1024
   device_type_id: 6
 - id: 68
   name: "DIFF_T3"
-  description: "None"
+  description: "Toroid Diff"
   value: 2048
   mask: 2048
   device_type_id: 6
 - id: 69
   name: "DIFF_T4"
-  description: "None"
+  description: "Toroid Diff"
   value: 4096
   mask: 4096
   device_type_id: 6
 - id: 70
   name: "DIFF_T5"
-  description: "None"
+  description: "Toroid Diff"
   value: 8192
   mask: 8192
   device_type_id: 6
 - id: 71
   name: "DIFF_T6"
-  description: "None"
+  description: "Toroid Diff"
   value: 16384
   mask: 16384
   device_type_id: 6
 - id: 72
   name: "DIFF_T7"
-  description: "None"
+  description: "Toroid Diff"
   value: 32768
   mask: 32768
   device_type_id: 6
@@ -964,88 +981,44 @@ FaultState:
   device_state_id: 9
 - id: 12
   default: False
-  fault_id: 9
-  device_state_id: 10
-- id: 13
-  default: False
   fault_id: 10
   device_state_id: 17
-- id: 14
-  default: False
-  fault_id: 10
-  device_state_id: 18
-- id: 15
+- id: 13
   default: False
   fault_id: 11
   device_state_id: 25
-- id: 16
-  default: False
-  fault_id: 11
-  device_state_id: 26
-- id: 17
+- id: 14
   default: False
   fault_id: 12
   device_state_id: 9
-- id: 18
-  default: False
-  fault_id: 12
-  device_state_id: 10
-- id: 19
+- id: 15
   default: False
   fault_id: 13
   device_state_id: 17
-- id: 20
-  default: False
-  fault_id: 13
-  device_state_id: 18
-- id: 21
+- id: 16
   default: False
   fault_id: 14
   device_state_id: 25
-- id: 22
-  default: False
-  fault_id: 14
-  device_state_id: 26
-- id: 23
+- id: 17
   default: False
   fault_id: 15
   device_state_id: 33
-- id: 24
-  default: False
-  fault_id: 15
-  device_state_id: 37
-- id: 25
+- id: 18
   default: False
   fault_id: 16
   device_state_id: 65
-- id: 26
-  default: False
-  fault_id: 16
-  device_state_id: 66
-- id: 27
+- id: 19
   default: False
   fault_id: 17
   device_state_id: 34
-- id: 28
+- id: 20
   default: False
   fault_id: 18
   device_state_id: 35
-- id: 29
+- id: 21
   default: False
   fault_id: 19
   device_state_id: 36
-- id: 30
-  default: False
-  fault_id: 17
-  device_state_id: 38
-- id: 31
-  default: False
-  fault_id: 18
-  device_state_id: 39
-- id: 32
-  default: False
-  fault_id: 19
-  device_state_id: 40
 ---
 AnalogDevice:
 - id: 9
@@ -1313,94 +1286,6 @@ AllowedClass:
   fault_state_id: 21
   mitigation_device_id: 2
   beam_class_id: 1
-- id: 42
-  fault_state_id: 22
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 43
-  fault_state_id: 22
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 44
-  fault_state_id: 23
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 45
-  fault_state_id: 23
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 46
-  fault_state_id: 24
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 47
-  fault_state_id: 24
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 48
-  fault_state_id: 25
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 49
-  fault_state_id: 25
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 50
-  fault_state_id: 26
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 51
-  fault_state_id: 26
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 52
-  fault_state_id: 27
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 53
-  fault_state_id: 27
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 54
-  fault_state_id: 30
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 55
-  fault_state_id: 30
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 56
-  fault_state_id: 28
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 57
-  fault_state_id: 28
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 58
-  fault_state_id: 31
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 59
-  fault_state_id: 31
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 60
-  fault_state_id: 29
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 61
-  fault_state_id: 29
-  mitigation_device_id: 2
-  beam_class_id: 1
-- id: 62
-  fault_state_id: 32
-  mitigation_device_id: 1
-  beam_class_id: 1
-- id: 63
-  fault_state_id: 32
-  mitigation_device_id: 2
-  beam_class_id: 1
 ---
 Condition:
 - id: 1
@@ -1430,6 +1315,6 @@ ConditionInput:
 ---
 DatabaseInfo:
 - source: mps_gun_config.db
-  date: Thu Nov 16 13:29:30 2017
+  date: Wed Dec 13 15:49:11 2017
   user: lpiccoli
-  md5sum: f3cdf93edbba51f1bcda3486663393f0
+  md5sum: 659bfcc0befd81568e1e9f07c53d7499

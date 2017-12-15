@@ -577,6 +577,10 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
 }
 
 void Firmware::writeMitigation(uint32_t *mitigation) {
+  //DEBUG
+  //  mitigation[0] = 0x55667788;
+  //  mitigation[1] = 0x11223344;
+  //DEBUG
   try {
     _swMitigationSV->setVal(mitigation, 2);
   } catch (IOError &e) {

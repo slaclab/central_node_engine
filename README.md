@@ -92,3 +92,10 @@ be disabled/commented out in the defs.mak file.
 Once the test server is running the central_node_test.py (from mps_database package) can be used to send 
 input status, receive mitigation from the server and check against expected mitigation values.
 
+By default the central node server does not evaluate fast rules, in the actual production system the
+fast rules are evaluated by firmware. However, for testing the logic the following can be used to
+enable fast evaluation by the software. This compile switch should be used for testing only:
+
+'''
+CXXFLAGS+= -DFAST_SW_EVALUATION
+'''

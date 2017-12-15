@@ -320,6 +320,9 @@ namespace YAML {
 
 	  field = "name";
 	  deviceType->name = (*it)[field].as<std::string>();
+
+	  field = "num_integrators";
+	  deviceType->numIntegrators = (*it)[field].as<unsigned int>();
 	} catch(YAML::InvalidNode e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for DeviceType.";
 	  throw(DbException(errorStream.str()));
@@ -906,11 +909,17 @@ namespace YAML {
 	  // Each mitigation device defines has a 4-bit power class, the 
 	  // position tells in which byte it falls based on the
 	  // destination mask
-	  mitigationDevice->softwareMitigationBufferIndex = 0;
+
+	  // In FW version from 17-OCT-17 the mitigation buffer is:
+	  // Destination mask
+	  // [09 10 11 12 13 14 15][01 02 03 04 05 06 07 08]
+	  
+	  mitigationDevice->softwareMitigationBufferIndex = 1; // when FW is fixed this goes back to index 0
 	  mitigationDevice->bitShift = 0;
 	  uint16_t mask = mitigationDevice->destinationMask;
 	  if ((mask & 0xFFFF0000) > 0) {
-	    mitigationDevice->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
+	    // mitigationDevice->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
+	    mitigationDevice->softwareMitigationBufferIndex = 0; // when FW is fixed this goes back to index 1
 	    mask >>= 8;
 	  }
 
