@@ -367,6 +367,14 @@ void MpsDb::configureFaultInputs() {
 		}
 	      }
 
+	      // Find the power classes for analog thresholds based on the AllowedClasses.
+	      // Note: even though the database allows for different power classes for
+	      // different destinations for the same fault, the firmware only has a single
+	      // power class to apply for a 16-bit destination mask. For example:
+	      // IM01B Charge Fault has one AllowedClass per destination, where
+	      //   Shutter = power class 1 (destination 1)
+	      //   AOM = power class 0 (destination 2)
+	      // The power class for the destination mask 0x03 is power class 0 (the lowest)
 	      for (DbAllowedClassMap::iterator allowedClass =
 		     (*faultState).second->allowedClasses->begin();
 		   allowedClass != (*faultState).second->allowedClasses->end(); ++allowedClass) {

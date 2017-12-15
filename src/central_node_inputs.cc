@@ -407,6 +407,7 @@ void DbApplicationCard::writeAnalogConfiguration() {
     // Only configure firmware for devices/faults that require fast evaluation
     if ((*analogDevice).second->evaluation == FAST_EVALUATION) {
       LOG_TRACE("DATABASE", "AnalogConfig: " << (*analogDevice).second->name);
+      //      std::cout << "AnalogConfig: " << (*analogDevice).second->name << std::endl;
 
       int channelNumber = (*analogDevice).second->channel->number;
 
@@ -422,7 +423,8 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) { // for each threshold
 	  for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
 	    applicationConfigBuffer->set(powerClassOffset + k,
-					 ((*analogDevice).second->fastPowerClass[j] >> k) & 0x01);
+					 ((*analogDevice).second->fastPowerClass[j + i * ANALOG_DEVICE_NUM_THRESHOLDS] >> k) & 0x01);
+	    //	    std::cout << "offset=" << powerClassOffset+k << ", bit=" << (((*analogDevice).second->fastPowerClass[j] >> k) & 0x01) << std::endl;
 	  }
 	  powerClassOffset += POWER_CLASS_BIT_SIZE;
 	}

@@ -322,6 +322,8 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // there is a destination mask per integrator. 
   uint16_t fastDestinationMask[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
 
+  // For each fastDestinationMask there are 8 sets of power classes - 
+  // one per each threshold.
   // 4-bit encoded max beam power class for each integrator threshold
   // 4 integrators max, each with size of 8-bits - total of 32 elements
   uint16_t fastPowerClass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
