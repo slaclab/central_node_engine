@@ -131,9 +131,6 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout) {
   MpsDb *db = new MpsDb(inputUpdateTimeout);
   shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(db);
 
-  // Move this for later, so _mpsDb is not overwritten 
-  //  _mpsDb = shared_ptr<MpsDb>(db);
-  //  _mpsDb->lock();
   mpsDb->lock(); // the database mutex is static - is the same for all instances
 
   if (mpsDb->load(yamlFileName) != 0) {
@@ -179,7 +176,10 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout) {
     _bypassManager->assignBypass(mpsDb);
   } catch (CentralNodeException e) {
     mpsDb->unlock();
+    _initialized = true;
+    _evaluate = true;
     pthread_mutex_unlock(&_engineMutex);
+    startUpdateThread();
     throw e;
   }
 
