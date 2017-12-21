@@ -112,7 +112,9 @@ int Engine::reloadConfigFromIgnore() {
 }
 
 int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout) {
+  std::cout << "INFO: Engine::loadConfig(" << yamlFileName << ")" << std::endl;
   pthread_mutex_lock(&_engineMutex);
+  std::cout << "INFO: engineMutex locked." << std::endl;
 
   // First stop the MPS
   Firmware::getInstance().setSoftwareEnable(false);

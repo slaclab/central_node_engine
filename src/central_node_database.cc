@@ -829,18 +829,6 @@ void MpsDb::writeFirmwareConfiguration() {
     Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
 					(*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
 					APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
-    // DEBUG ONLY - begin
-    /*
-    if ((*card).second->globalId==1) {
-      for (int j = 2; j < 8; ++j) {
-	Firmware::getInstance().writeConfig(j, fastConfigurationBuffer + j *
-					    APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
-					    APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
-      }
-    }
-    */
-    // DEBUG ONLY - end
-
     i++;
   }
 

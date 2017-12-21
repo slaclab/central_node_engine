@@ -1315,6 +1315,6 @@ ConditionInput:
 ---
 DatabaseInfo:
 - source: mps_gun_config.db
-  date: Wed Dec 13 15:49:11 2017
+  date: Wed Dec 20 12:54:04 2017
   user: lpiccoli
-  md5sum: 659bfcc0befd81568e1e9f07c53d7499
+  md5sum: 5426e494ec17b766856c706846e11153

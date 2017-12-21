@@ -448,6 +448,7 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	    bitValue = false;
 	  }
 	  applicationConfigBuffer->set(maskOffset + j, bitValue);
+	  //	  std::cout << "offset=" << maskOffset+j << ", bit=" << bitValue << "(ignored=" << (*analogDevice).second->ignored<<  ")" << std::endl;
 	}
       }
     }
