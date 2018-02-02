@@ -242,36 +242,36 @@ std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
   return os;
 }
 
-DbMitigationDevice::DbMitigationDevice() : DbEntry(), name(""), softwareMitigationBufferIndex(0) {
+DbBeamDestination::DbBeamDestination() : DbEntry(), name(""), softwareMitigationBufferIndex(0) {
 }
 
-std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice) {
-  os << "id[" << mitigationDevice->id << "]; "
-     << "name[" << mitigationDevice->name << "]; "
-     << "destinationMask[" << mitigationDevice->destinationMask << "]; "
-     << "bufIndex[" << (int)mitigationDevice->softwareMitigationBufferIndex << "]; "
-     << "shift[" << (int)mitigationDevice->bitShift << "]";
-  if (mitigationDevice->allowedBeamClass) {
-    os << "; Allowed[" << mitigationDevice->allowedBeamClass->number << "]";
+std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination) {
+  os << "id[" << beamDestination->id << "]; "
+     << "name[" << beamDestination->name << "]; "
+     << "destinationMask[" << beamDestination->destinationMask << "]; "
+     << "bufIndex[" << (int)beamDestination->softwareMitigationBufferIndex << "]; "
+     << "shift[" << (int)beamDestination->bitShift << "]";
+  if (beamDestination->allowedBeamClass) {
+    os << "; Allowed[" << beamDestination->allowedBeamClass->number << "]";
   }
-  if (mitigationDevice->tentativeBeamClass) {
-    os << "; Tentative[" << mitigationDevice->tentativeBeamClass->number << "]";
+  if (beamDestination->tentativeBeamClass) {
+    os << "; Tentative[" << beamDestination->tentativeBeamClass->number << "]";
   }
-  if (mitigationDevice->previousAllowedBeamClass) {
+  if (beamDestination->previousAllowedBeamClass) {
     os << "; PrevAllowed["
-       << mitigationDevice->previousAllowedBeamClass->number << "]";
+       << beamDestination->previousAllowedBeamClass->number << "]";
   }
   return os;
 }
 
-DbAllowedClass::DbAllowedClass() : DbEntry(), beamClassId(-1), faultStateId(-1), mitigationDeviceId(-1) {
+DbAllowedClass::DbAllowedClass() : DbEntry(), beamClassId(-1), faultStateId(-1), beamDestinationId(-1) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbAllowedClass * const allowedClass) {
   os << "id[" << allowedClass->id << "]; "
      << "beamClassId[" << allowedClass->beamClassId << "]; "
      << "faultStateId[" << allowedClass->faultStateId << "]; "
-     << "mitigationDeviceId[" << allowedClass->mitigationDeviceId << "]";
+     << "beamDestinationId[" << allowedClass->beamDestinationId << "]";
   return os;
 }
 
@@ -294,7 +294,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
     unsigned int i = 1;
     for (DbAllowedClassMap::iterator it = digitalFault->allowedClasses->begin();
 	 it != digitalFault->allowedClasses->end(); ++it, ++i) {
-      os << (*it).second->mitigationDevice->name << "->"
+      os << (*it).second->beamDestination->name << "->"
 	 << (*it).second->beamClass->name;
       if (i < digitalFault->allowedClasses->size()) {
 	os << ", ";

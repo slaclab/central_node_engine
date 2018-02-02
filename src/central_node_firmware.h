@@ -5,6 +5,7 @@
 #include <sstream>
 #include <bitset>
 #include <boost/shared_ptr.hpp>
+#include <time_util.h>
 
 #include <cpsw_api_user.h>
 
@@ -24,6 +25,7 @@ using boost::shared_ptr;
 const uint32_t FW_NUM_APPLICATIONS = 8;
 const uint32_t FW_NUM_BEAM_CLASSES = 16;
 const uint32_t FW_NUM_MITIGATION_DEVICES = 16;
+const uint32_t FW_NUM_BEAM_DESTINATIONS = 16;
 const uint32_t FW_NUM_CONNECTIONS = 12;
 const uint32_t FW_NUM_APPLICATION_MASKS = 1024;
 const uint32_t FW_NUM_APPLICATION_MASKS_WORDS = FW_NUM_APPLICATION_MASKS/sizeof(uint32_t);
@@ -44,6 +46,7 @@ class Firmware {
   Firmware();
   Firmware(Firmware const &);
   ~Firmware();
+
   void operator=(Firmware const &);
   uint32_t _applicationTimeoutMaskBuffer[FW_NUM_APPLICATION_MASKS_WORDS];
   ApplicationBitMaskSet *_applicationTimeoutMaskBitSet;
@@ -114,6 +117,12 @@ class Firmware {
   Command    _toErrClearCmd;
   Command    _moConcErrClearCmd;
 
+  uint32_t _swLossErrorCounter;
+  uint32_t _swBusyCounter;
+  uint32_t _swPauseCounter;
+  uint32_t _swWdErrorCounter;
+  uint32_t _swOvflCntCounter;
+
   void setBoolU64(ScalVal reg, bool enable);
   bool getBoolU64(ScalVal reg);
   uint64_t getUInt64(ScalVal_RO reg);
@@ -128,6 +137,9 @@ class Firmware {
 #endif
 
  public:
+  bool _firstHeartbeat;
+  TimeAverage _heartbeatTime;
+
   uint64_t fpgaVersion;
   uint8_t buildStamp[256];
   char gitHashString[21];

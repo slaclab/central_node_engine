@@ -453,9 +453,9 @@ typedef std::map<uint32_t, DbBeamClassPtr> DbBeamClassMap;
 typedef shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
 
 /**
- * DbMitigationDevice YAML class
+ * DbBeamDestination YAML class
  */
-class DbMitigationDevice : public DbEntry {
+class DbBeamDestination : public DbEntry {
  public:
   std::string name;
   uint16_t destinationMask;
@@ -471,7 +471,7 @@ class DbMitigationDevice : public DbEntry {
   uint8_t softwareMitigationBufferIndex;
   uint8_t bitShift; // define if mitigation uses high/low 4-bits in the softwareMitigationBuffer
 
-  DbMitigationDevice();
+  DbBeamDestination();
 
   void setAllowedBeamClass() {
     allowedBeamClass = tentativeBeamClass;
@@ -483,12 +483,12 @@ class DbMitigationDevice : public DbEntry {
 
   }
 
-  friend std::ostream & operator<<(std::ostream &os, DbMitigationDevice * const mitigationDevice);
+  friend std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination);
 };
 
-typedef shared_ptr<DbMitigationDevice> DbMitigationDevicePtr;
-typedef std::map<uint32_t, DbMitigationDevicePtr> DbMitigationDeviceMap;
-typedef shared_ptr<DbMitigationDeviceMap> DbMitigationDeviceMapPtr;
+typedef shared_ptr<DbBeamDestination> DbBeamDestinationPtr;
+typedef std::map<uint32_t, DbBeamDestinationPtr> DbBeamDestinationMap;
+typedef shared_ptr<DbBeamDestinationMap> DbBeamDestinationMapPtr;
 
 
 /**
@@ -498,11 +498,11 @@ class DbAllowedClass : public DbEntry {
  public:
   uint32_t beamClassId;
   uint32_t faultStateId;
-  uint32_t mitigationDeviceId;
+  uint32_t beamDestinationId;
 
   // Configured after loading the YAML file
   DbBeamClassPtr beamClass;
-  DbMitigationDevicePtr mitigationDevice;
+  DbBeamDestinationPtr beamDestination;
   
   DbAllowedClass();
 
@@ -527,7 +527,7 @@ class DbFaultState : public DbEntry {
   // Configured/Used after loading the YAML file
   bool faulted; // Evaluated based on the status of the deviceState
   bool ignored; // Fault state is ignored if there are valid ignore conditions 
-  DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each mitigation device) for this fault states
+  DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each beam destination) for this fault states
   DbDeviceStatePtr deviceState;
 
   DbFaultState();

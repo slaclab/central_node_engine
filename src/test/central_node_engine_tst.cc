@@ -263,7 +263,7 @@ int main(int argc, char **argv) {
     Engine::getInstance().checkFaults();
     if (verbose) {
       Engine::getInstance().showFaults();
-      Engine::getInstance().showMitigationDevices();
+      Engine::getInstance().showBeamDestinations();
     }
   }
 

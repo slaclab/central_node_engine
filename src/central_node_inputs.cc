@@ -232,6 +232,10 @@ void DbApplicationCard::configureUpdateBuffers() {
   if (digitalDevices) {
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {
+      if (!(*digitalDevice).second->inputDevices) {
+	throw(DbException("Found digital device without inputs"));
+      }
+
       for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
 	   deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
 	//	std::cout << "D" << (*deviceInput).second->id << " ";
@@ -469,7 +473,7 @@ void DbApplicationCard::printAnalogConfiguration() {
   int index=0;
   for (int i = 0; i < 24; ++i) {
     int16_t mask = 0;
-    for (uint32_t j = 0; j < FW_NUM_MITIGATION_DEVICES; ++j) {
+    for (uint32_t j = 0; j < FW_NUM_BEAM_DESTINATIONS; ++j) {
       mask <<= 1;
       mask |= ((*applicationConfigBuffer)[index] & 1);
       index++;

@@ -11,7 +11,15 @@ static Logger *firmwareLogger;
 #endif 
 
 #ifdef FW_ENABLED
-Firmware::Firmware() {
+Firmware::Firmware() : 
+  _swLossErrorCounter(0),
+  _swBusyCounter(0),
+  _swPauseCounter(0),
+  _swWdErrorCounter(0),
+  _swOvflCntCounter(0),
+  _firstHeartbeat(true),
+  _heartbeatTime(5, "Time Between Heartbeats") {
+
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   firmwareLogger = Loggers::getLogger("FIRMWARE");
   LOG_TRACE("FIRMWARE", "Created Firmware");
@@ -453,12 +461,39 @@ void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
 }
 
 bool Firmware::heartbeat() {
+  if (_firstHeartbeat) {
+    _firstHeartbeat = false;
+  }
+  else {
+    _heartbeatTime.end();
+  }
+  _heartbeatTime.start();
+
   try {
+    // Check if there are pending sw busy indicators
+    if (getUInt32(_swBusySV) > 0) {
+      _swBusyCounter++;
+    }
+
+    if (getUInt32(_swPauseSV) > 0) {
+      _swPauseCounter++;
+    }
+
+    if (getUInt32(_swWdErrorSV) > 0) {
+      _swWdErrorCounter++;
+    }
+
+    if (getUInt32(_swOvflCntSV) > 0) {
+      _swOvflCntCounter++;
+    }
+
     _swHeartbeatCmd->execute();
   } catch (IOError &e) {
     std::cout << "Exception Info: " << e.getInfo() << std::endl;
     return false;
   }
+
+
   return true;
 }
 
@@ -650,26 +685,26 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       if (firmware->getBoolU64(firmware->_beamFaultEnSV)) os << "Enabled"; else os << "Disabled";
       os << std::endl;
 
-      uint8_t aux8[FW_NUM_MITIGATION_DEVICES]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+      uint8_t aux8[FW_NUM_BEAM_DESTINATIONS]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
       uint32_t aux32[2]={0,0};
       firmware->getMitigation(aux32);
       //      firmware->getMitigation(aux8);
       firmware->extractMitigation(aux32, aux8);
       os << "Mitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) {
 	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
+	if (i == FW_NUM_BEAM_DESTINATIONS - 1) os << "]"; else os << ", ";
       }
       os << std::endl;
 
       firmware->getFirmwareMitigation(aux32);
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux8[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;      
       //      firmware->getFirmwareMitigation(aux8);
       firmware->extractMitigation(aux32, aux8);
       os << "FirmwareMitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) {
 	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
+	if (i == FW_NUM_BEAM_DESTINATIONS - 1) os << "]"; else os << ", ";
       }
       os << std::endl;
       
@@ -677,32 +712,32 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       os << "SoftwareMitigation=[";
       os << std::hex << "0x" << aux32[0] << " 0x" << aux32[1] << std::dec << "]" << std::endl;
       
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux8[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;      
       //      firmware->getSoftwareMitigation(aux8);
       firmware->extractMitigation(aux32, aux8);
       os << "SoftwareMitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) {
 	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
+	if (i == FW_NUM_BEAM_DESTINATIONS - 1) os << "]"; else os << ", ";
       }
       os << std::endl;
       
       firmware->getLatchedMitigation(aux32);
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux8[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;      
       firmware->extractMitigation(aux32, aux8);
       //      firmware->getLatchedMitigation(aux8);
       os << "LatchedMitigation=[";
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) {
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) {
 	os << (int) aux8[i];
-	if (i == FW_NUM_MITIGATION_DEVICES - 1) os << "]"; else os << ", ";
+	if (i == FW_NUM_BEAM_DESTINATIONS - 1) os << "]"; else os << ", ";
       }
       os << std::endl;
 
       os << "MonitorReady=" << std::hex << "0x"
 	 << firmware->getUInt32(firmware->_monitorReadySV) << std::dec << std::endl;
 
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorRxErrorCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      firmware->_monitorRxErrorCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorRxErrorCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
 	os << (int) aux[i];
@@ -710,8 +745,8 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorPauseCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      firmware->_monitorPauseCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorPauseCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
 	os << (int) aux[i];
@@ -719,8 +754,8 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorOvflCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      firmware->_monitorOvflCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorOvflCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
 	os << (int) aux[i];
@@ -728,8 +763,8 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-      for (uint32_t i = 0; i < FW_NUM_MITIGATION_DEVICES; ++i) aux[i]=0;      
-      firmware->_monitorDropCntSV->getVal(aux, FW_NUM_MITIGATION_DEVICES);
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      firmware->_monitorDropCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorDropCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
 	os << (int) aux[i];
@@ -788,19 +823,25 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 	 << firmware->getUInt32(firmware->_swWdTimeSV) << std::endl;
 
       os << "SoftwareBusy="
-	 << firmware->getUInt32(firmware->_swBusySV) << std::endl;
+	 << firmware->getUInt32(firmware->_swBusySV)
+	 << " (Counter=" << firmware->_swBusyCounter << ")" << std::endl;
 
       os << "SoftwarePause="
-	 << firmware->getUInt32(firmware->_swPauseSV) << std::endl;
+	 << firmware->getUInt32(firmware->_swPauseSV)
+	 << " (Counter=" << firmware->_swPauseCounter << ")" << std::endl;
 
       os << "SoftwareWdError="
-	 << firmware->getUInt32(firmware->_swWdErrorSV) << std::endl;
+	 << firmware->getUInt32(firmware->_swWdErrorSV)
+	 << " (Counter=" << firmware->_swWdErrorCounter << ")" << std::endl;
 
       os << "SoftwareOvflCnt="
-	 << firmware->getUInt32(firmware->_swOvflCntSV) << std::endl;
+	 << firmware->getUInt32(firmware->_swOvflCntSV)
+	 << " (Counter=" << firmware->_swOvflCntCounter << ")" << std::endl;
 
       os << "EvaluationTimeStamp="
 	 << firmware->getUInt32(firmware->_evaluationTimeStampSV) << std::endl;
+
+      
 
     } catch (IOError &e) {
       std::cout << "Exception Info: " << e.getInfo() << std::endl;

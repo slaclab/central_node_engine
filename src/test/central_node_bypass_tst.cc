@@ -330,7 +330,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
   }
   t->checkBypass(1);
   //t->showFaults();
@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
   }
   t->checkBypass(1);
   //t->showFaults();
@@ -348,7 +348,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
   }
   t->checkBypass(1);
   //t->showFaults();
@@ -373,7 +373,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
     t->showFaults();
   }
   t->checkBypass(91);
@@ -382,7 +382,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
   }
   t->checkBypass(92);
   //t->showFaults();
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
   }
   t->checkBypass(93);
   //t->showFaults();
@@ -417,7 +417,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
     t->showFaults();
   }
   t->checkBypass(201);
@@ -426,7 +426,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(false, false, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
   }
   t->checkBypass(202);
 
@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
   t->checkFaultState(true, true, verbose);
   if (verbose) {
     Engine::getInstance().showFaults();
-    Engine::getInstance().showMitigationDevices();
+    Engine::getInstance().showBeamDestinations();
   }
   t->checkBypass(203);
 

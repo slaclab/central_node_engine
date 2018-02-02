@@ -32,7 +32,7 @@ class MpsDb {
   void configureAnalogDevices();
   void configureIgnoreConditions();
   void configureApplicationCards();
-  void configureMitigationDevices();
+  void configureBeamDestinations();
 
   /**
    * Memory that holds the firmware/hardware database configuration.
@@ -96,7 +96,7 @@ class MpsDb {
   DbFaultInputMapPtr faultInputs;
   DbFaultStateMapPtr faultStates;
   DbAnalogDeviceMapPtr analogDevices;
-  DbMitigationDeviceMapPtr mitigationDevices;
+  DbBeamDestinationMapPtr beamDestinations;
   DbBeamClassMapPtr beamClasses;
   DbAllowedClassMapPtr allowedClasses;
   DbConditionMapPtr conditions;

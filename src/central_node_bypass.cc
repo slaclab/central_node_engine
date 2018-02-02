@@ -470,6 +470,9 @@ void BypassManager::printBypassQueue() {
     std::cout << "MPS not initialized - no database" << std::endl;
   }
 
+  time_t now;
+  time(&now);
+
   int ret = pthread_mutex_lock(&mutex);
   if (0 != ret) {
     throw("ERROR: BypassManager::printBypassQueue() failed to lock mutex.");
@@ -480,6 +483,7 @@ void BypassManager::printBypassQueue() {
     throw("ERROR: BypassManager::printBypassQueue() failed to unlock mutex.");
   }
   std::cout << "=== Bypass Queue (orded by expiration date) ===" << std::endl;
+  std::cout << "=== Current time: " << now << "(s) ===" << std::endl;
   while (!copy.empty()) {
     struct tm *ptr;
     char buf[40];
@@ -515,7 +519,6 @@ void *BypassManager::bypassThread(void *arg) {
   while(true) {
     Engine::getInstance().getBypassManager()->checkBypassQueue();
     if (refreshFirmwareConfiguration) {
-      std::cout << "write fw config now!" << std::endl;
       Engine::getInstance().reloadConfig();
       refreshFirmwareConfiguration = false;
     }

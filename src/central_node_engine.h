@@ -42,12 +42,13 @@ class Engine {
   pthread_t _engineThread;
 
   static pthread_mutex_t _engineMutex;
-  static bool _evaluate;
+  static volatile bool _evaluate;
   static uint32_t _rate;
   static uint32_t _updateCounter;
   static time_t _startTime;
 
   uint32_t _debugCounter;
+  static uint32_t _inputUpdateFailCounter;
 
  public:
   int loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout=3500);
@@ -65,7 +66,7 @@ class Engine {
   
   void showFaults();
   void showStats();
-  void showMitigationDevices();
+  void showBeamDestinations();
   void showDeviceInputs();
   void showFirmware();
   void showDatabaseInfo();

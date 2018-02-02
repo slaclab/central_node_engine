@@ -118,12 +118,14 @@ bool MpsDb::updateInputs() {
     }
 
     _inputUpdateTime.start();
+
     DbApplicationCardMap::iterator applicationCardIt;
     for (applicationCardIt = applicationCards->begin();
 	 applicationCardIt != applicationCards->end();
 	 ++applicationCardIt) {
       (*applicationCardIt).second->updateInputs();
     }
+
     _updateCounter++;
     _inputUpdateTime.end();
     //    Firmware::getInstance().getAppTimeoutStatus();
@@ -150,7 +152,7 @@ void MpsDb::configureAllowedClasses() {
     }
   }
 
-  // Assign BeamClass and MitigationDevice to AllowedClass
+  // Assign BeamClass and BeamDestination to AllowedClass
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
        it != allowedClasses->end(); ++it) {
     int id = (*it).second->beamClassId;
@@ -162,18 +164,18 @@ void MpsDb::configureAllowedClasses() {
     }
     (*it).second->beamClass = (*beamIt).second;
 
-    id = (*it).second->mitigationDeviceId;
-    DbMitigationDeviceMap::iterator mitigationIt = mitigationDevices->find(id);
-    if (mitigationIt == mitigationDevices->end()) {
-      errorStream << "ERROR: Failed to configure database, invalid ID found for MitigationDevices ("
+    id = (*it).second->beamDestinationId;
+    DbBeamDestinationMap::iterator beamDestIt = beamDestinations->find(id);
+    if (beamDestIt == beamDestinations->end()) {
+      errorStream << "ERROR: Failed to configure database, invalid ID found for BeamDestinations ("
 		  << id << ") for AllowedClass (" << (*it).second->id << ")";
       throw(DbException(errorStream.str()));
     }
-    (*it).second->mitigationDevice = (*mitigationIt).second;
+    (*it).second->beamDestination = (*beamDestIt).second;
   }
 
   // Assign AllowedClasses to FaultState or ThresholdFaultState
-  // There are multiple AllowedClasses for each Fault, one per MitigationDevice
+  // There are multiple AllowedClasses for each Fault, one per BeamDestination
   for (DbAllowedClassMap::iterator it = allowedClasses->begin();
        it != allowedClasses->end(); ++it) {
     int id = (*it).second->faultStateId;
@@ -250,6 +252,8 @@ void MpsDb::configureDeviceInputs() {
     }
     (*deviceIt).second->inputDevices->insert(std::pair<int, DbDeviceInputPtr>((*it).second->id,
 									      (*it).second));
+    LOG_TRACE("DATABASE", "Adding DeviceInput (" << (*it).second->id << ") to "
+	      " DigitalDevice (" << (*deviceIt).second->id << ")");
 
     int channelId = (*it).second->channelId;
     DbChannelMap::iterator channelIt = digitalChannels->find(channelId);
@@ -379,13 +383,13 @@ void MpsDb::configureFaultInputs() {
 		     (*faultState).second->allowedClasses->begin();
 		   allowedClass != (*faultState).second->allowedClasses->end(); ++allowedClass) {
 		(*aDeviceIt).second->fastDestinationMask[integratorIndex] |=
-		  (*allowedClass).second->mitigationDevice->destinationMask;
+		  (*allowedClass).second->beamDestination->destinationMask;
 		LOG_TRACE("DATABASE", "PowerClass: integrator=" << integratorIndex
 			  << " threshold index=" << thresholdIndex
 			  << " current power=" << (*aDeviceIt).second->fastPowerClass[thresholdIndex]
 			  << " power=" << (*allowedClass).second->beamClass->number
 			  << " allowedClassId=" << (*allowedClass).second->id
-			  << " destinationMask=0x" << std::hex << (*allowedClass).second->mitigationDevice->destinationMask << std::dec );
+			  << " destinationMask=0x" << std::hex << (*allowedClass).second->beamDestination->destinationMask << std::dec );
 		if ((*aDeviceIt).second->fastPowerClassInit[thresholdIndex] == 1) {
 		  (*aDeviceIt).second->fastPowerClass[thresholdIndex] =
 		    (*allowedClass).second->beamClass->number;
@@ -443,7 +447,7 @@ void MpsDb::configureFaultInputs() {
 	  //	  DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
 	  for (DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
 	       allowedClass != (*faultState).second->allowedClasses->end(); ++allowedClass) {
-	    (*deviceIt).second->fastDestinationMask |= (*allowedClass).second->mitigationDevice->destinationMask;
+	    (*deviceIt).second->fastDestinationMask |= (*allowedClass).second->beamDestination->destinationMask;
 	    if ((*allowedClass).second->beamClass->number < (*deviceIt).second->fastPowerClass) {
 	      (*deviceIt).second->fastPowerClass = (*allowedClass).second->beamClass->number;
 	    }
@@ -784,9 +788,9 @@ void MpsDb::configureApplicationCards() {
   }
 }
 
-void MpsDb::configureMitigationDevices() {
-  for (DbMitigationDeviceMap::iterator it = mitigationDevices->begin();
-       it != mitigationDevices->end(); ++it) {
+void MpsDb::configureBeamDestinations() {
+  for (DbBeamDestinationMap::iterator it = beamDestinations->begin();
+       it != beamDestinations->end(); ++it) {
     (*it).second->softwareMitigationBuffer = &softwareMitigationBuffer[0];
     (*it).second->previousAllowedBeamClass = lowestBeamClass;
     (*it).second->allowedBeamClass = lowestBeamClass;
@@ -816,7 +820,7 @@ void MpsDb::configure() {
   configureFaultInputs();
   configureIgnoreConditions();
   configureApplicationCards();
-  configureMitigationDevices();
+  configureBeamDestinations();
 }
 
 void MpsDb::writeFirmwareConfiguration() {
@@ -930,8 +934,10 @@ int MpsDb::load(std::string yamlFileName) {
       faultStates = (*node).as<DbFaultStateMapPtr>();
     } else if (nodeName == "AnalogDevice") {
       analogDevices = (*node).as<DbAnalogDeviceMapPtr>();
+    } else if (nodeName == "BeamDestination") {
+      beamDestinations = (*node).as<DbBeamDestinationMapPtr>();
     } else if (nodeName == "MitigationDevice") {
-      mitigationDevices = (*node).as<DbMitigationDeviceMapPtr>();
+      // Not implemented
     } else if (nodeName == "BeamClass") {
       beamClasses = (*node).as<DbBeamClassMapPtr>();
     } else if (nodeName == "AllowedClass") {
@@ -1070,9 +1076,9 @@ void MpsDb::showFault(DbFaultPtr fault) {
 void MpsDb::showMitigation() {
   lock();
 
-  std::cout << "Allowed power classes at mitigation devices:" << std::endl;
-  for (DbMitigationDeviceMap::iterator mitDevice = mitigationDevices->begin();
-       mitDevice != mitigationDevices->end(); ++mitDevice) {
+  std::cout << "Allowed power classes at beam destinations:" << std::endl;
+  for (DbBeamDestinationMap::iterator mitDevice = beamDestinations->begin();
+       mitDevice != beamDestinations->end(); ++mitDevice) {
     std::cout << "  " << (*mitDevice).second->name << ": " << (*mitDevice).second->allowedBeamClass->number << std::endl;
   }
 
@@ -1168,8 +1174,8 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
   mpsDb->printMap<DbAnalogDeviceMapPtr, DbAnalogDeviceMap::iterator>
     (os, mpsDb->analogDevices, "AnalogDevice");
 
-  mpsDb->printMap<DbMitigationDeviceMapPtr, DbMitigationDeviceMap::iterator>
-    (os, mpsDb->mitigationDevices, "MitigationDevice");
+  mpsDb->printMap<DbBeamDestinationMapPtr, DbBeamDestinationMap::iterator>
+    (os, mpsDb->beamDestinations, "BeamDestination");
 
   mpsDb->printMap<DbBeamClassMapPtr, DbBeamClassMap::iterator>
     (os, mpsDb->beamClasses, "BeamClass");

@@ -878,32 +878,32 @@ namespace YAML {
   };
 
   /**
-   * MitigationDevice:
+   * BeamDestination:
    * - id: '1'
-   *   name: Shutter
+   *   name: Linac
    *   destination_mask: 1
    */
   template<>
-    struct convert<DbMitigationDeviceMapPtr> {
-    static bool decode(const Node &node, DbMitigationDeviceMapPtr &rhs) {
-      DbMitigationDeviceMap *mitigationDevices = new DbMitigationDeviceMap();
+    struct convert<DbBeamDestinationMapPtr> {
+    static bool decode(const Node &node, DbBeamDestinationMapPtr &rhs) {
+      DbBeamDestinationMap *beamDestinations = new DbBeamDestinationMap();
       std::stringstream errorStream;
       std::string field;
-      rhs = DbMitigationDeviceMapPtr(mitigationDevices);
+      rhs = DbBeamDestinationMapPtr(beamDestinations);
 
-      for (YAML::Node::const_iterator it = node["MitigationDevice"].begin();
-	   it != node["MitigationDevice"].end(); ++it) {
-	DbMitigationDevice *mitigationDevice = new DbMitigationDevice();
+      for (YAML::Node::const_iterator it = node["BeamDestination"].begin();
+	   it != node["BeamDestination"].end(); ++it) {
+	DbBeamDestination *beamDestination = new DbBeamDestination();
 
 	try {
 	  field = "id";
-	  mitigationDevice->id = (*it)[field].as<unsigned int>();
+	  beamDestination->id = (*it)[field].as<unsigned int>();
 
 	  field = "name";
-	  mitigationDevice->name = (*it)[field].as<std::string>();
+	  beamDestination->name = (*it)[field].as<std::string>();
 
 	  field = "destination_mask";
-	  mitigationDevice->destinationMask = (*it)[field].as<short>();
+	  beamDestination->destinationMask = (*it)[field].as<short>();
 
 	  // Find the device position in the softwareMitigationBuffer (32-bit array)
 	  // Each mitigation device defines has a 4-bit power class, the 
@@ -914,12 +914,12 @@ namespace YAML {
 	  // Destination mask
 	  // [09 10 11 12 13 14 15][01 02 03 04 05 06 07 08]
 	  
-	  mitigationDevice->softwareMitigationBufferIndex = 1; // when FW is fixed this goes back to index 0
-	  mitigationDevice->bitShift = 0;
-	  uint16_t mask = mitigationDevice->destinationMask;
+	  beamDestination->softwareMitigationBufferIndex = 1; // when FW is fixed this goes back to index 0
+	  beamDestination->bitShift = 0;
+	  uint16_t mask = beamDestination->destinationMask;
 	  if ((mask & 0xFFFF0000) > 0) {
-	    // mitigationDevice->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
-	    mitigationDevice->softwareMitigationBufferIndex = 0; // when FW is fixed this goes back to index 1
+	    // beamDestination->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
+	    beamDestination->softwareMitigationBufferIndex = 0; // when FW is fixed this goes back to index 1
 	    mask >>= 8;
 	  }
 
@@ -929,27 +929,27 @@ namespace YAML {
 	    }
 	    else {
 	      if (mask > 0) {
-		mitigationDevice->bitShift += 4;
+		beamDestination->bitShift += 4;
 		mask >>= 1;
 	      }
 	    }
 	  }
   	} catch(YAML::InvalidNode e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for MitigationDevice.";
+	  errorStream << "ERROR: Failed to find field " << field << " for BeamDestination.";
 	  throw(DbException(errorStream.str()));
 	} catch(YAML::TypedBadConversion<unsigned int> e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for MitigationDevice (expected unsigned int).";
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	} catch(YAML::TypedBadConversion<short> e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for MitigationDevice (expected unsigned int).";
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	} catch(YAML::TypedBadConversion<std::string> e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for MitigationDevice (expected string).";
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
 
-	rhs->insert(std::pair<int, DbMitigationDevicePtr>(mitigationDevice->id, 
-							  DbMitigationDevicePtr(mitigationDevice)));
+	rhs->insert(std::pair<int, DbBeamDestinationPtr>(beamDestination->id, 
+							  DbBeamDestinationPtr(beamDestination)));
       }
 
       return true;
@@ -1019,7 +1019,7 @@ namespace YAML {
    * - beam_class_id: '1'
    *   fault_state_id: '1'
    *   id: '1'
-   *   mitigation_device_id: '1'
+   *   beam_destination_id: '1'
    */
   template<>
     struct convert<DbAllowedClassMapPtr> {
@@ -1043,8 +1043,8 @@ namespace YAML {
 	  field = "fault_state_id";
 	  allowedClass->faultStateId = (*it)[field].as<unsigned int>();
 
-	  field = "mitigation_device_id";
-	  allowedClass->mitigationDeviceId = (*it)[field].as<unsigned int>();
+	  field = "beam_destination_id";
+	  allowedClass->beamDestinationId = (*it)[field].as<unsigned int>();
   	} catch(YAML::InvalidNode e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for AllowedClass.";
 	  throw(DbException(errorStream.str()));
