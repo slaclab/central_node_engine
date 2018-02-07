@@ -63,7 +63,7 @@ class Engine {
   friend class EngineTest;
   friend class BypassTest;
   friend class FirmwareTest;
-  
+
   void showFaults();
   void showStats();
   void showBeamDestinations();

@@ -10,13 +10,15 @@ using namespace easyloggingpp;
 static Logger *firmwareLogger;
 #endif 
 
+uint32_t Firmware::_swWdErrorCounter = 0;
+uint32_t Firmware::_swLossErrorCounter = 0;
+uint32_t Firmware::_swBusyCounter = 0;
+uint32_t Firmware::_swPauseCounter = 0;
+uint32_t Firmware::_swOvflCntCounter = 0;
+uint32_t Firmware::_monitorNotReadyCounter = 0;
+
 #ifdef FW_ENABLED
 Firmware::Firmware() : 
-  _swLossErrorCounter(0),
-  _swBusyCounter(0),
-  _swPauseCounter(0),
-  _swWdErrorCounter(0),
-  _swOvflCntCounter(0),
   _firstHeartbeat(true),
   _heartbeatTime(5, "Time Between Heartbeats") {
 
@@ -487,6 +489,10 @@ bool Firmware::heartbeat() {
       _swOvflCntCounter++;
     }
 
+    if (getUInt32(_monitorReadySV) < 1) {
+      _monitorNotReadyCounter++;
+    }
+
     _swHeartbeatCmd->execute();
   } catch (IOError &e) {
     std::cout << "Exception Info: " << e.getInfo() << std::endl;
@@ -734,7 +740,8 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       os << std::endl;
 
       os << "MonitorReady=" << std::hex << "0x"
-	 << firmware->getUInt32(firmware->_monitorReadySV) << std::dec << std::endl;
+	 << firmware->getUInt32(firmware->_monitorReadySV) << std::dec
+	 << " (Not ready counter=" << firmware->_monitorNotReadyCounter << ")" << std::endl;
 
       for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
       firmware->_monitorRxErrorCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
@@ -832,7 +839,8 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 
       os << "SoftwareWdError="
 	 << firmware->getUInt32(firmware->_swWdErrorSV)
-	 << " (Counter=" << firmware->_swWdErrorCounter << ")" << std::endl;
+	 << " (Counter=" << firmware->_swWdErrorCounter << ")" << std::endl; 
+      //	 << " addr=" << std::hex << &(firmware->_swWdErrorCounter) << std::dec << std::endl;
 
       os << "SoftwareOvflCnt="
 	 << firmware->getUInt32(firmware->_swOvflCntSV)
@@ -840,8 +848,6 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 
       os << "EvaluationTimeStamp="
 	 << firmware->getUInt32(firmware->_evaluationTimeStampSV) << std::endl;
-
-      
 
     } catch (IOError &e) {
       std::cout << "Exception Info: " << e.getInfo() << std::endl;

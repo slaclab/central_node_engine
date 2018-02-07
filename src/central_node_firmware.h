@@ -117,12 +117,6 @@ class Firmware {
   Command    _toErrClearCmd;
   Command    _moConcErrClearCmd;
 
-  uint32_t _swLossErrorCounter;
-  uint32_t _swBusyCounter;
-  uint32_t _swPauseCounter;
-  uint32_t _swWdErrorCounter;
-  uint32_t _swOvflCntCounter;
-
   void setBoolU64(ScalVal reg, bool enable);
   bool getBoolU64(ScalVal reg);
   uint64_t getUInt64(ScalVal_RO reg);
@@ -137,12 +131,19 @@ class Firmware {
 #endif
 
  public:
-  bool _firstHeartbeat;
-  TimeAverage _heartbeatTime;
-
   uint64_t fpgaVersion;
   uint8_t buildStamp[256];
   char gitHashString[21];
+
+  bool _firstHeartbeat;
+  TimeAverage _heartbeatTime;
+
+  static uint32_t _swLossErrorCounter;
+  static uint32_t _swBusyCounter;
+  static uint32_t _swPauseCounter;
+  static uint32_t _swWdErrorCounter;
+  static uint32_t _swOvflCntCounter;
+  static uint32_t _monitorNotReadyCounter;
 
   bool heartbeat();
 
@@ -190,7 +191,7 @@ class Firmware {
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
   void writeMitigation(uint32_t *mitigation);
   void writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]);
-
+  
   static Firmware &getInstance() {
     static Firmware instance;
     return instance;

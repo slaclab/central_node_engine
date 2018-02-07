@@ -565,7 +565,8 @@ void Engine::showStats() {
     Firmware::getInstance()._heartbeatTime.clear();
     std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
     std::cout << "Counter: " << Engine::_updateCounter << std::endl;
-    std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter << std::endl;
+    std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter
+	      << " (timed out waiting on FW 360Hz updates)" << std::endl;
     std::cout << "Started at " << ctime(&Engine::_startTime) << std::endl;
     std::cout << &History::getInstance() << std::endl;
     _debugCounter = 0;
@@ -721,7 +722,9 @@ void *Engine::engineThread(void *arg) {
 	Firmware::getInstance().heartbeat();
       }
       else {
-	_inputUpdateFailCounter++;
+	// This counter may be increased due to FW config changes, e.g. 
+	// new or expired bypass of analog fast signal.
+	_inputUpdateFailCounter++; 
 	_rate = 0;
       }
       Engine::getInstance()._evaluationCycleTime.end();
