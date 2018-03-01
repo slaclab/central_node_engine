@@ -145,6 +145,8 @@ class Firmware {
   static uint32_t _swOvflCntCounter;
   static uint32_t _monitorNotReadyCounter;
 
+  static bool _skipHeartbeat;
+
   bool heartbeat();
 
   void setEnable(bool enable);

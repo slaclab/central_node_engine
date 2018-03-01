@@ -16,6 +16,7 @@ uint32_t Firmware::_swBusyCounter = 0;
 uint32_t Firmware::_swPauseCounter = 0;
 uint32_t Firmware::_swOvflCntCounter = 0;
 uint32_t Firmware::_monitorNotReadyCounter = 0;
+bool     Firmware::_skipHeartbeat = false;
 
 #ifdef FW_ENABLED
 Firmware::Firmware() : 
@@ -463,13 +464,15 @@ void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
 }
 
 bool Firmware::heartbeat() {
-  if (_firstHeartbeat) {
-    _firstHeartbeat = false;
+  if (_skipHeartbeat) {
+    if (_firstHeartbeat) {
+      _firstHeartbeat = false;
+    }
+    else {
+      _heartbeatTime.end();
+    }
+    _heartbeatTime.start();
   }
-  else {
-    _heartbeatTime.end();
-  }
-  _heartbeatTime.start();
 
   try {
     // Check if there are pending sw busy indicators
@@ -493,7 +496,9 @@ bool Firmware::heartbeat() {
       _monitorNotReadyCounter++;
     }
 
-    _swHeartbeatCmd->execute();
+    if (_skipHeartbeat) {
+      _swHeartbeatCmd->execute();
+    }
   } catch (IOError &e) {
     std::cout << "Exception Info: " << e.getInfo() << std::endl;
     return false;

@@ -363,6 +363,9 @@ class DbApplicationCard : public DbEntry {
   // Application Type Card 
   DbApplicationTypePtr applicationType;
 
+  // Crate
+  DbCratePtr crate;
+
   // Memory containing firmware configuration buffer
   ApplicationConfigBufferBitSet *applicationConfigBuffer;
 

@@ -61,10 +61,16 @@ DbChannel::DbChannel() : DbEntry(), number(-1), cardId(-1) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbChannel * const channel) {
+  os << channel->name << " : "
+     << "card=" << channel->cardId << " : "
+     << "channel=" << channel->number << " : "
+     << "dbId=" << channel->id;
+  /*
   os << "id[" << channel->id << "]; " 
      << "number[" << channel->number << "]; "
      << "cardId[" << channel->cardId << "]; " 
      << "name[" << channel->name << "]";
+  */
   return os;
 }
 
@@ -111,6 +117,19 @@ void DbDeviceInput::unlatch() {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
+  os << "DeviceInput: "
+     << "deviceId=" << deviceInput->digitalDeviceId << " : "
+     << "channelId=" << deviceInput->channelId << " : "
+     << "bitPos=" << deviceInput->bitPosition << " : "
+     << "faultValue=" << deviceInput->faultValue << " : "
+     << "value=" << deviceInput->value << " [wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]";
+  if (deviceInput->fastEvaluation) {
+    os << " [in fast device]";
+  }
+  if (deviceInput->bypass->status == BYPASS_VALID) {
+    os << " [Bypassed to " << deviceInput->bypass->value << "]";
+  }
+  /*
   os << "id[" << deviceInput->id << "]; " 
      << "bitPosition[" << deviceInput->bitPosition << "]; "
      << "faultValue[" << deviceInput->faultValue << "]; "
@@ -123,6 +142,7 @@ std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
   if (deviceInput->bypass->status == BYPASS_VALID) {
     os << " [Bypassed to " << deviceInput->bypass->value << "]";
   }
+  */
   return os;
 }
 
@@ -130,6 +150,39 @@ DbDigitalDevice::DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevice) {
+  os << "DigitalDevice: "
+     << digitalDevice->name << " : "
+     << digitalDevice->description << " : ";
+
+  if (digitalDevice->evaluation == FAST_EVALUATION) {
+    os << "eval=fast : ";
+  }
+  else {
+    os << "eval=slow : ";
+  }
+
+  os << "type=" << digitalDevice->deviceTypeId << " : "
+     << "card=" << digitalDevice->cardId << " : "
+     << "value=" << std::hex << digitalDevice->value << std::dec << " : "
+     << "dbId=" << digitalDevice->id;
+
+  os << std::endl;
+
+  for (DbDeviceInputMap::iterator input = digitalDevice->inputDevices->begin();
+       input != digitalDevice->inputDevices->end(); ++input) {
+    os << " * " << (*input).second;
+    os << std::endl;
+  }
+
+  os << " + States:" << std::endl;
+
+  for (DbDeviceStateMap::iterator state = digitalDevice->deviceType->deviceStates->begin();
+       state != digitalDevice->deviceType->deviceStates->end(); ++state) {
+    os << "   - " << (*state).second << std::endl;
+  }
+
+  return os;
+  /*
   os << "id[" << digitalDevice->id << "]; "
      << "deviceTypeId[" << digitalDevice->deviceTypeId << "]; "
      << "name[" << digitalDevice->name << "]; "
@@ -138,6 +191,7 @@ std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevic
      << "cardId[" << digitalDevice->cardId << "] "
      << "value[" << digitalDevice->value << "]";
   return os;
+  */
 }
 
 /**
@@ -156,6 +210,49 @@ uint32_t DbAnalogDevice::unlatch(uint32_t mask) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice) {
+  os << "AnalogDevice: "
+     << analogDevice->name << " : "
+     << analogDevice->description << " : ";
+
+  if (analogDevice->evaluation == FAST_EVALUATION) {
+    os << "eval=fast : ";
+  }
+  else {
+    os << "eval=slow : ";
+  }
+
+  os << "type=" << analogDevice->deviceTypeId << " : "
+     << "card=" << analogDevice->cardId << " : "
+     << "value=0x" << std::hex << analogDevice->value << std::dec << " : "
+     << "dbId=" << analogDevice->id << " : " << std::endl
+     << "  ignored=" << analogDevice->ignored << " : "
+     << "bypassMask=0x" << std::hex << analogDevice->bypassMask << std::dec << " : ";
+
+  if (analogDevice->evaluation == FAST_EVALUATION) {
+    os << "destinationMasks=";
+    uint32_t integratorsPerChannel = analogDevice->deviceType->numIntegrators;
+
+    for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
+      os << std::hex << analogDevice->fastDestinationMask[i];
+      if (i < integratorsPerChannel - 1) {
+	os << ", ";
+      }
+      os << std::dec;
+    }
+    os << " : powerClasses=";
+    for (uint32_t i = 0; i < integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+      os << analogDevice->fastPowerClass[i];
+      if (i < (integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE) - 1) {
+	os << ", ";
+      }
+    }
+  }
+
+  os << std::endl;
+  os << " * " << analogDevice->channel;
+
+  return os;
+  /*
   os << "id[" << analogDevice->id << "]; "
      << "deviceTypeId[" << analogDevice->deviceTypeId << "]; "
      << "name[" << analogDevice->name << "]; "
@@ -179,37 +276,35 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
     }
     os << "]";
   }
-
+  */
   return os;
 }
 
 DbApplicationCard::DbApplicationCard() {};
 
 std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
-  os << "id[" << appCard->id << "]; " 
-     << "number[" << appCard->number << "]; "
-     << "crateId[" << appCard->crateId << "]; "
-     << "slotNumber[" << appCard->slotNumber << "]; "
-     << "applicationTypeId[" << appCard->applicationTypeId << "]; "
-     << "globalId[" << appCard->globalId << "]; "
-     << "name[" << appCard->name << "]; "
-     << "description[" << appCard->description << "]; ";
+  os << "App: " << appCard->name << " : "
+     << appCard->description << std::endl
+     << "  globalId=" << appCard->globalId << " : "
+     << "dbId=" << appCard->id << " : "
+     << "type=" << appCard->applicationTypeId << " : "
+     << "number=" << appCard->number << " : "
+     << "crateId=" << appCard->crateId << " : "
+     << "slot=" << appCard->slotNumber << std::endl;
 
   if (appCard->digitalDevices) {
-    os << "DigitalDevices [";
+    os << "  DigitalDevices:" << std::endl;
     for (DbDigitalDeviceMap::iterator digitalDevice = appCard->digitalDevices->begin();
 	 digitalDevice != appCard->digitalDevices->end(); ++digitalDevice) {
-      os << (*digitalDevice).second->name << ", ";
+      os << " * " << (*digitalDevice).second->name << " [id=" << (*digitalDevice).second->id << "]" << std::endl;
     }
-    os << "]";
   }
   else if (appCard->analogDevices) {
-    os << "AnalogDevices [";
+    os << "  AnalogDevices:" << std::endl;
     for (DbAnalogDeviceMap::iterator analogDevice = appCard->analogDevices->begin();
 	 analogDevice != appCard->analogDevices->end(); ++analogDevice) {
-      os << (*analogDevice).second->name << ", ";
+      os << " * " << (*analogDevice).second->name << " [id=" << (*analogDevice).second->id << "]" << std::endl;
     }
-    os << "]";
   }
   else {
     os << " - no devices (?)";

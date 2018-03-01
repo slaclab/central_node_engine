@@ -706,6 +706,13 @@ void MpsDb::configureApplicationCards() {
        ++applicationCardIt) {
     aPtr = (*applicationCardIt).second;
 
+    // Find its crate
+    DbCrateMap::iterator crateIt;
+    crateIt = crates->find(aPtr->crateId);
+    if (crateIt != crates->end()) {
+      aPtr->crate = (*crateIt).second;
+    }
+
     // Configuration buffer
     configBuffer = fastConfigurationBuffer + aPtr->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES;
     aPtr->applicationConfigBuffer = reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
