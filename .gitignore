@@ -1,0 +1,9 @@
+O.*/
+*~
+.*
+src/git_version_string.h
+
+# Ignore all directories, except for the src directory
+*/
+!src/
+!src/test
