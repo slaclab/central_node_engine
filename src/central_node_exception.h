@@ -3,7 +3,7 @@
 
 /**
  * DbException class
- * 
+ *
  * It is thrown by any Db* classes when there is a problem loading or
  * configuring the database.
  */

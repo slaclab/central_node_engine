@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sstream>
-#include <netdb.h> 
+#include <netdb.h>
 
 History::History() : _counter(0), enabled (true) {
 }
@@ -28,7 +28,7 @@ void History::startSenderThread(std::string serverName, int port) {
 
   bzero((char *) &serveraddr, sizeof(serveraddr));
   serveraddr.sin_family = AF_INET;
-  bcopy((char *)server->h_addr, 
+  bcopy((char *)server->h_addr,
 	(char *)&serveraddr.sin_addr.s_addr, server->h_length);
   serveraddr.sin_port = htons(port);
   serverlen = sizeof(serveraddr);
@@ -46,7 +46,7 @@ void History::startSenderThread(std::string serverName, int port) {
   if (enabled) {
     if (pthread_create(&_senderThread, 0, History::senderThread, 0)) {
       //      throw(CentralNodeException("ERROR: Failed to start message history sender thread"));
-      std::cerr << "ERROR: Failed to start message history sender thread" 
+      std::cerr << "ERROR: Failed to start message history sender thread"
 		<< ", proceeding without MPS history." << std::endl;
       enabled = false;
     }
@@ -132,7 +132,7 @@ int History::send(Message &message) {
   else {
     _counter++;
   }
-  
+
   return 0;
 }
 

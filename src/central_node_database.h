@@ -45,13 +45,13 @@ class MpsDb {
 
   /**
    * Memory that receives input updates from firmware/hardware. There are
-   * up to 384 inputs bits per application, 2-bit per input indicating 
+   * up to 384 inputs bits per application, 2-bit per input indicating
    * a 'was low' and 'was high' status.
    *
    * The bits from 0 to 191 are the 'was low' status, and bits 192 to 383
    * are the 'was high' status.
    */
-  uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + 
+  uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 			   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
   uint64_t _fastUpdateTimeStamp;
@@ -59,7 +59,7 @@ class MpsDb {
   uint64_t _maxDiff;
   uint32_t _diffCount;
 
-  /** 
+  /**
    * Each destination takes 4-bits for the allowed power class.
    */
   uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
@@ -80,7 +80,7 @@ class MpsDb {
 
   uint32_t _updateCounter;
   uint32_t _updateTimeoutCounter;
-  
+
  public:
   DbBeamClassPtr lowestBeamClass;
   DbCrateMapPtr crates;
@@ -111,7 +111,7 @@ class MpsDb {
   std::string name;
 
   // This is initialized by the configure() method, after loading the YAML file
-  //  DbFaultStateMapPtr faultStates; 
+  //  DbFaultStateMapPtr faultStates;
 
   MpsDb(uint32_t inputUpdateTimeout=3500);
   ~MpsDb();
@@ -142,14 +142,14 @@ class MpsDb {
   uint8_t *getFastUpdateBuffer() {
     return &fastUpdateBuffer[0];
   }
-  
+
   //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
 
   template<class MapPtrType, class IteratorType>
     void printMap(std::ostream &os, MapPtrType map,
 	     std::string mapName) {
     os << mapName << ":" << std::endl;
-    for (IteratorType it = map->begin(); 
+    for (IteratorType it = map->begin();
 	 it != map->end(); ++it) {
       os << "  " << (*it).second << std::endl;
     }

@@ -15,7 +15,7 @@
 
 
 namespace YAML {
-  
+
   /**
    * Crate:
    * - id: '1'
@@ -195,7 +195,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["ApplicationCard"].begin();
 	   it != node["ApplicationCard"].end(); ++it) {
 	DbApplicationCard *appCard = new DbApplicationCard();
-	
+
 	try {
 	  field = "id";
 	  appCard->id = (*it)[field].as<unsigned int>();
@@ -269,7 +269,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node[key].begin();
 	   it != node[key].end(); ++it) {
 	DbChannel *channel = new DbChannel();
-	
+
 	try {
 	  field = "id";
 	  channel->id = (*it)[field].as<unsigned int>();
@@ -279,7 +279,7 @@ namespace YAML {
 
 	  field = "number";
 	  channel->number = (*it)[field].as<unsigned int>();
-	  
+
 	  field = "card_id";
 	  channel->cardId = (*it)[field].as<unsigned int>();
 	} catch(YAML::InvalidNode e) {
@@ -360,7 +360,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["DeviceState"].begin();
 	   it != node["DeviceState"].end(); ++it) {
 	DbDeviceState *	deviceState = new DbDeviceState();
-	
+
 	try {
 	  field = "id";
 	  deviceState->id = (*it)[field].as<unsigned int>();
@@ -411,7 +411,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["DigitalDevice"].begin();
 	   it != node["DigitalDevice"].end(); ++it) {
 	DbDigitalDevice *digitalDevice = new DbDigitalDevice();
-	
+
 	try {
 	  field = "id";
 	  digitalDevice->id = (*it)[field].as<unsigned int>();
@@ -470,7 +470,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["DeviceInput"].begin();
 	   it != node["DeviceInput"].end(); ++it) {
 	DbDeviceInput *deviceInput = new DbDeviceInput();
-	
+
 	try {
 	  field = "id";
 	  deviceInput->id = (*it)[field].as<unsigned int>();
@@ -504,7 +504,7 @@ namespace YAML {
     }
   };
 
-  /** 
+  /**
    * Condition:
    * - id: 1
    *   name: "YAG01_IN"
@@ -522,7 +522,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["Condition"].begin();
 	   it != node["Condition"].end(); ++it) {
 	DbCondition *condition = new DbCondition();
-	
+
 	try {
 	  field = "id";
 	  condition->id = (*it)[field].as<unsigned int>();
@@ -644,7 +644,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["ConditionInput"].begin();
 	   it != node["ConditionInput"].end(); ++it) {
 	DbConditionInput *conditionInput = new DbConditionInput();
-	
+
 	try {
 	  field = "id";
 	  conditionInput->id = (*it)[field].as<unsigned int>();
@@ -672,7 +672,7 @@ namespace YAML {
     }
   };
 
-  /** 
+  /**
    * Fault:
    * - description: None
    *   id: '1'
@@ -736,7 +736,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["FaultInput"].begin();
 	   it != node["FaultInput"].end(); ++it) {
 	DbFaultInput *faultInput = new DbFaultInput();
-	
+
 	try {
 	  field = "id";
 	  faultInput->id = (*it)[field].as<unsigned int>();
@@ -785,7 +785,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["FaultState"].begin();
 	   it != node["FaultState"].end(); ++it) {
 	DbFaultState *faultState = new DbFaultState();
-	
+
 	try {
 	  field = "id";
 	  faultState->id = (*it)[field].as<unsigned int>();
@@ -816,7 +816,7 @@ namespace YAML {
       return true;
     }
   };
-  
+
   /**
    * AnalogDevice:
    * - analog_device_type_id: '1'
@@ -834,7 +834,7 @@ namespace YAML {
       for (YAML::Node::const_iterator it = node["AnalogDevice"].begin();
 	   it != node["AnalogDevice"].end(); ++it) {
 	DbAnalogDevice *analogDevice = new DbAnalogDevice();
-	
+
 	try {
 	  field = "id";
 	  analogDevice->id = (*it)[field].as<unsigned int>();
@@ -906,14 +906,14 @@ namespace YAML {
 	  beamDestination->destinationMask = (*it)[field].as<short>();
 
 	  // Find the device position in the softwareMitigationBuffer (32-bit array)
-	  // Each mitigation device defines has a 4-bit power class, the 
+	  // Each mitigation device defines has a 4-bit power class, the
 	  // position tells in which byte it falls based on the
 	  // destination mask
 
 	  // In FW version from 17-OCT-17 the mitigation buffer is:
 	  // Destination mask
 	  // [09 10 11 12 13 14 15][01 02 03 04 05 06 07 08]
-	  
+
 	  beamDestination->softwareMitigationBufferIndex = 1; // when FW is fixed this goes back to index 0
 	  beamDestination->bitShift = 0;
 	  uint16_t mask = beamDestination->destinationMask;
@@ -924,7 +924,7 @@ namespace YAML {
 	  }
 
 	  for (int i = 0; i < 8; ++i) {
-	    if (mask & 1) { 
+	    if (mask & 1) {
 	      mask = 0;
 	    }
 	    else {
@@ -948,7 +948,7 @@ namespace YAML {
 	  throw(DbException(errorStream.str()));
 	}
 
-	rhs->insert(std::pair<int, DbBeamDestinationPtr>(beamDestination->id, 
+	rhs->insert(std::pair<int, DbBeamDestinationPtr>(beamDestination->id,
 							  DbBeamDestinationPtr(beamDestination)));
       }
 
@@ -1036,7 +1036,7 @@ namespace YAML {
 	try {
 	  field = "id";
 	  allowedClass->id = (*it)[field].as<unsigned int>();
-	  
+
 	  field = "beam_class_id";
 	  allowedClass->beamClassId = (*it)[field].as<unsigned int>();
 

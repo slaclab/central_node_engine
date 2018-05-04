@@ -13,7 +13,7 @@
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *engineLogger;
-#endif 
+#endif
 
 pthread_mutex_t Engine::_engineMutex;
 volatile bool            Engine::_evaluate;
@@ -130,7 +130,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout) {
     pthread_mutex_unlock(&_engineMutex);
     threadJoin();
     pthread_mutex_lock(&_engineMutex);
-  }  
+  }
 
   _evaluate = false;
 
@@ -151,7 +151,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout) {
   LOG_TRACE("ENGINE", "YAML Database loaded from " << yamlFileName);
 
   // When the first yaml configuration file is loaded the bypassMap
-  // must be created.  
+  // must be created.
   //
   // TODO/Database/Important: the bypasses are created for each device input and
   // analog channel in the database, this happens for the first time
@@ -250,11 +250,11 @@ void Engine::setTentativeBeamClass() {
 }
 
 /**
- * After checking the faults move the final tentativeBeamClass into the 
+ * After checking the faults move the final tentativeBeamClass into the
  * allowedBeamClass for the beam destinations
  */
 void Engine::setAllowedBeamClass() {
-  for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin(); 
+  for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
        it != _mpsDb->beamDestinations->end(); ++it) {
     (*it).second->setAllowedBeamClass();
     //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
@@ -267,7 +267,7 @@ void Engine::setAllowedBeamClass() {
  * First goes through the list of DigitalDevices and updates the current state.
  * Second updates the FaultStates for each Fault.
  * At the end of this method all Digital Faults will have updated values,
- * i.e. the field 'faulted' gets updated based on the current machine state. 
+ * i.e. the field 'faulted' gets updated based on the current machine state.
  *
  * TODO: bypass mask and values accessed by multiple threads
  */
@@ -280,13 +280,13 @@ void Engine::evaluateFaults() {
   // The individual inputs come from independent digital inputs,
   // this does not apply to analog devices, where the input
   // come from a single channel (with multiple bits in it)
-  for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin(); 
+  for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
        device != _mpsDb->digitalDevices->end(); ++device) {
     uint32_t deviceValue = 0;
     LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
 	      << ", there are " << (*device).second->inputDevices->size()
 	      << " inputs");
-    for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin(); 
+    for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin();
 	 input != (*device).second->inputDevices->end(); ++input) {
       uint32_t inputValue = 0;
       // Check if the input has a valid bypass value
@@ -304,7 +304,7 @@ void Engine::evaluateFaults() {
     }
     (*device).second->update(deviceValue);
     LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
-  }  
+  }
 
   // At this point all digital devices have an updated value
 
@@ -354,7 +354,7 @@ void Engine::evaluateFaults() {
 	(*fault).second->faulted = true; // Set fault faulted field
 	(*fault).second->faultLatched = true;
 	faulted = true; // Signal that at least one state is faulted
-	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+	LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
 		  << faultValue << ", masked=" << maskedValue
 		  << " (fault state="
 		  << (*state).second->deviceState->name
@@ -369,7 +369,7 @@ void Engine::evaluateFaults() {
     if (!faulted && (*fault).second->defaultFaultState) {
       (*fault).second->defaultFaultState->faulted = true;
       deviceStateId = (*fault).second->defaultFaultState->deviceState->id;
-      LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+      LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
 		<< faultValue << " (Default) fault state="
 		<< (*fault).second->defaultFaultState->deviceState->name);
     }
@@ -403,7 +403,7 @@ bool Engine::evaluateIgnoreConditions() {
 		<< ", input value " << inputValue << std::dec << " bit pos "
 		<< (*input).second->bitPosition);
     }
-    
+
 
     // 'mask' is the condition value that needs to be matched in order to ignore faults
     bool newConditionState = false;
@@ -449,7 +449,7 @@ void Engine::mitigate() {
       for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
 	   state != (*fault).second->faultStates->end(); ++state) {
 	if ((*state).second->faulted && !(*state).second->ignored) {
-	  LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+	  LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
 		    << (*fault).second->value
 		    << " (fault state="
 		    << (*state).second->deviceState->name
@@ -473,7 +473,7 @@ void Engine::mitigate() {
       if ((*fault).second->defaultFaultState) {
 	if ((*fault).second->defaultFaultState->faulted &&
 	    !(*fault).second->defaultFaultState->ignored) {
-	  LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+	  LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
 		    << (*fault).second->value << " (Default) fault state="
 		    << (*fault).second->defaultFaultState->deviceState->name);
 	  if ((*fault).second->defaultFaultState->allowedClasses) {
@@ -714,7 +714,7 @@ void *Engine::engineThread(void *arg) {
 	counter++;
 	now = time(0);
 	if (now > before) {
-	  time_t diff = now - before; 
+	  time_t diff = now - before;
 	  before = now;
 	  _rate = counter / diff;
 	  counter = 0;
@@ -722,9 +722,9 @@ void *Engine::engineThread(void *arg) {
 	Firmware::getInstance().heartbeat();
       }
       else {
-	// This counter may be increased due to FW config changes, e.g. 
+	// This counter may be increased due to FW config changes, e.g.
 	// new or expired bypass of analog fast signal.
-	_inputUpdateFailCounter++; 
+	_inputUpdateFailCounter++;
 	_rate = 0;
       }
       Engine::getInstance()._evaluationCycleTime.end();
@@ -734,7 +734,7 @@ void *Engine::engineThread(void *arg) {
 	Engine::getInstance()._clearEvaluationCycleTime = false;
       }
 
-      // Reloads FW configuration - cause by ignore logic that 
+      // Reloads FW configuration - cause by ignore logic that
       // enables/disables faults based on fast analog devices
       if (reload) {
 	Engine::getInstance().reloadConfigFromIgnore();

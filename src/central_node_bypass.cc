@@ -28,7 +28,7 @@ BypassManager::BypassManager() :
   if (0 != ret) {
     throw("ERROR: BypassManager::BypassManager() failed to init mutex.");
   }
-} 
+}
 
 bool BypassManager::isInitialized() {
   return initialized;
@@ -36,13 +36,13 @@ bool BypassManager::isInitialized() {
 
 /**
  * This creates bypasses for all digital/analog inputs. Should be invoked
- * when the engine loads its first configuration. The number and types of 
+ * when the engine loads its first configuration. The number and types of
  * inputs must be the same for all configurations loaded. The bypass information
  * is shared by the loaded configs.
  */
 void BypassManager::createBypassMap(MpsDbPtr db) {
   LOG_TRACE("BYPASS", "Creating bypass map");
-  
+
   InputBypassMap *map = new InputBypassMap();
   bypassMap = InputBypassMapPtr(map);
 
@@ -62,7 +62,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     }
 
     bypassId++;
-    
+
     InputBypassPtr bypassPtr = InputBypassPtr(bypass);
     bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
   }
@@ -93,7 +93,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
       }
 
       bypassId++;
-    
+
       InputBypassPtr bypassPtr = InputBypassPtr(bypass);
       bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
     }
@@ -129,7 +129,7 @@ void BypassManager::assignBypass(MpsDbPtr db) {
 	throw(CentralNodeException(errorStream.str()));
       }
       else {
-	(*digitalInput).second->bypass = (*bypass).second; 
+	(*digitalInput).second->bypass = (*bypass).second;
       }
     }
     else { // BYPASS_ANALOG
@@ -191,7 +191,7 @@ void BypassManager::assignBypass(MpsDbPtr db) {
 
 /**
  * Check if there are expired bypasses in the priority queue.
- * If expired, the bypass is removed from the queue and 
+ * If expired, the bypass is removed from the queue and
  * marked BYPASS_EXPIRED.
  *
  * @param testTime number of seconds since the Epoch (00:00:00 UTC, January 1, 1970)
@@ -227,14 +227,14 @@ void BypassManager::checkBypassQueue(time_t testTime) {
     throw("ERROR: BypassManager::checkBypassQueue() failed to unlock mutex.");
   }
 }
- 
+
 /**
  * Check if the top element in queue is expired. If so
  * remove it from the queue, mark as expired and return
  * true (expired). Otherwise return false (bypass still valid).
  *
  * @param now current time, in seconds
- */ 
+ */
 bool BypassManager::checkBypassQueueTop(time_t now) {
   BypassQueueEntry top;
   if (!bypassQueue.empty()) {
@@ -271,8 +271,8 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
       else if (top.second->until <= top.first) {
 	if (top.second->type == BYPASS_ANALOG) {
 	  History::getInstance().logBypassState(top.second->deviceId,
-						top.second->status, 
-						BYPASS_EXPIRED, 
+						top.second->status,
+						BYPASS_EXPIRED,
 						top.second->index);
 	  // If analog/threshold bypass, change bypassMask
 	  // set integrator thresholds bit to 1 (not-bypassed)
@@ -310,7 +310,7 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 
 /**
  * Add a new bypass to the bypassQueue. Possible scenarios are:
- * 
+ *
  * 1) New bypass: the device has no bypass in the queue, add a new one
  * with the specified until time
  *
@@ -318,7 +318,7 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
  * new expiration time may be earlier or later than the previous.
  * In either case a new entry is added to the queue.
  * - If later: change the until field in the deviceBypass and keep
- *   the status BYPASS_VALID. When the first timer expires the 
+ *   the status BYPASS_VALID. When the first timer expires the
  *   checkBypassQueue verifies if the time from the queue is the
  *   same as the one saved in the bypass. The expiration time in
  *   the bypass is later, so the status is kept at BYPASS_VALID.
@@ -332,10 +332,10 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
  * 3) Cancel bypass: by specifying a bypassUntil parameter of ZERO. The
  *    until field in the bypass is set to ZERO and status changed to
  *    BYPASS_EXPIRED. No new element is added to the priority queue.
- *    If there are entries in the queue then they will be removed 
+ *    If there are entries in the queue then they will be removed
  *    the next time the bypasses are checked.
  *
- * Multiple bypass to the same device can be added, the last one 
+ * Multiple bypass to the same device can be added, the last one
  * to be added will be the the one that controls when the bypass
  * expires.
  */
@@ -378,18 +378,18 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
   newEntry.first = bypassUntil;
   newEntry.second = bypass;
 
-  // This handles case #3 - cancel bypass  
+  // This handles case #3 - cancel bypass
   if (bypassUntil == 0) {
     if (bypass->type == BYPASS_ANALOG) {
-      History::getInstance().logBypassState(bypass->deviceId, 
+      History::getInstance().logBypassState(bypass->deviceId,
 					    bypass->status,
 					    BYPASS_EXPIRED,
 					    bypass->index);
     }
     else {
       History::getInstance().logBypassState(bypass->deviceId,
-					    bypass->status, 
-					    BYPASS_EXPIRED, 
+					    bypass->status,
+					    BYPASS_EXPIRED,
 					    BYPASS_DIGITAL_INDEX);
     }
 
@@ -418,7 +418,7 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     else {
       time(&now);
     }
-    
+
     // This handles cases #1 and #2, for new and modified bypasses.
     if (bypassUntil > now) {
       if (bypass->type == BYPASS_ANALOG) {

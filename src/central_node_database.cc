@@ -19,7 +19,7 @@
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   using namespace easyloggingpp;
   static Logger *databaseLogger;
-#endif 
+#endif
 
 extern TimeAverage DeviceInputUpdateTime;
 extern TimeAverage AnalogDeviceUpdateTime;
@@ -36,9 +36,9 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _diffCount(0),
   _inputUpdateTimeout(inputUpdateTimeout),
   _inputUpdateTime(5, "Input update time"),
-  _clearUpdateTime(false), 
+  _clearUpdateTime(false),
   _inputDelayTime(5, "Input delay time (wait for FW)"),
-  _clearInputDelayTime(false), 
+  _clearInputDelayTime(false),
   _updateCounter(0),
   _updateTimeoutCounter(0) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -160,7 +160,7 @@ void MpsDb::configureAllowedClasses() {
     if (beamIt == beamClasses->end()) {
       errorStream <<  "ERROR: Failed to configure database, invalid ID found for BeamClass ("
 		  << id << ") for AllowedClass (" << (*it).second->id << ")";
-      throw(DbException(errorStream.str())); 
+      throw(DbException(errorStream.str()));
     }
     (*it).second->beamClass = (*beamIt).second;
 
@@ -188,14 +188,14 @@ void MpsDb::configureAllowedClasses() {
 	(*digFaultIt).second->allowedClasses = DbAllowedClassMapPtr(faultAllowedClasses);
       }
       (*digFaultIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*it).second->id,
-										     (*it).second));      
+										     (*it).second));
     }
   }
 }
 
 void MpsDb::configureDeviceTypes() {
   // Compile a list of DeviceStates and assign to the proper DeviceType
-  for (DbDeviceStateMap::iterator it = deviceStates->begin(); 
+  for (DbDeviceStateMap::iterator it = deviceStates->begin();
        it != deviceStates->end(); ++it) {
     int id = (*it).second->deviceTypeId;
 
@@ -207,7 +207,7 @@ void MpsDb::configureDeviceTypes() {
 	(*deviceType).second->deviceStates = DbDeviceStateMapPtr(deviceStates);
       }
       (*deviceType).second->deviceStates->insert(std::pair<int, DbDeviceStatePtr>((*it).second->id,
-										  (*it).second));      
+										  (*it).second));
     }
   }
 }
@@ -217,7 +217,7 @@ void MpsDb::configureDeviceInputs() {
   std::stringstream errorStream;
   // Assign DeviceInputs to it's DigitalDevices, and find the Channel
   // the device is connected to
-  for (DbDeviceInputMap::iterator it = deviceInputs->begin(); 
+  for (DbDeviceInputMap::iterator it = deviceInputs->begin();
        it != deviceInputs->end(); ++it) {
     int id = (*it).second->digitalDeviceId;
 
@@ -242,7 +242,7 @@ void MpsDb::configureDeviceInputs() {
       (*deviceIt).second->inputDevices = DbDeviceInputMapPtr(deviceInputs);
     }
     else {
-      // Extra check to make sure the digitalDevice has only one input, if 
+      // Extra check to make sure the digitalDevice has only one input, if
       // it has evaluation set to FAST
       if ((*deviceIt).second->evaluation == FAST_EVALUATION) {
 	errorStream << "ERROR: Failed to configure database, found DigitalDevice ("
@@ -325,8 +325,8 @@ void MpsDb::configureFaultInputs() {
 	    // There is one DbFaultState per threshold bit, for BPMs there are
 	    // 24 bits (8 for X, 8 for Y and 8 for TMIT). Other analog devices
 	    // have up to 32 bits (4 integrators) - there is one destination mask
-	    // per integrator	    
-	    
+	    // per integrator
+
 	    // There is a unique power class for each threshold bit (each DbFaultState)
 	    // The destination masks for the thresholds for the same integrator
 	    // must be and'ed together.
@@ -410,7 +410,7 @@ void MpsDb::configureFaultInputs() {
     }
     else {
       (*it).second->digitalDevice = (*deviceIt).second;
-      // If the DbDigitalDevice is set for fast evaluation, save a pointer to the 
+      // If the DbDigitalDevice is set for fast evaluation, save a pointer to the
       // DbFaultInput
       if ((*deviceIt).second->evaluation == FAST_EVALUATION) {
 	DbFaultMap::iterator faultIt = faults->find((*it).second->faultId);
@@ -433,7 +433,7 @@ void MpsDb::configureFaultInputs() {
 	    errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one fault state only."
 			<< " Found " << (*faultIt).second->faultStates->size() << " fault states for "
 			<< "device " << (*deviceIt).second->name;
-	    throw(DbException(errorStream.str())); 
+	    throw(DbException(errorStream.str()));
 	  }
 	  DbFaultStateMap::iterator faultState = (*faultIt).second->faultStates->begin();
 
@@ -557,7 +557,7 @@ void MpsDb::configureFaultStates() {
     (*it).second->deviceState = (*deviceStateIt).second;
   }
 
-  
+
 }
 
 
@@ -578,7 +578,7 @@ void MpsDb::configureAnalogDevices() {
 		  << typeId << ") for AnalogDevice (" <<  (*it).second->id << ")";
       throw(DbException(errorStream.str()));
     }
-    
+
     int channelId = (*it).second->channelId;
     DbChannelMap::iterator channelIt = analogChannels->find(channelId);
     if (channelIt == analogChannels->end()) {
@@ -607,14 +607,14 @@ void MpsDb::configureIgnoreConditions() {
 	(*condition).second->ignoreConditions = DbIgnoreConditionMapPtr(ignoreConditionMap);
       }
       (*condition).second->ignoreConditions->
-	insert(std::pair<int, DbIgnoreConditionPtr>((*ignoreCondition).second->id, (*ignoreCondition).second));      
+	insert(std::pair<int, DbIgnoreConditionPtr>((*ignoreCondition).second->id, (*ignoreCondition).second));
     }
     else {
       errorStream << "ERROR: Failed to configure database, invalid conditionId ("
 		  << conditionId << ") for ignoreCondition (" <<  (*ignoreCondition).second->id << ")";
       throw(DbException(errorStream.str()));
     }
-    
+
     // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
 
@@ -663,7 +663,7 @@ void MpsDb::configureIgnoreConditions() {
 	(*condition).second->conditionInputs = DbConditionInputMapPtr(conditionInputMap);
       }
       (*condition).second->conditionInputs->
-	insert(std::pair<int, DbConditionInputPtr>((*conditionInput).second->id, (*conditionInput).second));      
+	insert(std::pair<int, DbConditionInputPtr>((*conditionInput).second->id, (*conditionInput).second));
     }
     else {
       errorStream << "ERROR: Failed to configure database, invalid conditionId ("
@@ -813,7 +813,7 @@ void MpsDb::clearMitigationBuffer() {
 /**
  * After the YAML database file is loaded this method must be called to resolve
  * references between tables. In the YAML table entries there is a reference to
- * another table using a 'foreign key'. The configure*() methods look for the 
+ * another table using a 'foreign key'. The configure*() methods look for the
  * actual item referenced by the foreign key and saves a pointer to the
  * referenced element for direct access. This allows the engine to evaluate
  * faults without having to search for entries.
@@ -866,7 +866,7 @@ void MpsDb::writeFirmwareConfiguration() {
   }
 
   Firmware::getInstance().writeTimingChecking(time, period, charge);
-  
+
   // Firmware command to actually switch to the new configuration
   Firmware::getInstance().switchConfig();
 }
@@ -967,7 +967,7 @@ int MpsDb::load(std::string yamlFileName) {
   setName(yamlFileName);
 
   // Zero out the buffer that holds the firmware configuration
-  //  memset(fastConfigurationBuffer, 0, NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE); 
+  //  memset(fastConfigurationBuffer, 0, NUM_APPLICATIONS * APPLICATION_CONFIG_BUFFER_SIZE);
 
   return 0;
 }
@@ -993,7 +993,7 @@ void MpsDb::showFaults() {
   std::cout << "| Faults: " << std::endl;
   std::cout << "+-------------------------------------------------------" << std::endl;
   lock();
-  for (DbFaultMap::iterator fault = faults->begin(); 
+  for (DbFaultMap::iterator fault = faults->begin();
        fault != faults->end(); ++fault) {
     showFault((*fault).second);
   }
@@ -1061,7 +1061,7 @@ void MpsDb::showFault(DbFaultPtr fault) {
 	  std::cout << "| - Input[" << (*devInput).second->id
 		    << "], Position[" << (*devInput).second->bitPosition
 		    << "], Bypass[";
-      
+
 	  if (!(*devInput).second->bypass) {
 	    std::cout << "WARNING: NO BYPASS INFO]";
 	  }
@@ -1099,7 +1099,7 @@ void MpsDb::showInfo() {
   std::cout << "File: " << name << std::endl;
   std::cout << "Update counter: " << _updateCounter << std::endl;
   std::cout << "Input update timeout " << _inputUpdateTimeout << " usec" << std::endl;
-  
+
   printMap<DbInfoMapPtr, DbInfoMap::iterator>
     (std::cout, databaseInfo, "DatabaseInfo");
 

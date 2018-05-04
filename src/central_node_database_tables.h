@@ -20,7 +20,7 @@ using boost::weak_ptr;
 
 /**
  * DbException class
- * 
+ *
  * It is thrown by any Db* classes when there is a problem loading or
  * configuring the database.
  */
@@ -50,7 +50,7 @@ class DbCrate : public DbEntry {
   uint32_t number;
   uint32_t numSlots;
   uint32_t shelfNumber;
-  
+
   DbCrate();
   friend std::ostream & operator<<(std::ostream &os, DbCrate * const crate);
 };
@@ -105,7 +105,7 @@ class DbChannel : public DbEntry {
   uint32_t number;
   uint32_t cardId;
   std::string name;
-  
+
   DbChannel();
   friend std::ostream & operator<<(std::ostream &os, DbChannel * const channel);
 };
@@ -118,12 +118,12 @@ typedef shared_ptr<DbChannelMap> DbChannelMapPtr;
  * DbDeviceState YAML class
  */
 class DbDeviceState : public DbEntry {
- public:  
+ public:
   uint32_t deviceTypeId;
   uint32_t value;
   uint32_t mask;
   std::string name;
-  
+
   DbDeviceState();
   friend std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState);
 };
@@ -181,7 +181,7 @@ class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
   // Latched value
   uint32_t latchedValue;
 
-  // Count 'was high'=0 & 'was low'=0 
+  // Count 'was high'=0 & 'was low'=0
   uint32_t invalidValueCount;
 
   // Pouint32_ter to the bypass for this input
@@ -276,21 +276,21 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // Analog devices: 1 byte (only one integration window)
   // BPM devices: 3 bytes (X, Y, TMIT thresholds)
   // BLM devices: 4 bytes (one byte for each integration window)
-  int32_t value; 
+  int32_t value;
   int32_t previousValue;
 
   // Latched value
   uint32_t latchedValue;
 
-  // Count 'was high'=0 & 'was low'=0 
+  // Count 'was high'=0 & 'was low'=0
   uint32_t invalidValueCount;
 
   // Faults from this devices are bypassed when ignored==true
-  bool ignored; 
+  bool ignored;
 
   DbDeviceTypePtr deviceType;
 
-  // Number of analog channels in the same card - this information 
+  // Number of analog channels in the same card - this information
   // comes from the ApplicationCard type (from the cardId attribute),
   // and it is filled out when the database is loaded and configured
   uint32_t numChannelsCard;
@@ -303,15 +303,15 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // expires the bypassMask for the AnalogDevice is updated.
   //
   // TODO: bypass is possible in HW only per integrator, not by threshold!
-  //  InputBypassPtr bypass[ANALOG_DEVICE_NUM_THRESHOLDS]; 
+  //  InputBypassPtr bypass[ANALOG_DEVICE_NUM_THRESHOLDS];
   InputBypassPtr bypass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
 
   // Bypass mask composed from all active threshold bypasses. This value gets updated
-  // whenever a threshold bypass becomes valid or expires. The BypassManager changes this 
+  // whenever a threshold bypass becomes valid or expires. The BypassManager changes this
   // mask directly. The Engine always does a bitwise AND between this mask and the value read
   // from firmware. If a threshold is bypassed the bypassMask is 0 at the threshold position,
   // and 1 otherwise.
-  uint32_t bypassMask; 
+  uint32_t bypassMask;
 
   /**
    * These fields get populated when the database is loaded, they are
@@ -319,10 +319,10 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
    * information.
    */
   // 16-bit beam destination mask for fast digital devices/faults
-  // there is a destination mask per integrator. 
+  // there is a destination mask per integrator.
   uint16_t fastDestinationMask[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
 
-  // For each fastDestinationMask there are 8 sets of power classes - 
+  // For each fastDestinationMask there are 8 sets of power classes -
   // one per each threshold.
   // 4-bit encoded max beam power class for each integrator threshold
   // 4 integrators max, each with size of 8-bits - total of 32 elements
@@ -360,7 +360,7 @@ class DbApplicationCard : public DbEntry {
   std::string description;
   bool online; // True if received non-zero update last 360Hz update period
 
-  // Application Type Card 
+  // Application Type Card
   DbApplicationTypePtr applicationType;
 
   // Crate
@@ -419,7 +419,7 @@ class DbFaultInput : public DbEntry {
   // A fault input may come from a digital device or analog device threshold fault bits
   DbAnalogDevicePtr analogDevice;
   DbDigitalDevicePtr digitalDevice;
-  
+
   DbFaultInput();
 
   // Update the value from the DeviceInputs
@@ -446,7 +446,7 @@ class DbBeamClass : public DbEntry {
   uint32_t integrationWindow;
   uint32_t minPeriod;
   uint32_t totalCharge;
-  
+
   DbBeamClass();
   friend std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass);
 };
@@ -467,7 +467,7 @@ class DbBeamDestination : public DbEntry {
   DbBeamClassPtr previousAllowedBeamClass; // beam class set previously
   DbBeamClassPtr allowedBeamClass; // allowed beam class after evaluating faults
   DbBeamClassPtr tentativeBeamClass; // used while faults are being evaluated
-  
+
   // Memory location where the allowed beam class for this device
   // is written and sent to firmware
   uint32_t *softwareMitigationBuffer;
@@ -506,7 +506,7 @@ class DbAllowedClass : public DbEntry {
   // Configured after loading the YAML file
   DbBeamClassPtr beamClass;
   DbBeamDestinationPtr beamDestination;
-  
+
   DbAllowedClass();
 
   friend std::ostream & operator<<(std::ostream &os, DbAllowedClass * const allowedClass);
@@ -529,7 +529,7 @@ class DbFaultState : public DbEntry {
 
   // Configured/Used after loading the YAML file
   bool faulted; // Evaluated based on the status of the deviceState
-  bool ignored; // Fault state is ignored if there are valid ignore conditions 
+  bool ignored; // Fault state is ignored if there are valid ignore conditions
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each beam destination) for this fault states
   DbDeviceStatePtr deviceState;
 
@@ -538,7 +538,7 @@ class DbFaultState : public DbEntry {
 };
 
 
-/** 
+/**
  * DbFault YAML class (these are digital faults types)
  */
 class DbFault : public DbEntry {
@@ -585,7 +585,7 @@ class DbConditionInput : public DbEntry {
   // TODO: this does not look good, these should be a single pointer, can't they?
   // This also happens with the DbIgnoreCondition class
   DbFaultStatePtr faultState;
-  
+
   DbConditionInput();
   friend std::ostream & operator<<(std::ostream &os, DbConditionInput * const input);
 };
@@ -608,7 +608,7 @@ class DbIgnoreCondition : public DbEntry {
 
   // The ignore condition can be used to ignore a fault state or an analog device
   // The analog device is used to disable a device when beam is blocked upstream, causing
-  // faults from no beam 
+  // faults from no beam
   DbFaultStatePtr faultState;
   DbAnalogDevicePtr analogDevice;
 
@@ -620,7 +620,7 @@ typedef shared_ptr<DbIgnoreCondition> DbIgnoreConditionPtr;
 typedef std::map<uint32_t, DbIgnoreConditionPtr> DbIgnoreConditionMap;
 typedef shared_ptr<DbIgnoreConditionMap> DbIgnoreConditionMapPtr;
 
-/** 
+/**
  * DbCondition YAML class
  */
 class DbCondition : public DbEntry {
