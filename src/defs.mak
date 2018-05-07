@@ -66,7 +66,7 @@ RANLIB =$(CROSS)$(or $(RANLIB_$(TARNM)),$(RANLIB_default),ranlib)
 INSTALL=install -C
 
 # Tool options
-OPT_CXXFLAGS=-g -Wall -O2
+OPT_CXXFLAGS=-g -std=c++0x -Wall -O2
 OPT_CFLAGS  =-g -Wall -O2
 
 CPPFLAGS+= $(addprefix -I,$(SRCDIR) $(INCLUDE_DIRS) $(INSTALL_DIR:%=%/include))
