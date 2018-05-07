@@ -25,7 +25,8 @@ uint32_t        Engine::_inputUpdateFailCounter;
 Engine::Engine() :
   _initialized(false),
   _debugCounter(0),
-  _checkFaultTime(5, "Evaluation only time"),
+  // _checkFaultTime(5, "Evaluation only time"),
+  _checkFaultTime( "Evaluation only time", 360 ),
   _clearCheckFaultTime(false),
   _evaluationCycleTime(5, "Evaluation Cycle time"),
   _clearEvaluationCycleTime(false) {
@@ -500,11 +501,12 @@ int Engine::checkFaults() {
   }
 
   if (_clearCheckFaultTime) {
-    _checkFaultTime.clear();
+    // _checkFaultTime.clear();
     _clearCheckFaultTime = false;
   }
 
   // must first get updated input values
+  // _checkFaultTime.start();
   _checkFaultTime.start();
 
   LOG_TRACE("ENGINE", "Checking faults");
@@ -516,7 +518,8 @@ int Engine::checkFaults() {
   mitigate();
   setAllowedBeamClass();
   _mpsDb->unlock();
-  _checkFaultTime.end();
+  // _checkFaultTime.end();
+  _checkFaultTime.tick();
 
   // If FW configuration needs reloading, return non-zero value
   if (reload) {
@@ -762,11 +765,13 @@ void Engine::clearCheckTime() {
 }
 
 long Engine::getMaxCheckTime() {
-  return _checkFaultTime.getMax();
+  // return _checkFaultTime.getMax();
+  return static_cast<int>( _checkFaultTime.getMaxPeriod() * 1e6 );
 }
 
 long Engine::getAvgCheckTime() {
-  return _checkFaultTime.getAverage();
+  // return _checkFaultTime.getAverage();
+  return static_cast<int>( _checkFaultTime.getMeanPeriod() * 1e6 );
 }
 
 long Engine::getMaxEvalTime() {

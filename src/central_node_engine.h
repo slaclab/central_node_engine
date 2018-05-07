@@ -12,6 +12,7 @@
 #include <central_node_bypass.h>
 #include <central_node_bypass_manager.h>
 #include <time_util.h>
+#include "timer.h"
 
 using boost::shared_ptr;
 
@@ -101,7 +102,8 @@ class Engine {
   DbBeamClassPtr _lowestBeamClass;
 
   std::stringstream _errorStream;
-  TimeAverage _checkFaultTime;
+  // TimeAverage _checkFaultTime;
+  Timer<double> _checkFaultTime;
   bool _clearCheckFaultTime;
 
   TimeAverage _evaluationCycleTime;
