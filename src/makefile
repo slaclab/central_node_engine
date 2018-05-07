@@ -15,6 +15,7 @@ HEADERS = central_node_bypass.h \
         log.h \
         log_wrapper.h \
         time_util.h \
+        timer.h \
         central_node_history.h \
         central_node_history_protocol.h \
         central_node_firmware.h
@@ -32,6 +33,7 @@ central_node_engine_SRCS += central_node_firmware.cc
 central_node_engine_SRCS += central_node_firmware_noop.cc
 central_node_engine_SRCS += central_node_history.cc
 central_node_engine_SRCS += time_util.cc
+central_node_engine_SRCS += timer.cc
 
 DEP_HEADERS  = $(HEADERS)
 
