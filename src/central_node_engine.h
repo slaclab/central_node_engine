@@ -104,10 +104,11 @@ class Engine {
   std::stringstream _errorStream;
   // TimeAverage _checkFaultTime;
   Timer<double> _checkFaultTime;
-  bool _clearCheckFaultTime;
+  // bool _clearCheckFaultTime;
 
-  TimeAverage _evaluationCycleTime;
-  bool _clearEvaluationCycleTime;
+  // TimeAverage _evaluationCycleTime;
+  Timer<double>  _evaluationCycleTime;
+  // bool _clearEvaluationCycleTime;
 
  public:
   static Engine &getInstance() {

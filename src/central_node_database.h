@@ -11,6 +11,7 @@
 #include <central_node_history.h>
 #include <stdint.h>
 #include <time_util.h>
+#include "timer.h"
 
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
@@ -64,10 +65,12 @@ class MpsDb {
    */
   uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
 
-  TimeAverage _inputUpdateTime;
+  Timer<double> _inputUpdateTime;
+  // TimeAverage _inputUpdateTime;
   bool _clearUpdateTime;
 
-  TimeAverage _inputDelayTime;
+  Timer<double> _inputDelayTime;
+  // TimeAverage _inputDelayTime;
   bool _clearInputDelayTime;
 
   uint32_t _inputUpdateTimeout;

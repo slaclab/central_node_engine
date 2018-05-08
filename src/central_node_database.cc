@@ -35,9 +35,11 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _maxDiff(0),
   _diffCount(0),
   _inputUpdateTimeout(inputUpdateTimeout),
-  _inputUpdateTime(5, "Input update time"),
+  // _inputUpdateTime(5, "Input update time"),
+  _inputUpdateTime("Input update time", 360),
   _clearUpdateTime(false),
-  _inputDelayTime(5, "Input delay time (wait for FW)"),
+  // _inputDelayTime(5, "Input delay time (wait for FW)"),
+  _inputDelayTime("Input delay time (wait for FW)", 360),
   _clearInputDelayTime(false),
   _updateCounter(0),
   _updateTimeoutCounter(0) {
@@ -102,14 +104,15 @@ bool MpsDb::updateInputs() {
     }
     _diff = diff;
 
-    _inputDelayTime.end();
+    // _inputDelayTime.end();
+    _inputDelayTime.tick();
     if (_clearInputDelayTime) {
-      _inputDelayTime.clear();
+      // _inputDelayTime.clear();
       _clearInputDelayTime = false;
     }
     Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
     if (_clearUpdateTime) {
-      _inputUpdateTime.clear();
+      // _inputUpdateTime.clear();
       DeviceInputUpdateTime.clear();
       AnalogDeviceUpdateTime.clear();
       AppCardDigitalUpdateTime.clear();
@@ -127,12 +130,14 @@ bool MpsDb::updateInputs() {
     }
 
     _updateCounter++;
-    _inputUpdateTime.end();
+    // _inputUpdateTime.end();
+    _inputUpdateTime.tick();
     //    Firmware::getInstance().getAppTimeoutStatus();
   }
   else {
     _updateTimeoutCounter++;
-    _inputDelayTime.end();
+    // _inputDelayTime.end();
+    _inputDelayTime.tick();
     //    std::cerr << "ERROR: updateInputs failed" << std::endl;
     return false;
   }
@@ -1124,19 +1129,23 @@ void MpsDb::clearUpdateTime() {
 }
 
 long MpsDb::getMaxUpdateTime() {
-  return _inputUpdateTime.getMax();
+  // return _inputUpdateTime.getMax();
+  return static_cast<int>( _inputUpdateTime.getMaxPeriod() * 1e6 );
 }
 
 long MpsDb::getAvgUpdateTime() {
-  return _inputUpdateTime.getAverage();
+  // return _inputUpdateTime.getAverage();
+  return static_cast<int>( _inputUpdateTime.getMeanPeriod() * 1e6 );
 }
 
 long MpsDb::getMaxInputDelayTime() {
-  return _inputDelayTime.getMax();
+  // return _inputDelayTime.getMax();
+  return static_cast<int>( _inputDelayTime.getMaxPeriod() * 1e6 );
 }
 
 long MpsDb::getAvgInputDelayTime() {
-  return _inputDelayTime.getAverage();
+  // return _inputDelayTime.getAverage();
+  return static_cast<int>( _inputDelayTime.getMeanPeriod() * 1e6 );
 }
 
 std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {

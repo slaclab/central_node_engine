@@ -27,9 +27,10 @@ Engine::Engine() :
   _debugCounter(0),
   // _checkFaultTime(5, "Evaluation only time"),
   _checkFaultTime( "Evaluation only time", 360 ),
-  _clearCheckFaultTime(false),
-  _evaluationCycleTime(5, "Evaluation Cycle time"),
-  _clearEvaluationCycleTime(false) {
+  _evaluationCycleTime( "Evaluation Cycle time", 360 ) {
+  // _clearCheckFaultTime(false),
+  // _evaluationCycleTime(5, "Evaluation Cycle time"),
+  // _clearEvaluationCycleTime(false) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   engineLogger = Loggers::getLogger("ENGINE");
   LOG_TRACE("ENGINE", "Created Engine");
@@ -500,10 +501,10 @@ int Engine::checkFaults() {
     return 0;
   }
 
-  if (_clearCheckFaultTime) {
-    // _checkFaultTime.clear();
-    _clearCheckFaultTime = false;
-  }
+  // if (_clearCheckFaultTime) {
+  //   // _checkFaultTime.clear();
+  //   _clearCheckFaultTime = false;
+  // }
 
   // must first get updated input values
   // _checkFaultTime.start();
@@ -688,7 +689,7 @@ void *Engine::engineThread(void *arg) {
   // Pre-fault our stack
   stack_prefault();
 
-  Engine::getInstance()._evaluationCycleTime.clear();
+  // Engine::getInstance()._evaluationCycleTime.clear();
 
   Firmware::getInstance().setEnable(true);
   Firmware::getInstance().clearAll();
@@ -730,12 +731,13 @@ void *Engine::engineThread(void *arg) {
 	_inputUpdateFailCounter++;
 	_rate = 0;
       }
-      Engine::getInstance()._evaluationCycleTime.end();
+      // Engine::getInstance()._evaluationCycleTime.end();
+      Engine::getInstance()._evaluationCycleTime.tick();
 
-      if (Engine::getInstance()._clearEvaluationCycleTime) {
-	Engine::getInstance()._evaluationCycleTime.clear();
-	Engine::getInstance()._clearEvaluationCycleTime = false;
-      }
+ //      if (Engine::getInstance()._clearEvaluationCycleTime) {
+	// // Engine::getInstance()._evaluationCycleTime.clear();
+	// Engine::getInstance()._clearEvaluationCycleTime = false;
+ //      }
 
       // Reloads FW configuration - cause by ignore logic that
       // enables/disables faults based on fast analog devices
@@ -760,8 +762,8 @@ void *Engine::engineThread(void *arg) {
 }
 
 void Engine::clearCheckTime() {
-  _clearCheckFaultTime = true;
-  _clearEvaluationCycleTime = true;
+  // _clearCheckFaultTime = true;
+  // _clearEvaluationCycleTime = true;
 }
 
 long Engine::getMaxCheckTime() {
@@ -775,9 +777,11 @@ long Engine::getAvgCheckTime() {
 }
 
 long Engine::getMaxEvalTime() {
-  return _evaluationCycleTime.getMax();
+  // return _evaluationCycleTime.getMax();
+  return static_cast<int>( _evaluationCycleTime.getMaxPeriod() * 1e6 );
 }
 
 long Engine::getAvgEvalTime() {
-  return _evaluationCycleTime.getAverage();
+  // return _evaluationCycleTime.getAverage();
+  return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
 }
