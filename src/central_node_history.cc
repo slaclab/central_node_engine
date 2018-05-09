@@ -52,6 +52,9 @@ void History::startSenderThread(std::string serverName, int port) {
     }
     else {
       std::cout << "INFO: MPS History sender ready" << std::endl;
+
+      if(pthread_setname_np(_senderThread, "SenderThread"))
+          perror("pthread_setname_np failed");
     }
   }
 

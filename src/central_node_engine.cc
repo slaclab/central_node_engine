@@ -635,6 +635,9 @@ void Engine::startUpdateThread() {
   if (pthread_create(&_engineThread, 0, Engine::engineThread, 0)) {
     throw(EngineException("ERROR: Failed to start update thread"));
   }
+
+  if(pthread_setname_np(_engineThread, "EngineThread"))
+        perror("pthread_setname_np failed");
 }
 
 uint32_t Engine::getUpdateRate() {

@@ -513,6 +513,10 @@ void BypassManager::startBypassThread() {
     throw("ERROR: Failed to start bypass thread");
     return;
   }
+
+  if(pthread_setname_np(_bypassThread, "BypassThread"))
+        perror("pthread_setname_np failed");
+
 }
 
 void *BypassManager::bypassThread(void *arg) {
