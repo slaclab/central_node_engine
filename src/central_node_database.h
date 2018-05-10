@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <time_util.h>
 #include "timer.h"
+#include "buffer.h"
 
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
@@ -54,6 +55,8 @@ class MpsDb {
    */
   uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 			   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
+
+  DataBuffer* fastUpdateBuffer2;
 
   uint64_t _fastUpdateTimeStamp;
   uint64_t _diff;
@@ -116,7 +119,7 @@ class MpsDb {
   // This is initialized by the configure() method, after loading the YAML file
   //  DbFaultStateMapPtr faultStates;
 
-  MpsDb(uint32_t inputUpdateTimeout=3500);
+  MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout=3500);
   ~MpsDb();
   int load(std::string yamlFile);
   void configure();

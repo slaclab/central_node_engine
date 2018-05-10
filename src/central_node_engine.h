@@ -13,6 +13,7 @@
 #include <central_node_bypass_manager.h>
 #include <time_util.h>
 #include "timer.h"
+#include "buffer.h"
 
 using boost::shared_ptr;
 
@@ -50,6 +51,8 @@ class Engine {
 
   uint32_t _debugCounter;
   static uint32_t _inputUpdateFailCounter;
+
+  DataBuffer fwUpdateBuffer;
 
  public:
   int loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout=3500);

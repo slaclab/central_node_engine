@@ -27,7 +27,9 @@ Engine::Engine() :
   _debugCounter(0),
   // _checkFaultTime(5, "Evaluation only time"),
   _checkFaultTime( "Evaluation only time", 360 ),
-  _evaluationCycleTime( "Evaluation Cycle time", 360 ) {
+  _evaluationCycleTime( "Evaluation Cycle time", 360 ),
+  fwUpdateBuffer(100*1024)  // 100k buffer for firmware update data
+  {
   // _clearCheckFaultTime(false),
   // _evaluationCycleTime(5, "Evaluation Cycle time"),
   // _clearEvaluationCycleTime(false) {
@@ -136,7 +138,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout) {
 
   _evaluate = false;
 
-  MpsDb *db = new MpsDb(inputUpdateTimeout);
+  MpsDb *db = new MpsDb(&fwUpdateBuffer, inputUpdateTimeout);
   shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(db);
 
   mpsDb->lock(); // the database mutex is static - is the same for all instances

@@ -29,7 +29,7 @@ extern TimeAverage AppCardAnalogUpdateTime;
 pthread_mutex_t MpsDb::_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool MpsDb::_initialized = false;
 
-MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
+MpsDb::MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout) :
   _fastUpdateTimeStamp(0),
   _diff(0),
   _maxDiff(0),
@@ -42,7 +42,9 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _inputDelayTime("Input delay time (wait for FW)", 360),
   _clearInputDelayTime(false),
   _updateCounter(0),
-  _updateTimeoutCounter(0) {
+  _updateTimeoutCounter(0)
+  fastUpdateBuffer2(buffer)
+  {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
