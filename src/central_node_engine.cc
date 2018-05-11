@@ -54,6 +54,11 @@ Engine::Engine() :
     perror("mlockall failed");
     std::cerr << "WARN: Engine::Engine() mlockall failed." << std::endl;
   }
+
+  // Start thread to read the FW update data
+  fwUpdateThread = boost::thread(&Engine::fwUpdateReader, this);
+  if( pthread_setname_np( fwUpdateThread.native_handle(), "fwUpdateReader" ) )
+    perror("pthread_setname_np failed");
 }
 
 Engine::~Engine() {
@@ -63,6 +68,10 @@ Engine::~Engine() {
   // Stop the MPS before quitting
   Firmware::getInstance().setSoftwareEnable(false);
   Firmware::getInstance().setEnable(false);
+
+  // Stop the thread that reads the Fw update data
+  fwUpdateThread.interrupt();
+  fwUpdateThread.join();
 
   _checkFaultTime.show();
 }
@@ -789,4 +798,35 @@ long Engine::getMaxEvalTime() {
 long Engine::getAvgEvalTime() {
   // return _evaluationCycleTime.getAverage();
   return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
+}
+
+void Engine::fwUpdateReader()
+{
+    std::cout << "FW Update Data reader started" << std::endl;
+
+    try
+    {
+        for(;;)
+        {
+            {
+                std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
+                while(!fwUpdateBuffer.isReady())
+                {
+                    fwUpdateBuffer.getCondVar()->wait(lock);
+                }
+            }
+            std::cout << "Writting data into buffer..." << std::endl;
+            std::vector<uint8_t>* p = fwUpdateBuffer.getWritePtr();
+            // p->at(0) = ++val;
+            // p->at(1) = ++val;
+            // p->at(2) = ++val;
+            // boost::this_thread::sleep_for( boost::chrono::seconds(1) );
+            fwUpdateBuffer.doneWriting();
+        }
+    }
+    catch(boost::thread_interrupted& e)
+    {
+        std::cout << "FW Update Data reader interrupted" << std::endl;
+    }
+
 }

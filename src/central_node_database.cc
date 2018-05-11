@@ -42,7 +42,7 @@ MpsDb::MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout) :
   _inputDelayTime("Input delay time (wait for FW)", 360),
   _clearInputDelayTime(false),
   _updateCounter(0),
-  _updateTimeoutCounter(0)
+  _updateTimeoutCounter(0),
   fastUpdateBuffer2(buffer)
   {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
