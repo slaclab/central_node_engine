@@ -125,6 +125,7 @@ class DbDeviceState : public DbEntry {
   std::string name;
   
   DbDeviceState();
+  int getIntegrator();
   friend std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState);
 };
 
@@ -288,6 +289,9 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // Faults from this devices are bypassed when ignored==true
   bool ignored; 
 
+  // Faults from the integrators from this device are bypassed when ignored[integrator]==true
+  bool ignoredIntegrator[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
+
   DbDeviceTypePtr deviceType;
 
   // Number of analog channels in the same card - this information 
@@ -301,9 +305,6 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // Array of pointer to bypasses, one for each threshold (max of 32 thresholds).
   // The bypasses are managed by the BypassManager class, when a bypass is added or
   // expires the bypassMask for the AnalogDevice is updated.
-  //
-  // TODO: bypass is possible in HW only per integrator, not by threshold!
-  //  InputBypassPtr bypass[ANALOG_DEVICE_NUM_THRESHOLDS]; 
   InputBypassPtr bypass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
 
   // Bypass mask composed from all active threshold bypasses. This value gets updated
