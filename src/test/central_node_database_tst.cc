@@ -9,6 +9,7 @@
 #include <central_node_database.h>
 #include <boost/shared_ptr.hpp>
 #include <log.h>
+#include "buffer.h"
 
 using boost::shared_ptr;
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -54,7 +55,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb());
+  DataBuffer fwBuffer(100*1024);
+  shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb(&fwBuffer));
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {

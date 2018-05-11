@@ -53,7 +53,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb());
+  DataBuffer fwBuffer(100*1024);
+  shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb(&fwBuffer));
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
