@@ -10,8 +10,7 @@ readPtr( &buf1 ),
 writeDone( false ),
 readDone( true ),
 writeCnt( 0 ),
-readCnt( 0 ),
-ready( false )
+readCnt( 0 )
 {
     printf( "Circular buffer was created (size = %zu)\n", mySize );
 }
@@ -39,12 +38,7 @@ void DataBuffer::tryToRotate()
         std::swap(writePtr, readPtr);
         writeDone = false;
         readDone  = false;
-        ready     = true;
         condVar.notify_all();
-    }
-    else
-    {
-        ready = false;
     }
 }
 

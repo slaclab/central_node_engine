@@ -4,6 +4,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdio.h>
+#include <iostream>
 #include <vector>
 #include <mutex>
 #include <condition_variable>
@@ -14,14 +15,15 @@ public:
     DataBuffer( const size_t& size );
     ~DataBuffer();
 
-    std::vector<uint8_t>* getWritePtr()   const { return writePtr;    };
-    std::vector<uint8_t>* getReadPtr()    const { return readPtr;     };
-    size_t   size()                       const { return mySize;      };
-    void     doneWriting();
-    void     doneReading();
-    bool                     isReady()    const { return ready;       };
-    std::condition_variable* getCondVar()       { return &condVar;    };
-    std::mutex*              getMutex()         { return &mut;        };
+    std::vector<uint8_t>*    getWritePtr()  const { return writePtr;    };
+    std::vector<uint8_t>*    getReadPtr()   const { return readPtr;     };
+    size_t                   size()         const { return mySize;      };
+    void                     doneWriting();
+    void                     doneReading();ß
+    bool                     isReadReady()  const { return !readDone;   };
+    bool                     isWriteReady() const { return !writeDone;  };
+    std::condition_variable* getCondVar()         { return &condVar;    };
+    std::mutex*              getMutex()           { return &mut;        };
 
 private:
     size_t                  mySize;
@@ -35,7 +37,6 @@ private:
     int                     readCnt;
     std::mutex              mut;
     std::condition_variable condVar;
-    bool                    ready;
 
     void                  tryToRotate();
 };
