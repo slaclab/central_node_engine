@@ -5,7 +5,6 @@
 #include <sstream>
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
-#include <boost/thread/thread.hpp>
 
 #include <central_node_exception.h>
 #include <central_node_yaml.h>
@@ -54,11 +53,6 @@ private:
 
     uint32_t _debugCounter;
     static uint32_t _inputUpdateFailCounter;
-
-    DataBuffer     fwUpdateBuffer;
-    boost::thread  fwUpdateThread;
-
-    void fwUpdateReader();
 
 public:
     int loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout=3500);

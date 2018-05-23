@@ -29,7 +29,8 @@ extern TimeAverage AppCardAnalogUpdateTime;
 pthread_mutex_t MpsDb::_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool MpsDb::_initialized = false;
 
-MpsDb::MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout) :
+MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
+  fwUpdateBuffer(100*1024),
   _fastUpdateTimeStamp(0),
   _diff(0),
   _maxDiff(0),
@@ -42,8 +43,7 @@ MpsDb::MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout) :
   _inputDelayTime("Input delay time (wait for FW)", 360),
   _clearInputDelayTime(false),
   _updateCounter(0),
-  _updateTimeoutCounter(0),
-  fastUpdateBuffer2(buffer)
+  _updateTimeoutCounter(0)
   {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
@@ -55,12 +55,23 @@ MpsDb::MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout) :
       throw(DbException("ERROR: MpsDb::MpsDb() failed to initialize mutex."));
     }
     _initialized = true;
+
+    // Start thread to read the FW update data
+    fwUpdateThread = boost::thread(&MpsDb::fwUpdateReader, this);
+    if( pthread_setname_np( fwUpdateThread.native_handle(), "fwUpdateReader" ) )
+        perror("pthread_setname_np failed");
+
   }
 }
 
 
 
 MpsDb::~MpsDb() {
+
+  // Stop the thread that reads the Fw update data
+  fwUpdateThread.interrupt();
+  fwUpdateThread.join();
+
   _inputUpdateTime.show();
   std::cout << "Update counter: " << _updateCounter << std::endl;
 }
@@ -88,12 +99,21 @@ void MpsDb::unlatchAll() {
  * and updates the status of all digital/analog inputs.
  */
 bool MpsDb::updateInputs() {
-  if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
-					       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
-					       NUM_APPLICATIONS *
-					       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
-					       _inputUpdateTimeout)) { // 3.5 msec
-    uint64_t *time = reinterpret_cast<uint64_t *>(Engine::getInstance().getCurrentDb()->getFastUpdateBuffer() + 8);
+  // if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
+		// 			       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
+		// 			       NUM_APPLICATIONS *
+		// 			       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
+		// 			       _inputUpdateTimeout)) { // 3.5 msec
+    // uint64_t *time = reinterpret_cast<uint64_t *>(Engine::getInstance().getCurrentDb()->getFastUpdateBuffer() + 8);
+    {
+        std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
+        while(!fwUpdateBuffer.isReadReady())
+        {
+            fwUpdateBuffer.getCondVar()->wait(lock);
+        }
+    }
+
+    uint64_t *time = reinterpret_cast<uint64_t *>(fwUpdateBuffer.getReadPtr() + 8);
     uint64_t diff = time[0] - _fastUpdateTimeStamp;
     _fastUpdateTimeStamp = time[0];
 
@@ -131,18 +151,21 @@ bool MpsDb::updateInputs() {
       (*applicationCardIt).second->updateInputs();
     }
 
+
+    fwUpdateBuffer.doneReading();
+
     _updateCounter++;
     // _inputUpdateTime.end();
     _inputUpdateTime.tick();
     //    Firmware::getInstance().getAppTimeoutStatus();
-  }
-  else {
-    _updateTimeoutCounter++;
-    // _inputDelayTime.end();
-    _inputDelayTime.tick();
-    //    std::cerr << "ERROR: updateInputs failed" << std::endl;
-    return false;
-  }
+  // }
+  // else {
+  //   _updateTimeoutCounter++;
+  //   // _inputDelayTime.end();
+  //   _inputDelayTime.tick();
+  //   //    std::cerr << "ERROR: updateInputs failed" << std::endl;
+  //   return false;
+  // }
 
   return true;
 }
@@ -725,12 +748,12 @@ void MpsDb::configureApplicationCards() {
     aPtr->applicationConfigBuffer = reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
 
     // Update buffer
-    updateBuffer = fastUpdateBuffer +
+    updateBuffer = fwUpdateBuffer.getReadPtr()->data() +
       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + // Skip header (timestamp + zeroes)
       aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES; // Jump to correct area according to the globalId
 
     // For debugging purposes only
-    aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(fastUpdateBuffer);
+    aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(fwUpdateBuffer.getReadPtr());
 
     // New mapping
     uint8_t *statusBits = updateBuffer;
@@ -1017,8 +1040,8 @@ void MpsDb::showFastUpdateBuffer(uint32_t begin, uint32_t size) {
 
     std::cout << " ";
 
-    char c1 = fastUpdateBuffer[address] & 0x0F;
-    char c2 = (fastUpdateBuffer[address] & 0xF0) >> 4;
+    char c1 = fwUpdateBuffer.getReadPtr()->at(address) & 0x0F;
+    char c2 = (fwUpdateBuffer.getReadPtr()->at(address) & 0xF0) >> 4;
     if (c1 <= 9) c1 += 0x30; else c1 = 0x61 + (c1 - 10);
     if (c2 <= 9) c2 += 0x30; else c2 = 0x61 + (c2 - 10);
     std::cout << c1 << c2;
@@ -1211,4 +1234,50 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
     (os, mpsDb->ignoreConditions, "IgnoreConditions");
 
   return os;
+}
+
+void MpsDb::fwUpdateReader()
+{
+    std::cout << "FW Update Data reader started" << std::endl;
+
+    try
+    {
+        for(;;)
+        {
+            // std::cout << "  >> FwUpdateReader: waiting for buffer ready..." << std::endl;
+            {
+                std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
+                while(!fwUpdateBuffer.isWriteReady())
+                {
+                    fwUpdateBuffer.getCondVar()->wait(lock);
+                }
+            }
+
+            // std::cout << "  >> FwUpdateReader: Buffer is ready. Reading..." << std::endl;
+
+            while ( ! (Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
+                           APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
+                           NUM_APPLICATIONS *
+                           APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
+                           _inputUpdateTimeout)))
+            {
+                ++_updateTimeoutCounter;
+                // std::cout << "  >> FwUpdateReader: Timeout..." << std::endl;
+            }
+            // std::cout << "  >> FwUpdateReader: Data received..." << std::endl;
+
+            // std::cout << "Writting data into buffer..." << std::endl;
+            // std::vector<uint8_t>* p = fwUpdateBuffer.getWritePtr();
+            // p->at(0) = ++val;
+            // p->at(1) = ++val;
+            // p->at(2) = ++val;
+            // boost::this_thread::sleep_for( boost::chrono::seconds(1) );
+            fwUpdateBuffer.doneWriting();
+        }
+    }
+    catch(boost::thread_interrupted& e)
+    {
+        std::cout << "FW Update Data reader interrupted" << std::endl;
+    }
+
 }

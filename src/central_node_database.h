@@ -16,6 +16,7 @@
 
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/thread.hpp>
 
 using boost::shared_ptr;
 using boost::weak_ptr;
@@ -56,7 +57,9 @@ class MpsDb {
   uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 			   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
-  DataBuffer* fastUpdateBuffer2;
+  DataBuffer     fwUpdateBuffer;
+  boost::thread  fwUpdateThread;
+  void fwUpdateReader();
 
   uint64_t _fastUpdateTimeStamp;
   uint64_t _diff;
@@ -119,7 +122,8 @@ class MpsDb {
   // This is initialized by the configure() method, after loading the YAML file
   //  DbFaultStateMapPtr faultStates;
 
-  MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout=3500);
+  // MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout=3500);
+  MpsDb(uint32_t inputUpdateTimeout=3500);
   ~MpsDb();
   int load(std::string yamlFile);
   void configure();
