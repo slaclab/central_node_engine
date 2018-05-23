@@ -5,6 +5,7 @@
 #include <exception>
 #include <iostream>
 #include <bitset>
+#include <cstring>
 #include <central_node_database_defs.h>
 #include <central_node_exception.h>
 #include <central_node_bypass.h>
