@@ -54,8 +54,8 @@ class MpsDb {
    * The bits from 0 to 191 are the 'was low' status, and bits 192 to 383
    * are the 'was high' status.
    */
-  uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
-			   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
+  // uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
+		// 	   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
   DataBuffer     fwUpdateBuffer;
   boost::thread  fwUpdateThread;
@@ -149,9 +149,7 @@ class MpsDb {
   long getMaxInputDelayTime();
   long getAvgInputDelayTime();
 
-  uint8_t *getFastUpdateBuffer() {
-    return &fastUpdateBuffer[0];
-  }
+  uint64_t getFastUpdateTimeStamp() const { return _fastUpdateTimeStamp; };
 
   //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
 

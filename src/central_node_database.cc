@@ -113,9 +113,17 @@ bool MpsDb::updateInputs() {
         }
     }
 
-    uint64_t *time = reinterpret_cast<uint64_t *>(fwUpdateBuffer.getReadPtr() + 8);
-    uint64_t diff = time[0] - _fastUpdateTimeStamp;
-    _fastUpdateTimeStamp = time[0];
+    // uint64_t *time = reinterpret_cast<uint64_t *>(fwUpdateBuffer.getReadPtr() + 8);
+    // uint64_t diff = time[0] - _fastUpdateTimeStamp;
+    // _fastUpdateTimeStamp = time[0];
+    uint64_t t = 0;
+    for (int i = 0; i < 8; ++i)
+    {
+      t *= 256;
+      t += fwUpdateBuffer.getReadPtr()->at(15-i);
+    }
+    uint64_t diff = t - _fastUpdateTimeStamp;
+    _fastUpdateTimeStamp = t;
 
     if (diff > _maxDiff) {
       _maxDiff = diff;
