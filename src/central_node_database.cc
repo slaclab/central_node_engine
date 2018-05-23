@@ -733,7 +733,7 @@ void MpsDb::configureApplicationCards() {
   // Set the address of the firmware configuration location for each application card; and
   // the address of the firmware input update location for each application card
   uint8_t *configBuffer = 0;
-  uint8_t *updateBuffer = 0;
+  // uint8_t *updateBuffer = 0;
   DbApplicationCardPtr aPtr;
   DbApplicationCardMap::iterator applicationCardIt;
 
@@ -753,15 +753,19 @@ void MpsDb::configureApplicationCards() {
     aPtr->applicationConfigBuffer = reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
 
     // Update buffer
-    updateBuffer = fwUpdateBuffer.getReadPtr()->data() +
-      APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + // Skip header (timestamp + zeroes)
-      aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES; // Jump to correct area according to the globalId
+    // updateBuffer = fwUpdateBuffer.getReadPtr()->at(
+    //   APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + // Skip header (timestamp + zeroes)
+    //   aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES); // Jump to correct area according to the globalId
 
     // For debugging purposes only
     aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(fwUpdateBuffer.getReadPtr());
 
     // New mapping
-    uint8_t *statusBits = updateBuffer;
+    // uint8_t *statusBits = updateBuffer;
+    uint8_t* statusBits = &fwUpdateBuffer.getReadPtr()->at(
+      APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + // Skip header (timestamp + zeroes)
+      aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES); // Jump to correct area according to the globalId
+
     aPtr->wasLowBuffer = reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(statusBits);
     statusBits += (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2); // Skip 192 bits from wasLow
     aPtr->wasHighBuffer = reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(statusBits);
