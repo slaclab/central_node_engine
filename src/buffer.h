@@ -19,7 +19,7 @@ public:
     std::vector<uint8_t>*    getReadPtr()   const { return readPtr;     };
     size_t                   size()         const { return mySize;      };
     void                     doneWriting();
-    void                     doneReading();ß
+    void                     doneReading();
     bool                     isReadReady()  const { return !readDone;   };
     bool                     isWriteReady() const { return !writeDone;  };
     std::condition_variable* getCondVar()         { return &condVar;    };
