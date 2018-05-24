@@ -132,7 +132,7 @@ bool MpsDb::updateInputs() {
     _diff = diff;
 
     // _inputDelayTime.end();
-    _inputDelayTime.tick();
+    // _inputDelayTime.tick();
     if (_clearInputDelayTime) {
       // _inputDelayTime.clear();
       _clearInputDelayTime = false;
@@ -1248,7 +1248,7 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
 void MpsDb::fwUpdateReader()
 {
     std::cout << "FW Update Data reader started" << std::endl;
-
+    _inputDelayTime.start();
     try
     {
         for(;;)
@@ -1271,6 +1271,7 @@ void MpsDb::fwUpdateReader()
                            _inputUpdateTimeout)))
             {
                 ++_updateTimeoutCounter;
+                _inputDelayTime.start();
                 // std::cout << "  >> FwUpdateReader: Timeout..." << std::endl;
             }
             // std::cout << "  >> FwUpdateReader: Data received..." << std::endl;
@@ -1282,6 +1283,7 @@ void MpsDb::fwUpdateReader()
             // p->at(2) = ++val;
             // boost::this_thread::sleep_for( boost::chrono::seconds(1) );
             fwUpdateBuffer.doneWriting();
+            _inputDelayTime.tick();
         }
     }
     catch(boost::thread_interrupted& e)

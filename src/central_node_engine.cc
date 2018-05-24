@@ -886,7 +886,7 @@ void *Engine::engineThread(void *arg)
                 Engine::getInstance().reloadConfigFromIgnore();
             }
 
-            Engine::getInstance()._mpsDb->_inputDelayTime.start();
+            // Engine::getInstance()._mpsDb->_inputDelayTime.start();
         }
         else
         {
