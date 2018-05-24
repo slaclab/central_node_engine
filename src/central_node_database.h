@@ -5,6 +5,7 @@
 #include <exception>
 #include <iostream>
 #include <bitset>
+#include <vector>
 #include <cstring>
 #include <central_node_database_defs.h>
 #include <central_node_exception.h>
@@ -151,6 +152,7 @@ class MpsDb {
   long getAvgInputDelayTime();
 
   uint64_t getFastUpdateTimeStamp() const { return _fastUpdateTimeStamp; };
+  std::vector<uint8_t> getFastUpdateBuffer();
 
   //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
 

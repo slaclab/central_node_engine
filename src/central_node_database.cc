@@ -1245,6 +1245,12 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
   return os;
 }
 
+std::vector<uint8_t> MpsDb::getFastUpdateBuffer()
+{
+  std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
+  return std::vector<uint8_t>( fwUpdateBuffer.getReadPtr()->begin(), fwUpdateBuffer.getReadPtr()->end() );
+}
+
 void MpsDb::fwUpdateReader()
 {
     std::cout << "FW Update Data reader started" << std::endl;
