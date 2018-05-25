@@ -92,6 +92,8 @@ class MpsDb {
   uint32_t _updateCounter;
   uint32_t _updateTimeoutCounter;
 
+  Timer<double> mitigationTxTime;
+
  public:
   DbBeamClassPtr lowestBeamClass;
   DbCrateMapPtr crates;

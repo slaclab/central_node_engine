@@ -43,7 +43,8 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _inputDelayTime("Input delay time (wait for FW)", 360),
   _clearInputDelayTime(false),
   _updateCounter(0),
-  _updateTimeoutCounter(0)
+  _updateTimeoutCounter(0),
+  mitigationTxTime( "Mitigation Transmission time", 360 )
   {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
@@ -914,7 +915,9 @@ void MpsDb::writeFirmwareConfiguration() {
  * Send mitigation to firmware
  */
 void MpsDb::mitigate() {
+  mitigationTxTime.start();
   Firmware::getInstance().writeMitigation(&softwareMitigationBuffer[0]);
+  mitigationTxTime.tick();
 }
 
 void MpsDb::setName(std::string yamlFileName) {
@@ -1144,6 +1147,7 @@ void MpsDb::showInfo() {
 
   _inputUpdateTime.show();
   _inputDelayTime.show();
+  mitigationTxTime.show();
   AnalogDeviceUpdateTime.show();
   DeviceInputUpdateTime.show();
   AppCardDigitalUpdateTime.show();
