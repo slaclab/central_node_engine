@@ -31,7 +31,8 @@ Engine::Engine() :
   _debugCounter(0),
   // _checkFaultTime(5, "Evaluation only time"),
   _checkFaultTime( "Evaluation only time", 360 ),
-  _evaluationCycleTime( "Evaluation Cycle time", 360 )
+  _evaluationCycleTime( "Evaluation Cycle time", 360 ),
+  hb( Firmware::getInstance().getRoot() )
   {
     // _clearCheckFaultTime(false),
     // _evaluationCycleTime(5, "Evaluation Cycle time"),
@@ -680,9 +681,10 @@ void Engine::showStats()
         std::cout << ">>> Engine Stats <<<" << std::endl;
         _checkFaultTime.show();
         _evaluationCycleTime.show();
-        Firmware::getInstance()._heartbeatTime.show();
-        Firmware::getInstance()._heartbeatTime.clear();
-        Firmware::getInstance().heartbeatTxTime.show();
+        // Firmware::getInstance()._heartbeatTime.show();
+        // Firmware::getInstance()._heartbeatTime.clear();
+        // Firmware::getInstance().heartbeatTxTime.show();
+        hb.printReport();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
         std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter
@@ -960,7 +962,10 @@ void Engine::mitigationWriter()
             _rate = counter / diff;
             counter = 0;
         }
-        Firmware::getInstance().heartbeat();
+        // Firmware::getInstance().heartbeat();
+
+        // Send a heartbeat
+        hb.beat();
 
         // Reloads FW configuration - cause by ignore logic that
         // enables/disables faults based on fast analog devices

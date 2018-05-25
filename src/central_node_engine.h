@@ -14,6 +14,7 @@
 #include <time_util.h>
 #include "timer.h"
 #include "buffer.h"
+#include "heartbeat.h"
 
 using boost::shared_ptr;
 
@@ -88,6 +89,9 @@ public:
     MpsDbPtr getCurrentDb();
     BypassManagerPtr getBypassManager();
 
+    // Watchdog error counter
+    int getWdErrorCnt() const { return hb.getWdErrorCnt(); };
+
 private:
     void mitigate();
 
@@ -119,6 +123,9 @@ private:
     static std::condition_variable mitCondVar;
     boost::thread                  mitigationThread;
     void                           mitigationWriter();
+
+    // Heartbeat control class
+    HeartBeat hb;
 
 public:
     static Engine &getInstance()
