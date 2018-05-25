@@ -63,7 +63,8 @@ void HeartBeat::beat()
             ++wdErrorCnt;
 
         // Set heartbeat command
-        swHeartBeat->execute();
+        // swHeartBeat->execute();
+        swHeartBeat2->setVal( static_cast<uint64_t>( 0 ) );
 
         // Tick period timer;
         txPeriod.tick();
@@ -73,4 +74,7 @@ void HeartBeat::beat()
 
         // Tick the duration timer
         txDuration.tick();
+
+        swHeartBeat2->setVal( static_cast<uint64_t>( 1 ) );
+
 }
