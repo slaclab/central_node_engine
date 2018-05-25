@@ -6,6 +6,7 @@
 #include <bitset>
 #include <boost/shared_ptr.hpp>
 #include <time_util.h>
+#include "timer.h"
 
 #include <cpsw_api_user.h>
 
@@ -137,6 +138,7 @@ class Firmware {
 
   bool _firstHeartbeat;
   TimeAverage _heartbeatTime;
+  Timer<double> heartbeatTxTime;
 
   static uint32_t _swLossErrorCounter;
   static uint32_t _swBusyCounter;

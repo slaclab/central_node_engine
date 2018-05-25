@@ -21,7 +21,8 @@ bool     Firmware::_skipHeartbeat = false;
 #ifdef FW_ENABLED
 Firmware::Firmware() :
   _firstHeartbeat(true),
-  _heartbeatTime(5, "Time Between Heartbeats") {
+  _heartbeatTime(5, "Time Between Heartbeats"),
+  heartbeatTxTime( "Heartbeat transmission time", 360 ) {
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   firmwareLogger = Loggers::getLogger("FIRMWARE");
@@ -464,6 +465,7 @@ void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
 }
 
 bool Firmware::heartbeat() {
+  heartbeatTxTime.start();
   if (_skipHeartbeat) {
     if (_firstHeartbeat) {
       _firstHeartbeat = false;
@@ -503,8 +505,7 @@ bool Firmware::heartbeat() {
     std::cout << "Exception Info: " << e.getInfo() << std::endl;
     return false;
   }
-
-
+  heartbeatTxTime.tick();
   return true;
 }
 
