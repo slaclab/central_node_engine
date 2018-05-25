@@ -22,6 +22,10 @@ uint32_t        Engine::_updateCounter;
 time_t          Engine::_startTime;
 uint32_t        Engine::_inputUpdateFailCounter;
 
+bool                    Engine::mitReady = false;
+std::mutex              Engine::mitMutex;
+std::condition_variable Engine::mitCondVar;
+
 Engine::Engine() :
   _initialized(false),
   _debugCounter(0),
@@ -55,10 +59,19 @@ Engine::Engine() :
         perror("mlockall failed");
         std::cerr << "WARN: Engine::Engine() mlockall failed." << std::endl;
     }
+
+    // Start thread to write mitigation messages to FW
+    mitigationThread = boost::thread(&Engine::mitigationWriter, this);
+    if( pthread_setname_np( mitigationThread.native_handle(), "mitigationThread" ) )
+        perror("pthread_setname_np failed");
 }
 
 Engine::~Engine()
 {
+  // Stop the thread write mitigatioin messages to FW
+  mitigationThread.interrupt();
+  mitigationThread.join();
+
 #if defined(LOG_ENABLED)
     //  Firmware::getInstance().showStats();
 #endif
@@ -669,6 +682,7 @@ void Engine::showStats()
         _evaluationCycleTime.show();
         Firmware::getInstance()._heartbeatTime.show();
         Firmware::getInstance()._heartbeatTime.clear();
+        Firmware::getInstance().heartbeatTxTime.show();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
         std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter
@@ -828,12 +842,12 @@ void *Engine::engineThread(void *arg)
     Firmware::getInstance().setSoftwareEnable(true);
     Firmware::getInstance().setTimingCheckEnable(true);
 
-    time_t before = time(0);
-    time_t now;
-    _startTime = before;
+    // time_t before = time(0);
+    // time_t now;
+    _startTime = time(0);
     _updateCounter = 0;
-    uint32_t counter = 0;
-    bool reload = false;
+    // uint32_t counter = 0;
+    // bool reload = false;
 
     while(_evaluate)
     {
@@ -841,35 +855,41 @@ void *Engine::engineThread(void *arg)
 
         if (Engine::getInstance()._mpsDb)
         {
-            if (Engine::getInstance()._mpsDb->updateInputs())
+            Engine::getInstance()._mpsDb->updateInputs();
             {
-                reload = false;
-                if (Engine::getInstance().checkFaults() > 0)
-                {
-                    reload = true;
-                }
-
-                Engine::getInstance()._mpsDb->mitigate(); // Write the mitigation to FW
-                _updateCounter++;
-                counter++;
-                now = time(0);
-                if (now > before)
-                {
-                    time_t diff = now - before;
-                    before = now;
-                    _rate = counter / diff;
-                    counter = 0;
-                }
-
-                Firmware::getInstance().heartbeat();
+                std::unique_lock<std::mutex> lock(mitMutex);
+                mitReady = true;
+                mitCondVar.notify_all();
             }
-            else
-            {
-                // This counter may be increased due to FW config changes, e.g.
-                // new or expired bypass of analog fast signal.
-                _inputUpdateFailCounter++;
-                _rate = 0;
-            }
+
+            // if (Engine::getInstance()._mpsDb->updateInputs())
+            // {
+                // reload = false;
+                // if (Engine::getInstance().checkFaults() > 0)
+                // {
+                //     reload = true;
+                // }
+
+                // Engine::getInstance()._mpsDb->mitigate(); // Write the mitigation to FW
+                // _updateCounter++;
+                // counter++;
+                // now = time(0);
+                // if (now > before)
+                // {
+                //     time_t diff = now - before;
+                //     before = now;
+                //     _rate = counter / diff;
+                //     counter = 0;
+                // }
+                // Firmware::getInstance().heartbeat();
+            // }
+            // else
+            // {
+            //     // This counter may be increased due to FW config changes, e.g.
+            //     // new or expired bypass of analog fast signal.
+            //     _inputUpdateFailCounter++;
+            //     _rate = 0;
+            // }
 
             // Engine::getInstance()._evaluationCycleTime.end();
             Engine::getInstance()._evaluationCycleTime.tick();
@@ -881,10 +901,10 @@ void *Engine::engineThread(void *arg)
 
             // Reloads FW configuration - cause by ignore logic that
             // enables/disables faults based on fast analog devices
-            if (reload)
-            {
-                Engine::getInstance().reloadConfigFromIgnore();
-            }
+            // if (reload)
+            // {
+            //     Engine::getInstance().reloadConfigFromIgnore();
+            // }
 
             // Engine::getInstance()._mpsDb->_inputDelayTime.start();
         }
@@ -902,6 +922,55 @@ void *Engine::engineThread(void *arg)
 
     std::cout << "EngineThread: Exiting..." << std::endl;
     pthread_exit(0);
+}
+
+void Engine::mitigationWriter()
+{
+    time_t   before  = time(0);
+    time_t   now;
+    uint32_t counter = 0;
+    bool     reload  = false;
+
+    std::cout << "Mitigation writer started" << std::endl;
+
+    for(;;)
+    {
+        {
+            std::unique_lock<std::mutex> lock(mitMutex);
+            while(!mitReady)
+            {
+                mitCondVar.wait(lock);
+            }
+        }
+
+        reload = false;
+        if (Engine::getInstance().checkFaults() > 0)
+        {
+            reload = true;
+        }
+
+        Engine::getInstance()._mpsDb->mitigate(); // Write the mitigation to FW
+        _updateCounter++;
+        counter++;
+        now = time(0);
+        if (now > before)
+        {
+            time_t diff = now - before;
+            before = now;
+            _rate = counter / diff;
+            counter = 0;
+        }
+        Firmware::getInstance().heartbeat();
+
+        // Reloads FW configuration - cause by ignore logic that
+        // enables/disables faults based on fast analog devices
+        if (reload)
+        {
+            Engine::getInstance().reloadConfigFromIgnore();
+        }
+
+        mitReady = false;
+    }
 }
 
 void Engine::clearCheckTime()

@@ -113,6 +113,13 @@ private:
     Timer<double>  _evaluationCycleTime;
     // bool _clearEvaluationCycleTime;
 
+    // Mitigation control
+    static bool                    mitReady;
+    static std::mutex              mitMutex;
+    static std::condition_variable mitCondVar;
+    boost::thread                  mitigationThread;
+    void                           mitigationWriter();
+
 public:
     static Engine &getInstance()
     {
