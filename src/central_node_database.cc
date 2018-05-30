@@ -31,6 +31,7 @@ bool MpsDb::_initialized = false;
 
 MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   fwUpdateBuffer(100*1024),
+  inputsUpdated(false),
   _fastUpdateTimeStamp(0),
   _diff(0),
   _maxDiff(0),
@@ -57,11 +58,15 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
     }
     _initialized = true;
 
-    // Start thread to read the FW update data
-    fwUpdateThread = boost::thread(&MpsDb::fwUpdateReader, this);
-    if( pthread_setname_np( fwUpdateThread.native_handle(), "fwUpdateReader" ) )
-        perror("pthread_setname_np failed");
+    // Start the thread to update the inputs
+    updateInputThread = boost::thread( &MpsDb::updateInputs, this );
+    if ( pthread_setname_np( updateInputThread.native_handle(), "InputUpdates" ) )
+      perror( "pthread_setname_np failed for updateInputThread" );
 
+    // Start thread to read the FW update data
+    fwUpdateThread = boost::thread( &MpsDb::fwUpdateReader, this );
+    if ( pthread_setname_np( fwUpdateThread.native_handle(), "FwReader" ) )
+        perror( "pthread_setname_np failed for fwUpdateThread" );
   }
 }
 
@@ -72,6 +77,10 @@ MpsDb::~MpsDb() {
   // Stop the thread that reads the Fw update data
   fwUpdateThread.interrupt();
   fwUpdateThread.join();
+
+  // Stop the update input thread
+  updateInputThread.interrupt();
+  updateInputThread.join();
 
   _inputUpdateTime.show();
   std::cout << "Update counter: " << _updateCounter << std::endl;
@@ -99,81 +108,98 @@ void MpsDb::unlatchAll() {
  * This method reads input states from the central node firmware
  * and updates the status of all digital/analog inputs.
  */
-bool MpsDb::updateInputs() {
+void MpsDb::updateInputs() {
   // if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
 		// 			       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 		// 			       NUM_APPLICATIONS *
 		// 			       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
 		// 			       _inputUpdateTimeout)) { // 3.5 msec
     // uint64_t *time = reinterpret_cast<uint64_t *>(Engine::getInstance().getCurrentDb()->getFastUpdateBuffer() + 8);
+
+  std::cout << "Update input thread started" << std::endl;
+
+  try
+  {
+    for(;;)
     {
-        std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
-        while(!fwUpdateBuffer.isReadReady())
-        {
-            fwUpdateBuffer.getCondVar()->wait(lock);
-        }
+      {
+          std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
+          while(!fwUpdateBuffer.isReadReady())
+          {
+              fwUpdateBuffer.getCondVar()->wait(lock);
+          }
+      }
+
+      // uint64_t *time = reinterpret_cast<uint64_t *>(fwUpdateBuffer.getReadPtr() + 8);
+      // uint64_t diff = time[0] - _fastUpdateTimeStamp;
+      // _fastUpdateTimeStamp = time[0];
+
+      uint64_t t;
+      memcpy(&t, &fwUpdateBuffer.getReadPtr()->at(8), sizeof(t));
+      uint64_t diff = t - _fastUpdateTimeStamp;
+      _fastUpdateTimeStamp = t;
+
+      if (diff > _maxDiff) {
+        _maxDiff = diff;
+      }
+
+      if (diff > 12000000) {
+        _diffCount++;
+      }
+      _diff = diff;
+
+      // _inputDelayTime.end();
+      // _inputDelayTime.tick();
+      if (_clearInputDelayTime) {
+        // _inputDelayTime.clear();
+        _clearInputDelayTime = false;
+      }
+      Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
+      if (_clearUpdateTime) {
+        // _inputUpdateTime.clear();
+        DeviceInputUpdateTime.clear();
+        AnalogDeviceUpdateTime.clear();
+        AppCardDigitalUpdateTime.clear();
+        AppCardAnalogUpdateTime.clear();
+        _clearUpdateTime = false;
+      }
+
+      _inputUpdateTime.start();
+
+      DbApplicationCardMap::iterator applicationCardIt;
+      for (applicationCardIt = applicationCards->begin();
+  	 applicationCardIt != applicationCards->end();
+  	 ++applicationCardIt) {
+        (*applicationCardIt).second->updateInputs();
+      }
+
+
+      fwUpdateBuffer.doneReading();
+
+      _updateCounter++;
+      // _inputUpdateTime.end();
+      _inputUpdateTime.tick();
+      //    Firmware::getInstance().getAppTimeoutStatus();
+    // }
+    // else {
+    //   _updateTimeoutCounter++;
+    //   // _inputDelayTime.end();
+    //   _inputDelayTime.tick();
+    //   //    std::cerr << "ERROR: updateInputs failed" << std::endl;
+    //   return false;
+    // }
+
+      {
+        std::lock_guard<std::mutex> lock(inputsUpdatedMutex);
+        inputsUpdated = true;
+        inputsUpdatedCondVar.notify_all();
+      }
     }
-
-    // uint64_t *time = reinterpret_cast<uint64_t *>(fwUpdateBuffer.getReadPtr() + 8);
-    // uint64_t diff = time[0] - _fastUpdateTimeStamp;
-    // _fastUpdateTimeStamp = time[0];
-
-    uint64_t t;
-    memcpy(&t, &fwUpdateBuffer.getReadPtr()->at(8), sizeof(t));
-    uint64_t diff = t - _fastUpdateTimeStamp;
-    _fastUpdateTimeStamp = t;
-
-    if (diff > _maxDiff) {
-      _maxDiff = diff;
-    }
-
-    if (diff > 12000000) {
-      _diffCount++;
-    }
-    _diff = diff;
-
-    // _inputDelayTime.end();
-    // _inputDelayTime.tick();
-    if (_clearInputDelayTime) {
-      // _inputDelayTime.clear();
-      _clearInputDelayTime = false;
-    }
-    Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
-    if (_clearUpdateTime) {
-      // _inputUpdateTime.clear();
-      DeviceInputUpdateTime.clear();
-      AnalogDeviceUpdateTime.clear();
-      AppCardDigitalUpdateTime.clear();
-      AppCardAnalogUpdateTime.clear();
-      _clearUpdateTime = false;
-    }
-
-    _inputUpdateTime.start();
-
-    DbApplicationCardMap::iterator applicationCardIt;
-    for (applicationCardIt = applicationCards->begin();
-	 applicationCardIt != applicationCards->end();
-	 ++applicationCardIt) {
-      (*applicationCardIt).second->updateInputs();
-    }
-
-
-    fwUpdateBuffer.doneReading();
-
-    _updateCounter++;
-    // _inputUpdateTime.end();
-    _inputUpdateTime.tick();
-    //    Firmware::getInstance().getAppTimeoutStatus();
-  // }
-  // else {
-  //   _updateTimeoutCounter++;
-  //   // _inputDelayTime.end();
-  //   _inputDelayTime.tick();
-  //   //    std::cerr << "ERROR: updateInputs failed" << std::endl;
-  //   return false;
-  // }
-
-  return true;
+  }
+  catch(boost::thread_interrupted& e)
+  {
+    std::cout << "FW Update Data reader interrupted" << std::endl;
+  }
 }
 
 void MpsDb::configureAllowedClasses() {
@@ -1259,6 +1285,7 @@ void MpsDb::fwUpdateReader()
 {
     std::cout << "FW Update Data reader started" << std::endl;
     _inputDelayTime.start();
+
     try
     {
         for(;;)

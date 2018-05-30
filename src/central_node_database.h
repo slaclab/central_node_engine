@@ -60,8 +60,16 @@ class MpsDb {
 		// 	   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
   DataBuffer     fwUpdateBuffer;
-  boost::thread  fwUpdateThread;
+
+  boost::thread fwUpdateThread;
+  boost::thread updateInputThread;
+
   void fwUpdateReader();
+  void updateInputs();
+
+  bool                    inputsUpdated;
+  std::mutex              inputsUpdatedMutex;
+  std::condition_variable inputsUpdatedCondVar;
 
   uint64_t _fastUpdateTimeStamp;
   uint64_t _diff;
@@ -142,7 +150,6 @@ class MpsDb {
   void showInfo();
 
   void writeFirmwareConfiguration();
-  bool updateInputs();
   void unlatchAll();
   void clearMitigationBuffer();
   void mitigate();
@@ -157,6 +164,11 @@ class MpsDb {
   std::vector<uint8_t> getFastUpdateBuffer();
 
   //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
+
+  bool                     isInputReady()          const { return inputsUpdated;         };
+  std::mutex*              getInputUpdateMutex()         { return &inputsUpdatedMutex;   };
+  std::condition_variable* getInputUpdateCondVar()       { return &inputsUpdatedCondVar; };
+  void                     inputProcessed()              { inputsUpdated = false;        };
 
   template<class MapPtrType, class IteratorType>
     void printMap(std::ostream &os, MapPtrType map,
