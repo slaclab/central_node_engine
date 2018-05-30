@@ -59,7 +59,7 @@ class MpsDb {
   // uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 		// 	   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
-  DataBuffer     fwUpdateBuffer;
+  DataBuffer<uint8_t>     fwUpdateBuffer;
 
   boost::thread fwUpdateThread;
   boost::thread updateInputThread;

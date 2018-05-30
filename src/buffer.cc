@@ -1,6 +1,7 @@
 #include "buffer.h"
 
-DataBuffer::DataBuffer( const size_t& size )
+template <typename T>
+DataBuffer<T>::DataBuffer( const size_t& size )
 :
 mySize( size ),
 buf0( size ),
@@ -15,7 +16,8 @@ readCnt( 0 )
     printf( "Circular buffer was created (size = %zu)\n", mySize );
 }
 
-void DataBuffer::doneWriting()
+template <typename T>
+void DataBuffer<T>::doneWriting()
 {
     std::lock_guard<std::mutex> lock(mut);
     ++writeCnt;
@@ -23,7 +25,8 @@ void DataBuffer::doneWriting()
     tryToRotate();
 }
 
-void DataBuffer::doneReading()
+template <typename T>
+void DataBuffer<T>::doneReading()
 {
     std::lock_guard<std::mutex> lock(mut);
     ++readCnt;
@@ -31,7 +34,8 @@ void DataBuffer::doneReading()
     tryToRotate();
 }
 
-void DataBuffer::tryToRotate()
+template <typename T>
+void DataBuffer<T>::tryToRotate()
 {
     if ( writeDone and readDone )
     {
@@ -42,7 +46,8 @@ void DataBuffer::tryToRotate()
     }
 }
 
-DataBuffer::~DataBuffer()
+template <typename T>
+DataBuffer<T>::~DataBuffer()
 {
     printf( "\n" );
     printf( "DataBuffer report:\n" );
@@ -54,3 +59,5 @@ DataBuffer::~DataBuffer()
     printf( "==========================================\n" );
     printf( "\n" );
 }
+
+template class DataBuffer<uint8_t>;

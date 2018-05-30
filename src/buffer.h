@@ -9,14 +9,15 @@
 #include <mutex>
 #include <condition_variable>
 
+template <typename T>
 class DataBuffer
 {
 public:
     DataBuffer( const size_t& size );
     ~DataBuffer();
 
-    std::vector<uint8_t>*    getWritePtr()  const { return writePtr;    };
-    std::vector<uint8_t>*    getReadPtr()   const { return readPtr;     };
+    std::vector<T>*          getWritePtr()  const { return writePtr;    };
+    std::vector<T>*          getReadPtr()   const { return readPtr;     };
     size_t                   size()         const { return mySize;      };
     void                     doneWriting();
     void                     doneReading();
@@ -27,10 +28,10 @@ public:
 
 private:
     size_t                  mySize;
-    std::vector<uint8_t>    buf0;
-    std::vector<uint8_t>    buf1;
-    std::vector<uint8_t>*   writePtr;
-    std::vector<uint8_t>*   readPtr;
+    std::vector<T>          buf0;
+    std::vector<T>          buf1;
+    std::vector<T>*         writePtr;
+    std::vector<T>*         readPtr;
     bool                    writeDone;
     bool                    readDone;
     int                     writeCnt;
