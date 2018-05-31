@@ -36,6 +36,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _diff(0),
   _maxDiff(0),
   _diffCount(0),
+  softwareMitigationBuffer(NUM_DESTINATIONS / 8),
   _inputUpdateTimeout(inputUpdateTimeout),
   // _inputUpdateTime(5, "Input update time"),
   _inputUpdateTime("Input update time", 360),
@@ -67,6 +68,11 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
     fwUpdateThread = boost::thread( &MpsDb::fwUpdateReader, this );
     if ( pthread_setname_np( fwUpdateThread.native_handle(), "FwReader" ) )
         perror( "pthread_setname_np failed for fwUpdateThread" );
+
+    // Start thread to write mitigation messages to FW
+    mitigationThread = boost::thread( &MpsDb::mitigationWriter, this );
+    if( pthread_setname_np( mitigationThread.native_handle(), "MitWriter" ) )
+        perror( "pthread_setname_np failed for mitigationThread" );
   }
 }
 
@@ -81,6 +87,10 @@ MpsDb::~MpsDb() {
   // Stop the update input thread
   updateInputThread.interrupt();
   updateInputThread.join();
+
+  // Stop the thread write mitigatioin messages to FW
+  mitigationThread.interrupt();
+  mitigationThread.join();
 
   _inputUpdateTime.show();
   std::cout << "Update counter: " << _updateCounter << std::endl;
@@ -864,7 +874,8 @@ void MpsDb::configureApplicationCards() {
 void MpsDb::configureBeamDestinations() {
   for (DbBeamDestinationMap::iterator it = beamDestinations->begin();
        it != beamDestinations->end(); ++it) {
-    (*it).second->softwareMitigationBuffer = &softwareMitigationBuffer[0];
+    // (*it).second->softwareMitigationBuffer = &softwareMitigationBuffer[0];
+    (*it).second->softwareMitigationBuffer = softwareMitigationBuffer.getReadPtr()->data();
     (*it).second->previousAllowedBeamClass = lowestBeamClass;
     (*it).second->allowedBeamClass = lowestBeamClass;
   }
@@ -872,7 +883,8 @@ void MpsDb::configureBeamDestinations() {
 
 void MpsDb::clearMitigationBuffer() {
   for (uint32_t i = 0; i < NUM_DESTINATIONS / 8; ++i) {
-    softwareMitigationBuffer[i] = 0;
+    // softwareMitigationBuffer[i] = 0;
+    softwareMitigationBuffer.getWritePtr()->at(i) = 0;
   }
 }
 
@@ -935,15 +947,6 @@ void MpsDb::writeFirmwareConfiguration() {
 
   // Firmware command to actually switch to the new configuration
   Firmware::getInstance().switchConfig();
-}
-
-/**
- * Send mitigation to firmware
- */
-void MpsDb::mitigate() {
-  mitigationTxTime.start();
-  Firmware::getInstance().writeMitigation(&softwareMitigationBuffer[0]);
-  mitigationTxTime.tick();
 }
 
 void MpsDb::setName(std::string yamlFileName) {
@@ -1328,4 +1331,36 @@ void MpsDb::fwUpdateReader()
         std::cout << "FW Update Data reader interrupted" << std::endl;
     }
 
+}
+
+void MpsDb::mitigationWriter()
+{
+  std::cout << "Mitigation writer started" << std::endl;
+
+  try
+  {
+
+    for(;;)
+    {
+        {
+            std::unique_lock<std::mutex> lock(*(softwareMitigationBuffer.getMutex()));
+            while(!softwareMitigationBuffer.isReadReady())
+            {
+                softwareMitigationBuffer.getCondVar()->wait(lock);
+            }
+        }
+
+      // Write the mitigation to FW
+      mitigationTxTime.start();
+      Firmware::getInstance().writeMitigation(softwareMitigationBuffer.getReadPtr()->data());
+      mitigationTxTime.tick();
+
+      softwareMitigationBuffer.doneReading();
+
+    }
+  }
+  catch(boost::thread_interrupted& e)
+  {
+    std::cout << "Mitigation writer interrupted" << std::endl;
+  }
 }

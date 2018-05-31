@@ -63,9 +63,11 @@ class MpsDb {
 
   boost::thread fwUpdateThread;
   boost::thread updateInputThread;
+  boost::thread mitigationThread;
 
   void fwUpdateReader();
   void updateInputs();
+  void mitigationWriter();
 
   bool                    inputsUpdated;
   std::mutex              inputsUpdatedMutex;
@@ -79,7 +81,8 @@ class MpsDb {
   /**
    * Each destination takes 4-bits for the allowed power class.
    */
-  uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
+  // uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
+  DataBuffer<uint32_t> softwareMitigationBuffer;
 
   Timer<double> _inputUpdateTime;
   // TimeAverage _inputUpdateTime;
@@ -152,7 +155,7 @@ class MpsDb {
   void writeFirmwareConfiguration();
   void unlatchAll();
   void clearMitigationBuffer();
-  void mitigate();
+  // void mitigate();
 
   void clearUpdateTime();
   long getMaxUpdateTime();
@@ -169,6 +172,11 @@ class MpsDb {
   std::mutex*              getInputUpdateMutex()         { return &inputsUpdatedMutex;   };
   std::condition_variable* getInputUpdateCondVar()       { return &inputsUpdatedCondVar; };
   void                     inputProcessed()              { inputsUpdated = false;        };
+
+  bool                     isMitBufferWriteReady() const { return softwareMitigationBuffer.isWriteReady(); };
+  std::mutex*              getMitBufferMutex()           { return softwareMitigationBuffer.getMutex();     };
+  std::condition_variable* getMitBufferCondVar()         { return softwareMitigationBuffer.getCondVar();   };
+  void                     mitBufferDoneWriting()        { softwareMitigationBuffer.doneWriting();         };
 
   template<class MapPtrType, class IteratorType>
     void printMap(std::ostream &os, MapPtrType map,

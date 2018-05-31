@@ -22,10 +22,6 @@ uint32_t        Engine::_updateCounter;
 time_t          Engine::_startTime;
 uint32_t        Engine::_inputUpdateFailCounter;
 
-bool                    Engine::mitReady = false;
-std::mutex              Engine::mitMutex;
-std::condition_variable Engine::mitCondVar;
-
 Engine::Engine() :
   _initialized(false),
   _debugCounter(0),
@@ -60,18 +56,10 @@ Engine::Engine() :
         perror("mlockall failed");
         std::cerr << "WARN: Engine::Engine() mlockall failed." << std::endl;
     }
-
-    // Start thread to write mitigation messages to FW
-    mitigationThread = boost::thread( &Engine::mitigationWriter, this );
-    if( pthread_setname_np( mitigationThread.native_handle(), "MitWriter" ) )
-        perror( "pthread_setname_np failed for mitigationThread" );
 }
 
 Engine::~Engine()
 {
-  // Stop the thread write mitigatioin messages to FW
-  mitigationThread.interrupt();
-  mitigationThread.join();
 
 #if defined(LOG_ENABLED)
     //  Firmware::getInstance().showStats();
@@ -844,11 +832,11 @@ void *Engine::engineThread(void *arg)
     Firmware::getInstance().setSoftwareEnable(true);
     Firmware::getInstance().setTimingCheckEnable(true);
 
-    // time_t before = time(0);
-    // time_t now;
+    time_t before = time(0);
+    time_t now;
     _startTime = time(0);
     _updateCounter = 0;
-    // uint32_t counter = 0;
+    uint32_t counter = 0;
     bool reload = false;
 
     while(_evaluate)
@@ -872,31 +860,48 @@ void *Engine::engineThread(void *arg)
             // if (Engine::getInstance()._mpsDb->updateInputs())
             // {
 
+            // Wait for the mitigation buffer to be ready to write
+            {
+                std::unique_lock<std::mutex> lock(*(Engine::getInstance()._mpsDb->getMitBufferMutex()));
+                while(!Engine::getInstance()._mpsDb->isMitBufferWriteReady())
+                {
+                    Engine::getInstance()._mpsDb->getMitBufferCondVar()->wait(lock);
+                }
+            }
+
             reload = false;
             if (Engine::getInstance().checkFaults() > 0)
             {
                 reload = true;
             }
 
+            // Inputs were processed
             Engine::getInstance()._mpsDb->inputProcessed();
 
-            {
-                std::unique_lock<std::mutex> lock(mitMutex);
-                mitReady = true;
-                mitCondVar.notify_all();
-            }
+            // The mitigation buffer was written
+            Engine::getInstance()._mpsDb->mitBufferDoneWriting();
+
+            // {
+            //     std::unique_lock<std::mutex> lock(mitMutex);
+            //     mitReady = true;
+            //     mitCondVar.notify_all();
+            // }
 
                 // Engine::getInstance()._mpsDb->mitigate(); // Write the mitigation to FW
-                // _updateCounter++;
-                // counter++;
-                // now = time(0);
-                // if (now > before)
-                // {
-                //     time_t diff = now - before;
-                //     before = now;
-                //     _rate = counter / diff;
-                //     counter = 0;
-                // }
+            _updateCounter++;
+            counter++;
+            now = time(0);
+            if (now > before)
+            {
+                time_t diff = now - before;
+                before = now;
+                _rate = counter / diff;
+                counter = 0;
+            }
+
+            // Send a heartbeat
+            Engine::getInstance().hb.beat();
+
                 // Firmware::getInstance().heartbeat();
             // }
             // else
@@ -938,58 +943,6 @@ void *Engine::engineThread(void *arg)
 
     std::cout << "EngineThread: Exiting..." << std::endl;
     pthread_exit(0);
-}
-
-void Engine::mitigationWriter()
-{
-    time_t   before  = time(0);
-    time_t   now;
-    uint32_t counter = 0;
-    // bool     reload  = false;
-
-    std::cout << "Mitigation writer started" << std::endl;
-
-    for(;;)
-    {
-        {
-            std::unique_lock<std::mutex> lock(mitMutex);
-            while(!mitReady)
-            {
-                mitCondVar.wait(lock);
-            }
-        }
-
-        // reload = false;
-        // if (Engine::getInstance().checkFaults() > 0)
-        // {
-        //     reload = true;
-        // }
-
-        Engine::getInstance()._mpsDb->mitigate(); // Write the mitigation to FW
-        _updateCounter++;
-        counter++;
-        now = time(0);
-        if (now > before)
-        {
-            time_t diff = now - before;
-            before = now;
-            _rate = counter / diff;
-            counter = 0;
-        }
-        // Firmware::getInstance().heartbeat();
-
-        // Send a heartbeat
-        hb.beat();
-
-        // Reloads FW configuration - cause by ignore logic that
-        // enables/disables faults based on fast analog devices
-        // if (reload)
-        // {
-        //     Engine::getInstance().reloadConfigFromIgnore();
-        // }
-
-        mitReady = false;
-    }
 }
 
 void Engine::clearCheckTime()

@@ -61,3 +61,4 @@ DataBuffer<T>::~DataBuffer()
 }
 
 template class DataBuffer<uint8_t>;
+template class DataBuffer<uint32_t>;
