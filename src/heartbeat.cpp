@@ -9,19 +9,29 @@ HeartBeat::HeartBeat( Path root, const uint32_t& timeout )
     swHeartBeat2   ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdHeartbeat" ) ) ),
     swHeartBeat    ( ICommand::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
     hbCnt          ( 0 ),
-    wdErrorCnt     ( 0 )
+    wdErrorCnt     ( 0 ),
+    beatReq        ( false )
 {
     printf("\n");
     printf("Central Node HeartBeat started.\n");
     swWdTime->setVal( timeout );
     printf("Software Watchdog timer set to: %" PRIu32 "\n", timeout);
 
-    // Start the period timer
-    txPeriod.start();
+    // Start heartbeat thread
+    beatThread = boost::thread( &HeartBeat::beatWriter, this );
+    if( pthread_setname_np( beatThread.native_handle(), "HeartBeat" ) )
+        perror( "pthread_setname_np failed for HeartBeat" );
+
+
 }
 
 HeartBeat::~HeartBeat()
 {
+    // Stop the heartbeat thread
+    beatThread.interrupt();
+    beatThread.join();
+
+    // Print final report
     printReport();
 }
 
@@ -30,7 +40,6 @@ void HeartBeat::printReport()
     printf( "\n" );
     printf( "HeartBeat report:\n" );
     printf( "===============================================\n" );
-    printf( "Stopping HeartBeat object:\n" );
     uint32_t u32;
     swWdTime->getVal( &u32 );
     printf( "Software waychdog timer:           %" PRIu32 " us\n", u32 );
@@ -53,28 +62,60 @@ void HeartBeat::setWdTime( const uint32_t& timeout )
 
 void HeartBeat::beat()
 {
-        // Start the TX duration Timer
-        txDuration.start();
+    std::unique_lock<std::mutex> lock(beatMutex);
+    beatReq = true;
+    beatCondVar.notify_all();
+}
 
-        // Check if there was a WD error, and increase counter accordingly
-        uint32_t u32;
-        swWdError->getVal( &u32 );
-        if ( u32 )
-            ++wdErrorCnt;
+void HeartBeat::beatWriter()
+{
+    std::cout << "Heartbeat writer thread started..." << std::endl;
 
-        // Set heartbeat command
-        // swHeartBeat->execute();
-        swHeartBeat2->setVal( static_cast<uint64_t>( 0 ) );
+    // Start the period timer
+    txPeriod.start();
 
-        // Tick period timer;
-        txPeriod.tick();
+    try
+    {
+        for(;;)
+        {
+            // Wait for a request
+            {
+                std::unique_lock<std::mutex> lock(beatMutex);
+                while(!beatReq)
+                {
+                    beatCondVar.wait(lock);
+                }
+            }
 
-        // Increase counter
-        ++hbCnt;
+            // Start the TX duration Timer
+            txDuration.start();
 
-        // Tick the duration timer
-        txDuration.tick();
+            // Check if there was a WD error, and increase counter accordingly
+            uint32_t u32;
+            swWdError->getVal( &u32 );
+            if ( u32 )
+                ++wdErrorCnt;
 
-        swHeartBeat2->setVal( static_cast<uint64_t>( 1 ) );
+            // Set heartbeat command
+            // swHeartBeat->execute();
+            swHeartBeat2->setVal( static_cast<uint64_t>( 0 ) );
 
+            // Tick period timer;
+            txPeriod.tick();
+
+            // Increase counter
+            ++hbCnt;
+
+            // Tick the duration timer
+            txDuration.tick();
+
+            swHeartBeat2->setVal( static_cast<uint64_t>( 1 ) );
+
+            beatReq = false;
+        }
+    }
+    catch(boost::thread_interrupted& e)
+    {
+        std::cout << "Heartbeat writer thread interrupted" << std::endl;
+    }
 }
