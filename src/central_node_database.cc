@@ -43,7 +43,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _clearUpdateTime(false),
   // _inputDelayTime(5, "Input delay time (wait for FW)"),
   fwUpdateTimer("FW Update Period", 360),
-  _clearInputDelayTime(false),
+  // _clearInputDelayTime(false),
   _updateCounter(0),
   _updateTimeoutCounter(0),
   mitigationTxTime( "Mitigation Transmission time", 360 )
@@ -160,10 +160,10 @@ void MpsDb::updateInputs() {
 
       // _inputDelayTime.end();
       // _inputDelayTime.tick();
-      if (_clearInputDelayTime) {
-        // _inputDelayTime.clear();
-        _clearInputDelayTime = false;
-      }
+      // if (_clearInputDelayTime) {
+      //   // _inputDelayTime.clear();
+      //   _clearInputDelayTime = false;
+      // }
       Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
       if (_clearUpdateTime) {
         // _inputUpdateTime.clear();
@@ -1192,7 +1192,7 @@ void MpsDb::showInfo() {
 
 void MpsDb::clearUpdateTime() {
   _clearUpdateTime = true;
-  _clearInputDelayTime = true;
+  // _clearInputDelayTime = true;
 }
 
 long MpsDb::getMaxUpdateTime() {
