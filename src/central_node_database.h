@@ -88,7 +88,7 @@ class MpsDb {
   // TimeAverage _inputUpdateTime;
   bool _clearUpdateTime;
 
-  Timer<double> _inputDelayTime;
+  Timer<double> fwUpdateTimer;
   // TimeAverage _inputDelayTime;
   bool _clearInputDelayTime;
 

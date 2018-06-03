@@ -42,7 +42,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _inputUpdateTime("Input update time", 360),
   _clearUpdateTime(false),
   // _inputDelayTime(5, "Input delay time (wait for FW)"),
-  _inputDelayTime("Input delay time (wait for FW)", 360),
+  fwUpdateTimer("FW Update Period", 360),
   _clearInputDelayTime(false),
   _updateCounter(0),
   _updateTimeoutCounter(0),
@@ -1175,7 +1175,7 @@ void MpsDb::showInfo() {
     (std::cout, databaseInfo, "DatabaseInfo");
 
   _inputUpdateTime.show();
-  _inputDelayTime.show();
+  fwUpdateTimer.show();
   mitigationTxTime.show();
   AnalogDeviceUpdateTime.show();
   DeviceInputUpdateTime.show();
@@ -1207,12 +1207,12 @@ long MpsDb::getAvgUpdateTime() {
 
 long MpsDb::getMaxInputDelayTime() {
   // return _inputDelayTime.getMax();
-  return static_cast<int>( _inputDelayTime.getMaxPeriod() * 1e6 );
+  return static_cast<int>( fwUpdateTimer.getMaxPeriod() * 1e6 );
 }
 
 long MpsDb::getAvgInputDelayTime() {
   // return _inputDelayTime.getAverage();
-  return static_cast<int>( _inputDelayTime.getMeanPeriod() * 1e6 );
+  return static_cast<int>( fwUpdateTimer.getMeanPeriod() * 1e6 );
 }
 
 std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb) {
@@ -1287,7 +1287,7 @@ std::vector<uint8_t> MpsDb::getFastUpdateBuffer()
 void MpsDb::fwUpdateReader()
 {
     std::cout << "FW Update Data reader started" << std::endl;
-    _inputDelayTime.start();
+    fwUpdateTimer.start();
 
     try
     {
@@ -1311,7 +1311,7 @@ void MpsDb::fwUpdateReader()
                            _inputUpdateTimeout)))
             {
                 ++_updateTimeoutCounter;
-                _inputDelayTime.start();
+                fwUpdateTimer.start();
                 // std::cout << "  >> FwUpdateReader: Timeout..." << std::endl;
             }
             // std::cout << "  >> FwUpdateReader: Data received..." << std::endl;
@@ -1323,7 +1323,7 @@ void MpsDb::fwUpdateReader()
             // p->at(2) = ++val;
             // boost::this_thread::sleep_for( boost::chrono::seconds(1) );
             fwUpdateBuffer.doneWriting();
-            _inputDelayTime.tick();
+            fwUpdateTimer.tick();
         }
     }
     catch(boost::thread_interrupted& e)
