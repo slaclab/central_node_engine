@@ -71,6 +71,15 @@ void HeartBeat::beatWriter()
 {
     std::cout << "Heartbeat writer thread started..." << std::endl;
 
+    // Declare as real time task
+    struct sched_param  param;
+    param.sched_priority = 20;
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
+    {
+        perror("Set priority");
+        std::cerr << "WARN: Setting thread RT priority failed on Heartbeat thread." << std::endl;
+    }
+
     // Start the period timer
     txPeriod.start();
 
