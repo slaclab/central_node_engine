@@ -945,11 +945,11 @@ void *Engine::engineThread(void *arg)
     pthread_exit(0);
 }
 
-void Engine::clearCheckTime()
-{
-    // _clearCheckFaultTime = true;
-    // _clearEvaluationCycleTime = true;
-}
+// void Engine::clearCheckTime()
+// {
+//     // _clearCheckFaultTime = true;
+//     // _clearEvaluationCycleTime = true;
+// }
 
 long Engine::getMaxCheckTime()
 {

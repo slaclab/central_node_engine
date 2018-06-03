@@ -80,7 +80,7 @@ public:
     uint32_t getUpdateCounter();
     time_t getStartTime();
 
-    void clearCheckTime();
+    // void clearCheckTime();
     long getMaxCheckTime();
     long getAvgCheckTime();
     long getMaxEvalTime();
