@@ -974,3 +974,13 @@ long Engine::getAvgEvalTime()
     // return _evaluationCycleTime.getAverage();
     return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
 }
+
+long Engine::getAvgWdUpdatePeriod()
+{
+    return static_cast<long>( hb.getMeanTxPeriod() * 1e6 );
+}
+
+long Engine::getMaxWdUpdatePeriod()
+{
+    return static_cast<long>( hb.getMaxTxPeriod() * 1e6 );
+}

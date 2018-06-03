@@ -92,6 +92,10 @@ public:
     // Watchdog error counter
     int getWdErrorCnt() const { return hb.getWdErrorCnt(); };
 
+    // Watchdog times
+    long getAvgWdUpdatePeriod();
+    long getMaxWdUpdatePeriod();
+
 private:
     void mitigate();
 
