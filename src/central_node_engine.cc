@@ -26,8 +26,8 @@ Engine::Engine() :
   _initialized(false),
   _debugCounter(0),
   // _checkFaultTime(5, "Evaluation only time"),
-  _checkFaultTime( "Evaluation only time", 360 ),
-  _evaluationCycleTime( "Evaluation Cycle time", 360 ),
+  _checkFaultTime( "Evaluation only time", 720 ),
+  _evaluationCycleTime( "Evaluation Cycle time", 720 ),
   hb( Firmware::getInstance().getRoot(), 3500 )
   {
     // _clearCheckFaultTime(false),

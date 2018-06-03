@@ -2,8 +2,8 @@
 
 HeartBeat::HeartBeat( Path root, const uint32_t& timeout )
 :
-    txPeriod       ( "Time Between Heartbeats", 360 ),
-    txDuration     ( "Time to send Heartbeats", 360 ),
+    txPeriod       ( "Time Between Heartbeats", 720 ),
+    txDuration     ( "Time to send Heartbeats", 720 ),
     swWdTime       ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
     swWdError      ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
     swHeartBeat2   ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdHeartbeat" ) ) ),
