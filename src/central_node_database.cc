@@ -1205,12 +1205,12 @@ long MpsDb::getAvgUpdateTime() {
   return static_cast<int>( _inputUpdateTime.getMeanPeriod() * 1e6 );
 }
 
-long MpsDb::getMaxInputDelayTime() {
+long MpsDb::getMaxFwUpdatePeriod() {
   // return _inputDelayTime.getMax();
   return static_cast<int>( fwUpdateTimer.getMaxPeriod() * 1e6 );
 }
 
-long MpsDb::getAvgInputDelayTime() {
+long MpsDb::getAvgFwUpdatePeriod() {
   // return _inputDelayTime.getAverage();
   return static_cast<int>( fwUpdateTimer.getMeanPeriod() * 1e6 );
 }

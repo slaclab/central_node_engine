@@ -160,8 +160,8 @@ class MpsDb {
   void clearUpdateTime();
   long getMaxUpdateTime();
   long getAvgUpdateTime();
-  long getMaxInputDelayTime();
-  long getAvgInputDelayTime();
+  long getMaxFwUpdatePeriod();
+  long getAvgFwUpdatePeriod();
 
   uint64_t getFastUpdateTimeStamp() const { return _fastUpdateTimeStamp; };
   std::vector<uint8_t> getFastUpdateBuffer();
