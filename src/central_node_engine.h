@@ -80,7 +80,6 @@ public:
     uint32_t getUpdateCounter();
     time_t getStartTime();
 
-    // void clearCheckTime();
     long getMaxCheckTime();
     long getAvgCheckTime();
     long getMaxEvalTime();
@@ -113,13 +112,9 @@ private:
     DbBeamClassPtr _lowestBeamClass;
 
     std::stringstream _errorStream;
-    // TimeAverage _checkFaultTime;
     Timer<double> _checkFaultTime;
-    // bool _clearCheckFaultTime;
 
-    // TimeAverage _evaluationCycleTime;
     Timer<double>  _evaluationCycleTime;
-    // bool _clearEvaluationCycleTime;
 
     // Heartbeat control class
     HeartBeat hb;

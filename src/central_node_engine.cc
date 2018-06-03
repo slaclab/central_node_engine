@@ -25,14 +25,10 @@ uint32_t        Engine::_inputUpdateFailCounter;
 Engine::Engine() :
   _initialized(false),
   _debugCounter(0),
-  // _checkFaultTime(5, "Evaluation only time"),
   _checkFaultTime( "Evaluation only time", 720 ),
   _evaluationCycleTime( "Evaluation Cycle time", 720 ),
   hb( Firmware::getInstance().getRoot(), 3500 )
-  {
-    // _clearCheckFaultTime(false),
-    // _evaluationCycleTime(5, "Evaluation Cycle time"),
-    // _clearEvaluationCycleTime(false) {
+{
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     engineLogger = Loggers::getLogger("ENGINE");
     LOG_TRACE("ENGINE", "Created Engine");
@@ -592,13 +588,7 @@ int Engine::checkFaults()
         return 0;
     }
 
-    // if (_clearCheckFaultTime) {
-    //   // _checkFaultTime.clear();
-    //   _clearCheckFaultTime = false;
-    // }
-
     // must first get updated input values
-    // _checkFaultTime.start();
     _checkFaultTime.start();
 
     LOG_TRACE("ENGINE", "Checking faults");
@@ -610,7 +600,6 @@ int Engine::checkFaults()
     mitigate();
     setAllowedBeamClass();
     _mpsDb->unlock();
-    // _checkFaultTime.end();
     _checkFaultTime.tick();
 
     // If FW configuration needs reloading, return non-zero value
@@ -669,9 +658,6 @@ void Engine::showStats()
         std::cout << ">>> Engine Stats <<<" << std::endl;
         _checkFaultTime.show();
         _evaluationCycleTime.show();
-        // Firmware::getInstance()._heartbeatTime.show();
-        // Firmware::getInstance()._heartbeatTime.clear();
-        // Firmware::getInstance().heartbeatTxTime.show();
         hb.printReport();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
@@ -824,8 +810,6 @@ void *Engine::engineThread(void *arg)
     // Pre-fault our stack
     stack_prefault();
 
-    // Engine::getInstance()._evaluationCycleTime.clear();
-
     Firmware::getInstance().setEnable(true);
     Firmware::getInstance().clearAll();
     //  Firmware::getInstance().softwareClear();
@@ -845,8 +829,6 @@ void *Engine::engineThread(void *arg)
 
         if (Engine::getInstance()._mpsDb)
         {
-            // Engine::getInstance()._mpsDb->updateInputs();
-
             // Wait for inputs to be updated
             {
                 std::unique_lock<std::mutex> lock(*(Engine::getInstance()._mpsDb->getInputUpdateMutex()));
@@ -855,10 +837,6 @@ void *Engine::engineThread(void *arg)
                     Engine::getInstance()._mpsDb->getInputUpdateCondVar()->wait(lock);
                 }
             }
-
-
-            // if (Engine::getInstance()._mpsDb->updateInputs())
-            // {
 
             // Wait for the mitigation buffer to be ready to write
             {
@@ -881,13 +859,6 @@ void *Engine::engineThread(void *arg)
             // The mitigation buffer was written
             Engine::getInstance()._mpsDb->mitBufferDoneWriting();
 
-            // {
-            //     std::unique_lock<std::mutex> lock(mitMutex);
-            //     mitReady = true;
-            //     mitCondVar.notify_all();
-            // }
-
-                // Engine::getInstance()._mpsDb->mitigate(); // Write the mitigation to FW
             _updateCounter++;
             counter++;
             now = time(0);
@@ -902,23 +873,7 @@ void *Engine::engineThread(void *arg)
             // Send a heartbeat
             Engine::getInstance().hb.beat();
 
-                // Firmware::getInstance().heartbeat();
-            // }
-            // else
-            // {
-            //     // This counter may be increased due to FW config changes, e.g.
-            //     // new or expired bypass of analog fast signal.
-            //     _inputUpdateFailCounter++;
-            //     _rate = 0;
-            // }
-
-            // Engine::getInstance()._evaluationCycleTime.end();
             Engine::getInstance()._evaluationCycleTime.tick();
-
-            //      if (Engine::getInstance()._clearEvaluationCycleTime) {
-            // // Engine::getInstance()._evaluationCycleTime.clear();
-            // Engine::getInstance()._clearEvaluationCycleTime = false;
-            //      }
 
             // Reloads FW configuration - cause by ignore logic that
             // enables/disables faults based on fast analog devices
@@ -926,8 +881,6 @@ void *Engine::engineThread(void *arg)
             {
                 Engine::getInstance().reloadConfigFromIgnore();
             }
-
-            // Engine::getInstance()._mpsDb->_inputDelayTime.start();
         }
         else
         {
@@ -945,33 +898,23 @@ void *Engine::engineThread(void *arg)
     pthread_exit(0);
 }
 
-// void Engine::clearCheckTime()
-// {
-//     // _clearCheckFaultTime = true;
-//     // _clearEvaluationCycleTime = true;
-// }
-
 long Engine::getMaxCheckTime()
 {
-    // return _checkFaultTime.getMax();
     return static_cast<int>( _checkFaultTime.getMaxPeriod() * 1e6 );
 }
 
 long Engine::getAvgCheckTime()
 {
-    // return _checkFaultTime.getAverage();
     return static_cast<int>( _checkFaultTime.getMeanPeriod() * 1e6 );
 }
 
 long Engine::getMaxEvalTime()
 {
-    // return _evaluationCycleTime.getMax();
     return static_cast<int>( _evaluationCycleTime.getMaxPeriod() * 1e6 );
 }
 
 long Engine::getAvgEvalTime()
 {
-    // return _evaluationCycleTime.getAverage();
     return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
 }
 

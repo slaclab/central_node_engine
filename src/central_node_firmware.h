@@ -136,19 +136,6 @@ class Firmware {
   uint8_t buildStamp[256];
   char gitHashString[21];
 
-  bool _firstHeartbeat;
-  // TimeAverage _heartbeatTime;
-  // Timer<double> heartbeatTxTime;
-
-  // static uint32_t _swLossErrorCounter;
-  // static uint32_t _swBusyCounter;
-  // static uint32_t _swPauseCounter;
-  // static uint32_t _swWdErrorCounter;
-  // static uint32_t _swOvflCntCounter;
-  // static uint32_t _monitorNotReadyCounter;
-
-  // static bool _skipHeartbeat;
-
   bool heartbeat();
 
   void setEnable(bool enable);

@@ -38,12 +38,9 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _diffCount(0),
   softwareMitigationBuffer(NUM_DESTINATIONS / 8),
   _inputUpdateTimeout(inputUpdateTimeout),
-  // _inputUpdateTime(5, "Input update time"),
   _inputUpdateTime("Input update time", 360),
   _clearUpdateTime(false),
-  // _inputDelayTime(5, "Input delay time (wait for FW)"),
   fwUpdateTimer("FW Update Period", 360),
-  // _clearInputDelayTime(false),
   _updateCounter(0),
   _updateTimeoutCounter(0),
   mitigationTxTime( "Mitigation Transmission time", 360 )
@@ -119,12 +116,6 @@ void MpsDb::unlatchAll() {
  * and updates the status of all digital/analog inputs.
  */
 void MpsDb::updateInputs() {
-  // if (Firmware::getInstance().readUpdateStream(fastUpdateBuffer,
-		// 			       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
-		// 			       NUM_APPLICATIONS *
-		// 			       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
-		// 			       _inputUpdateTimeout)) { // 3.5 msec
-    // uint64_t *time = reinterpret_cast<uint64_t *>(Engine::getInstance().getCurrentDb()->getFastUpdateBuffer() + 8);
 
   std::cout << "Update input thread started" << std::endl;
 
@@ -140,10 +131,6 @@ void MpsDb::updateInputs() {
           }
       }
 
-      // uint64_t *time = reinterpret_cast<uint64_t *>(fwUpdateBuffer.getReadPtr() + 8);
-      // uint64_t diff = time[0] - _fastUpdateTimeStamp;
-      // _fastUpdateTimeStamp = time[0];
-
       uint64_t t;
       memcpy(&t, &fwUpdateBuffer.getReadPtr()->at(8), sizeof(t));
       uint64_t diff = t - _fastUpdateTimeStamp;
@@ -158,15 +145,9 @@ void MpsDb::updateInputs() {
       }
       _diff = diff;
 
-      // _inputDelayTime.end();
-      // _inputDelayTime.tick();
-      // if (_clearInputDelayTime) {
-      //   // _inputDelayTime.clear();
-      //   _clearInputDelayTime = false;
-      // }
       Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
+
       if (_clearUpdateTime) {
-        // _inputUpdateTime.clear();
         DeviceInputUpdateTime.clear();
         AnalogDeviceUpdateTime.clear();
         AppCardDigitalUpdateTime.clear();
@@ -187,17 +168,7 @@ void MpsDb::updateInputs() {
       fwUpdateBuffer.doneReading();
 
       _updateCounter++;
-      // _inputUpdateTime.end();
       _inputUpdateTime.tick();
-      //    Firmware::getInstance().getAppTimeoutStatus();
-    // }
-    // else {
-    //   _updateTimeoutCounter++;
-    //   // _inputDelayTime.end();
-    //   _inputDelayTime.tick();
-    //   //    std::cerr << "ERROR: updateInputs failed" << std::endl;
-    //   return false;
-    // }
 
       {
         std::lock_guard<std::mutex> lock(inputsUpdatedMutex);
@@ -632,7 +603,6 @@ void MpsDb::configureFaultStates() {
 
 }
 
-
 void MpsDb::configureAnalogDevices() {
   LOG_TRACE("DATABASE", "Configure: AnalogDevices");
   std::stringstream errorStream;
@@ -874,7 +844,6 @@ void MpsDb::configureApplicationCards() {
 void MpsDb::configureBeamDestinations() {
   for (DbBeamDestinationMap::iterator it = beamDestinations->begin();
        it != beamDestinations->end(); ++it) {
-    // (*it).second->softwareMitigationBuffer = &softwareMitigationBuffer[0];
     (*it).second->softwareMitigationBuffer = softwareMitigationBuffer.getReadPtr()->data();
     (*it).second->previousAllowedBeamClass = lowestBeamClass;
     (*it).second->allowedBeamClass = lowestBeamClass;
@@ -883,7 +852,6 @@ void MpsDb::configureBeamDestinations() {
 
 void MpsDb::clearMitigationBuffer() {
   for (uint32_t i = 0; i < NUM_DESTINATIONS / 8; ++i) {
-    // softwareMitigationBuffer[i] = 0;
     softwareMitigationBuffer.getWritePtr()->at(i) = 0;
   }
 }
@@ -1192,26 +1160,21 @@ void MpsDb::showInfo() {
 
 void MpsDb::clearUpdateTime() {
   _clearUpdateTime = true;
-  // _clearInputDelayTime = true;
 }
 
 long MpsDb::getMaxUpdateTime() {
-  // return _inputUpdateTime.getMax();
   return static_cast<int>( _inputUpdateTime.getMaxPeriod() * 1e6 );
 }
 
 long MpsDb::getAvgUpdateTime() {
-  // return _inputUpdateTime.getAverage();
   return static_cast<int>( _inputUpdateTime.getMeanPeriod() * 1e6 );
 }
 
 long MpsDb::getMaxFwUpdatePeriod() {
-  // return _inputDelayTime.getMax();
   return static_cast<int>( fwUpdateTimer.getMaxPeriod() * 1e6 );
 }
 
 long MpsDb::getAvgFwUpdatePeriod() {
-  // return _inputDelayTime.getAverage();
   return static_cast<int>( fwUpdateTimer.getMeanPeriod() * 1e6 );
 }
 
@@ -1293,7 +1256,6 @@ void MpsDb::fwUpdateReader()
     {
         for(;;)
         {
-            // std::cout << "  >> FwUpdateReader: waiting for buffer ready..." << std::endl;
             {
                 std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
                 while(!fwUpdateBuffer.isWriteReady())
@@ -1302,7 +1264,6 @@ void MpsDb::fwUpdateReader()
                 }
             }
 
-            // std::cout << "  >> FwUpdateReader: Buffer is ready. Reading..." << std::endl;
 
             while ( ! (Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
                            APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
@@ -1312,16 +1273,8 @@ void MpsDb::fwUpdateReader()
             {
                 ++_updateTimeoutCounter;
                 fwUpdateTimer.start();
-                // std::cout << "  >> FwUpdateReader: Timeout..." << std::endl;
             }
-            // std::cout << "  >> FwUpdateReader: Data received..." << std::endl;
 
-            // std::cout << "Writting data into buffer..." << std::endl;
-            // std::vector<uint8_t>* p = fwUpdateBuffer.getWritePtr();
-            // p->at(0) = ++val;
-            // p->at(1) = ++val;
-            // p->at(2) = ++val;
-            // boost::this_thread::sleep_for( boost::chrono::seconds(1) );
             fwUpdateBuffer.doneWriting();
             fwUpdateTimer.tick();
         }

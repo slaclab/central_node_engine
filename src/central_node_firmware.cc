@@ -19,11 +19,8 @@ static Logger *firmwareLogger;
 // bool     Firmware::_skipHeartbeat = false;
 
 #ifdef FW_ENABLED
-Firmware::Firmware() :
-  _firstHeartbeat(true) {
-  // _heartbeatTime(5, "Time Between Heartbeats"),
-  // heartbeatTxTime( "Heartbeat transmission time", 360 ) {
-
+Firmware::Firmware()
+  {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   firmwareLogger = Loggers::getLogger("FIRMWARE");
   LOG_TRACE("FIRMWARE", "Created Firmware");
@@ -464,51 +461,6 @@ void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
   }
 }
 
-// bool Firmware::heartbeat() {
-//   heartbeatTxTime.start();
-//   if (_skipHeartbeat) {
-//     if (_firstHeartbeat) {
-//       _firstHeartbeat = false;
-//     }
-//     else {
-//       _heartbeatTime.end();
-//     }
-//     _heartbeatTime.start();
-//   }
-
-//   try {
-//     // Check if there are pending sw busy indicators
-//     if (getUInt32(_swBusySV) > 0) {
-//       _swBusyCounter++;
-//     }
-
-//     if (getUInt32(_swPauseSV) > 0) {
-//       _swPauseCounter++;
-//     }
-
-//     if (getUInt32(_swWdErrorSV) > 0) {
-//       _swWdErrorCounter++;
-//     }
-
-//     if (getUInt32(_swOvflCntSV) > 0) {
-//       _swOvflCntCounter++;
-//     }
-
-//     if (getUInt32(_monitorReadySV) < 1) {
-//       _monitorNotReadyCounter++;
-//     }
-
-//     if (_skipHeartbeat) {
-//       _swHeartbeatCmd->execute();
-//     }
-//   } catch (IOError &e) {
-//     std::cout << "Exception Info: " << e.getInfo() << std::endl;
-//     return false;
-//   }
-//   heartbeatTxTime.tick();
-//   return true;
-// }
-
 void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
   uint32_t *config32 = reinterpret_cast<uint32_t *>(config);
   uint32_t size32 = size / 4;
@@ -745,10 +697,6 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-  //     os << "MonitorReady=" << std::hex << "0x"
-	 // << firmware->getUInt32(firmware->_monitorReadySV) << std::dec
-	 // << " (Not ready counter=" << firmware->_monitorNotReadyCounter << ")" << std::endl;
-
       for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;
       firmware->_monitorRxErrorCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorRxErrorCnt=[";
@@ -834,23 +782,6 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 
       os << "SoftwareWdTime="
 	 << firmware->getUInt32(firmware->_swWdTimeSV) << std::endl;
-
-  //     os << "SoftwareBusy="
-	 // << firmware->getUInt32(firmware->_swBusySV)
-	 // << " (Counter=" << firmware->_swBusyCounter << ")" << std::endl;
-
-  //     os << "SoftwarePause="
-	 // << firmware->getUInt32(firmware->_swPauseSV)
-	 // << " (Counter=" << firmware->_swPauseCounter << ")" << std::endl;
-
-  //     os << "SoftwareWdError="
-	 // << firmware->getUInt32(firmware->_swWdErrorSV)
-	 // << " (Counter=" << firmware->_swWdErrorCounter << ")" << std::endl;
-  //     //	 << " addr=" << std::hex << &(firmware->_swWdErrorCounter) << std::dec << std::endl;
-
-  //     os << "SoftwareOvflCnt="
-	 // << firmware->getUInt32(firmware->_swOvflCntSV)
-	 // << " (Counter=" << firmware->_swOvflCntCounter << ")" << std::endl;
 
       os << "EvaluationTimeStamp="
 	 << firmware->getUInt32(firmware->_evaluationTimeStampSV) << std::endl;

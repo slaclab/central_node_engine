@@ -81,16 +81,12 @@ class MpsDb {
   /**
    * Each destination takes 4-bits for the allowed power class.
    */
-  // uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
   DataBuffer<uint32_t> softwareMitigationBuffer;
 
   Timer<double> _inputUpdateTime;
-  // TimeAverage _inputUpdateTime;
   bool _clearUpdateTime;
 
   Timer<double> fwUpdateTimer;
-  // TimeAverage _inputDelayTime;
-  // bool _clearInputDelayTime;
 
   uint32_t _inputUpdateTimeout;
 
@@ -137,7 +133,6 @@ class MpsDb {
   // This is initialized by the configure() method, after loading the YAML file
   //  DbFaultStateMapPtr faultStates;
 
-  // MpsDb(DataBuffer* buffer, uint32_t inputUpdateTimeout=3500);
   MpsDb(uint32_t inputUpdateTimeout=3500);
   ~MpsDb();
   int load(std::string yamlFile);
@@ -155,7 +150,6 @@ class MpsDb {
   void writeFirmwareConfiguration();
   void unlatchAll();
   void clearMitigationBuffer();
-  // void mitigate();
 
   void clearUpdateTime();
   long getMaxUpdateTime();
