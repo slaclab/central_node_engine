@@ -2,10 +2,10 @@
 
 bool HeartBeat::beatReq = false;
 
-HeartBeat::HeartBeat( Path root, const uint32_t& timeout )
+HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
 :
-    txPeriod     ( "Time Between Heartbeats", 720 ),
-    txDuration   ( "Time to send Heartbeats", 720 ),
+    txPeriod     ( "Time Between Heartbeats", timerBufferSize ),
+    txDuration   ( "Time to send Heartbeats", timerBufferSize ),
     swWdTime     ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
     swWdError    ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
     swHeartBeat2 ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdHeartbeat" ) ) ),

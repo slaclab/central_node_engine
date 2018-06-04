@@ -16,7 +16,7 @@
 class HeartBeat
 {
 public:
-    HeartBeat( Path root, const uint32_t& timeout=3500 );
+    HeartBeat( Path root, const uint32_t& timeout=3500, size_t timerBufferSize=360 );
     ~HeartBeat();
     void beat();
     void setWdTime( const uint32_t& timeout );
