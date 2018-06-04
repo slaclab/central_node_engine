@@ -4,9 +4,11 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdio.h>
-#include <boost/thread/thread.hpp>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
+#include <thread>
+#include <boost/atomic.hpp>
 #include <cpsw_api_user.h>
 
 #include "timer.h"
@@ -39,12 +41,14 @@ private:
     Command                 swHeartBeat;
     int                     hbCnt;
     int                     wdErrorCnt;
-    boost::thread           beatThread;
-    bool                    beatReq;
+    std::thread             beatThread;
+    static bool             beatReq;
     std::mutex              beatMutex;
     std::condition_variable beatCondVar;
-
-    void beatWriter();
+    boost::atomic<bool>     run;
+    
+    void        beatWriter();
+    static bool requested() { return beatReq; };
 };
 
 #endif
