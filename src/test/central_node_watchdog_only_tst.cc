@@ -102,6 +102,14 @@ void Tester::worker()
     std::cout << std::endl;
 }
 
+void usage(char* name)
+{
+    std::cout << "This program starts the FW engine and send heartbeat each 2.7ms aprox." << std::endl;
+    std::cout << "The program runs for the specified number of seconds aprox., printing a report at the end." << std::endl;
+    std::cout << "Usege: " << name << " -a <IP_address> -Y <Yaml_top> -s <Seconds to run the test> [-T <Watchdog timeout>]i [-h]" << std::endl;
+    std::cout << std::endl;
+}
+
 int main(int argc, char **argv)
 {
     int           c;
@@ -111,7 +119,7 @@ int main(int argc, char **argv)
     std::string   yamlDoc;
     uint32_t      timeout = 3500;
 
-    while((c =  getopt(argc, argv, "a:Y:s:T:")) != -1)
+    while((c =  getopt(argc, argv, "a:Y:s:T:h")) != -1)
     {
         switch (c)
         {
@@ -142,8 +150,14 @@ int main(int argc, char **argv)
                 }
                 timeout = aux;
                 break;
+            case 'h':
+                usage( argv[0] );
+                exit(0);
+                break;
             default:
-                std::cout << "Invalid option. Use -a <IP_address> -Y <Yaml_top> -s <Seconds to run the test> [-T <Watchdog timeout>]" << std::endl;
+                std::cout << "Invalid option." << std::endl;
+                std::cout << std::endl;
+                usage( argv[0]  );
                 exit(1);
                 break;
         }
