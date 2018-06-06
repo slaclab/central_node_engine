@@ -41,14 +41,13 @@ private:
     Command                 swHeartBeat;
     int                     hbCnt;
     int                     wdErrorCnt;
-    std::thread             beatThread;
-    static bool             beatReq;
+    bool                    beatReq;
     std::mutex              beatMutex;
     std::condition_variable beatCondVar;
     boost::atomic<bool>     run;
+    std::thread             beatThread;
     
     void        beatWriter();
-    static bool requested() { return beatReq; };
 };
 
 #endif

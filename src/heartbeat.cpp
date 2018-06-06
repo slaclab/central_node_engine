@@ -1,7 +1,5 @@
 #include "heartbeat.h"
 
-bool HeartBeat::beatReq = false;
-
 HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
 :
     txPeriod     ( "Time Between Heartbeats", timerBufferSize ),
@@ -12,8 +10,9 @@ HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize
     swHeartBeat  ( ICommand::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
     hbCnt        ( 0 ),
     wdErrorCnt   ( 0 ),
-    beatThread   ( std::thread( &HeartBeat::beatWriter, this ) ),
-    run          (true)
+    beatReq      ( false ),
+    run          ( true ),
+    beatThread   ( std::thread( &HeartBeat::beatWriter, this ) )
 {
     printf("\n");
     printf("Central Node HeartBeat started.\n");
@@ -82,41 +81,46 @@ void HeartBeat::beatWriter()
     // Start the period timer
     txPeriod.start();
 
-    while(run)
+    for(;;)
     {
         {
             // Wait for a request
             std::unique_lock<std::mutex> lock(beatMutex);
-            if ( beatCondVar.wait_for( lock, std::chrono::milliseconds(5), requested ) )
+            while(!beatReq)
             {
-                // Start the TX duration Timer
-                txDuration.start();
-
-                // Check if there was a WD error, and increase counter accordingly
-                uint32_t u32;
-                swWdError->getVal( &u32 );
-                if ( u32 )
-                    ++wdErrorCnt;
-
-                // Set heartbeat command
-                // swHeartBeat->execute();
-                swHeartBeat2->setVal( static_cast<uint64_t>( 0 ) );
-
-                // Tick period timer;
-                txPeriod.tick();
-
-                // Increase counter
-                ++hbCnt;
-
-                // Tick the duration timer
-                txDuration.tick();
-
-                swHeartBeat2->setVal( static_cast<uint64_t>( 1 ) );
-
-                beatReq = false;
+                beatCondVar.wait_for( lock, std::chrono::milliseconds(5) );
+                if(!run)
+                {
+                    std::cout << "Heartbeat writer thread interrupted" << std::endl;
+                    return;
+                }
             }
         }
-    }
 
-    std::cout << "Heartbeat writer thread interrupted" << std::endl;
+        // Start the TX duration Timer
+        txDuration.start();
+
+        // Check if there was a WD error, and increase counter accordingly
+        uint32_t u32;
+        swWdError->getVal( &u32 );
+        if ( u32 )
+            ++wdErrorCnt;
+
+        // Set heartbeat command
+        // swHeartBeat->execute();
+        swHeartBeat2->setVal( static_cast<uint64_t>( 0 ) );
+
+        // Tick period timer;
+        txPeriod.tick();
+
+        // Increase counter
+        ++hbCnt;
+
+        // Tick the duration timer
+        txDuration.tick();
+
+        swHeartBeat2->setVal( static_cast<uint64_t>( 1 ) );
+
+        beatReq = false;
+    }
 }
