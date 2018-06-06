@@ -105,7 +105,7 @@ central_node_engineinc_DIRS=$(CENTRAL_NODE_ENGINE_DIR)$(addprefix :,$(cpswinc_DI
 central_node_enginelib_DIRS=$(addsuffix /O.$(TARCH),$(CENTRAL_NODE_ENGINE_DIR))$(addprefix :,$(boostlib_DIR))$(addprefix :,$(yaml_cpplib_DIR))
 
 # Libraries CENTRAL_NODE_ENGINE requires -- must be added to application's <prog>_LIBS variable
-CENTRAL_NODE_ENGINE_LIBS   = central_node_engine cpsw yaml-cpp pthread boost_system boost_thread rt dl
+CENTRAL_NODE_ENGINE_LIBS   = central_node_engine cpsw yaml-cpp pthread boost_system rt dl
 
 STATIC_LIBRARIES=$(STATIC_LIBRARIES_$(WITH_STATIC_LIBRARIES))
 SHARED_LIBRARIES=$(SHARED_LIBRARIES_$(WITH_SHARED_LIBRARIES))
