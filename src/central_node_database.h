@@ -18,7 +18,8 @@
 
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/atomic.hpp>
+#include <thread>
 
 using boost::shared_ptr;
 using boost::weak_ptr;
@@ -61,9 +62,11 @@ class MpsDb {
 
   DataBuffer<uint8_t>     fwUpdateBuffer;
 
-  boost::thread fwUpdateThread;
-  boost::thread updateInputThread;
-  boost::thread mitigationThread;
+  boost::atomic<bool>     run;
+ 
+  std::thread fwUpdateThread;
+  std::thread updateInputThread;
+  std::thread mitigationThread;
 
   void fwUpdateReader();
   void updateInputs();

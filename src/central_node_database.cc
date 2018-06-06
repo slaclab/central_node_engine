@@ -31,6 +31,10 @@ bool MpsDb::_initialized = false;
 
 MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   fwUpdateBuffer(100*1024),
+  run( true ),
+  fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
+  updateInputThread( std::thread( &MpsDb::updateInputs, this ) ), 
+  mitigationThread( std::thread( &MpsDb::mitigationWriter, this ) ),
   inputsUpdated(false),
   _fastUpdateTimeStamp(0),
   _diff(0),
@@ -56,18 +60,13 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
     }
     _initialized = true;
 
-    // Start the thread to update the inputs
-    updateInputThread = boost::thread( &MpsDb::updateInputs, this );
+    //  Set thread names
     if ( pthread_setname_np( updateInputThread.native_handle(), "InputUpdates" ) )
       perror( "pthread_setname_np failed for updateInputThread" );
 
-    // Start thread to read the FW update data
-    fwUpdateThread = boost::thread( &MpsDb::fwUpdateReader, this );
     if ( pthread_setname_np( fwUpdateThread.native_handle(), "FwReader" ) )
         perror( "pthread_setname_np failed for fwUpdateThread" );
 
-    // Start thread to write mitigation messages to FW
-    mitigationThread = boost::thread( &MpsDb::mitigationWriter, this );
     if( pthread_setname_np( mitigationThread.native_handle(), "MitWriter" ) )
         perror( "pthread_setname_np failed for mitigationThread" );
   }
@@ -77,16 +76,10 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
 
 MpsDb::~MpsDb() {
 
-  // Stop the thread that reads the Fw update data
-  fwUpdateThread.interrupt();
+  // Stop all threads
+  run = false;
   fwUpdateThread.join();
-
-  // Stop the update input thread
-  updateInputThread.interrupt();
   updateInputThread.join();
-
-  // Stop the thread write mitigatioin messages to FW
-  mitigationThread.interrupt();
   mitigationThread.join();
 
   _inputUpdateTime.show();
@@ -119,67 +112,65 @@ void MpsDb::updateInputs() {
 
   std::cout << "Update input thread started" << std::endl;
 
-  try
+  for(;;)
   {
-    for(;;)
     {
-      {
-          std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
-          while(!fwUpdateBuffer.isReadReady())
-          {
-              fwUpdateBuffer.getCondVar()->wait(lock);
-          }
-      }
-
-      uint64_t t;
-      memcpy(&t, &fwUpdateBuffer.getReadPtr()->at(8), sizeof(t));
-      uint64_t diff = t - _fastUpdateTimeStamp;
-      _fastUpdateTimeStamp = t;
-
-      if (diff > _maxDiff) {
-        _maxDiff = diff;
-      }
-
-      if (diff > 12000000) {
-        _diffCount++;
-      }
-      _diff = diff;
-
-      Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
-
-      if (_clearUpdateTime) {
-        DeviceInputUpdateTime.clear();
-        AnalogDeviceUpdateTime.clear();
-        AppCardDigitalUpdateTime.clear();
-        AppCardAnalogUpdateTime.clear();
-        _clearUpdateTime = false;
-      }
-
-      _inputUpdateTime.start();
-
-      DbApplicationCardMap::iterator applicationCardIt;
-      for (applicationCardIt = applicationCards->begin();
-  	 applicationCardIt != applicationCards->end();
-  	 ++applicationCardIt) {
-        (*applicationCardIt).second->updateInputs();
-      }
-
-
-      fwUpdateBuffer.doneReading();
-
-      _updateCounter++;
-      _inputUpdateTime.tick();
-
-      {
-        std::lock_guard<std::mutex> lock(inputsUpdatedMutex);
-        inputsUpdated = true;
-        inputsUpdatedCondVar.notify_all();
-      }
+        std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
+        while(!fwUpdateBuffer.isReadReady())
+        {
+            fwUpdateBuffer.getCondVar()->wait_for( lock, std::chrono::milliseconds(5) );
+            if(!run)
+            {
+                std::cout << "FW Update Data reader interrupted" << std::endl;
+                return;
+            }
+        }
     }
-  }
-  catch(boost::thread_interrupted& e)
-  {
-    std::cout << "FW Update Data reader interrupted" << std::endl;
+
+    uint64_t t;
+    memcpy(&t, &fwUpdateBuffer.getReadPtr()->at(8), sizeof(t));
+    uint64_t diff = t - _fastUpdateTimeStamp;
+    _fastUpdateTimeStamp = t;
+
+    if (diff > _maxDiff) {
+      _maxDiff = diff;
+    }
+
+    if (diff > 12000000) {
+      _diffCount++;
+    }
+    _diff = diff;
+
+    Engine::getInstance()._evaluationCycleTime.start(); // Start timer to measure whole eval cycle
+
+    if (_clearUpdateTime) {
+      DeviceInputUpdateTime.clear();
+      AnalogDeviceUpdateTime.clear();
+      AppCardDigitalUpdateTime.clear();
+      AppCardAnalogUpdateTime.clear();
+      _clearUpdateTime = false;
+    }
+
+    _inputUpdateTime.start();
+
+    DbApplicationCardMap::iterator applicationCardIt;
+    for (applicationCardIt = applicationCards->begin();
+       applicationCardIt != applicationCards->end();
+       ++applicationCardIt) {
+      (*applicationCardIt).second->updateInputs();
+    }
+
+
+    fwUpdateBuffer.doneReading();
+
+    _updateCounter++;
+    _inputUpdateTime.tick();
+
+    {
+      std::lock_guard<std::mutex> lock(inputsUpdatedMutex);
+      inputsUpdated = true;
+      inputsUpdatedCondVar.notify_all();
+    }
   }
 }
 
@@ -1252,68 +1243,62 @@ void MpsDb::fwUpdateReader()
     std::cout << "FW Update Data reader started" << std::endl;
     fwUpdateTimer.start();
 
-    try
+    for(;;)
     {
-        for(;;)
         {
+            std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
+            while(!fwUpdateBuffer.isWriteReady())
             {
-                std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
-                while(!fwUpdateBuffer.isWriteReady())
+                fwUpdateBuffer.getCondVar()->wait_for( lock, std::chrono::milliseconds(5) );
+                if (!run)
                 {
-                    fwUpdateBuffer.getCondVar()->wait(lock);
-                }
+                    std::cout << "FW Update Data reader interrupted" << std::endl;
+                    return;
+                } 
             }
-
-
-            while ( ! (Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
-                           APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
-                           NUM_APPLICATIONS *
-                           APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
-                           _inputUpdateTimeout)))
-            {
-                ++_updateTimeoutCounter;
-                fwUpdateTimer.start();
-            }
-
-            fwUpdateBuffer.doneWriting();
-            fwUpdateTimer.tick();
         }
-    }
-    catch(boost::thread_interrupted& e)
-    {
-        std::cout << "FW Update Data reader interrupted" << std::endl;
-    }
 
+
+        while ( ! (Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
+                       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
+                       NUM_APPLICATIONS *
+                       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
+                       _inputUpdateTimeout)))
+        {
+            ++_updateTimeoutCounter;
+            fwUpdateTimer.start();
+        }
+
+        fwUpdateBuffer.doneWriting();
+        fwUpdateTimer.tick();
+    }
 }
 
 void MpsDb::mitigationWriter()
 {
   std::cout << "Mitigation writer started" << std::endl;
 
-  try
+  for(;;)
   {
+      {
+          std::unique_lock<std::mutex> lock(*(softwareMitigationBuffer.getMutex()));
+          while(!softwareMitigationBuffer.isReadReady())
+          {
+              softwareMitigationBuffer.getCondVar()->wait_for( lock, std::chrono::milliseconds(5) );
+              if(!run)
+              {
+                  std::cout << "Mitigation writer interrupted" << std::endl;
+                  return;
+              }
+          }
+      }
 
-    for(;;)
-    {
-        {
-            std::unique_lock<std::mutex> lock(*(softwareMitigationBuffer.getMutex()));
-            while(!softwareMitigationBuffer.isReadReady())
-            {
-                softwareMitigationBuffer.getCondVar()->wait(lock);
-            }
-        }
+    // Write the mitigation to FW
+    mitigationTxTime.start();
+    Firmware::getInstance().writeMitigation(softwareMitigationBuffer.getReadPtr()->data());
+    mitigationTxTime.tick();
 
-      // Write the mitigation to FW
-      mitigationTxTime.start();
-      Firmware::getInstance().writeMitigation(softwareMitigationBuffer.getReadPtr()->data());
-      mitigationTxTime.tick();
+    softwareMitigationBuffer.doneReading();
 
-      softwareMitigationBuffer.doneReading();
-
-    }
-  }
-  catch(boost::thread_interrupted& e)
-  {
-    std::cout << "Mitigation writer interrupted" << std::endl;
   }
 }
