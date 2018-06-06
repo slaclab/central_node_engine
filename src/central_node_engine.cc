@@ -311,7 +311,8 @@ void Engine::evaluateFaults() {
   // Update digital & analog Fault values and BeamDestination allowed class
   for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
        fault != _mpsDb->faults->end(); ++fault) {
-    LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
+    LOG_TRACE("ENGINE", (*fault).second->name
+	      << " (" << (*fault).second->description<< ") updating fault values");
 
     // First calculate the digital Fault value from its one or more digital device inputs
     uint32_t faultValue = 0;
@@ -458,7 +459,8 @@ void Engine::mitigate() {
       for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
 	   state != (*fault).second->faultStates->end(); ++state) {
 	if ((*state).second->faulted && !(*state).second->ignored) {
-	  LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value=" 
+	  LOG_TRACE("ENGINE", (*fault).second->name << " ("
+		    << (*fault).second->description << ") is faulted value="
 		    << (*fault).second->value
 		    << " (fault state="
 		    << (*state).second->deviceState->name

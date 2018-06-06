@@ -254,7 +254,9 @@ void DbApplicationCard::configureUpdateBuffers() {
     }
   }
   else {
-    throw(DbException("Can't configure update buffers - no devices configured"));
+    //    throw(DbException("Can't configure update buffers - no devices configured"));
+    std::cerr << "WARN: No devices configured for application card " << this->name
+	      << " (Id: " << this->id << ")" << std::endl;
   }
 }
 
@@ -294,7 +296,9 @@ void DbApplicationCard::updateInputs() {
     AppCardAnalogUpdateTime.end();
   }
   else {
-    throw(DbException("Can't configure update devices because there are no devices"));
+    //    throw(DbException("Can't configure update devices because there are no devices"));
+    //    std::cerr << "WARN: No devices configured for application card " << this->name
+    //	      << " (Id: " << this->id << ")" << std::endl;
   }
 }
 
@@ -309,7 +313,10 @@ void DbApplicationCard::writeConfiguration() {
     writeAnalogConfiguration();
   }
   else {
-    throw(DbException("Can't configure application card - no devices configured"));
+    //    throw(DbException("Can't configure application card - no devices configured"));
+    //    std::cerr << "WARN: No devices configured for application card " << this->name
+    //	      << " (Id: " << this->id << ")" << std::endl;
+    return;
   }
   // Enable application timeout mask
   Firmware::getInstance().setAppTimeoutEnable(globalId, true);
