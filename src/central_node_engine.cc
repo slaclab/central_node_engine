@@ -27,7 +27,7 @@ Engine::Engine() :
   _debugCounter(0),
   _checkFaultTime( "Evaluation only time", 720 ),
   _evaluationCycleTime( "Evaluation Cycle time", 720 ),
-  hb( Firmware::getInstance().getRoot(), 3500 )
+  hb( Firmware::getInstance().getRoot(), 3500, 720 )
 {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     engineLogger = Loggers::getLogger("ENGINE");
