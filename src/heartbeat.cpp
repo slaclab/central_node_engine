@@ -6,8 +6,7 @@ HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize
     txDuration   ( "Time to send Heartbeats", timerBufferSize ),
     swWdTime     ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
     swWdError    ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
-    swHeartBeat2 ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdHeartbeat" ) ) ),
-    swHeartBeat  ( ICommand::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
+    swHeartBeat  ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdHeartbeat" ) ) ),
     hbCnt        ( 0 ),
     wdErrorCnt   ( 0 ),
     beatReq      ( false ),
@@ -107,8 +106,7 @@ void HeartBeat::beatWriter()
             ++wdErrorCnt;
 
         // Set heartbeat command
-        // swHeartBeat->execute();
-        swHeartBeat2->setVal( static_cast<uint64_t>( 0 ) );
+        swHeartBeat->setVal( static_cast<uint64_t>( 0 ) );
 
         // Tick period timer;
         txPeriod.tick();
@@ -119,7 +117,7 @@ void HeartBeat::beatWriter()
         // Tick the duration timer
         txDuration.tick();
 
-        swHeartBeat2->setVal( static_cast<uint64_t>( 1 ) );
+        swHeartBeat->setVal( static_cast<uint64_t>( 1 ) );
 
         beatReq = false;
     }

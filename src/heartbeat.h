@@ -37,8 +37,7 @@ private:
     Timer<double>           txDuration;
     ScalVal                 swWdTime;
     ScalVal_RO              swWdError;
-    ScalVal                 swHeartBeat2;
-    Command                 swHeartBeat;
+    ScalVal                 swHeartBeat;
     int                     hbCnt;
     int                     wdErrorCnt;
     bool                    beatReq;
