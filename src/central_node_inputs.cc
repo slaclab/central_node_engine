@@ -107,6 +107,7 @@ DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
 				   bypassMask(0xFFFFFFFF) {
   for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
+    ignoredIntegrator[i] = false;
   }
 
   // Initialize power class to maximum
@@ -253,7 +254,9 @@ void DbApplicationCard::configureUpdateBuffers() {
     }
   }
   else {
-    throw(DbException("Can't configure update buffers - no devices configured"));
+    //    throw(DbException("Can't configure update buffers - no devices configured"));
+    std::cerr << "WARN: No devices configured for application card " << this->name
+	      << " (Id: " << this->id << ")" << std::endl;
   }
 }
 
@@ -293,7 +296,9 @@ void DbApplicationCard::updateInputs() {
     AppCardAnalogUpdateTime.end();
   }
   else {
-    throw(DbException("Can't configure update devices because there are no devices"));
+    //    throw(DbException("Can't configure update devices because there are no devices"));
+    //    std::cerr << "WARN: No devices configured for application card " << this->name
+    //	      << " (Id: " << this->id << ")" << std::endl;
   }
 }
 
@@ -308,7 +313,10 @@ void DbApplicationCard::writeConfiguration() {
     writeAnalogConfiguration();
   }
   else {
-    throw(DbException("Can't configure application card - no devices configured"));
+    //    throw(DbException("Can't configure application card - no devices configured"));
+    //    std::cerr << "WARN: No devices configured for application card " << this->name
+    //	      << " (Id: " << this->id << ")" << std::endl;
+    return;
   }
   // Enable application timeout mask
   Firmware::getInstance().setAppTimeoutEnable(globalId, true);
@@ -448,6 +456,7 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	  // If bypass for the integrator is valid, set destination mask to zero - i.e. no mitigation
 	  // No mitigation also if the analogDevice is currently ignored
 	  if ((*analogDevice).second->bypass[i]->status == BYPASS_VALID ||
+	      (*analogDevice).second->ignoredIntegrator[i] ||
 	      (*analogDevice).second->ignored) {
 	    bitValue = false;
 	  }

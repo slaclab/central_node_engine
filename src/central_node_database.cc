@@ -631,6 +631,7 @@ void MpsDb::configureIgnoreConditions() {
   for (DbIgnoreConditionMap::iterator ignoreCondition = ignoreConditions->begin();
        ignoreCondition != ignoreConditions->end(); ++ignoreCondition) {
     uint32_t conditionId = (*ignoreCondition).second->conditionId;
+    std::cout << "conditionId=" << conditionId << " ";
 
     DbConditionMap::iterator condition = conditions->find(conditionId);
     if (condition != conditions->end()) {
@@ -651,6 +652,8 @@ void MpsDb::configureIgnoreConditions() {
     // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
 
+    std::cout << "faultStateId=" << faultStateId << " ";
+
     if (faultStateId != DbIgnoreCondition::INVALID_ID) {
       DbFaultStateMap::iterator faultIt = faultStates->find(faultStateId);
       if (faultIt != faultStates->end()) {
@@ -662,20 +665,23 @@ void MpsDb::configureIgnoreConditions() {
 	throw(DbException(errorStream.str()));
       }
     }
-    else {
-      uint32_t analogDeviceId = (*ignoreCondition).second->analogDeviceId;
-      if (analogDeviceId != DbIgnoreCondition::INVALID_ID) {
-	DbAnalogDeviceMap::iterator deviceIt = analogDevices->find(analogDeviceId);
-	if (deviceIt != analogDevices->end()) {
-	  (*ignoreCondition).second->analogDevice = (*deviceIt).second;
-	}
-	else {
-	  errorStream << "ERROR: Failed to configure database, invalid ID for AnalogDevice ("
-		      << analogDeviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
-	  throw(DbException(errorStream.str()));
-	}
+
+    uint32_t analogDeviceId = (*ignoreCondition).second->analogDeviceId;
+    std::cout << "analogDeviceId=" << analogDeviceId << " ";
+
+    if (analogDeviceId != DbIgnoreCondition::INVALID_ID) {
+      DbAnalogDeviceMap::iterator deviceIt = analogDevices->find(analogDeviceId);
+      if (deviceIt != analogDevices->end()) {
+	(*ignoreCondition).second->analogDevice = (*deviceIt).second;
       }
       else {
+	errorStream << "ERROR: Failed to configure database, invalid ID for AnalogDevice ("
+		    << analogDeviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
+	throw(DbException(errorStream.str()));
+      }
+    }
+    else {
+      if (faultStateId == DbIgnoreCondition::INVALID_ID) {
 	errorStream << "ERROR: Failed to configure database, invalid ID for FaultState and"
 		    << " FaultState for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
 	throw(DbException(errorStream.str()));
@@ -886,22 +892,18 @@ void MpsDb::writeFirmwareConfiguration() {
   uint32_t charge[FW_NUM_BEAM_CLASSES];
 
   for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
-    time[i] = 0;//111;
-    period[i] = 0;//222;
-    charge[i] = 0;//333;
+    time[i] = 1;
+    period[i] = 0;
+    charge[i] = 4294967295;
   }
-  // Problem: values writen/read back are wrong:
-  //  BeamIntTime=[111, 222, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333]
-  //  BeamMinPeriod=[222, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333]
-  //  BeamIntCharge=[333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333, 333]
-
+  /** SKIP for testing 
   for (DbBeamClassMap::iterator beamClass = beamClasses->begin();
        beamClass != beamClasses->end(); ++beamClass) {
     time[(*beamClass).second->number] = (*beamClass).second->integrationWindow;
     period[(*beamClass).second->number] = (*beamClass).second->minPeriod;
     charge[(*beamClass).second->number] = (*beamClass).second->totalCharge;
   }
-
+  **/
   Firmware::getInstance().writeTimingChecking(time, period, charge);
 
   // Firmware command to actually switch to the new configuration

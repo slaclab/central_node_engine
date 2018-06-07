@@ -600,18 +600,16 @@ namespace YAML {
 	  // ... just continue, this exception is fine as long an there is an analogDeviceId defined next
 	}
 
-	if (!found) {
-	  try {
-	    field = "analog_device_id";
-	    ignoreCondition->analogDeviceId = (*it)[field].as<unsigned int>();
-	    found = true;
-	  } catch(YAML::InvalidNode e) {
-	    errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
-	    throw(DbException(errorStream.str()));
-	  } catch(YAML::TypedBadConversion<unsigned int> e) {
-	    errorStream << "ERROR: Failed to convert contents of field " << field << " for IgnoreCondition (expected unsigned int).";
-	    throw(DbException(errorStream.str()));
-	  }
+	try {
+	  field = "analog_device_id";
+	  ignoreCondition->analogDeviceId = (*it)[field].as<unsigned int>();
+	  found = true;
+	} catch(YAML::InvalidNode e) {
+	  errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
+	  throw(DbException(errorStream.str()));
+	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	  errorStream << "ERROR: Failed to convert contents of field " << field << " for IgnoreCondition (expected unsigned int).";
+	  throw(DbException(errorStream.str()));
 	}
 
 	if (!found) {
