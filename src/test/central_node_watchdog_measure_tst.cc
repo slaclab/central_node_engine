@@ -81,26 +81,35 @@ Tester::Tester( Path root, size_t iterations, uint32_t timeout )
 
     for( size_t i(0); i<iterations; ++i )
     {
+        // Send heartbeat command (in FW is active on the risig edge)
         swHeartBeat->setVal( static_cast<uint64_t>( 1 ) );
-        swHeartBeat->setVal( static_cast<uint64_t>( 0 ) );
 
+        // Start measuring the time to clear the watchdog error flag 
         t2.at(i).start();
+        // Wait for the watchdog error flag to clear
         swWdError->getVal( &u32 );
         while( 1 == u32)
         {
             swWdError->getVal( &u32 );
             ++c2.at(i);
         }
+        // End of the timer
         t2.at(i).tick();
 
+        // Start measuring the time until timeout
         t1.at(i).start();
+        // Wait for the watchdog error flag to be set
         swWdError->getVal( &u32 );
         while( 0 == u32)
         {
             swWdError->getVal( &u32 );
             ++c1.at(i);
         }
+        // End of the timer
         t1.at(i).tick();
+
+        // Clear the heartbeat flag (this is a falling edge which has no effect on FW) 
+        swHeartBeat->setVal( static_cast<uint64_t>( 0 ) );
     }
 
    std::cout << "End of iterations." << std::endl;
