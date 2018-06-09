@@ -77,6 +77,24 @@ std::ostream & operator<<(std::ostream &os, DbChannel * const channel) {
 DbDeviceState::DbDeviceState() : DbEntry(), deviceTypeId(0), value(0), mask(0), name("") {
 }
 
+// Returns the integrator # based on the DeviceState value
+// The integrator # is valid only for AnalogDevices, where the value
+// is a single bit set within the 32 bits of the device value.
+int DbDeviceState::getIntegrator() {
+  if (value < 0x100) {
+    return 0;
+  }
+  else if (value < 0x10000) {
+    return 1;
+  }
+  else if (value < 0x1000000) {
+    return 2;
+  }
+  else {
+    return 3;
+  }
+}
+
 std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState) {
   os << "id[" << devState->id << "]; "
      << "deviceTypeId[" << devState->deviceTypeId << "]; "
@@ -224,9 +242,23 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
   os << "type=" << analogDevice->deviceTypeId << " : "
      << "card=" << analogDevice->cardId << " : "
      << "value=0x" << std::hex << analogDevice->value << std::dec << " : "
-     << "dbId=" << analogDevice->id << " : " << std::endl
-     << "  ignored=" << analogDevice->ignored << " : "
-     << "bypassMask=0x" << std::hex << analogDevice->bypassMask << std::dec << " : ";
+     << "dbId=" << analogDevice->id << " : " << std::endl;
+  if (analogDevice->ignored) {
+    os << "  ignored=YES";
+  }
+  else {
+    os << "  ignored=no";
+  }
+  os << " [";
+  for (int i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
+    if (analogDevice->ignoredIntegrator[i]) {
+      os << "I";
+    }
+    else {
+      os << "-";
+    }
+  }
+  os << "] : bypassMask=0x" << std::hex << analogDevice->bypassMask << std::dec << " : ";
 
   if (analogDevice->evaluation == FAST_EVALUATION) {
     os << "destinationMasks=";
@@ -239,7 +271,8 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
       }
       os << std::dec;
     }
-    os << " : powerClasses=";
+    os << std::endl;
+    os << "  powerClasses=";
     for (uint32_t i = 0; i < integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
       os << analogDevice->fastPowerClass[i];
       if (i < (integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE) - 1) {
