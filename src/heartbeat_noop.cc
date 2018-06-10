@@ -1,13 +1,13 @@
 #include "heartbeat.h"
 
-#ifdef FW_ENABLED
+#ifndef FW_ENABLED
+
+#warning "Code compiled without CPSW - fake heartbeat core"
+
 HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
 :
     txPeriod     ( "Time Between Heartbeats", timerBufferSize ),
     txDuration   ( "Time to send Heartbeats", timerBufferSize ),
-    swWdTime     ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
-    swWdError    ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
-    swHeartBeat  ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdHeartbeat" ) ) ),
     hbCnt        ( 0 ),
     wdErrorCnt   ( 0 ),
     beatReq      ( false ),
@@ -16,8 +16,6 @@ HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize
 {
     printf("\n");
     printf("Central Node HeartBeat started.\n");
-    swWdTime->setVal( timeout );
-    printf("Software Watchdog timer set to: %" PRIu32 "\n", timeout);
 
     if( pthread_setname_np( beatThread.native_handle(), "HeartBeat" ) )
         perror( "pthread_setname_np failed for HeartBeat thread" );
@@ -38,9 +36,6 @@ void HeartBeat::printReport()
     printf( "\n" );
     printf( "HeartBeat report:\n" );
     printf( "===============================================\n" );
-    uint32_t u32;
-    swWdTime->getVal( &u32 );
-    printf( "Software watchdog timer:           %" PRIu32 " us\n", u32 );
     printf( "Heartbeat count:                   %d\n",    hbCnt );
     printf( "Software watchdog error count:     %d\n",    wdErrorCnt );
     printf( "Maximum period between heartbeats: %f us\n", ( txPeriod.getMaxPeriod()    * 1000000 ) );
@@ -55,7 +50,6 @@ void HeartBeat::printReport()
 
 void HeartBeat::setWdTime( const uint32_t& timeout )
 {
-    swWdTime->setVal( timeout );
 }
 
 void HeartBeat::beat()
@@ -101,13 +95,8 @@ void HeartBeat::beatWriter()
         txDuration.start();
 
         // Check if there was a WD error, and increase counter accordingly
-        uint32_t u32;
-        swWdError->getVal( &u32 );
-        if ( u32 )
-            ++wdErrorCnt;
 
         // Set heartbeat command
-        swHeartBeat->setVal( static_cast<uint64_t>( 0 ) );
 
         // Tick period timer;
         txPeriod.tick();
@@ -117,8 +106,6 @@ void HeartBeat::beatWriter()
 
         // Tick the duration timer
         txDuration.tick();
-
-        swHeartBeat->setVal( static_cast<uint64_t>( 1 ) );
 
         beatReq = false;
     }

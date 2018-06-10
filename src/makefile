@@ -37,6 +37,7 @@ central_node_engine_SRCS += central_node_history.cc
 central_node_engine_SRCS += time_util.cc
 central_node_engine_SRCS += timer.cc
 central_node_engine_SRCS += heartbeat.cc
+central_node_engine_SRCS += heartbeat_noop.cc
 central_node_engine_SRCS += buffer.cc
 
 DEP_HEADERS  = $(HEADERS)
