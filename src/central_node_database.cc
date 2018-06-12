@@ -30,7 +30,7 @@ pthread_mutex_t MpsDb::_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool MpsDb::_initialized = false;
 
 MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
-  fwUpdateBuffer(100*1024),
+  fwUpdateBuffer( fwUpdateBuferSize ),
   run( true ),
   fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
   updateInputThread( std::thread( &MpsDb::updateInputs, this ) ), 

@@ -61,6 +61,7 @@ class MpsDb {
 		// 	   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
   DataBuffer<uint8_t>     fwUpdateBuffer;
+  static const uint32_t          fwUpdateBuferSize = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
 
   boost::atomic<bool>     run;
  
