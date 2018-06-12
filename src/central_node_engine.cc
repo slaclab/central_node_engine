@@ -856,6 +856,9 @@ void *Engine::engineThread(void *arg)
             // Inputs were processed
             Engine::getInstance()._mpsDb->inputProcessed();
 
+            // The mitigation buffer was written        
+            Engine::getInstance()._mpsDb->mitBufferDoneWriting();
+
             _updateCounter++;
             counter++;
             now = time(0);

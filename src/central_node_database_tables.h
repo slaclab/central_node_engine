@@ -493,7 +493,6 @@ class DbBeamDestination : public DbEntry {
   void setAllowedBeamClass() {
     allowedBeamClass = tentativeBeamClass;
     softwareMitigationBuffer->getWritePtr()->at(softwareMitigationBufferIndex) |= ((allowedBeamClass->number & 0xF) << bitShift);
-    softwareMitigationBuffer->doneWriting();
 
     if (previousAllowedBeamClass->number != allowedBeamClass->number) {
       History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
