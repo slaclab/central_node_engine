@@ -22,18 +22,35 @@ TimeAverage AnalogDeviceUpdateTime(5, "Analog Device update time");
 TimeAverage AppCardDigitalUpdateTime(5, "Application Card (digital) update time");
 TimeAverage AppCardAnalogUpdateTime(5, "Application Card (analog) update time");
 
+ApplicationUpdateBufferBitSetHalf* DbApplicationCardInput::getWasLowBuffer()
+{
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasLowBufferOffset));
+}
+
+ApplicationUpdateBufferBitSetHalf* DbApplicationCardInput::getWasHighBuffer()
+{
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasHighBufferOffset));
+}
+
 uint32_t DbApplicationCardInput::getWasLow(int channel) {
-  return (*wasLowBuffer)[channel];
+  return (*getWasLowBuffer())[channel];
 }
 
 uint32_t DbApplicationCardInput::getWasHigh(int channel) {
-  return (*wasHighBuffer)[channel];
+  return (*getWasHighBuffer())[channel];
 }
 
-void DbApplicationCardInput::setUpdateBuffers(ApplicationUpdateBufferBitSetHalf *wasLowBuf,
-					      ApplicationUpdateBufferBitSetHalf *wasHighBuf) {
-  wasLowBuffer = wasLowBuf;
-  wasHighBuffer = wasHighBuf;
+void DbApplicationCardInput::setUpdateBuffers(DataBuffer<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff) 
+{
+    fwUpdateBuffer      = bufPtr;
+    wasLowBufferOffset  = wasLowBufferOff;
+    wasHighBufferOffset = wasHighBufferOff;
 }
 
 // void DbDeviceInput::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
@@ -59,7 +76,7 @@ void DbDeviceInput::update() {
 
   DeviceInputUpdateTime.start();
 
-  if (wasLowBuffer) {
+  if (getWasLowBuffer()) {
     previousValue = value;
 
     wasLow = getWasLow(channel->number);
@@ -152,10 +169,10 @@ void DbAnalogDevice::update() {
 
   AnalogDeviceUpdateTime.start();
 
-  if (wasLowBuffer) {
+  if (getWasLowBuffer()) {
     previousValue = value;
-
     value = 0;
+
     uint32_t integratorOffset = 0;
     for (uint32_t i = 0; i < deviceType->numIntegrators; ++i) {
       integratorOffset = numChannelsCard * ANALOG_DEVICE_NUM_THRESHOLDS * i + channel->number * ANALOG_DEVICE_NUM_THRESHOLDS;
@@ -241,7 +258,7 @@ void DbApplicationCard::configureUpdateBuffers() {
 	   deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
 	//	std::cout << "D" << (*deviceInput).second->id << " ";
 	//	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
-	(*deviceInput).second->setUpdateBuffers(wasLowBuffer, wasHighBuffer);
+	(*deviceInput).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
       }
     }
   }
@@ -250,7 +267,7 @@ void DbApplicationCard::configureUpdateBuffers() {
 	 analogDevice != analogDevices->end(); ++analogDevice) {
       //      std::cout << "A" << (*analogDevice).second->id << " ";
       //(*analogDevice).second->setUpdateBuffer(applicationUpdateBuffer);
-      (*analogDevice).second->setUpdateBuffers(wasLowBuffer, wasHighBuffer);
+      (*analogDevice).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
     }
   }
   else {
@@ -273,7 +290,6 @@ void DbApplicationCard::updateInputs() {
   else {
     online = true;
   }
-
 
   if (digitalDevices) {
     AppCardDigitalUpdateTime.start();

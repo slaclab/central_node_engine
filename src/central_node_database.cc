@@ -765,14 +765,7 @@ void MpsDb::configureApplicationCards() {
     aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(fwUpdateBuffer.getReadPtr());
 
     // New mapping
-    // uint8_t *statusBits = updateBuffer;
-    uint8_t* statusBits = &fwUpdateBuffer.getReadPtr()->at(
-      APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + // Skip header (timestamp + zeroes)
-      aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES); // Jump to correct area according to the globalId
-
-    aPtr->wasLowBuffer = reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(statusBits);
-    statusBits += (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2); // Skip 192 bits from wasLow
-    aPtr->wasHighBuffer = reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(statusBits);
+    aPtr->setUpdateBufferPtr(&fwUpdateBuffer);
 
     // Find the ApplicationType for each card
     DbApplicationTypeMap::iterator applicationTypeIt = applicationTypes->find(aPtr->applicationTypeId);

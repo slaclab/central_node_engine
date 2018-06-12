@@ -315,6 +315,35 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
 
 DbApplicationCard::DbApplicationCard() {};
 
+void DbApplicationCard::setUpdateBufferPtr(DataBuffer<uint8_t>* p)
+{ 
+    fwUpdateBuffer = p; 
+
+    wasLowBufferOffset = 
+      APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +            // Skip header (timestamp + zeroes)
+      globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;  // Jump to correct area according to the globalId
+
+    wasHighBufferOffset = 
+        wasLowBufferOffset + 
+        (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2);        // Skip 192 bits from wasLow
+}
+
+ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasLowBuffer()
+{ 
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasLowBufferOffset));  
+}
+
+ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasHighBuffer()
+{
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasHighBufferOffset));
+}
+
 std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
   os << "App: " << appCard->name << " : "
      << appCard->description << std::endl

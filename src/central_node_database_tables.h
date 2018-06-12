@@ -15,6 +15,8 @@
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
 
+#include "buffer.h"
+
 using boost::shared_ptr;
 using boost::weak_ptr;
 
@@ -135,14 +137,19 @@ typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
 
 class DbApplicationCardInput {
  public:
-  ApplicationUpdateBufferBitSetHalf *wasLowBuffer;
-  ApplicationUpdateBufferBitSetHalf *wasHighBuffer;
+  DbApplicationCardInput() : fwUpdateBuffer(NULL),  wasLowBufferOffset(999), wasHighBufferOffset(888) {};
+  ApplicationUpdateBufferBitSetHalf* getWasLowBuffer();
+  ApplicationUpdateBufferBitSetHalf* getWasHighBuffer();
 
-  void setUpdateBuffers(ApplicationUpdateBufferBitSetHalf *wasLowBuf,
-			ApplicationUpdateBufferBitSetHalf *wasHighBuf);
+  void setUpdateBuffers(DataBuffer<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff);
 
   uint32_t getWasLow(int channel);
   uint32_t getWasHigh(int channel);
+
+ private:
+  DataBuffer<uint8_t>* fwUpdateBuffer;
+  size_t               wasLowBufferOffset;
+  size_t               wasHighBufferOffset;
 };
 
 /**
@@ -381,8 +388,9 @@ class DbApplicationCard : public DbEntry {
   DbAnalogDeviceMapPtr analogDevices;
   DbDigitalDeviceMapPtr digitalDevices;
 
-  ApplicationUpdateBufferBitSetHalf *wasLowBuffer;
-  ApplicationUpdateBufferBitSetHalf *wasHighBuffer;
+  void setUpdateBufferPtr(DataBuffer<uint8_t>* p);
+  ApplicationUpdateBufferBitSetHalf* getWasLowBuffer();
+  ApplicationUpdateBufferBitSetHalf* getWasHighBuffer();
 
   DbApplicationCard();
 
@@ -398,6 +406,11 @@ class DbApplicationCard : public DbEntry {
   bool isDigital();
 
   friend std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard);
+
+ private:
+  DataBuffer<uint8_t>* fwUpdateBuffer;
+  size_t               wasLowBufferOffset;
+  size_t               wasHighBufferOffset;
 };
 
 typedef shared_ptr<DbApplicationCard> DbApplicationCardPtr;
