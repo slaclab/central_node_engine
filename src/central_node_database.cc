@@ -834,7 +834,7 @@ void MpsDb::configureApplicationCards() {
 void MpsDb::configureBeamDestinations() {
   for (DbBeamDestinationMap::iterator it = beamDestinations->begin();
        it != beamDestinations->end(); ++it) {
-    (*it).second->softwareMitigationBuffer = softwareMitigationBuffer.getReadPtr()->data();
+    (*it).second->setSoftwareMitigationBuffer( &softwareMitigationBuffer );
     (*it).second->previousAllowedBeamClass = lowestBeamClass;
     (*it).second->allowedBeamClass = lowestBeamClass;
   }
