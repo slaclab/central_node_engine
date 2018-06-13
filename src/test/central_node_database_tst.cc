@@ -9,6 +9,7 @@
 #include <central_node_database.h>
 #include <boost/shared_ptr.hpp>
 #include <log.h>
+#include "buffer.h"
 
 using boost::shared_ptr;
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)

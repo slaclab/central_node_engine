@@ -9,7 +9,7 @@
 /**
  * The bypass expirations are monitored via a priority queue. The head of the
  * queue points to the bypass that will expire first. If a bypass time is
- *  
+ *
  */
 typedef std::pair<time_t, InputBypassPtr> BypassQueueEntry;
 
@@ -34,7 +34,7 @@ class BypassManager {
   pthread_mutex_t mutex;
   bool initialized;
   static bool refreshFirmwareConfiguration;
-  
+
  public:
   BypassManager();
   void createBypassMap(MpsDbPtr db);
@@ -47,7 +47,7 @@ class BypassManager {
 		 uint32_t value, time_t bypassUntil, bool test = false);
   void printBypassQueue();
   bool isInitialized();
-  
+
   void startBypassThread();
   static void *bypassThread(void *arg);
 

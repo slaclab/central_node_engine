@@ -8,12 +8,12 @@
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *firmwareLogger;
-#endif 
+#endif
 
 #ifndef FW_ENABLED
 
 //====================================================================
-// The following code is for testing the Central Node software 
+// The following code is for testing the Central Node software
 // without the Central Node board/firmware.
 //====================================================================
 #warning "Code compiled without CPSW - NO FIRMWARE"
@@ -38,7 +38,7 @@ Firmware::Firmware() :
   if (_updateSock < 0) {
     throw(CentralNodeException("ERROR: Failed to open socket for simulated firmware inputs"));
   }
-  
+
   int optval = 1;
   setsockopt(_updateSock, SOL_SOCKET, SO_REUSEADDR,
              (const void *) &optval , sizeof(int));
@@ -64,7 +64,7 @@ Firmware::Firmware() :
 };
 
 Firmware::~Firmware() {
-} 
+}
 
 int Firmware::createRoot(std::string yamlFileName) {
   return 0;
@@ -283,7 +283,7 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
     strncpy(info.user, Engine::getInstance().getCurrentDb()->databaseInfo->at(0)->user.c_str(), 64);
     strncpy(info.md5sum, Engine::getInstance().getCurrentDb()->databaseInfo->at(0)->md5sum.c_str(), 64);
 
-    int n = sendto(_updateSock, &info, sizeof(DatabaseInfo), 0, 
+    int n = sendto(_updateSock, &info, sizeof(DatabaseInfo), 0,
 		   reinterpret_cast<struct sockaddr *>(&clientaddr), clientlen);
 
     return 0;
@@ -303,7 +303,7 @@ void Firmware::writeMitigation(uint32_t *mitigation) {
   for (int i = 0; i < 2; ++i) {
     uint32_t powerClass = mitigation[i];
     for (int j = 0; j < 32; j = j + 4) {
-      std::cout << "Destination[" << i * 8 + j/4<< "]: Class[" << ((powerClass >> j) & 0xF) << "]" << std::endl; 
+      std::cout << "Destination[" << i * 8 + j/4<< "]: Class[" << ((powerClass >> j) & 0xF) << "]" << std::endl;
     }
   }
   */

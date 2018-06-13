@@ -5,15 +5,21 @@
 #include <exception>
 #include <iostream>
 #include <bitset>
+#include <vector>
+#include <cstring>
 #include <central_node_database_defs.h>
 #include <central_node_exception.h>
 #include <central_node_bypass.h>
 #include <central_node_history.h>
 #include <stdint.h>
 #include <time_util.h>
+#include "timer.h"
+#include "buffer.h"
 
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/atomic.hpp>
+#include <thread>
 
 using boost::shared_ptr;
 using boost::weak_ptr;
@@ -45,30 +51,46 @@ class MpsDb {
 
   /**
    * Memory that receives input updates from firmware/hardware. There are
-   * up to 384 inputs bits per application, 2-bit per input indicating 
+   * up to 384 inputs bits per application, 2-bit per input indicating
    * a 'was low' and 'was high' status.
    *
    * The bits from 0 to 191 are the 'was low' status, and bits 192 to 383
    * are the 'was high' status.
    */
-  uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + 
-			   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
+  // uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
+		// 	   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
+
+  DataBuffer<uint8_t>     fwUpdateBuffer;
+  static const uint32_t          fwUpdateBuferSize = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
+
+  boost::atomic<bool>     run;
+ 
+  std::thread fwUpdateThread;
+  std::thread updateInputThread;
+  std::thread mitigationThread;
+
+  void fwUpdateReader();
+  void updateInputs();
+  void mitigationWriter();
+
+  bool                    inputsUpdated;
+  std::mutex              inputsUpdatedMutex;
+  std::condition_variable inputsUpdatedCondVar;
 
   uint64_t _fastUpdateTimeStamp;
   uint64_t _diff;
   uint64_t _maxDiff;
   uint32_t _diffCount;
 
-  /** 
+  /**
    * Each destination takes 4-bits for the allowed power class.
    */
-  uint32_t softwareMitigationBuffer[NUM_DESTINATIONS / 8];
+  DataBuffer<uint32_t> softwareMitigationBuffer;
 
-  TimeAverage _inputUpdateTime;
+  Timer<double> _inputUpdateTime;
   bool _clearUpdateTime;
 
-  TimeAverage _inputDelayTime;
-  bool _clearInputDelayTime;
+  Timer<double> fwUpdateTimer;
 
   uint32_t _inputUpdateTimeout;
 
@@ -80,7 +102,9 @@ class MpsDb {
 
   uint32_t _updateCounter;
   uint32_t _updateTimeoutCounter;
-  
+
+  Timer<double> mitigationTxTime;
+
  public:
   DbBeamClassPtr lowestBeamClass;
   DbCrateMapPtr crates;
@@ -111,7 +135,7 @@ class MpsDb {
   std::string name;
 
   // This is initialized by the configure() method, after loading the YAML file
-  //  DbFaultStateMapPtr faultStates; 
+  //  DbFaultStateMapPtr faultStates;
 
   MpsDb(uint32_t inputUpdateTimeout=3500);
   ~MpsDb();
@@ -128,28 +152,35 @@ class MpsDb {
   void showInfo();
 
   void writeFirmwareConfiguration();
-  bool updateInputs();
   void unlatchAll();
   void clearMitigationBuffer();
-  void mitigate();
 
   void clearUpdateTime();
   long getMaxUpdateTime();
   long getAvgUpdateTime();
-  long getMaxInputDelayTime();
-  long getAvgInputDelayTime();
+  long getMaxFwUpdatePeriod();
+  long getAvgFwUpdatePeriod();
 
-  uint8_t *getFastUpdateBuffer() {
-    return &fastUpdateBuffer[0];
-  }
-  
+  uint64_t getFastUpdateTimeStamp() const { return _fastUpdateTimeStamp; };
+  std::vector<uint8_t> getFastUpdateBuffer();
+
   //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
+
+  bool                     isInputReady()          const { return inputsUpdated;         };
+  std::mutex*              getInputUpdateMutex()         { return &inputsUpdatedMutex;   };
+  std::condition_variable* getInputUpdateCondVar()       { return &inputsUpdatedCondVar; };
+  void                     inputProcessed()              { inputsUpdated = false;        };
+
+  bool                     isMitBufferWriteReady() const { return softwareMitigationBuffer.isWriteReady(); };
+  std::mutex*              getMitBufferMutex()           { return softwareMitigationBuffer.getMutex();     };
+  std::condition_variable* getMitBufferCondVar()         { return softwareMitigationBuffer.getCondVar();   };
+  void                     mitBufferDoneWriting()        { softwareMitigationBuffer.doneWriting();         };
 
   template<class MapPtrType, class IteratorType>
     void printMap(std::ostream &os, MapPtrType map,
 	     std::string mapName) {
     os << mapName << ":" << std::endl;
-    for (IteratorType it = map->begin(); 
+    for (IteratorType it = map->begin();
 	 it != map->end(); ++it) {
       os << "  " << (*it).second << std::endl;
     }

@@ -31,7 +31,7 @@ const uint32_t APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES = APPLICATION_CONFIG_BU
 // [ 128 -  191] Was low status from bits 128 to 191
 // [ 192 -  255] Was high status from bits 0 to 63
 // [ 256 -  383] Was low status from bits 0 to 127
-// 
+//
 
 // Header sizes
 const uint32_t APPLICATION_UPDATE_BUFFER_HEADER_ZEROES_SIZE = 64;
@@ -99,10 +99,10 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 //
 // Each application card has an array of bits for the fast firmware
 // evaluation. The formats are different for digital and analog inputs
-// 
+//
 // Digital input configuration (total size = 1344 bits):
 //
-//   +------------> Expected digital input state 
+//   +------------> Expected digital input state
 //   |   +--------> 16-bit destination mask
 //   |   |    +---> 4-bit encoded power class
 //   |   |    |
@@ -116,7 +116,7 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 // Analog input configuration (total size = 1152 bits):
 //
 //   +------------> 16-bit destination mask
-//   |   
+//   |
 //   |                        +---> 4-bit encoded power class
 //   |                        |
 // +----+----+---   ---+----+----+---+---   ---+---+---+
@@ -124,17 +124,17 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 // +----+----+---   ---+----+----+---+---   ---+---+---+
 // |B23 |B22 |   ...   | B0 |M191|M190   ...   | M1| M0|
 //
-// Bxx are the 16-bit destination masks for each 
+// Bxx are the 16-bit destination masks for each
 // 4 integrators of each of the 6 channels:
 // 6 * 4 = 24 (B0-B23)
-// 
+//
 // Power classes (M0-M191):
 // 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
 // 8 comparators for each integrator:
 // 8 * 4 * 6 = 192 (M0 through M191)
 //
 // EIC: only one integrator per channel - the configuration for the integrators is contiguous
-// 
+//
 // The order of the integrators/destination masks starts with the first
 // integrators of all channels, then the second integrators, and so on.
 //
@@ -157,7 +157,7 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 // Byte3 - channel 1, Y
 // Byte4 - channel 0, TMIT
 // Byte5 - channel 1, TMIT
-// 
+//
 typedef std::bitset<APPLICATION_CONFIG_BUFFER_SIZE> ApplicationConfigBufferBitSet;
 
 typedef std::bitset<APPLICATION_UPDATE_BUFFER_INPUTS_SIZE * 10 +

@@ -23,7 +23,7 @@ std::ostream & operator<<(std::ostream &os, DbEntry * const entry) {
 DbCrate::DbCrate() : DbEntry(), number(-1), numSlots(-1), shelfNumber(-1) {};
 
 std::ostream & operator<<(std::ostream &os, DbCrate * const crate) {
-  os << "id[" << crate->id << "]; " 
+  os << "id[" << crate->id << "]; "
      << "number[" << crate->number << "]; "
      << "slots[" << crate->numSlots << "]; "
      << "shelf[" << crate->shelfNumber << "]";
@@ -47,7 +47,7 @@ DbApplicationType::DbApplicationType() : DbEntry(), number(-1),
 }
 
 std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
-  os << "id[" << appType->id << "]; " 
+  os << "id[" << appType->id << "]; "
      << "number[" << appType->number << "]; "
      << "analogChannelCount[" << appType->analogChannelCount << "]; "
      << "analogChannelSize[" << appType->analogChannelSize << "]; "
@@ -66,9 +66,9 @@ std::ostream & operator<<(std::ostream &os, DbChannel * const channel) {
      << "channel=" << channel->number << " : "
      << "dbId=" << channel->id;
   /*
-  os << "id[" << channel->id << "]; " 
+  os << "id[" << channel->id << "]; "
      << "number[" << channel->number << "]; "
-     << "cardId[" << channel->cardId << "]; " 
+     << "cardId[" << channel->cardId << "]; "
      << "name[" << channel->name << "]";
   */
   return os;
@@ -123,7 +123,7 @@ std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType) {
   return os;
 }
 
-DbDeviceInput::DbDeviceInput() : DbEntry(), 
+DbDeviceInput::DbDeviceInput() : DbEntry(),
 				 bitPosition(-1), channelId(-1), faultValue(0),
 				 digitalDeviceId(-1), value(0), previousValue(0),
 				 latchedValue(0), invalidValueCount(0),
@@ -148,7 +148,7 @@ std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
     os << " [Bypassed to " << deviceInput->bypass->value << "]";
   }
   /*
-  os << "id[" << deviceInput->id << "]; " 
+  os << "id[" << deviceInput->id << "]; "
      << "bitPosition[" << deviceInput->bitPosition << "]; "
      << "faultValue[" << deviceInput->faultValue << "]; "
      << "channelId[" << deviceInput->channelId << "]; "
@@ -221,7 +221,7 @@ uint32_t DbAnalogDevice::unlatch(uint32_t mask) {
   // Get the threshold bit from current value
   uint32_t currentBitValue = (value & mask);
 
-  // Copy the current threshold bit value to the latchedValue 
+  // Copy the current threshold bit value to the latchedValue
   latchedValue &= (currentBitValue & ~mask);
 
   return currentBitValue;
@@ -315,6 +315,35 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
 
 DbApplicationCard::DbApplicationCard() {};
 
+void DbApplicationCard::setUpdateBufferPtr(DataBuffer<uint8_t>* p)
+{ 
+    fwUpdateBuffer = p; 
+
+    wasLowBufferOffset = 
+      APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +            // Skip header (timestamp + zeroes)
+      globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;  // Jump to correct area according to the globalId
+
+    wasHighBufferOffset = 
+        wasLowBufferOffset + 
+        (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2);        // Skip 192 bits from wasLow
+}
+
+ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasLowBuffer()
+{ 
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasLowBufferOffset));  
+}
+
+ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasHighBuffer()
+{
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasHighBufferOffset));
+}
+
 std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
   os << "App: " << appCard->name << " : "
      << appCard->description << std::endl
@@ -349,7 +378,7 @@ DbFaultInput::DbFaultInput() : DbEntry(), faultId(-1), deviceId(-1), bitPosition
 }
 
 std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
-  os << "id[" << crate->id << "]; " 
+  os << "id[" << crate->id << "]; "
      << "faultId[" << crate->faultId << "]; "
      << "deviceId[" << crate->deviceId << "]; "
      << "bitPosition[" << crate->bitPosition << "]";
@@ -496,7 +525,7 @@ DbConditionInput::DbConditionInput() : DbEntry(), bitPosition(0), faultStateId(0
 }
 
 std::ostream & operator<<(std::ostream &os, DbConditionInput * const input) {
-  os << "id[" << input->id << "]; " 
+  os << "id[" << input->id << "]; "
      << "bitPosition[" << input->bitPosition << "]; "
      << "faultStateId[" << input->faultStateId << "]; "
      << "conditionId[" << input->conditionId << "]";
@@ -507,7 +536,7 @@ DbIgnoreCondition::DbIgnoreCondition() : DbEntry(), conditionId(0), faultStateId
 }
 
 std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input) {
-  os << "id[" << input->id << "]; " 
+  os << "id[" << input->id << "]; "
      << "faultStateId[" << input->faultStateId << "]; "
      << "conditionId[" << input->conditionId << "]";
   return os;

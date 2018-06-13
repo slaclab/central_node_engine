@@ -6,6 +6,7 @@
 #include <bitset>
 #include <boost/shared_ptr.hpp>
 #include <time_util.h>
+#include "timer.h"
 
 #include <cpsw_api_user.h>
 
@@ -61,7 +62,7 @@ class Firmware {
   Path getRoot();
 
   friend class FirmwareTest;
-  
+
  protected:
   Path _root;
 
@@ -71,7 +72,7 @@ class Firmware {
   ScalVal    _enableSV;
   ScalVal_RO _swLossErrorSV;
   ScalVal_RO _swLossCntSV;
-  ScalVal_RO _txClkCntSV; 
+  ScalVal_RO _txClkCntSV;
   ScalVal    _configSV[FW_NUM_APPLICATIONS];
   ScalVal    _swEnableSV;
   ScalVal    _swClearSV;
@@ -135,18 +136,6 @@ class Firmware {
   uint8_t buildStamp[256];
   char gitHashString[21];
 
-  bool _firstHeartbeat;
-  TimeAverage _heartbeatTime;
-
-  static uint32_t _swLossErrorCounter;
-  static uint32_t _swBusyCounter;
-  static uint32_t _swPauseCounter;
-  static uint32_t _swWdErrorCounter;
-  static uint32_t _swOvflCntCounter;
-  static uint32_t _monitorNotReadyCounter;
-
-  static bool _skipHeartbeat;
-
   bool heartbeat();
 
   void setEnable(bool enable);
@@ -162,7 +151,7 @@ class Firmware {
   bool getTimingCheckEnable();
   bool getEvaluationEnable();
   bool getTimeoutEnable();
- 
+
   void softwareClear();
   uint32_t getFaultReason();
   void showStats();
@@ -193,7 +182,7 @@ class Firmware {
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
   void writeMitigation(uint32_t *mitigation);
   void writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]);
-  
+
   static Firmware &getInstance() {
     static Firmware instance;
     return instance;

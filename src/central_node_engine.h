@@ -12,14 +12,18 @@
 #include <central_node_bypass.h>
 #include <central_node_bypass_manager.h>
 #include <time_util.h>
+#include "timer.h"
+#include "buffer.h"
+#include "heartbeat.h"
 
 using boost::shared_ptr;
 
-class EngineException: public CentralNodeException {
- public:
-  explicit EngineException(const char* message) : CentralNodeException(message) {}
-  explicit EngineException(const std::string& message) : CentralNodeException(message) {}
-  virtual ~EngineException() throw () {}
+class EngineException: public CentralNodeException
+{
+public:
+    explicit EngineException(const char* message) : CentralNodeException(message) {}
+    explicit EngineException(const std::string& message) : CentralNodeException(message) {}
+    virtual ~EngineException() throw () {}
 };
 
 /**
@@ -31,92 +35,101 @@ class EngineException: public CentralNodeException {
  * - Request mitigation
  */
 
-class Engine {
- private:
-  Engine();
-  Engine(Engine const &);
-  ~Engine();
+class Engine
+{
+private:
+    Engine();
+    Engine(Engine const &);
+    ~Engine();
 
-  void operator=(Engine const &);
-  bool _initialized;
-  pthread_t _engineThread;
+    void operator=(Engine const &);
+    bool _initialized;
+    pthread_t _engineThread;
 
-  static pthread_mutex_t _engineMutex;
-  static volatile bool _evaluate;
-  static uint32_t _rate;
-  static uint32_t _updateCounter;
-  static time_t _startTime;
+    static pthread_mutex_t _engineMutex;
+    static volatile bool _evaluate;
+    static uint32_t _rate;
+    static uint32_t _updateCounter;
+    static time_t _startTime;
 
-  uint32_t _debugCounter;
-  static uint32_t _inputUpdateFailCounter;
+    uint32_t _debugCounter;
+    static uint32_t _inputUpdateFailCounter;
 
- public:
-  int loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout=3500);
-  int reloadConfig();
-  int reloadConfigFromIgnore();
-  int checkFaults();
-  bool isInitialized();
+public:
+    int loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout=3500);
+    int reloadConfig();
+    int reloadConfigFromIgnore();
+    int checkFaults();
+    bool isInitialized();
 
-  void threadExit();
-  void threadJoin();
+    void threadExit();
+    void threadJoin();
 
-  friend class EngineTest;
-  friend class BypassTest;
-  friend class FirmwareTest;
+    friend class EngineTest;
+    friend class BypassTest;
+    friend class FirmwareTest;
 
-  void showFaults();
-  void showStats();
-  void showBeamDestinations();
-  void showDeviceInputs();
-  void showFirmware();
-  void showDatabaseInfo();
+    void showFaults();
+    void showStats();
+    void showBeamDestinations();
+    void showDeviceInputs();
+    void showFirmware();
+    void showDatabaseInfo();
 
-  uint32_t getUpdateRate();
-  uint32_t getUpdateCounter();
-  time_t getStartTime();
+    uint32_t getUpdateRate();
+    uint32_t getUpdateCounter();
+    time_t getStartTime();
 
-  void clearCheckTime();
-  long getMaxCheckTime();
-  long getAvgCheckTime();
-  long getMaxEvalTime();
-  long getAvgEvalTime();
+    long getMaxCheckTime();
+    long getAvgCheckTime();
+    long getMaxEvalTime();
+    long getAvgEvalTime();
 
-  MpsDbPtr getCurrentDb();
-  BypassManagerPtr getBypassManager();
+    MpsDbPtr getCurrentDb();
+    BypassManagerPtr getBypassManager();
 
- private:
-  void mitigate();
+    // Watchdog error counter
+    int getWdErrorCnt() const { return hb.getWdErrorCnt(); };
 
-  void setTentativeBeamClass();
-  void setAllowedBeamClass();
+    // Watchdog times
+    long getAvgWdUpdatePeriod();
+    long getMaxWdUpdatePeriod();
 
-  void evaluateFaults();
-  bool evaluateIgnoreConditions();
-  void mitgate();
+private:
+    void mitigate();
 
-  MpsDbPtr _mpsDb;
-  BypassManagerPtr _bypassManager;
+    void setTentativeBeamClass();
+    void setAllowedBeamClass();
 
-  DbBeamClassPtr _highestBeamClass;
-  DbBeamClassPtr _lowestBeamClass;
+    void evaluateFaults();
+    bool evaluateIgnoreConditions();
+    void mitgate();
 
-  std::stringstream _errorStream;
-  TimeAverage _checkFaultTime;
-  bool _clearCheckFaultTime;
+    MpsDbPtr _mpsDb;
+    BypassManagerPtr _bypassManager;
 
-  TimeAverage _evaluationCycleTime;
-  bool _clearEvaluationCycleTime;
+    DbBeamClassPtr _highestBeamClass;
+    DbBeamClassPtr _lowestBeamClass;
 
- public:
-  static Engine &getInstance() {
-    static Engine instance;
-    return instance;
-  }
+    std::stringstream _errorStream;
+    Timer<double> _checkFaultTime;
 
-  void startUpdateThread();
-  static void *engineThread(void *arg);
+    Timer<double>  _evaluationCycleTime;
 
-  friend class MpsDb;
+    // Heartbeat control class
+    HeartBeat hb;
+
+public:
+    static Engine &getInstance()
+    {
+        static Engine instance;
+        return instance;
+    }
+
+    void startUpdateThread();
+    static void *engineThread(void *arg);
+
+    friend class MpsDb;
 };
 
 typedef shared_ptr<Engine> EnginePtr;

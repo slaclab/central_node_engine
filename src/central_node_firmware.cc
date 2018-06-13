@@ -8,21 +8,19 @@
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
 static Logger *firmwareLogger;
-#endif 
+#endif
 
-uint32_t Firmware::_swWdErrorCounter = 0;
-uint32_t Firmware::_swLossErrorCounter = 0;
-uint32_t Firmware::_swBusyCounter = 0;
-uint32_t Firmware::_swPauseCounter = 0;
-uint32_t Firmware::_swOvflCntCounter = 0;
-uint32_t Firmware::_monitorNotReadyCounter = 0;
-bool     Firmware::_skipHeartbeat = false;
+// uint32_t Firmware::_swWdErrorCounter = 0;
+// uint32_t Firmware::_swLossErrorCounter = 0;
+// uint32_t Firmware::_swBusyCounter = 0;
+// uint32_t Firmware::_swPauseCounter = 0;
+// uint32_t Firmware::_swOvflCntCounter = 0;
+// uint32_t Firmware::_monitorNotReadyCounter = 0;
+// bool     Firmware::_skipHeartbeat = false;
 
 #ifdef FW_ENABLED
-Firmware::Firmware() : 
-  _firstHeartbeat(true),
-  _heartbeatTime(5, "Time Between Heartbeats") {
-
+Firmware::Firmware()
+  {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   firmwareLogger = Loggers::getLogger("FIRMWARE");
   LOG_TRACE("FIRMWARE", "Created Firmware");
@@ -75,7 +73,7 @@ int Firmware::createRegisters() {
 
     name = base + axi + "/BuildStamp";
     _buildStampSV  = IScalVal_RO::create(_root->findByName(name.c_str()));
-    
+
     name = base + axi + "/GitHash";
     _gitHashSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
@@ -132,13 +130,13 @@ int Firmware::createRegisters() {
 
     name = base + mps + core + "/EvaluationSwPowerLevel";
     _swMitigationSV = IScalVal::create(_root->findByName(name.c_str()));
-    
+
     name = base + mps + core + "/EvaluationFwPowerLevel";
     _fwMitigationSV = IScalVal_RO::create(_root->findByName(name.c_str()));
-    
+
     name = base + mps + core + "/EvaluationLatchedPowerLevel";
     _latchedMitigationSV = IScalVal_RO::create(_root->findByName(name.c_str()));
-    
+
     name = base + mps + core + "/EvaluationPowerLevel";
     _mitigationSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
@@ -156,10 +154,10 @@ int Firmware::createRegisters() {
 
     name = base + mps + core + "/MonitorReady";
     _monitorReadySV = IScalVal_RO::create(_root->findByName(name.c_str()));
-    
+
     name = base + mps + core + "/MonitorRxErrCnt";
     _monitorRxErrorCntSV = IScalVal_RO::create(_root->findByName(name.c_str()));
-    
+
     name = base + mps + core + "/MonitorPauseCnt";
     _monitorPauseCntSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
@@ -169,37 +167,37 @@ int Firmware::createRegisters() {
     name = base + mps + core + "/MonitorDropCnt";
     _monitorDropCntSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/MonitorConcWdErr"; 
+    name = base + mps + core + "/MonitorConcWdErr";
     _monitorConcWdErrSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/MonitorConcStallErr"; 
+    name = base + mps + core + "/MonitorConcStallErr";
     _monitorConcStallErrSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/MonitorConcExtRxErr"; 
+    name = base + mps + core + "/MonitorConcExtRxErr";
     _monitorConcExtRxErrSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/TimeoutEnable"; 
+    name = base + mps + core + "/TimeoutEnable";
     _timeoutEnableSV = IScalVal::create(_root->findByName(name.c_str()));
-    
-    name = base + mps + core + "/TimeoutClear"; 
+
+    name = base + mps + core + "/TimeoutClear";
     _timeoutClearSV = IScalVal::create(_root->findByName(name.c_str()));
-    
-    name = base + mps + core + "/TimeoutTime"; 
+
+    name = base + mps + core + "/TimeoutTime";
     _timeoutTimeSV = IScalVal::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/TimeoutMask"; 
+    name = base + mps + core + "/TimeoutMask";
     _timeoutMaskSV = IScalVal::create(_root->findByName(name.c_str()));
 
     // Initialize timeout mask to zero
     writeAppTimeoutMask();
 
-    name = base + mps + core + "/TimeoutErrStatus"; 
+    name = base + mps + core + "/TimeoutErrStatus";
     _timeoutErrStatusSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/TimeoutErrIndex"; 
+    name = base + mps + core + "/TimeoutErrIndex";
     _timeoutErrIndexSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/TimeoutMsgVer"; 
+    name = base + mps + core + "/TimeoutMsgVer";
     _timeoutMsgVerSV = IScalVal::create(_root->findByName(name.c_str()));
 
     name = base + mps + core + "/EvaluationEnable";
@@ -208,19 +206,19 @@ int Firmware::createRegisters() {
     name = base + mps + core + "/EvaluationTimeStamp";
     _evaluationTimeStampSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/SoftwareWdTime"; 
+    name = base + mps + core + "/SoftwareWdTime";
     _swWdTimeSV = IScalVal::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/SoftwareBusy"; 
+    name = base + mps + core + "/SoftwareBusy";
     _swBusySV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/SoftwarePause"; 
+    name = base + mps + core + "/SoftwarePause";
     _swPauseSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/SoftwareWdError"; 
+    name = base + mps + core + "/SoftwareWdError";
     _swWdErrorSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/SoftwareOvflCnt"; 
+    name = base + mps + core + "/SoftwareOvflCnt";
     _swOvflCntSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
     name = "/Stream0";
@@ -232,7 +230,7 @@ int Firmware::createRegisters() {
       appId << "/AppId" << i;
       name = base + mps + config + appId.str();
       _configSV[i] = IScalVal::create(_root->findByName(name.c_str()));
-    } 
+    }
   } catch (NotFoundError &e) {
     throw(CentralNodeException("ERROR: Failed to find " + name));
   } catch (InterfaceNotImplementedError &e) {
@@ -269,7 +267,7 @@ int Firmware::createRegisters() {
 
 void Firmware::writeAppTimeoutMask() {
   try {
-    _timeoutMaskSV->setVal(&_applicationTimeoutMaskBuffer[0], FW_NUM_APPLICATION_MASKS_WORDS); 
+    _timeoutMaskSV->setVal(&_applicationTimeoutMaskBuffer[0], FW_NUM_APPLICATION_MASKS_WORDS);
   } catch (IOError &e) {
     std::cerr << "ERROR: CPSW I/O Error on writeAppTimeoutMask()" << std::endl;
   }
@@ -461,51 +459,6 @@ void Firmware::extractMitigation(uint32_t *compressed, uint8_t *expanded) {
   for (int i = 0; i < 8; ++i) {
     expanded[i+8] = (uint8_t)((compressed[1] >> (4 * i)) & 0xF);
   }
-}
-
-bool Firmware::heartbeat() {
-  if (_skipHeartbeat) {
-    if (_firstHeartbeat) {
-      _firstHeartbeat = false;
-    }
-    else {
-      _heartbeatTime.end();
-    }
-    _heartbeatTime.start();
-  }
-
-  try {
-    // Check if there are pending sw busy indicators
-    if (getUInt32(_swBusySV) > 0) {
-      _swBusyCounter++;
-    }
-
-    if (getUInt32(_swPauseSV) > 0) {
-      _swPauseCounter++;
-    }
-
-    if (getUInt32(_swWdErrorSV) > 0) {
-      _swWdErrorCounter++;
-    }
-
-    if (getUInt32(_swOvflCntSV) > 0) {
-      _swOvflCntCounter++;
-    }
-
-    if (getUInt32(_monitorReadySV) < 1) {
-      _monitorNotReadyCounter++;
-    }
-
-    if (_skipHeartbeat) {
-      _swHeartbeatCmd->execute();
-    }
-  } catch (IOError &e) {
-    std::cout << "Exception Info: " << e.getInfo() << std::endl;
-    return false;
-  }
-
-
-  return true;
 }
 
 void Firmware::writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size) {
@@ -709,7 +662,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       os << std::endl;
 
       firmware->getFirmwareMitigation(aux32);
-      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;
       //      firmware->getFirmwareMitigation(aux8);
       firmware->extractMitigation(aux32, aux8);
       os << "FirmwareMitigation=[";
@@ -718,12 +671,12 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 	if (i == FW_NUM_BEAM_DESTINATIONS - 1) os << "]"; else os << ", ";
       }
       os << std::endl;
-      
+
       firmware->getSoftwareMitigation(aux32);
       os << "SoftwareMitigation=[";
       os << std::hex << "0x" << aux32[0] << " 0x" << aux32[1] << std::dec << "]" << std::endl;
-      
-      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;      
+
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;
       //      firmware->getSoftwareMitigation(aux8);
       firmware->extractMitigation(aux32, aux8);
       os << "SoftwareMitigation=[";
@@ -732,9 +685,9 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 	if (i == FW_NUM_BEAM_DESTINATIONS - 1) os << "]"; else os << ", ";
       }
       os << std::endl;
-      
+
       firmware->getLatchedMitigation(aux32);
-      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux8[i]=0;
       firmware->extractMitigation(aux32, aux8);
       //      firmware->getLatchedMitigation(aux8);
       os << "LatchedMitigation=[";
@@ -744,11 +697,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-      os << "MonitorReady=" << std::hex << "0x"
-	 << firmware->getUInt32(firmware->_monitorReadySV) << std::dec
-	 << " (Not ready counter=" << firmware->_monitorNotReadyCounter << ")" << std::endl;
-
-      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;
       firmware->_monitorRxErrorCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorRxErrorCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
@@ -757,7 +706,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;
       firmware->_monitorPauseCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorPauseCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
@@ -766,7 +715,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;
       firmware->_monitorOvflCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorOvflCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
@@ -775,7 +724,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       }
       os << std::endl;
 
-      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;      
+      for (uint32_t i = 0; i < FW_NUM_BEAM_DESTINATIONS; ++i) aux[i]=0;
       firmware->_monitorDropCntSV->getVal(aux, FW_NUM_BEAM_DESTINATIONS);
       os << "MonitorDropCnt=[";
       for (uint32_t i = 0; i < FW_NUM_CONNECTIONS; ++i) {
@@ -809,7 +758,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 
       os << "TimoutErrIndex=";
       uint32_t aux32_32[32];
-      for (uint32_t i = 0; i < 32; ++i) aux32_32[i]=0;      
+      for (uint32_t i = 0; i < 32; ++i) aux32_32[i]=0;
       firmware->_timeoutErrIndexSV->getVal(aux32_32, 32);
       for (uint32_t i = 0; i < 32; ++i) {
 	os << "0x" << std::hex << aux32_32[i] << std::dec;
@@ -819,7 +768,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 
 
       os << "TimoutMask=";
-      for (uint32_t i = 0; i < 32; ++i) aux32_32[i]=0;      
+      for (uint32_t i = 0; i < 32; ++i) aux32_32[i]=0;
       firmware->_timeoutMaskSV->getVal(aux32_32, 32);
       for (uint32_t i = 0; i < 32; ++i) {
 	os << "0x" << std::hex << aux32_32[i] << std::dec;
@@ -833,23 +782,6 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
 
       os << "SoftwareWdTime="
 	 << firmware->getUInt32(firmware->_swWdTimeSV) << std::endl;
-
-      os << "SoftwareBusy="
-	 << firmware->getUInt32(firmware->_swBusySV)
-	 << " (Counter=" << firmware->_swBusyCounter << ")" << std::endl;
-
-      os << "SoftwarePause="
-	 << firmware->getUInt32(firmware->_swPauseSV)
-	 << " (Counter=" << firmware->_swPauseCounter << ")" << std::endl;
-
-      os << "SoftwareWdError="
-	 << firmware->getUInt32(firmware->_swWdErrorSV)
-	 << " (Counter=" << firmware->_swWdErrorCounter << ")" << std::endl; 
-      //	 << " addr=" << std::hex << &(firmware->_swWdErrorCounter) << std::dec << std::endl;
-
-      os << "SoftwareOvflCnt="
-	 << firmware->getUInt32(firmware->_swOvflCntSV)
-	 << " (Counter=" << firmware->_swOvflCntCounter << ")" << std::endl;
 
       os << "EvaluationTimeStamp="
 	 << firmware->getUInt32(firmware->_evaluationTimeStampSV) << std::endl;

@@ -56,7 +56,7 @@ class History {
 
   friend std::ostream & operator<<(std::ostream &os, History * const history) {
     os << "=== History ===" << std::endl;
-    os << "  messages sent: " << history->_counter << std::endl; 
+    os << "  messages sent: " << history->_counter << std::endl;
 
     return os;
   }

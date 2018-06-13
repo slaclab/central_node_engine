@@ -34,24 +34,24 @@ static const int BYPASS_DIGITAL_INDEX = 100;
  * Each DeviceInput and AnalogDevice have a pointer to a instance of InputBypass.
  *
  * For inputs that are evaluated in firmware the bypass must be changed in
- * the application configuration memory. 
+ * the application configuration memory.
  *
  * The bypass value works only for slow evaluated devices. For fast evaluation
  * the input is ignored when bypassed, the bypass value is not used.
  *
- * It is enabled by writting zero to the 16-bit destination mask, effectively 
+ * It is enabled by writting zero to the 16-bit destination mask, effectively
  * disregarding the input state.
  */
 class InputBypass {
  public:
   uint32_t id;
-  
+
   // Index of the device for this bypass
   uint32_t deviceId;
 
   // This value is used to calculate the Fault value instead of the actual input value
   // Important: this bypass value is only used for slow evaluation.
-  uint32_t value; 
+  uint32_t value;
 
   // Defines the input type (analog or digital)
   // If digital then the faultInputId refers to a DbDeviceInput entry
@@ -62,7 +62,7 @@ class InputBypass {
   time_t until;
 
   // Indicates if bypass is still valid or not. The 'validUntil' field is
-  // checked once a second, while the 'valid' field is used by the 
+  // checked once a second, while the 'valid' field is used by the
   // engine to check whether the bypass value or the actual input value
   // should be used.
   BypassStatus status;

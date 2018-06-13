@@ -22,18 +22,35 @@ TimeAverage AnalogDeviceUpdateTime(5, "Analog Device update time");
 TimeAverage AppCardDigitalUpdateTime(5, "Application Card (digital) update time");
 TimeAverage AppCardAnalogUpdateTime(5, "Application Card (analog) update time");
 
+ApplicationUpdateBufferBitSetHalf* DbApplicationCardInput::getWasLowBuffer()
+{
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasLowBufferOffset));
+}
+
+ApplicationUpdateBufferBitSetHalf* DbApplicationCardInput::getWasHighBuffer()
+{
+    if (!fwUpdateBuffer)
+        return NULL;
+
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasHighBufferOffset));
+}
+
 uint32_t DbApplicationCardInput::getWasLow(int channel) {
-  return (*wasLowBuffer)[channel];
+  return (*getWasLowBuffer())[channel];
 }
 
 uint32_t DbApplicationCardInput::getWasHigh(int channel) {
-  return (*wasHighBuffer)[channel];
+  return (*getWasHighBuffer())[channel];
 }
 
-void DbApplicationCardInput::setUpdateBuffers(ApplicationUpdateBufferBitSetHalf *wasLowBuf,
-					      ApplicationUpdateBufferBitSetHalf *wasHighBuf) {
-  wasLowBuffer = wasLowBuf;
-  wasHighBuffer = wasHighBuf;
+void DbApplicationCardInput::setUpdateBuffers(DataBuffer<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff) 
+{
+    fwUpdateBuffer      = bufPtr;
+    wasLowBufferOffset  = wasLowBufferOff;
+    wasHighBufferOffset = wasHighBufferOff;
 }
 
 // void DbDeviceInput::setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer) {
@@ -44,7 +61,7 @@ void DbApplicationCardInput::setUpdateBuffers(ApplicationUpdateBufferBitSetHalf 
 void DbDeviceInput::update(uint32_t v) {
   previousValue = value;
   value = v;
-  
+
   // Latch new value if this is a fault
   if (v == faultValue) {
     latchedValue = faultValue;
@@ -56,10 +73,10 @@ void DbDeviceInput::update() {
   uint32_t wasLow;
   uint32_t wasHigh;
   uint32_t newValue = 0;
-  
+
   DeviceInputUpdateTime.start();
 
-  if (wasLowBuffer) {
+  if (getWasLowBuffer()) {
     previousValue = value;
 
     wasLow = getWasLow(channel->number);
@@ -102,14 +119,14 @@ void DbDeviceInput::update() {
 }
 
 DbAnalogDevice::DbAnalogDevice() : DbEntry(), deviceTypeId(-1), channelId(-1),
-				   value(0), previousValue(0), 
+				   value(0), previousValue(0),
 				   invalidValueCount(0), ignored(false),
 				   bypassMask(0xFFFFFFFF) {
   for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
     fastDestinationMask[i] = 0;
     ignoredIntegrator[i] = false;
   }
-  
+
   // Initialize power class to maximum
   for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
     fastPowerClass[i] = 0;
@@ -125,7 +142,7 @@ void DbAnalogDevice::update(uint32_t v) {
   //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
   previousValue = value;
   value = v;
-  
+
   // Latch new value if this there is a threshold at fault
   if ((value | latchedValue) != latchedValue) {
     latchedValue |= value;
@@ -134,7 +151,7 @@ void DbAnalogDevice::update(uint32_t v) {
 
 /**
  * Update the analog value (set of threshold bits) based on 'was High'/'was Low'
- * status read from firmware. An analog device has up to 4 integrators, with 8 
+ * status read from firmware. An analog device has up to 4 integrators, with 8
  * comparators each, resulting in 32-bit thresholds masks. In the update buffer
  * each bit is represented by 2 bits (was High/was Low).
  *
@@ -149,20 +166,20 @@ void DbAnalogDevice::update() {
   uint32_t wasLow;
   uint32_t wasHigh;
   uint32_t newValue = 0;
-  
+
   AnalogDeviceUpdateTime.start();
 
-  if (wasLowBuffer) {
+  if (getWasLowBuffer()) {
     previousValue = value;
-
     value = 0;
+
     uint32_t integratorOffset = 0;
     for (uint32_t i = 0; i < deviceType->numIntegrators; ++i) {
       integratorOffset = numChannelsCard * ANALOG_DEVICE_NUM_THRESHOLDS * i + channel->number * ANALOG_DEVICE_NUM_THRESHOLDS;
       for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) {
 	wasLow = getWasLow(integratorOffset + j);
 	wasHigh = getWasHigh(integratorOffset + j);
-	
+
 	// If both are zero the Central Node has not received messages from the device, assume fault
 	// Both zeroes also mean no messages from application card in the last 360Hz period
 	if (wasLow + wasHigh == 0) {
@@ -174,7 +191,7 @@ void DbAnalogDevice::update() {
 	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // If signal was both low and high during the 2.7ms set threshold crossed
 	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
 	}
-	else if (wasHigh > 0) { 
+	else if (wasHigh > 0) {
 	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
 	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
 	}
@@ -201,7 +218,7 @@ void DbAnalogDevice::update() {
 	newValue |= (1 << i); // If signal was both low and high during the 2.7ms set threshold crossed
 	latchedValue |= (1 << i);
       }
-      else if (wasHigh > 0) { 
+      else if (wasHigh > 0) {
 	newValue |= (1 << i); // Threshold exceeded
 	latchedValue |= (1 << i);
       }
@@ -241,7 +258,7 @@ void DbApplicationCard::configureUpdateBuffers() {
 	   deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
 	//	std::cout << "D" << (*deviceInput).second->id << " ";
 	//	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
-	(*deviceInput).second->setUpdateBuffers(wasLowBuffer, wasHighBuffer);
+	(*deviceInput).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
       }
     }
   }
@@ -250,7 +267,7 @@ void DbApplicationCard::configureUpdateBuffers() {
 	 analogDevice != analogDevices->end(); ++analogDevice) {
       //      std::cout << "A" << (*analogDevice).second->id << " ";
       //(*analogDevice).second->setUpdateBuffer(applicationUpdateBuffer);
-      (*analogDevice).second->setUpdateBuffers(wasLowBuffer, wasHighBuffer);
+      (*analogDevice).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
     }
   }
   else {
@@ -273,7 +290,6 @@ void DbApplicationCard::updateInputs() {
   else {
     online = true;
   }
-
 
   if (digitalDevices) {
     AppCardDigitalUpdateTime.start();
@@ -303,7 +319,7 @@ void DbApplicationCard::updateInputs() {
 }
 
 /**
- * 
+ *
  */
 void DbApplicationCard::writeConfiguration() {
   if (digitalDevices) {
@@ -325,7 +341,7 @@ void DbApplicationCard::writeConfiguration() {
 
 // Digital input configuration (total size = 1344 bits):
 //
-//   +------------> Expected digital input state 
+//   +------------> Expected digital input state
 //   |   +--------> 16-bit destination mask
 //   |   |    +---> 4-bit encoded power class
 //   |   |    |
@@ -338,7 +354,7 @@ void DbApplicationCard::writeConfiguration() {
 void DbApplicationCard::writeDigitalConfiguration() {
   // First set all bits to zero
   applicationConfigBuffer->reset();
-  
+
   std::stringstream errorStream;
   for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
        digitalDevice != digitalDevices->end(); ++digitalDevice) {
@@ -373,7 +389,7 @@ void DbApplicationCard::writeDigitalConfiguration() {
 	errorStream << "ERROR: DigitalDevice configured with FAST evaluation must have one input only."
 		    << " Found " << (*digitalDevice).second->inputDevices->size() << " inputs for "
 		    << "device " << (*digitalDevice).second->name;
-	throw(DbException(errorStream.str())); 
+	throw(DbException(errorStream.str()));
       }
     }
   }
@@ -382,7 +398,7 @@ void DbApplicationCard::writeDigitalConfiguration() {
 // Analog input configuration (total size = 1152 bits):
 //
 //   +------------> 16-bit destination mask
-//   |   
+//   |
 //   |                        +---> 4-bit encoded power class
 //   |                        |
 // +----+----+---   ---+----+----+---+---   ---+---+---+
@@ -390,10 +406,10 @@ void DbApplicationCard::writeDigitalConfiguration() {
 // +----+----+---   ---+----+----+---+---   ---+---+---+
 // |B23 |B22 |   ...   | B0 |M191|M190   ...   | M1| M0|
 //
-// Bxx are the 16-bit destination masks for each 
+// Bxx are the 16-bit destination masks for each
 // 4 integrators of each of the 6 channels:
 // 6 * 4 = 24 (B0-B23)
-// 
+//
 // Power classes (M0-M191):
 // 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
 // 8 comparators for each integrator:
@@ -404,13 +420,13 @@ void DbApplicationCard::writeDigitalConfiguration() {
 // defined for the device.
 //
 // ***
-// EIC Version: there is only one integrator per channel, therefore 
+// EIC Version: there is only one integrator per channel, therefore
 // only B0 though B6 are actually used
 // ***
 void DbApplicationCard::writeAnalogConfiguration() {
   // First set all bits to zero
   applicationConfigBuffer->reset();
-  
+
   std::stringstream errorStream;
 
   // Loop through all Analog Devices within this Application
@@ -441,12 +457,12 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	  powerClassOffset += POWER_CLASS_BIT_SIZE;
 	}
       }
-      
+
       // Write the destination mask for each integrator
       uint32_t maskOffset = 0;
       for (uint32_t i = 0; i < integratorsPerChannel; ++i) { // for each integrator
 	maskOffset = ANALOG_CHANNEL_DESTINATION_MASK_BASE +
-	  channelNumber * DESTINATION_MASK_BIT_SIZE + 
+	  channelNumber * DESTINATION_MASK_BIT_SIZE +
 	  i * channelsPerCard * DESTINATION_MASK_BIT_SIZE;
 	for (uint32_t j = 0; j < DESTINATION_MASK_BIT_SIZE; ++j) { // for each threshold
 	  bool bitValue = false;
