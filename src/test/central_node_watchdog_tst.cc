@@ -101,6 +101,12 @@ void Tester::rxData()
         std::cerr << "WARN: Setting thread RT priority failed on Heartbeat thread." << std::endl;
     }
 
+    // Wait for the first package
+    strm->read(buf, 102400, CTimeout(-1));
+    rxT.start();
+    ++rxCounter;
+    hb.beat();
+
     while(run)
     {
         if (0 != strm->read(buf, 102400, CTimeout(3500)))
