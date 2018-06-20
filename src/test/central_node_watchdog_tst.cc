@@ -103,7 +103,7 @@ void Tester::rxData()
 
     while(run)
     {
-        if (0 != strm->read(buf, 102400, CTimeout(3000)))
+        if (0 != strm->read(buf, 102400, CTimeout(3500)))
         {
             rxT.tick();
             ++rxCounter;
