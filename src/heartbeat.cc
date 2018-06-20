@@ -78,9 +78,6 @@ void HeartBeat::beatWriter()
         std::cerr << "WARN: Setting thread RT priority failed on Heartbeat thread." << std::endl;
     }
 
-    // Start the period timer
-    txPeriod.start();
-
     for(;;)
     {
         {
