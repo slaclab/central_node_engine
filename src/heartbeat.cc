@@ -106,8 +106,8 @@ void HeartBeat::beatWriter()
         if ( u32 )
             ++wdErrorCnt;
 
-        // Set heartbeat command
-        swHeartBeat->setVal( static_cast<uint64_t>( 0 ) );
+        // Set heartbeat bit
+        swHeartBeat->setVal( static_cast<uint64_t>( 1 ) );
 
         // Tick period timer;
         txPeriod.tick();
@@ -118,7 +118,8 @@ void HeartBeat::beatWriter()
         // Tick the duration timer
         txDuration.tick();
 
-        swHeartBeat->setVal( static_cast<uint64_t>( 1 ) );
+        // Reset heartbeat bit
+        swHeartBeat->setVal( static_cast<uint64_t>( 0 ) );
 
         beatReq = false;
     }
