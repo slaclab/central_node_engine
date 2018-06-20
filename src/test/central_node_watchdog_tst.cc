@@ -101,7 +101,6 @@ void Tester::rxData()
         std::cerr << "WARN: Setting thread RT priority failed on Heartbeat thread." << std::endl;
     }
 
-    rxT.start();
     while(run)
     {
         if (0 != strm->read(buf, 102400, CTimeout(3000)))
@@ -213,7 +212,7 @@ int main(int argc, char **argv)
     IYamlSetIP setIP(ipAddr);
     Path root = IPath::loadYamlFile(yamlDoc.c_str(), "NetIODev", NULL, &setIP);
 
-    Tester t( root, timeout, seconds*360-1 ); // DIscar the first period of the timers
+    Tester t( root, timeout, seconds*360 );
 
     // Now wait for the defined time
     std::cout << "Now waiting for " << seconds << " seconds..."<< std::endl;
