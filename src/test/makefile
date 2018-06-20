@@ -59,17 +59,9 @@ central_node_watchdog_tst_SRCS       = central_node_watchdog_tst.cc
 central_node_watchdog_tst_LIBS       = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS                        += central_node_watchdog_tst
 
-central_node_watchdog_only_tst_SRCS  = central_node_watchdog_only_tst.cc
-central_node_watchdog_only_tst_LIBS  = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS                        += central_node_watchdog_only_tst
-
 central_node_watchdog_measure_tst_SRCS  = central_node_watchdog_measure_tst.cc
 central_node_watchdog_measure_tst_LIBS  = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS                        += central_node_watchdog_measure_tst
-
-central_node_watchdog_measure_v2_tst_SRCS  = central_node_watchdog_measure_v2_tst.cc
-central_node_watchdog_measure_v2_tst_LIBS  = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS                        += central_node_watchdog_measure_v2_tst
 
 PROGRAMS = 
 include $(CENTRAL_NODE_ENGINE_DIR)/rules.mak

@@ -38,9 +38,7 @@ private:
     ScalVal_RO                   swWdError;
     ScalVal                      swHeartBeat;
     std::vector< Timer<double> > t1;
-    std::vector< Timer<double> > t2;
     std::vector<int>             c1;
-    std::vector<int>             c2;
 
     static void printTimerVal(Timer<double>& t) { std::cout << std::setw(8) << t.getMinPeriod()*1e6 << ", "; };
     static void printCounterVal(int c)          { std::cout << std::setw(8) << c << ", ";                    };
@@ -54,9 +52,7 @@ Tester::Tester( Path root, size_t iterations, uint32_t timeout )
     swWdError   ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
     swHeartBeat ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdHeartbeat" ) ) ),
     t1          ( iterations, Timer<double>("Waiting timeout") ),
-    t2          ( iterations, Timer<double>("Waiting flag reset") ),
-    c1          ( iterations, 1 ),
-    c2          ( iterations, 1 )
+    c1          ( iterations, 1 )
 {
     // Declare as real-time task
     struct sched_param  param;
@@ -84,20 +80,9 @@ Tester::Tester( Path root, size_t iterations, uint32_t timeout )
         // Send heartbeat command (in FW is active on the risig edge)
         swHeartBeat->setVal( static_cast<uint64_t>( 1 ) );
 
-        // Start measuring the time to clear the watchdog error flag 
-        t2.at(i).start();
-        // Wait for the watchdog error flag to clear
-        swWdError->getVal( &u32 );
-        while( 1 == u32)
-        {
-            swWdError->getVal( &u32 );
-            ++c2.at(i);
-        }
-        // End of the timer
-        t2.at(i).tick();
-
         // Start measuring the time until timeout
         t1.at(i).start();
+
         // Wait for the watchdog error flag to be set
         swWdError->getVal( &u32 );
         while( 0 == u32)
@@ -105,6 +90,7 @@ Tester::Tester( Path root, size_t iterations, uint32_t timeout )
             swWdError->getVal( &u32 );
             ++c1.at(i);
         }
+
         // End of the timer
         t1.at(i).tick();
 
@@ -129,25 +115,13 @@ Tester::~Tester()
     std::cout << "Time to timeout (us)                    = ";
     std::for_each( t1.begin(), t1.end(), printTimerVal );
     std::cout << std::endl;
-
+    //std::for_each(t1.begin(), t1.end(), std::mem_fun_ref(&Timer<double>::show));
+    //
     std::cout << "Number of register polls (counts)       = ";
     //std::copy( c1.begin(), c1.end(), std::ostream_iterator<int>(std::cout, ", "));
     std::for_each( c1.begin(), c1.end(), printCounterVal );
     std::cout << std::endl;
 
-    std::cout << std::endl;
-
-    std::cout << "Time to reset flag after heartbeat (us) = ";
-    std::for_each( t2.begin(), t2.end(), printTimerVal );
-    std::cout << std::endl;
-
-    std::cout << "Number of register polls (counts)       = ";
-    //std::copy( c2.begin(), c2.end(), std::ostream_iterator<int>(std::cout, ", "));
-    std::for_each( c2.begin(), c2.end(), printCounterVal );
-    std::cout << std::endl;
-
-    //std::for_each(t1.begin(), t1.end(), std::mem_fun_ref(&Timer<double>::show));
- 
     std::cout << "=============================" << std::endl;
 }
 

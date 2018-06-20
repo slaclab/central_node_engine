@@ -101,10 +101,15 @@ void Tester::rxData()
         std::cerr << "WARN: Setting thread RT priority failed on Heartbeat thread." << std::endl;
     }
 
+    // Wait for the first package
+    strm->read(buf, 102400, CTimeout(-1));
     rxT.start();
+    ++rxCounter;
+    hb.beat();
+
     while(run)
     {
-        if (0 != strm->read(buf, 102400, CTimeout(3000)))
+        if (0 != strm->read(buf, 102400, CTimeout(3500)))
         {
             rxT.tick();
             ++rxCounter;
@@ -213,7 +218,7 @@ int main(int argc, char **argv)
     IYamlSetIP setIP(ipAddr);
     Path root = IPath::loadYamlFile(yamlDoc.c_str(), "NetIODev", NULL, &setIP);
 
-    Tester t( root, timeout, seconds*360-1 ); // DIscar the first period of the timers
+    Tester t( root, timeout, seconds*360 );
 
     // Now wait for the defined time
     std::cout << "Now waiting for " << seconds << " seconds..."<< std::endl;
