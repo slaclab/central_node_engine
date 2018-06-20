@@ -474,32 +474,34 @@ bool Engine::evaluateIgnoreConditions()
         (*condition).second->state = newConditionState;
         LOG_TRACE("ENGINE",  "Condition " << (*condition).second->name << " is " << (*condition).second->state);
 
-        for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
-            ignoreCondition != (*condition).second->ignoreConditions->end(); ++ignoreCondition)
-        {
-            if ((*ignoreCondition).second->faultState)
-            {
-                LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
-                    << ", state=" << (*condition).second->state);
+	if ((*condition).second->ignoreConditions) {
+	  for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
+	       ignoreCondition != (*condition).second->ignoreConditions->end(); ++ignoreCondition)
+	    {
+	      if ((*ignoreCondition).second->faultState)
+		{
+		  LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
+			    << ", state=" << (*condition).second->state);
 
-                (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
-            }
-            else
-            {
-                if ((*ignoreCondition).second->analogDevice)
-                {
-                    LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->analogDeviceId << "]"
-                        << ", state=" << (*condition).second->state);
+		  (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
+		}
+	      else
+		{
+		  if ((*ignoreCondition).second->analogDevice)
+		    {
+		      LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->analogDeviceId << "]"
+				<< ", state=" << (*condition).second->state);
 
-                    if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state)
-                    {
-                        reload = true; // reload configuration!
-                    }
+		      if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state)
+			{
+			  reload = true; // reload configuration!
+			}
 
-                    (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
-                }
-            }
-        }
+		      (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
+		    }
+		}
+	    }
+	}
     }
 
     return reload;
@@ -517,7 +519,7 @@ void Engine::mitigate()
         if (true)
         {
 #else
-            if ((*fault).second->evaluation == SLOW_EVALUATION) {
+        if ((*fault).second->evaluation == SLOW_EVALUATION) {
 #endif
             for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
                 state != (*fault).second->faultStates->end(); ++state)
@@ -546,6 +548,9 @@ void Engine::mitigate()
                             }
                         }
                     }
+		    else {
+		      LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for " << (*fault).second->name << " fault");
+		    }
                 }
             }
 
