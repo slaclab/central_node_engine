@@ -3,10 +3,11 @@
 template<typename T>
 Timer<T>::Timer( const std::string& name, size_t size )
 :
-    size(size),
-    name(name),
-    TickCount(0),
-    cb(size)
+    size      ( size ),
+    name      ( name ),
+    TickCount ( 0 ),
+    cb        ( size ),
+    started   ( false )
 {
 }
 
@@ -14,6 +15,7 @@ template <typename T>
 void Timer<T>::start()
 {
     t = std::chrono::high_resolution_clock::now();
+    started = true;
 }
 
 template <typename T>
@@ -21,10 +23,18 @@ void Timer<T>::tick()
 {
     std::chrono::high_resolution_clock::time_point now =  std::chrono::high_resolution_clock::now();
 
-    std::chrono::duration<T> diff = now - t;
-    cb.push_back( diff.count() );
-    t = now;
-    ++TickCount;
+    if ( started )
+    {
+        std::chrono::duration<T> diff = now - t;
+        cb.push_back( diff.count() );
+        t = now;
+        ++TickCount;
+    }
+    else
+    {
+        t = now;
+        started = true;
+    }
 }
 
 template <typename T>

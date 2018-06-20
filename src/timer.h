@@ -28,6 +28,7 @@ private:
     int                                            TickCount;
     boost::circular_buffer<T>                      cb;
     std::chrono::high_resolution_clock::time_point t;
+    bool                                           started;
 };
 
 #endif
