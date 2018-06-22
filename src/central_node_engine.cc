@@ -15,8 +15,8 @@ using namespace easyloggingpp;
 static Logger *engineLogger;
 #endif
 
-pthread_mutex_t Engine::_engineMutex;
-volatile bool            Engine::_evaluate;
+std::mutex      Engine::_mutex;
+volatile bool   Engine::_evaluate;
 uint32_t        Engine::_rate;
 uint32_t        Engine::_updateCounter;
 time_t          Engine::_startTime;
@@ -40,12 +40,6 @@ Engine::Engine() :
     Engine::_updateCounter = 0;
     Engine::_startTime = 0;
     Engine::_inputUpdateFailCounter = 0;
-
-    int ret = pthread_mutex_init(&Engine::_engineMutex, NULL);
-    if (0 != ret)
-    {
-        throw(DbException("ERROR: Engine::Engine() failed to initialize engine mutex."));
-    }
 
     // Lock memory
     if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
@@ -134,7 +128,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     }
 
     std::cout << "INFO: Engine::loadConfig(" << yamlFileName << ")" << std::endl;
-    pthread_mutex_lock(&_engineMutex);
+    std::unique_lock<std::mutex> engineLock(_mutex);
 
     // First stop the MPS
     Firmware::getInstance().setSoftwareEnable(false);
@@ -145,9 +139,9 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     if (_evaluate)
     {
         _evaluate = false;
-        pthread_mutex_unlock(&_engineMutex);
+	engineLock.unlock();
         threadJoin();
-        pthread_mutex_lock(&_engineMutex);
+	engineLock.lock();
     }
 
     _evaluate = false;
@@ -163,7 +157,6 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
         _errorStream << "ERROR: Failed to load yaml database ("
             << yamlFileName << ")";
         mpsDb->unlock();
-        pthread_mutex_unlock(&_engineMutex);
         throw(EngineException(_errorStream.str()));
     }
 
@@ -194,7 +187,6 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     catch (DbException e)
     {
         mpsDb->unlock();
-        pthread_mutex_unlock(&_engineMutex);
         throw e;
     }
 
@@ -210,7 +202,6 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
         mpsDb->unlock();
         _initialized = true;
         _evaluate = true;
-        pthread_mutex_unlock(&_engineMutex);
         startUpdateThread();
         throw e;
     }
@@ -247,7 +238,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     _initialized = true;
 
     _evaluate = true;
-    pthread_mutex_unlock(&_engineMutex);
+    engineLock.unlock();
 
     startUpdateThread();
 
@@ -835,9 +826,12 @@ void Engine::engineThread()
     uint32_t counter = 0;
     bool reload = false;
 
+    std::defer_lock_t t;
+    std::unique_lock<std::mutex> engineLock(_mutex, t);
+
     while(_evaluate)
     {
-        pthread_mutex_lock(&_engineMutex);
+      engineLock.lock();
 
         if (Engine::getInstance()._mpsDb)
         {
@@ -848,7 +842,7 @@ void Engine::engineThread()
                 {
 		  Engine::getInstance()._mpsDb->getInputUpdateCondVar()->wait_for(lock, std::chrono::milliseconds(5));
 		  if (!_evaluate) {
-		    pthread_mutex_unlock(&_engineMutex);
+		    engineLock.unlock();
 		    std::cout << "INFO: EngineThread: Exiting..." << std::endl;
 		    return;
 		  }
@@ -862,7 +856,7 @@ void Engine::engineThread()
                 {
                     Engine::getInstance()._mpsDb->getMitBufferCondVar()->wait_for(lock, std::chrono::milliseconds(5));
 		    if (!_evaluate) {
-		      pthread_mutex_unlock(&_engineMutex);
+		      engineLock.unlock();
 		      std::cout << "INFO: EngineThread: Exiting..." << std::endl;
 		      return;
 		    }
@@ -910,7 +904,7 @@ void Engine::engineThread()
             sleep(1);
         }
 
-        pthread_mutex_unlock(&_engineMutex);
+	engineLock.unlock();
     }
 
     Firmware::getInstance().setSoftwareEnable(false);

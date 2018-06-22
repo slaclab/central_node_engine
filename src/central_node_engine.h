@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <pthread.h>
 #include <thread>
 #include <boost/shared_ptr.hpp>
 
@@ -48,7 +47,7 @@ private:
     std::thread *_engineThread;
 
     static pthread_mutex_t _engineMutex;
-    static std::mutex;
+    static std::mutex _mutex;
     static volatile bool _evaluate;
     static uint32_t _rate;
     static uint32_t _updateCounter;
