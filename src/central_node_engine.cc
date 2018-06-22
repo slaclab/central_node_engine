@@ -90,9 +90,10 @@ int Engine::reloadConfig()
         threadJoin();
     }
 
-    _mpsDb->lock();
-    _mpsDb->writeFirmwareConfiguration();
-    _mpsDb->unlock();
+    {
+      std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+      _mpsDb->writeFirmwareConfiguration();
+    }
 
     _evaluate = true;
 
@@ -107,9 +108,10 @@ int Engine::reloadConfigFromIgnore()
     Firmware::getInstance().setSoftwareEnable(false);
     Firmware::getInstance().setEnable(false);
 
-    _mpsDb->lock();
-    _mpsDb->writeFirmwareConfiguration();
-    _mpsDb->unlock();
+    {
+      std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+      _mpsDb->writeFirmwareConfiguration();
+    }
 
     Firmware::getInstance().setEnable(true);
     Firmware::getInstance().clearAll();
@@ -149,88 +151,86 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     MpsDb *db = new MpsDb(inputUpdateTimeout);
     shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(db);
 
-    mpsDb->lock(); // the database mutex is static - is the same for all instances
-
-    if (mpsDb->load(yamlFileName) != 0)
     {
-        _errorStream.str(std::string());
-        _errorStream << "ERROR: Failed to load yaml database ("
-            << yamlFileName << ")";
-        mpsDb->unlock();
-        throw(EngineException(_errorStream.str()));
+      std::unique_lock<std::mutex> lock(*mpsDb->getMutex()); // the database mutex is static - is the same for all instances
+
+      if (mpsDb->load(yamlFileName) != 0)
+	{
+	  _errorStream.str(std::string());
+	  _errorStream << "ERROR: Failed to load yaml database ("
+		       << yamlFileName << ")";
+	  throw(EngineException(_errorStream.str()));
+	}
+
+      LOG_TRACE("ENGINE", "YAML Database loaded from " << yamlFileName);
+
+      // When the first yaml configuration file is loaded the bypassMap
+      // must be created.
+      //
+      // TODO/Database/Important: the bypasses are created for each device input and
+      // analog channel in the database, this happens for the first time
+      // a database is loaded. If there are subsequent database changes
+      // they must have the same device inputs and analog channels.
+      // Currently if the number of channels differ between the loaded
+      // databases the central node engine must be restarted.
+      if (!_bypassManager)
+	{
+	  _bypassManager = BypassManagerPtr(new BypassManager());
+	  _bypassManager->createBypassMap(mpsDb);
+	  _bypassManager->startBypassThread();
+	}
+
+      LOG_TRACE("ENGINE", "BypassManager created");
+
+      try
+	{
+	  mpsDb->configure();
+	}
+      catch (DbException e)
+	{
+	  throw e;
+	}
+
+      LOG_TRACE("ENGINE", "MPS Database configured from YAML");
+
+      // Assign bypass to each digital/analog input
+      try
+	{
+	  _bypassManager->assignBypass(mpsDb);
+	}
+      catch (CentralNodeException e)
+	{
+	  _initialized = true;
+	  _evaluate = true;
+	  startUpdateThread();
+	  throw e;
+	}
+
+      // Now that the database has been loaded and configured
+      // successfully, assign to _mpsDb shared_ptr
+      _mpsDb = mpsDb;//shared_ptr<MpsDb>(db);
+
+      // Find the lowest/highest BeamClasses - used when checking faults
+      uint32_t num = 0;
+      uint32_t lowNum = 100;
+      for (DbBeamClassMap::iterator beamClass = _mpsDb->beamClasses->begin();
+	   beamClass != _mpsDb->beamClasses->end(); ++beamClass)
+	{
+	  if ((*beamClass).second->number > num)
+	    {
+	      _highestBeamClass = (*beamClass).second;
+	      num = (*beamClass).second->number;
+	    }
+
+	  if ((*beamClass).second->number < lowNum)
+	    {
+	      _lowestBeamClass = (*beamClass).second;
+	      lowNum = (*beamClass).second->number;
+	    }
+	}
+
+      _mpsDb->writeFirmwareConfiguration();
     }
-
-    LOG_TRACE("ENGINE", "YAML Database loaded from " << yamlFileName);
-
-    // When the first yaml configuration file is loaded the bypassMap
-    // must be created.
-    //
-    // TODO/Database/Important: the bypasses are created for each device input and
-    // analog channel in the database, this happens for the first time
-    // a database is loaded. If there are subsequent database changes
-    // they must have the same device inputs and analog channels.
-    // Currently if the number of channels differ between the loaded
-    // databases the central node engine must be restarted.
-    if (!_bypassManager)
-    {
-        _bypassManager = BypassManagerPtr(new BypassManager());
-        _bypassManager->createBypassMap(mpsDb);
-        _bypassManager->startBypassThread();
-    }
-
-    LOG_TRACE("ENGINE", "BypassManager created");
-
-    try
-    {
-        mpsDb->configure();
-    }
-    catch (DbException e)
-    {
-        mpsDb->unlock();
-        throw e;
-    }
-
-    LOG_TRACE("ENGINE", "MPS Database configured from YAML");
-
-    // Assign bypass to each digital/analog input
-    try
-    {
-        _bypassManager->assignBypass(mpsDb);
-    }
-    catch (CentralNodeException e)
-    {
-        mpsDb->unlock();
-        _initialized = true;
-        _evaluate = true;
-        startUpdateThread();
-        throw e;
-    }
-
-    // Now that the database has been loaded and configured
-    // successfully, assign to _mpsDb shared_ptr
-    _mpsDb = mpsDb;//shared_ptr<MpsDb>(db);
-
-    // Find the lowest/highest BeamClasses - used when checking faults
-    uint32_t num = 0;
-    uint32_t lowNum = 100;
-    for (DbBeamClassMap::iterator beamClass = _mpsDb->beamClasses->begin();
-        beamClass != _mpsDb->beamClasses->end(); ++beamClass)
-    {
-        if ((*beamClass).second->number > num)
-        {
-            _highestBeamClass = (*beamClass).second;
-            num = (*beamClass).second->number;
-        }
-
-        if ((*beamClass).second->number < lowNum)
-        {
-            _lowestBeamClass = (*beamClass).second;
-            lowNum = (*beamClass).second->number;
-        }
-    }
-
-    _mpsDb->writeFirmwareConfiguration();
-    _mpsDb->unlock();
 
     LOG_TRACE("ENGINE", "Lowest beam class found: " << _lowestBeamClass->number);
     LOG_TRACE("ENGINE", "Highest beam class found: " << _highestBeamClass->number);
@@ -594,14 +594,16 @@ int Engine::checkFaults()
     _checkFaultTime.start();
 
     LOG_TRACE("ENGINE", "Checking faults");
-    _mpsDb->lock();
-    _mpsDb->clearMitigationBuffer();
-    setTentativeBeamClass();
-    evaluateFaults();
-    bool reload = evaluateIgnoreConditions();
-    mitigate();
-    setAllowedBeamClass();
-    _mpsDb->unlock();
+    bool reload = false;
+    {
+      std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+      _mpsDb->clearMitigationBuffer();
+      setTentativeBeamClass();
+      evaluateFaults();
+      reload = evaluateIgnoreConditions();
+      mitigate();
+      setAllowedBeamClass();
+    }
     _checkFaultTime.tick();
 
     // If FW configuration needs reloading, return non-zero value
@@ -624,29 +626,30 @@ void Engine::showFaults()
     bool faults = false;
 
     // Digital Faults
-    _mpsDb->lock();
-    for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
-        fault != _mpsDb->faults->end(); ++fault)
     {
-        for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-            state != (*fault).second->faultStates->end(); ++state)
-        {
-            if ((*state).second->faulted)
-            {
-                if (!faults)
-                {
-                    std::cout << "# Current faults:" << std::endl;
-                    faults = true;
-                }
+      std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+      for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+	   fault != _mpsDb->faults->end(); ++fault)
+	{
+	  for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+	       state != (*fault).second->faultStates->end(); ++state)
+	    {
+	      if ((*state).second->faulted)
+		{
+		  if (!faults)
+		    {
+		      std::cout << "# Current faults:" << std::endl;
+		      faults = true;
+		    }
 
-                std::cout << "  " << (*fault).second->name << ": " << (*state).second->deviceState->name
-                    << " (value=" << (*state).second->deviceState->value << ", ignored="
-                    << (*state).second->ignored << ")" << std::endl;
-            }
-        }
+		  std::cout << "  " << (*fault).second->name << ": " << (*state).second->deviceState->name
+			    << " (value=" << (*state).second->deviceState->value << ", ignored="
+			    << (*state).second->ignored << ")" << std::endl;
+		}
+	    }
+	}
     }
 
-    _mpsDb->unlock();
     if (!faults)
     {
         std::cout << "# No faults" << std::endl;
@@ -689,7 +692,8 @@ void Engine::showBeamDestinations()
     }
 
     std::cout << ">> Beam Destinations: " << std::endl;
-    _mpsDb->lock();
+
+    std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
 
     for (DbBeamDestinationMap::iterator destination = _mpsDb->beamDestinations->begin(); destination != _mpsDb->beamDestinations->end(); ++destination)
     {
@@ -706,7 +710,6 @@ void Engine::showBeamDestinations()
         }
     }
 
-    _mpsDb->unlock();
 }
 
 void Engine::showDeviceInputs()
@@ -718,14 +721,12 @@ void Engine::showDeviceInputs()
     }
 
     std::cout << "Device Inputs: " << std::endl;
-    _mpsDb->lock();
+    std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
 
     for (DbDeviceInputMap::iterator input = _mpsDb->deviceInputs->begin(); input != _mpsDb->deviceInputs->end(); ++input)
     {
         std::cout << (*input).second << std::endl;
     }
-
-    _mpsDb->unlock();
 }
 
 void Engine::showDatabaseInfo()

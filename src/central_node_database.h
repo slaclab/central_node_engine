@@ -16,10 +16,10 @@
 #include "timer.h"
 #include "buffer.h"
 
-#include <pthread.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/atomic.hpp>
 #include <thread>
+#include <mutex>
 
 using boost::shared_ptr;
 using boost::weak_ptr;
@@ -97,7 +97,7 @@ class MpsDb {
   /**
    * Mutex to prevent multiple database access
    */
-  static pthread_mutex_t _mutex;
+  static std::mutex _mutex;
   static bool _initialized;
 
   uint32_t _updateCounter;
@@ -142,8 +142,7 @@ class MpsDb {
   int load(std::string yamlFile);
   void configure();
 
-  void lock();
-  void unlock();
+  std::mutex *getMutex() { return &_mutex; };
 
   void showFastUpdateBuffer(uint32_t begin, uint32_t size);
   void showFaults();

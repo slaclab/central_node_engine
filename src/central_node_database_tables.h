@@ -12,7 +12,6 @@
 #include <stdint.h>
 #include <time_util.h>
 
-#include <pthread.h>
 #include <boost/shared_ptr.hpp>
 
 #include "buffer.h"

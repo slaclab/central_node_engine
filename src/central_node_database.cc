@@ -26,7 +26,7 @@ extern TimeAverage AnalogDeviceUpdateTime;
 extern TimeAverage AppCardDigitalUpdateTime;
 extern TimeAverage AppCardAnalogUpdateTime;
 
-pthread_mutex_t MpsDb::_mutex = PTHREAD_MUTEX_INITIALIZER;
+std::mutex MpsDb::_mutex;
 bool MpsDb::_initialized = false;
 
 MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
@@ -54,10 +54,6 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
 #endif
 
   if (!_initialized) {
-    int ret = pthread_mutex_init(&_mutex, NULL);
-    if (0 != ret) {
-      throw(DbException("ERROR: MpsDb::MpsDb() failed to initialize mutex."));
-    }
     _initialized = true;
 
     //  Set thread names
@@ -1002,19 +998,6 @@ int MpsDb::load(std::string yamlFileName) {
   return 0;
 }
 
-void MpsDb::lock() {
-  int ret = pthread_mutex_lock(&_mutex);
-  if (ret != 0) {
-    throw(DbException("ERROR: MpsDb::lock() failed to lock mutex."));
-  }
-}
-
-void MpsDb::unlock() {
-  if (pthread_mutex_unlock(&_mutex) != 0) {
-    throw(DbException("ERROR: MpsDb::unlock() failed to unlock mutex."));
-  }
-}
-
 /**
  * Print out the digital/analog inputs (DbFaultInput and DbAnalogDevices)
  */
@@ -1022,12 +1005,11 @@ void MpsDb::showFaults() {
   std::cout << "+-------------------------------------------------------" << std::endl;
   std::cout << "| Faults: " << std::endl;
   std::cout << "+-------------------------------------------------------" << std::endl;
-  lock();
+  std::unique_lock<std::mutex> lock(_mutex);
   for (DbFaultMap::iterator fault = faults->begin();
        fault != faults->end(); ++fault) {
     showFault((*fault).second);
   }
-  unlock();
   std::cout << "+-------------------------------------------------------" << std::endl;
 }
 
@@ -1111,19 +1093,17 @@ void MpsDb::showFault(DbFaultPtr fault) {
 }
 
 void MpsDb::showMitigation() {
-  lock();
+  std::unique_lock<std::mutex> lock(_mutex);
 
   std::cout << "Allowed power classes at beam destinations:" << std::endl;
   for (DbBeamDestinationMap::iterator mitDevice = beamDestinations->begin();
        mitDevice != beamDestinations->end(); ++mitDevice) {
     std::cout << "  " << (*mitDevice).second->name << ": " << (*mitDevice).second->allowedBeamClass->number << std::endl;
   }
-
-  unlock();
 }
 
 void MpsDb::showInfo() {
-  lock();
+  std::unique_lock<std::mutex> lock(_mutex);
 
   std::cout << "Current database information:" << std::endl;
   std::cout << "File: " << name << std::endl;
@@ -1146,7 +1126,6 @@ void MpsDb::showInfo() {
   std::cout << "Current TimeStamp diff: " << _diff << std::endl;
   std::cout << "Diff > 12ms count     : " << _diffCount << std::endl;
   std::cout << "Update timout counter : " << _updateTimeoutCounter << std::endl;
-  unlock();
 }
 
 void MpsDb::clearUpdateTime() {
