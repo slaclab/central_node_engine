@@ -33,10 +33,13 @@ static void usage(const char *nm) {
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
+bool END_TEST=false;
+
 void intHandler(int) {
+  History::getInstance().stopSenderThread();
+  END_TEST=true;
   Firmware::getInstance().setSoftwareEnable(false);
   Firmware::getInstance().setEnable(false);
-
   exit(0);
 }
 
@@ -144,7 +147,16 @@ int main(int argc, char **argv) {
   Engine::getInstance().threadJoin();
 */
 
-  for (;;) {sleep(1);};
+  int count = 0;
+  for (;;) {
+    sleep(1);
+    count++;
+    //    if (count > 5) END_TEST = true;
+    if (END_TEST) {
+      std::cout << "Done!" << std::endl;
+      return 0;
+    }
+  }
   std::cout << "Done." << std::endl;
 
   return 0;

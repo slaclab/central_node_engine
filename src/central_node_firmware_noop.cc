@@ -43,6 +43,11 @@ Firmware::Firmware() :
   setsockopt(_updateSock, SOL_SOCKET, SO_REUSEADDR,
              (const void *) &optval , sizeof(int));
 
+  struct timeval tv;
+  tv.tv_sec = 1;
+  tv.tv_usec = 0;
+  setsockopt(_updateSock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
   struct sockaddr_in serveraddr;
   bzero((char *) &serveraddr, sizeof(serveraddr));
   serveraddr.sin_family = AF_INET;

@@ -4,7 +4,7 @@
 #include <central_node_database_tables.h>
 #include <central_node_database.h>
 #include <stdint.h>
-#include <pthread.h>
+#include <thread>
 
 /**
  * The bypass expirations are monitored via a priority queue. The head of the
@@ -30,13 +30,15 @@ class BypassManager {
 
   bool checkBypassQueueTop(time_t now);
 
-  pthread_t _bypassThread;
-  pthread_mutex_t mutex;
+  bool threadDone;
+  std::thread *_bypassThread;
+  std::mutex mutex;
   bool initialized;
   static bool refreshFirmwareConfiguration;
 
  public:
   BypassManager();
+  ~BypassManager();
   void createBypassMap(MpsDbPtr db);
   void assignBypass(MpsDbPtr db);
   void checkBypassQueue(time_t testTime = 0);
@@ -49,7 +51,8 @@ class BypassManager {
   bool isInitialized();
 
   void startBypassThread();
-  static void *bypassThread(void *arg);
+  void stopBypassThread();
+  void bypassThread();
 
   friend class BypassTest;
 };

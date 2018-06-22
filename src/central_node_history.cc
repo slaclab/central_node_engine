@@ -9,7 +9,7 @@
 #include <sstream>
 #include <netdb.h>
 
-History::History() : _counter(0), enabled (true) {
+History::History() : _counter(0), enabled(true), _done(false) {
 }
 
 void History::startSenderThread(std::string serverName, int port) {
@@ -33,28 +33,13 @@ void History::startSenderThread(std::string serverName, int port) {
   serveraddr.sin_port = htons(port);
   serverlen = sizeof(serveraddr);
 
-  int ret = pthread_mutex_init(&_mutex, NULL);
-  if (0 != ret) {
-    throw(CentralNodeException("ERROR: Failed to initialize mutex for MPS history sender."));
-  }
-
-  ret = pthread_cond_init(&_condition, NULL);
-  if (0 != ret) {
-    throw(CentralNodeException("ERROR: Failed to initialize condition variable for MPS history sender."));
-  }
-
   if (enabled) {
-    if (pthread_create(&_senderThread, 0, History::senderThread, 0)) {
-      //      throw(CentralNodeException("ERROR: Failed to start message history sender thread"));
-      std::cerr << "ERROR: Failed to start message history sender thread"
-		<< ", proceeding without MPS history." << std::endl;
-      enabled = false;
-    }
-    else {
-      std::cout << "INFO: MPS History sender ready" << std::endl;
 
-      if(pthread_setname_np(_senderThread, "SenderThread"))
-          perror("pthread_setname_np failed");
+    _senderThread = new std::thread(&History::senderThread, this);
+    std::cout << "INFO: MPS History sender ready" << std::endl;
+
+    if(pthread_setname_np(_senderThread->native_handle(), "SenderThread")) {
+      perror("pthread_setname_np failed");
     }
   }
 
@@ -99,26 +84,38 @@ int History::add(Message &message) {
     return 1;
   }
 
-  pthread_mutex_lock(&_mutex);
-  if (_histQueue.size() >= HIST_QUEUE_MAX_SIZE) {
-    pthread_mutex_unlock(&_mutex);
-    return 1;
+  {
+    std::lock_guard<std::mutex> lock(_mutex);
+    if (_histQueue.size() >= HIST_QUEUE_MAX_SIZE) {
+      return 1;
+    }
+    _histQueue.push_back(message);
+    _condVar.notify_all();
   }
-  _histQueue.push_back(message);
-  pthread_cond_signal(&_condition);
-  pthread_mutex_unlock(&_mutex);
 
   return 0;
 }
 
+void History::stopSenderThread() {
+  std::cout << "INFO: Stopping history thread" << std::endl;
+  _done = true;
+  _senderThread->join();
+  std::cout << "INFO: Join history thread" << std::endl;
+}
+
 int History::sendFront() {
-  pthread_mutex_lock(&_mutex);
-  pthread_cond_wait(&_condition, &_mutex);
-  while (_histQueue.size() > 0) {
-    send(_histQueue.front());
-    _histQueue.pop_front();
+  std::unique_lock<std::mutex> lock(_mutex);
+  _condVar.wait_for(lock, std::chrono::milliseconds(200));
+  if (_done) {
+    return 1;
   }
-  pthread_mutex_unlock(&_mutex);
+  else {
+    while (_histQueue.size() > 0) {
+      send(_histQueue.front());
+      _histQueue.pop_front();
+    }
+    return 0;
+  }
 }
 
 int History::send(Message &message) {
@@ -139,15 +136,17 @@ int History::send(Message &message) {
   return 0;
 }
 
-void *History::senderThread(void *arg) {
+void History::senderThread() {
   if (History::getInstance().enabled) {
     Message message;
     unsigned int priority;
 
     std::cout << "INFO: History sender thread ready." << std::endl;
     while (true) {
-      History::getInstance().sendFront();
+      if (History::getInstance().sendFront() > 0) {
+	return;
+      }
     }
   }
-  return NULL;
+  return;
 }

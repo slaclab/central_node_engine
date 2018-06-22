@@ -4,7 +4,9 @@
 #include <central_node_history_protocol.h>
 
 #include <iostream>
-#include <pthread.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <list>
 #include <boost/shared_ptr.hpp>
 
@@ -21,20 +23,22 @@ class History {
   History();
   History(History const &);
   void operator=(History const &);
-  pthread_t _senderThread;
-  pthread_mutex_t _mutex;
-  pthread_cond_t _condition;
+  std::thread *_senderThread;
+  std::mutex _mutex;
+  std::condition_variable _condVar;
   HistoryQueue _histQueue;
   Message message;
   int sock;
   int serverlen;
   struct sockaddr_in serveraddr;
   uint32_t _counter;
+  bool _done;
 
  public:
   bool enabled;
 
   void startSenderThread(std::string serverName = "lcls-dev3", int port = 3356);
+  void stopSenderThread();
 
   int log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);
 
@@ -47,7 +51,7 @@ class History {
   int add(Message &message);
   int send(Message &message);
   int sendFront();
-  static void *senderThread(void *arg);
+  void senderThread();
 
   static History &getInstance() {
     static History instance;

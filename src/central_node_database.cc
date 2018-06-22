@@ -76,11 +76,16 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
 
 MpsDb::~MpsDb() {
 
+  std::cout << "INFO: Stopping update/buffer threads" << std::endl;
+
   // Stop all threads
   run = false;
-  fwUpdateThread.join();
   updateInputThread.join();
+  std::cout << "INFO: updateInputThread join succeeded" << std::endl;
   mitigationThread.join();
+  std::cout << "INFO: mitigationThread join succeeded" << std::endl;
+  fwUpdateThread.join();
+  std::cout << "INFO: fwUpdateThread join succeeded" << std::endl;
 
   _inputUpdateTime.show();
   std::cout << "Update counter: " << _updateCounter << std::endl;
@@ -122,7 +127,7 @@ void MpsDb::updateInputs() {
             if(!run)
             {
                 std::cout << "FW Update Data reader interrupted" << std::endl;
-                return;
+		return;
             }
         }
     }
@@ -631,7 +636,7 @@ void MpsDb::configureIgnoreConditions() {
   for (DbIgnoreConditionMap::iterator ignoreCondition = ignoreConditions->begin();
        ignoreCondition != ignoreConditions->end(); ++ignoreCondition) {
     uint32_t conditionId = (*ignoreCondition).second->conditionId;
-    std::cout << "conditionId=" << conditionId << " ";
+    //    std::cout << "conditionId=" << conditionId << " ";
 
     DbConditionMap::iterator condition = conditions->find(conditionId);
     if (condition != conditions->end()) {
@@ -652,7 +657,7 @@ void MpsDb::configureIgnoreConditions() {
     // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
 
-    std::cout << "faultStateId=" << faultStateId << " ";
+    //    std::cout << "faultStateId=" << faultStateId << " ";
 
     if (faultStateId != DbIgnoreCondition::INVALID_ID) {
       DbFaultStateMap::iterator faultIt = faultStates->find(faultStateId);
@@ -667,7 +672,7 @@ void MpsDb::configureIgnoreConditions() {
     }
 
     uint32_t analogDeviceId = (*ignoreCondition).second->analogDeviceId;
-    std::cout << "analogDeviceId=" << analogDeviceId << " ";
+    //    std::cout << "analogDeviceId=" << analogDeviceId << " ";
 
     if (analogDeviceId != DbIgnoreCondition::INVALID_ID) {
       DbAnalogDeviceMap::iterator deviceIt = analogDevices->find(analogDeviceId);
@@ -1260,6 +1265,12 @@ void MpsDb::fwUpdateReader()
                        APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
                        _inputUpdateTimeout)))
         {
+#ifndef FW_ENABLED
+	  if (!run) {
+	    std::cout << "FW Update Data reader interrupted" << std::endl;
+	    return;
+	  } 	    
+#endif
             ++_updateTimeoutCounter;
             fwUpdateTimer.start();
         }

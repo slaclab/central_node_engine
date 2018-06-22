@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <pthread.h>
+#include <thread>
 #include <boost/shared_ptr.hpp>
 
 #include <central_node_exception.h>
@@ -44,9 +45,10 @@ private:
 
     void operator=(Engine const &);
     bool _initialized;
-    pthread_t _engineThread;
+    std::thread *_engineThread;
 
     static pthread_mutex_t _engineMutex;
+    static std::mutex;
     static volatile bool _evaluate;
     static uint32_t _rate;
     static uint32_t _updateCounter;
@@ -127,7 +129,7 @@ public:
     }
 
     void startUpdateThread();
-    static void *engineThread(void *arg);
+    void engineThread();
 
     friend class MpsDb;
 };

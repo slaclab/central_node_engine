@@ -19,20 +19,40 @@ static Logger *bypassLogger;
 bool BypassManager::refreshFirmwareConfiguration = false;
 
 BypassManager::BypassManager() :
-  initialized(false) {
+  initialized(false), threadDone(false), _bypassThread(NULL) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   bypassLogger = Loggers::getLogger("BYPASS");
   LOG_TRACE("BYPASS", "Created BypassManager");
 #endif
-  int ret = pthread_mutex_init(&mutex, NULL);
-  if (0 != ret) {
-    throw("ERROR: BypassManager::BypassManager() failed to init mutex.");
-  }
+}
+
+BypassManager::~BypassManager() {
 }
 
 bool BypassManager::isInitialized() {
   return initialized;
 }
+
+void BypassManager::startBypassThread() {
+  if (_bypassThread != NULL) {
+    _bypassThread->join();
+  }
+
+  _bypassThread = new std::thread(&BypassManager::bypassThread, this);
+
+  if (pthread_setname_np(_bypassThread->native_handle(), "BypassThread")) {
+    perror("pthread_setname_np failed");
+  }
+}
+
+void BypassManager::stopBypassThread() {
+  std::cout << "INFO: bypassThread stopping..." << std::endl;
+  threadDone = true;
+  if (_bypassThread != NULL) {
+    _bypassThread->join();
+  }
+  std::cout << "INFO: bypassThread stopped..." << std::endl;
+}  
 
 /**
  * This creates bypasses for all digital/analog inputs. Should be invoked
@@ -112,18 +132,14 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   std::stringstream errorStream;
   LOG_TRACE("BYPASS", "Assigning bypass slots to MPS database inputs (analog/digital)");
 
-  int ret = pthread_mutex_lock(&mutex);
-  if (0 != ret) {
-    throw("ERROR: BypassManager::assignBypass() failed to lock mutex.");
-  }
-
+  std::unique_lock<std::mutex> lock(mutex);
+  
   for (InputBypassMap::iterator bypass = bypassMap->begin();
        bypass != bypassMap->end(); ++bypass) {
     int inputId = (*bypass).second->deviceId;
     if ((*bypass).second->type == BYPASS_DIGITAL) {
       DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(inputId);
       if (digitalInput == db->deviceInputs->end()) {
-	pthread_mutex_unlock(&mutex);
 	errorStream << "ERROR: Failed to find FaultInput ("
 		    << inputId << ") when assigning digital bypass";
 	throw(CentralNodeException(errorStream.str()));
@@ -135,7 +151,6 @@ void BypassManager::assignBypass(MpsDbPtr db) {
     else { // BYPASS_ANALOG
       DbAnalogDeviceMap::iterator analogInput = db->analogDevices->find(inputId);
       if (analogInput == db->analogDevices->end()) {
-	pthread_mutex_unlock(&mutex);
 	errorStream << "ERROR: Failed to find FaultInput ("
 		    << inputId << ") when assigning analog bypass";
 	throw(CentralNodeException(errorStream.str()));
@@ -177,11 +192,6 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   }
   errorStream << "]";
 
-  ret = pthread_mutex_unlock(&mutex);
-  if (0 != ret) {
-    throw("ERROR: BypassManager::assignBypass() failed to unlock mutex.");
-  }
-
   if (error) {
     throw(CentralNodeException(errorStream.str()));
   }
@@ -214,17 +224,11 @@ void BypassManager::checkBypassQueue(time_t testTime) {
   //	    << ", size=" << bypassQueue.size() << ")");
 
   bool expired = true;
-  int ret = pthread_mutex_lock(&mutex);
-  if (0 != ret) {
-    throw("ERROR: BypassManager::checkBypassQueue() failed to lock mutex.");
-  }
-
-  while (expired) {
-    expired = checkBypassQueueTop(now);
-  }
-  ret = pthread_mutex_unlock(&mutex);
-  if (0 != ret) {
-    throw("ERROR: BypassManager::checkBypassQueue() failed to unlock mutex.");
+  {
+    std::unique_lock<std::mutex> lock(mutex);
+    while (expired) {
+      expired = checkBypassQueueTop(now);
+    }
   }
 }
 
@@ -442,24 +446,20 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 	refreshFirmwareConfiguration = true;
       }
 
-      int ret = pthread_mutex_lock(&mutex);
-      if (0 != ret) {
-	throw("ERROR: BypassManager::setBypass() failed to lock mutex.");
-      }
-      bypass->until = bypassUntil;
-      bypass->status = BYPASS_VALID;
-      bypass->value = value;
+      {
+	std::unique_lock<std::mutex> lock(mutex);
 
-      // If analog/threshold bypass, change bypassMask - set threshold bit to 0 (bypassed)
-      if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
-	uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
-	*bypassMask &= m;
-      }
+	bypass->until = bypassUntil;
+	bypass->status = BYPASS_VALID;
+	bypass->value = value;
 
-      bypassQueue.push(newEntry);
-      ret = pthread_mutex_unlock(&mutex);
-      if (0 != ret) {
-	throw("ERROR: BypassManager::setBypass() failed to unlock mutex.");
+	// If analog/threshold bypass, change bypassMask - set threshold bit to 0 (bypassed)
+	if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
+	  uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
+	  *bypassMask &= m;
+	}
+	
+	bypassQueue.push(newEntry);
       }
     }
   }
@@ -473,14 +473,10 @@ void BypassManager::printBypassQueue() {
   time_t now;
   time(&now);
 
-  int ret = pthread_mutex_lock(&mutex);
-  if (0 != ret) {
-    throw("ERROR: BypassManager::printBypassQueue() failed to lock mutex.");
-  }
-  BypassPriorityQueue copy = bypassQueue;
-  ret = pthread_mutex_unlock(&mutex);
-  if (0 != ret) {
-    throw("ERROR: BypassManager::printBypassQueue() failed to unlock mutex.");
+  BypassPriorityQueue copy;
+  {
+    std::unique_lock<std::mutex> lock(mutex);
+    copy = bypassQueue;
   }
   std::cout << "=== Bypass Queue (orded by expiration date) ===" << std::endl;
   std::cout << "=== Current time: " << now << "(s) ===" << std::endl;
@@ -508,32 +504,26 @@ void BypassManager::printBypassQueue() {
   }
 }
 
-void BypassManager::startBypassThread() {
-  if (pthread_create(&_bypassThread, 0, BypassManager::bypassThread, 0)) {
-    throw("ERROR: Failed to start bypass thread");
-    return;
-  }
-
-  if(pthread_setname_np(_bypassThread, "BypassThread"))
-        perror("pthread_setname_np failed");
-
-}
-
-void *BypassManager::bypassThread(void *arg) {
+void BypassManager::bypassThread() {
+  std::cout <<  "INFO: bypassThread started..." << std::endl;
   while(true) {
-    Engine::getInstance().getBypassManager()->checkBypassQueue();
-    if (refreshFirmwareConfiguration) {
-      Engine::getInstance().reloadConfig();
-      refreshFirmwareConfiguration = false;
+    if (threadDone) {
+      LOG_TRACE("BYPASS", "Exiting bypassThread");
+      std::cout << "INFO: bypassThread exiting..." << std::endl;
+      return;
     }
-    sleep(1);
+    if (Engine::getInstance().getBypassManager()) {
+      Engine::getInstance().getBypassManager()->checkBypassQueue();
+      if (refreshFirmwareConfiguration) {
+	Engine::getInstance().reloadConfig();
+	refreshFirmwareConfiguration = false;
+      }
+      sleep(1);
 
-    // Refresh the application timeout status - not really something related
-    // to bypass, but it is done here for convenience
-    Firmware::getInstance().getAppTimeoutStatus();
+      // Refresh the application timeout status - not really something related
+      // to bypass, but it is done here for convenience
+      Firmware::getInstance().getAppTimeoutStatus();
+    }
   }
-
-  std::cout << "bypassThread exiting..." << std::endl;
-  pthread_exit(0);
 }
 

@@ -24,6 +24,7 @@ uint32_t        Engine::_inputUpdateFailCounter;
 
 Engine::Engine() :
   _initialized(false),
+  _engineThread(NULL),
   _debugCounter(0),
   _checkFaultTime( "Evaluation only time", 720 ),
   _evaluationCycleTime( "Evaluation Cycle time", 720 ),
@@ -65,6 +66,11 @@ Engine::~Engine()
     Firmware::getInstance().setEnable(false);
 
     _checkFaultTime.show();
+
+    _evaluate = false;
+    threadJoin();
+    std::cout << "INFO: Stopping bypass thread now..." << std::endl;
+    _bypassManager->stopBypassThread();
 }
 
 MpsDbPtr Engine::getCurrentDb()
@@ -744,13 +750,11 @@ void Engine::showDatabaseInfo()
 
 void Engine::startUpdateThread()
 {
-    if (pthread_create(&_engineThread, 0, Engine::engineThread, 0))
-    {
-        throw(EngineException("ERROR: Failed to start update thread"));
-    }
+  _engineThread = new std::thread(&Engine::engineThread, this);
 
-    if(pthread_setname_np(_engineThread, "EngineThread"))
-        perror("pthread_setname_np failed");
+  if (pthread_setname_np(_engineThread->native_handle(), "EngineThread")) {
+    perror("pthread_setname_np failed");
+  }
 }
 
 uint32_t Engine::getUpdateRate()
@@ -775,7 +779,10 @@ void Engine::threadExit()
 
 void Engine::threadJoin()
 {
-    pthread_join(_engineThread, NULL);
+  if (_engineThread != NULL) {
+    std::cout << "INFO: Engine::threadJoin()" << std::endl;
+    _engineThread->join();
+  }
 }
 
 #define MAX_SAFE_STACK (8*1024) /* The maximum stack size which is
@@ -790,11 +797,11 @@ void stack_prefault(void)
     return;
 }
 
-void *Engine::engineThread(void *arg)
+void Engine::engineThread()
 {
     struct sched_param  param;
 
-    std::cout << "Engine: update thread started." << std::endl;
+    std::cout << "INFO: Engine: update thread started." << std::endl;
 
     // Declare as real time task
     param.sched_priority = 70;
@@ -839,7 +846,12 @@ void *Engine::engineThread(void *arg)
                 std::unique_lock<std::mutex> lock(*(Engine::getInstance()._mpsDb->getInputUpdateMutex()));
                 while(!Engine::getInstance()._mpsDb->isInputReady())
                 {
-                    Engine::getInstance()._mpsDb->getInputUpdateCondVar()->wait(lock);
+		  Engine::getInstance()._mpsDb->getInputUpdateCondVar()->wait_for(lock, std::chrono::milliseconds(5));
+		  if (!_evaluate) {
+		    pthread_mutex_unlock(&_engineMutex);
+		    std::cout << "INFO: EngineThread: Exiting..." << std::endl;
+		    return;
+		  }
                 }
             }
 
@@ -848,7 +860,12 @@ void *Engine::engineThread(void *arg)
                 std::unique_lock<std::mutex> lock(*(Engine::getInstance()._mpsDb->getMitBufferMutex()));
                 while(!Engine::getInstance()._mpsDb->isMitBufferWriteReady())
                 {
-                    Engine::getInstance()._mpsDb->getMitBufferCondVar()->wait(lock);
+                    Engine::getInstance()._mpsDb->getMitBufferCondVar()->wait_for(lock, std::chrono::milliseconds(5));
+		    if (!_evaluate) {
+		      pthread_mutex_unlock(&_engineMutex);
+		      std::cout << "INFO: EngineThread: Exiting..." << std::endl;
+		      return;
+		    }
                 }
             }
 
@@ -899,8 +916,7 @@ void *Engine::engineThread(void *arg)
     Firmware::getInstance().setSoftwareEnable(false);
     Firmware::getInstance().setEnable(false);
 
-    std::cout << "EngineThread: Exiting..." << std::endl;
-    pthread_exit(0);
+    std::cout << "INFO: EngineThread: Exiting..." << std::endl;
 }
 
 long Engine::getMaxCheckTime()
