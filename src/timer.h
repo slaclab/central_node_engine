@@ -17,11 +17,13 @@ public:
     void      start();
     void      tick();
     void      show();
+    void      clear();
     const int getTickCount() const;
     const T   getMinPeriod();
     const T   getMaxPeriod();
     const T   getMeanPeriod();
-
+    const T   getAllMaxPeriod();
+    
 private:
     int                                            size;
     std::string                                    name;
@@ -29,6 +31,7 @@ private:
     boost::circular_buffer<T>                      cb;
     std::chrono::high_resolution_clock::time_point t;
     bool                                           started;
+    T                                              max;
 };
 
 #endif

@@ -84,6 +84,7 @@ public:
     long getAvgCheckTime();
     long getMaxEvalTime();
     long getAvgEvalTime();
+    void clearMaxTimers();
 
     MpsDbPtr getCurrentDb();
     BypassManagerPtr getBypassManager();

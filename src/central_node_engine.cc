@@ -916,7 +916,7 @@ void Engine::engineThread()
 
 long Engine::getMaxCheckTime()
 {
-    return static_cast<int>( _checkFaultTime.getMaxPeriod() * 1e6 );
+    return static_cast<int>( _checkFaultTime.getAllMaxPeriod() * 1e6 );
 }
 
 long Engine::getAvgCheckTime()
@@ -926,13 +926,19 @@ long Engine::getAvgCheckTime()
 
 long Engine::getMaxEvalTime()
 {
-    return static_cast<int>( _evaluationCycleTime.getMaxPeriod() * 1e6 );
+    return static_cast<int>( _evaluationCycleTime.getAllMaxPeriod() * 1e6 );
 }
 
 long Engine::getAvgEvalTime()
 {
-    return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
+  return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
 }
+
+void Engine::clearMaxTimers() {
+  _checkFaultTime.clear();
+  _evaluationCycleTime.clear();
+  _mpsDb->clearUpdateTime();
+}   
 
 long Engine::getAvgWdUpdatePeriod()
 {

@@ -43,10 +43,10 @@ void HeartBeat::printReport()
     printf( "Software watchdog timer:           %" PRIu32 " us\n", u32 );
     printf( "Heartbeat count:                   %d\n",    hbCnt );
     printf( "Software watchdog error count:     %d\n",    wdErrorCnt );
-    printf( "Maximum period between heartbeats: %f us\n", ( txPeriod.getMaxPeriod()    * 1000000 ) );
+    printf( "Maximum period between heartbeats: %f us\n", ( txPeriod.getAllMaxPeriod()    * 1000000 ) );
     printf( "Average period between heartbeats: %f us\n", ( txPeriod.getMeanPeriod()   * 1000000 ) );
     printf( "Minimum period between heartbeats: %f us\n", ( txPeriod.getMinPeriod()    * 1000000 ) );
-    printf( "Maximum period to send heartbeats: %f us\n", ( txDuration.getMaxPeriod()  * 1000000 ) );
+    printf( "Maximum period to send heartbeats: %f us\n", ( txDuration.getAllMaxPeriod()  * 1000000 ) );
     printf( "Average period to send heartbeats: %f us\n", ( txDuration.getMeanPeriod() * 1000000 ) );
     printf( "Minimum period to send heartbeats: %f us\n", ( txDuration.getMinPeriod()  * 1000000 ) );
     printf( "===============================================\n" );

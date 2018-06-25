@@ -150,6 +150,9 @@ void MpsDb::updateInputs() {
       AppCardDigitalUpdateTime.clear();
       AppCardAnalogUpdateTime.clear();
       _clearUpdateTime = false;
+      _inputUpdateTime.clear();
+      fwUpdateTimer.clear();
+      mitigationTxTime.clear();
     }
 
     _inputUpdateTime.start();
@@ -1133,7 +1136,7 @@ void MpsDb::clearUpdateTime() {
 }
 
 long MpsDb::getMaxUpdateTime() {
-  return static_cast<int>( _inputUpdateTime.getMaxPeriod() * 1e6 );
+  return static_cast<int>( _inputUpdateTime.getAllMaxPeriod() * 1e6 );
 }
 
 long MpsDb::getAvgUpdateTime() {
@@ -1141,7 +1144,7 @@ long MpsDb::getAvgUpdateTime() {
 }
 
 long MpsDb::getMaxFwUpdatePeriod() {
-  return static_cast<int>( fwUpdateTimer.getMaxPeriod() * 1e6 );
+  return static_cast<int>( fwUpdateTimer.getAllMaxPeriod() * 1e6 );
 }
 
 long MpsDb::getAvgFwUpdatePeriod() {

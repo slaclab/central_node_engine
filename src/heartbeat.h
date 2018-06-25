@@ -25,11 +25,11 @@ public:
     int  getWdErrorCnt() const       { return wdErrorCnt; };
 
     const double getMinTxPeriod()    { return txPeriod.getMinPeriod();  };
-    const double getMaxTxPeriod()    { return txPeriod.getMaxPeriod();  };
+    const double getMaxTxPeriod()    { return txPeriod.getAllMaxPeriod();  };
     const double getMeanTxPeriod()   { return txPeriod.getMeanPeriod(); };
 
     const double getMinTxDuration()  { return txDuration.getMeanPeriod(); };
-    const double getMaxTxDuration()  { return txDuration.getMaxPeriod();  };
+    const double getMaxTxDuration()  { return txDuration.getAllMaxPeriod();  };
     const double getMeanTxDuration() { return txDuration.getMeanPeriod(); };
 
 private:
