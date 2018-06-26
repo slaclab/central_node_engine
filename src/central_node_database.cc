@@ -655,7 +655,6 @@ void MpsDb::configureIgnoreConditions() {
 
     // Find if the ignored fault state is digital or analog
     uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
-
     //    std::cout << "faultStateId=" << faultStateId << " ";
 
     if (faultStateId != DbIgnoreCondition::INVALID_ID) {

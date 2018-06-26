@@ -481,6 +481,15 @@ bool Engine::evaluateIgnoreConditions()
 			    << ", state=" << (*condition).second->state);
 
 		  (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
+		  // This check is needed in case specific faults from an AnalogDevice is
+		  // listed in the ignoreCondition.
+		  if ((*ignoreCondition).second->analogDevice) {
+		    int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
+		    if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state) {
+		      reload = true; // reload configuration!
+		    }
+		    (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
+		  }
 		}
 	      else
 		{
