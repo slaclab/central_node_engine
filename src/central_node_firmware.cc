@@ -140,9 +140,6 @@ int Firmware::createRegisters() {
     name = base + mps + core + "/EvaluationPowerLevel";
     _mitigationSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-    name = base + mps + core + "/EvaluationLatchedPowerLevel";
-    _latchedMitigationSV = IScalVal_RO::create(_root->findByName(name.c_str()));
-
     name = base + mps + core + "/SwitchConfig";
     _switchConfigCmd = ICommand::create(_root->findByName(name.c_str()));
 

@@ -261,11 +261,11 @@ typedef struct {
 uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout) {
   socklen_t clientlen = sizeof(clientaddr);
 
-  std::cout << "INFO: waiting for simulated data..." << std::endl;
+  //  std::cout << "INFO: waiting for simulated data..." << std::endl;
   int n = recvfrom(_updateSock, buffer, size, 0,
 		   (struct sockaddr *) &clientaddr, &clientlen);
   if (n < 0) {
-    std::cerr << "ERROR: Failed to receive simulated firmware data" << std::endl;
+    //    std::cerr << "ERROR: Failed to receive simulated firmware data" << std::endl;
     return 0;
   }
   else {

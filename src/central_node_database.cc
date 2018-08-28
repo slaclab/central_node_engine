@@ -892,14 +892,14 @@ void MpsDb::writeFirmwareConfiguration() {
     period[i] = 0;
     charge[i] = 4294967295;
   }
-  /** SKIP for testing 
+
   for (DbBeamClassMap::iterator beamClass = beamClasses->begin();
        beamClass != beamClasses->end(); ++beamClass) {
     time[(*beamClass).second->number] = (*beamClass).second->integrationWindow;
     period[(*beamClass).second->number] = (*beamClass).second->minPeriod;
     charge[(*beamClass).second->number] = (*beamClass).second->totalCharge;
   }
-  **/
+
   Firmware::getInstance().writeTimingChecking(time, period, charge);
 
   // Firmware command to actually switch to the new configuration
