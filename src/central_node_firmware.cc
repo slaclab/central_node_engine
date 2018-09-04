@@ -612,7 +612,7 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware) {
       os << "SwLossError=" << (int) firmware->getSoftwareLossError() << std::endl;
       os << "SwBwidthCnt=" << firmware->getSoftwareClockCount() << std::endl;
 
-      uint16_t aux[FW_NUM_BEAM_CLASSES]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+      uint32_t aux[FW_NUM_BEAM_CLASSES]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
       firmware->_beamIntTimeSV->getVal(aux, FW_NUM_BEAM_CLASSES);
       os << "BeamIntTime=[";
       for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
