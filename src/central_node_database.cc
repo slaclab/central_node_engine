@@ -986,9 +986,13 @@ int MpsDb::load(std::string yamlFileName) {
     } else if (nodeName == "DatabaseInfo") {
       databaseInfo = (*node).as<DbInfoMapPtr>();
     } else {
-      errorStream << "ERROR: Unknown YAML node name ("
-		  << nodeName << ")";
-      throw(DbException(errorStream.str()));
+      // Do not raise exception if the YAML node is known, but
+      // does not need to be loaded by central node engine
+      if (nodeName != "LinkNode") {
+	errorStream << "ERROR: Unknown YAML node name ("
+		    << nodeName << ")";
+	throw(DbException(errorStream.str()));
+      }
     }
   }
 
