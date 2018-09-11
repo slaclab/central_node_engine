@@ -823,10 +823,12 @@ void Engine::engineThread()
     // Pre-fault our stack
     stack_prefault();
 
-    Firmware::getInstance().setEnable(true);
+    //    Firmware::getInstance().setEnable(true);
+    Firmware::getInstance().setEnable(false);
     Firmware::getInstance().clearAll();
     //  Firmware::getInstance().softwareClear();
-    Firmware::getInstance().setSoftwareEnable(true);
+    //    Firmware::getInstance().setSoftwareEnable(true);
+    Firmware::getInstance().setSoftwareEnable(false);
     Firmware::getInstance().setTimingCheckEnable(true);
 
     time_t before = time(0);

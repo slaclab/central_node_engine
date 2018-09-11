@@ -89,7 +89,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
 
   for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
        analogInput != db->analogDevices->end(); ++analogInput) {
-    uint32_t integratorsPerChannel = 4;
+    uint32_t integratorsPerChannel = ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL;
     /*
     if ((*analogInput).second->deviceType) {
       integratorsPerChannel = (*analogInput).second->deviceType->numIntegrators;

@@ -8,6 +8,10 @@
 #  Auth: xx-Dec-2012, XXX         (xxx)
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
+central_node_engine-R1-2-5:
+  * After config is loaded MPS is not enabled by default, user
+    must enable it on the EDM panel
+
 central_node_engine-R1-2-4:
   * Minor fix on the beam charge table readback - changed from 16 to 32 bits
 
