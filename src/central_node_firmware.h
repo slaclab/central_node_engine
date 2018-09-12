@@ -177,6 +177,7 @@ class Firmware {
   bool swErrClear();
   bool toErrClear();
   bool moConcErrClear();
+  bool beamFaultClear();
   bool clearAll();
 
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);

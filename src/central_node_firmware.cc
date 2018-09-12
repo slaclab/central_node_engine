@@ -41,6 +41,7 @@ Firmware::~Firmware() {
 int Firmware::createRoot(std::string yamlFileName) {
   Hub hub = IPath::loadYamlFile(yamlFileName.c_str(), "NetIODev")->origin();
   _root = IPath::create(hub);
+  return 0;
 }
 
 Path Firmware::getRoot() {
@@ -536,6 +537,19 @@ bool Firmware::toErrClear() {
 bool Firmware::moConcErrClear() {
   try {
     _moConcErrClearCmd->execute();
+  } catch (IOError &e) {
+    std::cout << "Exception Info: " << e.getInfo() << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool Firmware::beamFaultClear() {
+  try {
+    uint64_t val = 1;
+    _beamFaultClrSV->setVal(val);
+    val = 0;
+    _beamFaultClrSV->setVal(val);
   } catch (IOError &e) {
     std::cout << "Exception Info: " << e.getInfo() << std::endl;
     return false;

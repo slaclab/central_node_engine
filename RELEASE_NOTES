@@ -8,6 +8,10 @@
 #  Auth: xx-Dec-2012, XXX         (xxx)
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
+central_node_engine-R1-3-0:
+  * Addition of Firmware::beamFaultClear(), for clearing
+    faults caused by power class or charge violation
+
 central_node_engine-R1-2-5:
   * After config is loaded MPS is not enabled by default, user
     must enable it on the EDM panel
