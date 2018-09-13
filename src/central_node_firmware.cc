@@ -562,6 +562,7 @@ bool Firmware::clearAll() {
     monErrClear() ||
     swErrClear() ||
     toErrClear() ||
+    beamFaultClear() ||
     moConcErrClear();
 }
 

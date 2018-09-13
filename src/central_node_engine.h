@@ -51,6 +51,7 @@ private:
     static uint32_t _rate;
     static uint32_t _updateCounter;
     static time_t _startTime;
+    static bool _enableMps;
 
     uint32_t _debugCounter;
     static uint32_t _inputUpdateFailCounter;

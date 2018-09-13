@@ -21,6 +21,7 @@ uint32_t        Engine::_rate;
 uint32_t        Engine::_updateCounter;
 time_t          Engine::_startTime;
 uint32_t        Engine::_inputUpdateFailCounter;
+bool            Engine::_enableMps = false;
 
 Engine::Engine() :
   _initialized(false),
@@ -823,12 +824,17 @@ void Engine::engineThread()
     // Pre-fault our stack
     stack_prefault();
 
-    //    Firmware::getInstance().setEnable(true);
-    Firmware::getInstance().setEnable(false);
+    // Do not start MPS on the first time the thread runs (i.e.
+    // when configuration is loaded)
+    if (!_enableMps) {
+      _enableMps = true;
+    }
+    else {
+      Firmware::getInstance().setEnable(true);
+      Firmware::getInstance().setSoftwareEnable(true);
+    }
+
     Firmware::getInstance().clearAll();
-    //  Firmware::getInstance().softwareClear();
-    //    Firmware::getInstance().setSoftwareEnable(true);
-    Firmware::getInstance().setSoftwareEnable(false);
     Firmware::getInstance().setTimingCheckEnable(true);
 
     time_t before = time(0);
