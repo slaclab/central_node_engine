@@ -8,6 +8,13 @@
 #  Auth: xx-Dec-2012, XXX         (xxx)
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
+central_node_engine-R1-3-2:
+  * Addition of functionality to allow forcing a power class to
+    o beam destination (e.g. allow ops to shut off gun by setting
+    a PV).
+  * Addition of missing firmware call to run central node stand-alone,
+    without connecting to central node card.
+
 central_node_engine-R1-3-1:
   * Change introduced in R1-2-5 stops MPS whenever the update thread
     is stopped/started. Modified so it doesn't start MPS only after

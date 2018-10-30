@@ -578,6 +578,9 @@ void MpsDb::configureFaultStates() {
     }
     (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
 											 (*it).second));
+    LOG_TRACE("DATABASE", "Adding FaultState (" << (*it).second->id << ") to "
+	      " Fault (" << (*faultIt).second->id << ", " << (*faultIt).second->name
+	      << ", " << (*faultIt).second->description << ")");
 
     // If this DigitalFault is the default, then assign it to the fault:
     if ((*it).second->defaultState && !((*faultIt).second->defaultFaultState)) {
@@ -595,7 +598,17 @@ void MpsDb::configureFaultStates() {
     (*it).second->deviceState = (*deviceStateIt).second;
   }
 
-
+  // After assigning all FaultStates to Faults, check if all Faults
+  // do have FaultStates
+  for (DbFaultMap::iterator fault = faults->begin();
+       fault != faults->end(); ++fault) {
+    if (!(*fault).second->faultStates) {
+      errorStream << "ERROR: Fault " << (*fault).second->name << " ("
+		  << (*fault).second->description << ", id="
+		  << (*fault).second->id << ") has no FaultStates";
+      throw(DbException(errorStream.str()));
+    }
+  }
 }
 
 void MpsDb::configureAnalogDevices() {
@@ -867,6 +880,24 @@ void MpsDb::configure() {
   configureIgnoreConditions();
   configureApplicationCards();
   configureBeamDestinations();
+}
+
+void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId) {
+  DbBeamDestinationMap::iterator beamDestIt = beamDestinations->find(beamDestinationId);
+  if (beamDestIt != beamDestinations->end()) {
+    if (beamClassId != CLEAR_BEAM_CLASS) {
+      DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
+      if (beamClassIt != beamClasses->end()) {
+	(*beamDestIt).second->setForceBeamClass((*beamClassIt).second);
+      }
+      else {
+	(*beamDestIt).second->resetForceBeamClass();
+      }
+    }
+    else {
+      (*beamDestIt).second->resetForceBeamClass();
+    }
+  }
 }
 
 void MpsDb::writeFirmwareConfiguration() {

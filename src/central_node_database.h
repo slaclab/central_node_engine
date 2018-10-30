@@ -150,6 +150,7 @@ class MpsDb {
   void showMitigation();
   void showInfo();
 
+  void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void writeFirmwareConfiguration();
   void unlatchAll();
   void clearMitigationBuffer();

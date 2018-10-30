@@ -6,6 +6,13 @@
 
 const uint32_t SLOW_EVALUATION = 0;
 const uint32_t FAST_EVALUATION = 1;
+const uint32_t NO_EVALUATION = 3;
+
+// CardId used when device do not have any card associated with
+const uint32_t NO_CARD_ID = 1000;
+
+// Used to remove forced beam class on a beam destination
+const uint32_t CLEAR_BEAM_CLASS = 99;
 
 // Definition of number of applications and memory space for
 // the hardware (fast) configuration

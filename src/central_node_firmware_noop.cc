@@ -213,6 +213,10 @@ bool Firmware::moConcErrClear() {
   return false;
 }
 
+bool Firmware::beamFaultClear() {
+  return false;
+}
+
 bool Firmware::clearAll() {
   return false;
 }

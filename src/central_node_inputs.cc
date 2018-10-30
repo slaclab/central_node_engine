@@ -246,19 +246,25 @@ void DbAnalogDevice::update() {
  * used to retrieve the latest updates form the firmware
  */
 void DbApplicationCard::configureUpdateBuffers() {
+ std::stringstream errorStream;
   //  std::cout << this << std::endl;
   if (digitalDevices) {
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {
-      if (!(*digitalDevice).second->inputDevices) {
-	throw(DbException("Found digital device without inputs"));
+      if ((*digitalDevice).second->evaluation != NO_EVALUATION &&
+	  !(*digitalDevice).second->inputDevices) {
+	errorStream << "ERROR: Found digital device (" << (*digitalDevice).second->name << ") "
+		    << "without inputs (eval=" << (*digitalDevice).second->evaluation << ")";
+	throw(DbException(errorStream.str()));
       }
 
-      for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
-	   deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
-	//	std::cout << "D" << (*deviceInput).second->id << " ";
-	//	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
-	(*deviceInput).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
+      if ((*digitalDevice).second->inputDevices) {
+	for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
+	     deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
+	  //	std::cout << "D" << (*deviceInput).second->id << " ";
+	  //	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
+	  (*deviceInput).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
+	}
       }
     }
   }
@@ -295,9 +301,11 @@ void DbApplicationCard::updateInputs() {
     AppCardDigitalUpdateTime.start();
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	 digitalDevice != digitalDevices->end(); ++digitalDevice) {
-      for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
-	   deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
-	(*deviceInput).second->update();
+      if ((*digitalDevice).second->inputDevices) {
+	for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
+	     deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
+	  (*deviceInput).second->update();
+	}
       }
     }
     AppCardDigitalUpdateTime.end();

@@ -436,8 +436,15 @@ namespace YAML {
 	  errorStream << "ERROR: Failed to find field " << field << " for DigitalDevice.";
 	  throw(DbException(errorStream.str()));
 	} catch(YAML::TypedBadConversion<unsigned int> e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DigitalDevice (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
+	  // There may be devices that do not have cards assigned, but have secondary measurement
+	  // devices that read some of its properties.
+	  if (field == "card_id") {
+	    digitalDevice->cardId = NO_CARD_ID;
+	  }
+	  else {
+	    errorStream << "ERROR: Failed to convert contents of field " << field << " for DigitalDevice (expected unsigned int).";
+	    throw(DbException(errorStream.str()));
+	  }
 	} catch(YAML::TypedBadConversion<std::string> e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DigitalDevice (expected string).";
 	  throw(DbException(errorStream.str()));

@@ -480,6 +480,7 @@ class DbBeamDestination : public DbEntry {
   DbBeamClassPtr previousAllowedBeamClass; // beam class set previously
   DbBeamClassPtr allowedBeamClass; // allowed beam class after evaluating faults
   DbBeamClassPtr tentativeBeamClass; // used while faults are being evaluated
+  DbBeamClassPtr forceBeamClass; // used when operators want to force a specific beam class
 
   // Memory location where the allowed beam class for this device
   // is written and sent to firmware
@@ -490,13 +491,28 @@ class DbBeamDestination : public DbEntry {
   DbBeamDestination();
 
   void setAllowedBeamClass() {
-    allowedBeamClass = tentativeBeamClass;
+    // If beam destination has a forceBeamClass, then set it
+    if (forceBeamClass) {
+      allowedBeamClass = forceBeamClass;
+    }
+    else {
+      allowedBeamClass = tentativeBeamClass;
+    }
+
     softwareMitigationBuffer->getWritePtr()->at(softwareMitigationBufferIndex) |= ((allowedBeamClass->number & 0xF) << bitShift);
 
     if (previousAllowedBeamClass->number != allowedBeamClass->number) {
       History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
     }
 
+  }
+
+  void setForceBeamClass(DbBeamClassPtr beamClass) {
+    forceBeamClass = beamClass;
+  }
+
+  void resetForceBeamClass() {
+    forceBeamClass.reset();
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination);

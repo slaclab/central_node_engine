@@ -311,6 +311,9 @@ void Engine::evaluateFaults()
     for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
         device != _mpsDb->digitalDevices->end(); ++device)
     {
+      // If device has no card assigned, then it cannot be evaluated.
+      if ((*device).second->cardId != NO_CARD_ID &&
+	  (*device).second->evaluation != NO_EVALUATION) {
         uint32_t deviceValue = 0;
         LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
             << ", there are " << (*device).second->inputDevices->size()
@@ -340,6 +343,7 @@ void Engine::evaluateFaults()
         (*device).second->update(deviceValue);
 
         LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
+      }
     }
 
     // At this point all digital devices have an updated value

@@ -30,6 +30,7 @@ static void usage(const char *nm) {
   std::cerr << "       -v          :  verbose output" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -c          :  clear firmware - disable MPS" << std::endl;
+  std::cerr << "       -l <PC ID>  :  force linac power class" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
 
@@ -49,10 +50,11 @@ int main(int argc, char **argv) {
   bool verbose = false;
   bool trace = false;
   bool clear = false;
+  uint32_t powerClassId = CLEAR_BEAM_CLASS;
 
   signal(SIGINT, intHandler);
   
-  for (int opt; (opt = getopt(argc, argv, "tvhf:w:c")) > 0;) {
+  for (int opt; (opt = getopt(argc, argv, "tvhf:w:cl:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
     case 'f' :
@@ -69,6 +71,9 @@ int main(int argc, char **argv) {
       break;
     case 'c':
       clear = true;
+      break;
+    case 'l':
+      powerClassId = atoi(optarg);
       break;
     case 'h': usage(argv[0]); return 0;
     default:
@@ -127,6 +132,10 @@ int main(int argc, char **argv) {
   } catch (DbException ex) {
     std::cerr << ex.what() << std::endl;
     return -1;
+  }
+
+  if (powerClassId != CLEAR_BEAM_CLASS) {
+    Engine::getInstance().getCurrentDb()->forceBeamDestination(1, powerClassId);
   }
 /*
 
