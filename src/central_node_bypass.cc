@@ -77,6 +77,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     // this field will get set later when bypasses start to be monitored
     bypass->status = BYPASS_EXPIRED;
     bypass->index = 0;
+    //    std::cout << (*input).second << std::endl;
     if ((*input).second->fastEvaluation) {
       bypass->configUpdate = true;
     }
@@ -146,6 +147,10 @@ void BypassManager::assignBypass(MpsDbPtr db) {
       }
       else {
 	(*digitalInput).second->bypass = (*bypass).second;
+	// Make sure that changes to the bypass for this digital input causes firmware reload
+	if ((*digitalInput).second->fastEvaluation) {
+	  (*digitalInput).second->bypass->configUpdate = true;
+	}
       }
     }
     else { // BYPASS_ANALOG

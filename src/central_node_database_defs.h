@@ -14,6 +14,8 @@ const uint32_t NO_CARD_ID = 1000;
 // Used to remove forced beam class on a beam destination
 const uint32_t CLEAR_BEAM_CLASS = 99;
 
+const uint32_t INVALID_ID = 4294967295;
+
 // Definition of number of applications and memory space for
 // the hardware (fast) configuration
 const uint32_t NUM_APPLICATIONS = 1024;

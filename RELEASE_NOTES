@@ -8,6 +8,11 @@
 #  Auth: xx-Dec-2012, XXX         (xxx)
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
+central_node_engine-R1-3-3:
+  * Implemented bypass for fast digital devices (they must have
+    a single device input). The firmware configuration is reloaded
+    when a fast digital input bypass is created or expires.
+
 central_node_engine-R1-3-2:
   * Addition of functionality to allow forcing a power class to
     o beam destination (e.g. allow ops to shut off gun by setting

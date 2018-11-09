@@ -889,13 +889,16 @@ void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassI
       DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
       if (beamClassIt != beamClasses->end()) {
 	(*beamDestIt).second->setForceBeamClass((*beamClassIt).second);
+	std::cout << "Force dest["<< beamDestinationId <<"] to class [" << beamClassId << "]" << std::endl;
       }
       else {
 	(*beamDestIt).second->resetForceBeamClass();
+	std::cout << "Force dest["<< beamDestinationId <<"] reset" << std::endl;
       }
     }
     else {
       (*beamDestIt).second->resetForceBeamClass();
+      std::cout << "Force dest["<< beamDestinationId <<"] reset" << std::endl;
     }
   }
 }
@@ -1256,7 +1259,7 @@ std::vector<uint8_t> MpsDb::getFastUpdateBuffer()
 
 void MpsDb::fwUpdateReader()
 {
-    std::cout << "FW Update Data reader started" << std::endl;
+    std::cout << "*** FW Update Data reader started" << std::endl;
     fwUpdateTimer.start();
 
     for(;;)

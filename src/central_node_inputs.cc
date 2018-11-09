@@ -380,10 +380,13 @@ void DbApplicationCard::writeDigitalConfiguration() {
 	applicationConfigBuffer->set(channelOffset + offset, (*digitalDevice).second->fastExpectedState);
 
 	// Write the destination mask (index 4 through 19)
-	offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
-	for (uint32_t i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
-	  applicationConfigBuffer->set(channelOffset + offset + i,
-				 ((*digitalDevice).second->fastDestinationMask >> i) & 0x01);
+	// If bypass for device is valid leave destination mask set to zero - i.e. no mitigation
+	if ((*deviceInput).second->bypass->status != BYPASS_VALID) {
+	  offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
+	  for (uint32_t i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
+	    applicationConfigBuffer->set(channelOffset + offset + i,
+					 ((*digitalDevice).second->fastDestinationMask >> i) & 0x01);
+	  }
 	}
 
 	// Write the beam power class (index 0 through 3)
@@ -460,7 +463,7 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	  for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
 	    applicationConfigBuffer->set(powerClassOffset + k,
 					 ((*analogDevice).second->fastPowerClass[j + i * ANALOG_DEVICE_NUM_THRESHOLDS] >> k) & 0x01);
-	    //	    std::cout << "offset=" << powerClassOffset+k << ", bit=" << (((*analogDevice).second->fastPowerClass[j] >> k) & 0x01) << std::endl;
+	    //std::cout << "offset=" << powerClassOffset+k << ", bit=" << (((*analogDevice).second->fastPowerClass[j] >> k) & 0x01) << std::endl;
 	  }
 	  powerClassOffset += POWER_CLASS_BIT_SIZE;
 	}
@@ -485,7 +488,7 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	    bitValue = false;
 	  }
 	  applicationConfigBuffer->set(maskOffset + j, bitValue);
-	  //	  std::cout << "offset=" << maskOffset+j << ", bit=" << bitValue << "(ignored=" << (*analogDevice).second->ignored<<  ")" << std::endl;
+	  //std::cout << "offset=" << maskOffset+j << ", bit=" << bitValue << "(ignored=" << (*analogDevice).second->ignored<<  ")" << std::endl;
 	}
       }
     }

@@ -144,8 +144,10 @@ std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
   if (deviceInput->fastEvaluation) {
     os << " [in fast device]";
   }
-  if (deviceInput->bypass->status == BYPASS_VALID) {
-    os << " [Bypassed to " << deviceInput->bypass->value << "]";
+  if (deviceInput->bypass) {
+    if (deviceInput->bypass->status == BYPASS_VALID) {
+      os << " [Bypassed to " << deviceInput->bypass->value << "]";
+    }
   }
   /*
   os << "id[" << deviceInput->id << "]; "
