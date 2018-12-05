@@ -48,7 +48,7 @@ class DbEntry {
  */
 class DbCrate : public DbEntry {
  public:
-  uint32_t number;
+  uint32_t crate_id;
   uint32_t numSlots;
   uint32_t shelfNumber;
 

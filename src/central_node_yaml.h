@@ -39,8 +39,8 @@ namespace YAML {
 	  field = "id";
 	  crate->id = (*it)[field].as<unsigned int>();
 
-	  field = "number";
-	  crate->number = (*it)[field].as<unsigned int>();
+	  field = "crate_id";
+	  crate->crate_id = (*it)[field].as<unsigned int>();
 
 	  field = "num_slots";
 	  crate->numSlots = (*it)[field].as<unsigned int>();

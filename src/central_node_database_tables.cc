@@ -13,18 +13,18 @@
 #include <stdio.h>
 #include <log_wrapper.h>
 
-DbEntry::DbEntry() : id(-1) {};
+DbEntry::DbEntry() : id(999) {};
 
 std::ostream & operator<<(std::ostream &os, DbEntry * const entry) {
   os << " id[" << entry->id << "];";
   return os;
 }
 
-DbCrate::DbCrate() : DbEntry(), number(-1), numSlots(-1), shelfNumber(-1) {};
+DbCrate::DbCrate() : DbEntry(), crate_id(999), numSlots(999), shelfNumber(999) {};
 
 std::ostream & operator<<(std::ostream &os, DbCrate * const crate) {
   os << "id[" << crate->id << "]; "
-     << "number[" << crate->number << "]; "
+     << "crate_id[" << crate->crate_id << "]; "
      << "slots[" << crate->numSlots << "]; "
      << "shelf[" << crate->shelfNumber << "]";
   return os;
@@ -40,9 +40,9 @@ std::ostream & operator<<(std::ostream &os, DbInfo * const dbInfo) {
   return os;
 }
 
-DbApplicationType::DbApplicationType() : DbEntry(), number(-1),
-					 analogChannelCount(-1), analogChannelSize(-1),
-					 digitalChannelCount(-1), digitalChannelSize(-1),
+DbApplicationType::DbApplicationType() : DbEntry(), number(999),
+					 analogChannelCount(0), analogChannelSize(0),
+					 digitalChannelCount(0), digitalChannelSize(0),
 					 description("empty") {
 }
 
@@ -57,7 +57,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
   return os;
 }
 
-DbChannel::DbChannel() : DbEntry(), number(-1), cardId(-1) {
+DbChannel::DbChannel() : DbEntry(), number(999), cardId(999) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbChannel * const channel) {
@@ -124,8 +124,8 @@ std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType) {
 }
 
 DbDeviceInput::DbDeviceInput() : DbEntry(),
-				 bitPosition(-1), channelId(-1), faultValue(0),
-				 digitalDeviceId(-1), value(0), previousValue(0),
+				 bitPosition(999), channelId(999), faultValue(0),
+				 digitalDeviceId(999), value(0), previousValue(0),
 				 latchedValue(0), invalidValueCount(0),
 				 fastEvaluation(false) {
 }
@@ -166,7 +166,7 @@ std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
   return os;
 }
 
-DbDigitalDevice::DbDigitalDevice() : DbEntry(), deviceTypeId(-1) {
+DbDigitalDevice::DbDigitalDevice() : DbEntry(), deviceTypeId(999) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevice) {
@@ -376,7 +376,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
   return os;
 }
 
-DbFaultInput::DbFaultInput() : DbEntry(), faultId(-1), deviceId(-1), bitPosition(-1) {
+DbFaultInput::DbFaultInput() : DbEntry(), faultId(999), deviceId(999), bitPosition(999) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
@@ -387,7 +387,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
   return os;
 }
 
-DbBeamClass::DbBeamClass() : DbEntry(), number(-1), name(""), description("") {
+DbBeamClass::DbBeamClass() : DbEntry(), number(999), name(""), description("") {
 }
 
 std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
@@ -423,7 +423,7 @@ std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestin
   return os;
 }
 
-DbAllowedClass::DbAllowedClass() : DbEntry(), beamClassId(-1), faultStateId(-1), beamDestinationId(-1) {
+DbAllowedClass::DbAllowedClass() : DbEntry(), beamClassId(999), faultStateId(999), beamDestinationId(999) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbAllowedClass * const allowedClass) {
