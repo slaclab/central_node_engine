@@ -592,13 +592,15 @@ void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t 
 	new_time[i] = time[i]/1000 - 1;
 	new_time[i] <<= 16;
 	// Set lower bits next
-	new_time[i] |= 1000;
+	new_time[i] |= 999;
       }
       else {
-	new_time[i] = time[i];
+        if (time[i] != 0) {
+	  new_time[i] = time[i];
+        }
       }
     }
-    
+
     _beamIntTimeSV->setVal(new_time, FW_NUM_BEAM_CLASSES);
 
   } catch (IOError &e) {
