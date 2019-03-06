@@ -592,10 +592,10 @@ void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t 
 	new_time[i] = time[i]/1000 - 1;
 	new_time[i] <<= 16;
 	// Set lower bits next
-	new_time[i] |= 999;
+	new_time[i] |= 1000;
       }
       else {
-	new_time[i] = time[i] - 1;
+	new_time[i] = time[i];
       }
     }
     
