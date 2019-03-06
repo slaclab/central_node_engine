@@ -567,6 +567,7 @@ bool Firmware::clearAll() {
 }
 
 /**
+ * This is for the integration time (input time array)
  * intBits[25:16] = (period>1000)?((period/1000)-1):(0)
  * intBits[9:0] = (period > 1000)?999:(period-1)
  *
@@ -580,25 +581,25 @@ bool Firmware::clearAll() {
  */
 void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {
   try {
-    _beamIntTimeSV->setVal(time, FW_NUM_BEAM_CLASSES);
+    _beamMinPeriodSV->setVal(period, FW_NUM_BEAM_CLASSES);
     _beamIntChargeSV->setVal(charge, FW_NUM_BEAM_CLASSES);
 
-    uint32_t new_period[FW_NUM_BEAM_CLASSES];
+    uint32_t new_time[FW_NUM_BEAM_CLASSES];
     for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
-      new_period[i] = 0;
-      if (period[i] > 1000) {
+      new_time[i] = 0;
+      if (time[i] > 1000) {
 	// Set bits 25:16 first
-	new_period[i] = period[i]/1000 - 1;
-	new_period[i] <<= 16;
+	new_time[i] = time[i]/1000 - 1;
+	new_time[i] <<= 16;
 	// Set lower bits next
-	new_period[i] |= 999;
+	new_time[i] |= 999;
       }
       else {
-	new_period[i] = period[i] - 1;
+	new_time[i] = time[i] - 1;
       }
     }
-
-    _beamMinPeriodSV->setVal(new_period, FW_NUM_BEAM_CLASSES);
+    
+    _beamIntTimeSV->setVal(new_time, FW_NUM_BEAM_CLASSES);
 
   } catch (IOError &e) {
     std::cerr << "ERROR: CPSW I/O Error on writeTimingChecking()" << std::endl;
