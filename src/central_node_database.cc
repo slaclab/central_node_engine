@@ -1,6 +1,7 @@
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/node/parse.h>
 #include <yaml-cpp/node/emit.h>
+#include <yaml-cpp/exceptions.h>
 
 #include <central_node_database_defs.h>
 #include <central_node_database_tables.h>
@@ -957,6 +958,9 @@ int MpsDb::load(std::string yamlFileName) {
   LOG_TRACE("DATABASE", "Loading YAML from file " << yamlFileName);
   try {
     nodes = YAML::LoadAllFromFile(yamlFileName);
+  } catch (YAML::BadFile e) {
+    errorStream << "ERROR: Please check if YAML file is readable";
+    throw(DbException(errorStream.str()));
   } catch (...) {
     errorStream << "ERROR: Failed to load YAML file ("
 		<< yamlFileName << ")";

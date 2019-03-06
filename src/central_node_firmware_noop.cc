@@ -292,6 +292,8 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
     strncpy(info.user, Engine::getInstance().getCurrentDb()->databaseInfo->at(0)->user.c_str(), 64);
     strncpy(info.md5sum, Engine::getInstance().getCurrentDb()->databaseInfo->at(0)->md5sum.c_str(), 64);
 
+    std::cout << "INFO: Database md5sum is " << info.md5sum << std::endl;
+
     int n = sendto(_updateSock, &info, sizeof(DatabaseInfo), 0,
 		   reinterpret_cast<struct sockaddr *>(&clientaddr), clientlen);
 

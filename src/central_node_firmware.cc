@@ -566,11 +566,40 @@ bool Firmware::clearAll() {
     moConcErrClear();
 }
 
+/**
+ * intBits[25:16] = (period>1000)?((period/1000)-1):(0)
+ * intBits[9:0] = (period > 1000)?999:(period-1)
+ *
+ * PC1: 100,000 will be written as (100 milliseconds)
+ *      999 in the lower bits
+ *       99 in the upper bits
+ *
+ * PC2: 1,000,000 will be written as (1 second)
+ *      999 in lower bits
+ *      999 in the upper bits
+ */
 void Firmware::writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]) {
   try {
     _beamIntTimeSV->setVal(time, FW_NUM_BEAM_CLASSES);
-    _beamMinPeriodSV->setVal(period, FW_NUM_BEAM_CLASSES);
     _beamIntChargeSV->setVal(charge, FW_NUM_BEAM_CLASSES);
+
+    uint32_t new_period[FW_NUM_BEAM_CLASSES];
+    for (uint32_t i = 0; i < FW_NUM_BEAM_CLASSES; ++i) {
+      new_period[i] = 0;
+      if (period[i] > 1000) {
+	// Set bits 25:16 first
+	new_period[i] = period[i]/1000 - 1;
+	new_period[i] <<= 16;
+	// Set lower bits next
+	new_period[i] |= 999;
+      }
+      else {
+	new_period[i] = period[i] - 1;
+      }
+    }
+
+    _beamMinPeriodSV->setVal(new_period, FW_NUM_BEAM_CLASSES);
+
   } catch (IOError &e) {
     std::cerr << "ERROR: CPSW I/O Error on writeTimingChecking()" << std::endl;
   }

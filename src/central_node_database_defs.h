@@ -137,6 +137,9 @@ const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Las
 // 4 integrators of each of the 6 channels:
 // 6 * 4 = 24 (B0-B23)
 //
+// The analog devices are bypassed by setting the destination
+// masks to zero.
+//
 // Power classes (M0-M191):
 // 4 integrators per channel (BPM has only 3 - X, Y and TMIT)
 // 8 comparators for each integrator:
