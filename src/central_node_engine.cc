@@ -28,6 +28,7 @@ Engine::Engine() :
   _engineThread(NULL),
   _debugCounter(0),
   _forceAomAllow(false),
+  _aomRestored(false),
   _aomAllowEnableCounter(0),
   _aomAllowDisableCounter(0),
   _checkFaultTime( "Evaluation only time", 720 ),
@@ -329,6 +330,7 @@ bool Engine::setAllowedBeamClass()
 	_forceAomAllow = false;
 	_aomAllowDisableCounter++;
 	reload = true;
+
 	return reload;
       }
 

@@ -118,6 +118,7 @@ private:
     DbDigitalDevicePtr _shutterDevice;
     uint32_t _shutterClosedStatus;
     bool _forceAomAllow;
+    bool _aomRestored;
     uint32_t _aomAllowEnableCounter;
     uint32_t _aomAllowDisableCounter;
 
