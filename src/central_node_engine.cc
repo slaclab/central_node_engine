@@ -315,6 +315,23 @@ void Engine::setTentativeBeamClass()
 bool Engine::setAllowedBeamClass()
 {
     bool reload = false;
+
+    // Read the current latched FW mitigation
+    uint32_t latchedMitigation[2];
+    Firmware::getInstance().getLatchedMitigation(&latchedMitigation[0]);
+    uint32_t linacLatchedMitigation = latchedMitigation[1] & 0xF; 
+
+    // If FW is allowing beam *and* the AOM is forced to be enabled, then
+    // must first release the AOM force allow. No SW mitigation will be 
+    // set in this case, first we must restore the AOM fast mitigation.
+    if (linacLatchedMitigation != 0 && _forceAomAllow)
+      {
+	_forceAomAllow = false;
+	_aomAllowDisableCounter++;
+	reload = true;
+	return reload;
+      }
+
     for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
         it != _mpsDb->beamDestinations->end(); ++it)
     {
@@ -326,8 +343,9 @@ bool Engine::setAllowedBeamClass()
 	  if ((*it).second->name == "AOM")
 	    {
 	      uint32_t mitigation[2];
-	      uint32_t linac_mitigation = mitigation[0] & 0xF; 
-	      if (linac_mitigation == 0)
+	      Firmware::getInstance().getMitigation(&mitigation[0]);
+	      uint32_t linacMitigation = mitigation[1] & 0xF; 
+	      if (linacMitigation == 0)
 		{
 		  // Set the SW mitigation
 		  (*it).second->tentativeBeamClass = _highestBeamClass;
@@ -343,7 +361,7 @@ bool Engine::setAllowedBeamClass()
       // If shutter is not CLOSED, then restore AOM destination if needed
       else 
 	{
-	  if (_forceAomAllow == true) 
+	  if (_forceAomAllow == true and (*it).second->name == "AOM")
 	    {
 	      _forceAomAllow = false;
 	      _aomAllowDisableCounter++;
@@ -351,11 +369,23 @@ bool Engine::setAllowedBeamClass()
 	    }
 	}
 
+      // If FW does not allow beam in Linac, then the SW needs to not allow 
+      // as well - this is needed to allow AOM while the shutter closed
+      // This insures the shutter remains closed after a fast fault is
+      // cleared - and the AOM is already enabled.
+      if (linacLatchedMitigation == 0 && (*it).second->name == "Linac")
+	{
+	  (*it).second->tentativeBeamClass = _lowestBeamClass;
+	}
+
       (*it).second->setAllowedBeamClass();
-      //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
       LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
 		<< (*it).second->allowedBeamClass->number);
     }
+
+    //    _aomAllowDisableCounter = latchedMitigation[1];
+    //    _aomAllowEnableCounter = linacLatchedMitigation;
+
     return reload;
 }
 
