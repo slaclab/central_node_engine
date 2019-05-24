@@ -117,10 +117,13 @@ private:
 
     DbDigitalDevicePtr _shutterDevice;
     uint32_t _shutterClosedStatus;
-    bool _forceAomAllow;
-    bool _aomRestored;
-    uint32_t _aomAllowEnableCounter;
-    uint32_t _aomAllowDisableCounter;
+    bool _forceAomAllowFW;
+    bool _forceAomAllowSW;
+    bool _aomRestoredFW;
+    uint32_t _aomAllowEnableCounterFW;
+    uint32_t _aomAllowDisableCounterFW;
+    uint32_t _aomAllowEnableCounterSW;
+    uint32_t _aomAllowDisableCounterSW;
 
     std::stringstream _errorStream;
     Timer<double> _checkFaultTime;

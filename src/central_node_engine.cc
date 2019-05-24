@@ -27,10 +27,13 @@ Engine::Engine() :
   _initialized(false),
   _engineThread(NULL),
   _debugCounter(0),
-  _forceAomAllow(false),
-  _aomRestored(false),
-  _aomAllowEnableCounter(0),
-  _aomAllowDisableCounter(0),
+  _forceAomAllowFW(false),
+  _forceAomAllowSW(false),
+  _aomRestoredFW(false),
+  _aomAllowEnableCounterFW(0),
+  _aomAllowDisableCounterFW(0),
+  _aomAllowEnableCounterSW(0),
+  _aomAllowDisableCounterSW(0),
   _checkFaultTime( "Evaluation only time", 720 ),
   _evaluationCycleTime( "Evaluation Cycle time", 720 ),
   hb( Firmware::getInstance().getRoot(), 3500, 720 )
@@ -115,7 +118,7 @@ int Engine::reloadConfigFromIgnore()
 
     {
       std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-      _mpsDb->writeFirmwareConfiguration(_forceAomAllow);
+      _mpsDb->writeFirmwareConfiguration(_forceAomAllowFW);
     }
 
     Firmware::getInstance().setEnable(true);
@@ -325,11 +328,15 @@ bool Engine::setAllowedBeamClass()
     // If FW is allowing beam *and* the AOM is forced to be enabled, then
     // must first release the AOM force allow. No SW mitigation will be 
     // set in this case, first we must restore the AOM fast mitigation.
-    if (linacLatchedMitigation != 0 && _forceAomAllow)
+    if (linacLatchedMitigation != 0 && _forceAomAllowFW)
       {
-	_forceAomAllow = false;
-	_aomAllowDisableCounter++;
+	_forceAomAllowFW = false;
+	_aomAllowDisableCounterFW++;
 	reload = true;
+
+	// Signal that AOM mitigation was just restored, and should not
+	// be re-enabled in case the shutter status is still closed
+	_aomRestoredFW = true;
 
 	return reload;
       }
@@ -351,23 +358,33 @@ bool Engine::setAllowedBeamClass()
 		{
 		  // Set the SW mitigation
 		  (*it).second->tentativeBeamClass = _highestBeamClass;
-		  if (_forceAomAllow == false) // If AOM is currently not enabled, and it should be 
+		  if (_forceAomAllowSW == false) 
 		    {
-		      _forceAomAllow = true; // Indicate AOM is enabled 
-		      _aomAllowEnableCounter++;
-		      reload = true;
+		      _aomAllowEnableCounterSW++;
+		      _forceAomAllowSW = true;
+		    }
+
+		  // This section is for reloading FW configuration
+		  if (_forceAomAllowFW == false) // If AOM is currently not enabled, and it should be 
+		    {
+		      if (_aomRestoredFW == false)
+			{
+			  _forceAomAllowFW = true; // Indicate AOM is enabled 
+			  _aomAllowEnableCounterFW++;
+			  reload = true;
+			  _aomRestoredFW = true;
+			}
 		    }
 		}
 	    }
 	}
-      // If shutter is not CLOSED, then restore AOM destination if needed
+      // If shutter is not CLOSED, then do not set AOM class to highest
       else 
 	{
-	  if (_forceAomAllow == true and (*it).second->name == "AOM")
+	  if (_forceAomAllowSW == true and (*it).second->name == "AOM")
 	    {
-	      _forceAomAllow = false;
-	      _aomAllowDisableCounter++;
-	      reload = true;
+	      _forceAomAllowSW = false;
+	      _aomAllowDisableCounterSW++;
 	    }
 	}
 
@@ -378,6 +395,10 @@ bool Engine::setAllowedBeamClass()
       if (linacLatchedMitigation == 0 && (*it).second->name == "Linac")
 	{
 	  (*it).second->tentativeBeamClass = _lowestBeamClass;
+	  if (_aomAllowDisableCounterFW == _aomAllowEnableCounterFW) 
+	    {
+	      _aomRestoredFW = false;
+	    }
 	}
 
       (*it).second->setAllowedBeamClass();
@@ -385,8 +406,8 @@ bool Engine::setAllowedBeamClass()
 		<< (*it).second->allowedBeamClass->number);
     }
 
-    //    _aomAllowDisableCounter = latchedMitigation[1];
-    //    _aomAllowEnableCounter = linacLatchedMitigation;
+    //    _aomAllowDisableCounterFW = latchedMitigation[1];
+    //    _aomAllowEnableCounterFW = linacLatchedMitigation;
 
     return reload;
 }
@@ -786,14 +807,22 @@ void Engine::showStats()
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
 	std::cout << "Shutter Status: " << Engine::_shutterDevice->value
 		  << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
-	std::cout << "AOM Status: ";
-	if (Engine::_forceAomAllow)
+	std::cout << "AOM FW Status: ";
+	if (Engine::_forceAomAllowFW)
 	  std::cout << " ALLOWED ";
 	else
 	  std::cout << " Normal ";
 	  
-	std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
-		  << Engine::_aomAllowDisableCounter << "]" << std::endl;
+	std::cout << "[" << Engine::_aomAllowEnableCounterFW << "/"
+		  << Engine::_aomAllowDisableCounterFW << "]" << std::endl;
+	std::cout << "AOM SW Status: ";
+	if (Engine::_forceAomAllowSW)
+	  std::cout << " ALLOWED ";
+	else
+	  std::cout << " Normal ";
+	  
+	std::cout << "[" << Engine::_aomAllowEnableCounterSW << "/"
+		  << Engine::_aomAllowDisableCounterSW << "]" << std::endl;
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
         std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter
             << " (timed out waiting on FW 360Hz updates)" << std::endl;
