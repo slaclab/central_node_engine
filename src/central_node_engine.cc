@@ -27,6 +27,9 @@ Engine::Engine() :
   _initialized(false),
   _engineThread(NULL),
   _debugCounter(0),
+  _forceAomAllow(false),
+  _aomAllowEnableCounter(0),
+  _aomAllowDisableCounter(0),
   _checkFaultTime( "Evaluation only time", 720 ),
   _evaluationCycleTime( "Evaluation Cycle time", 720 ),
   hb( Firmware::getInstance().getRoot(), 3500, 720 )
@@ -111,7 +114,7 @@ int Engine::reloadConfigFromIgnore()
 
     {
       std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-      _mpsDb->writeFirmwareConfiguration();
+      _mpsDb->writeFirmwareConfiguration(_forceAomAllow);
     }
 
     Firmware::getInstance().setEnable(true);
@@ -211,6 +214,12 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
       // successfully, assign to _mpsDb shared_ptr
       _mpsDb = mpsDb;//shared_ptr<MpsDb>(db);
 
+      // Search for Mech. Shutter device - this is needed to keep track
+      // of the shutter status, and allow AOM when the shutter is closed
+      if (!findShutterDevice()) {
+	throw(EngineException("Failed to find Mech. Shutter device - cannot continue, please check DB."));
+      }
+
       // Find the lowest/highest BeamClasses - used when checking faults
       uint32_t num = 0;
       uint32_t lowNum = 100;
@@ -246,6 +255,29 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     return 0;
 }
 
+bool Engine::findShutterDevice()
+{
+  for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
+       device != _mpsDb->digitalDevices->end(); ++device) 
+    {
+      if ((*device).second->name == "Mech. Shutter")
+	{
+	  _shutterDevice = (*device).second;
+	  for (DbDeviceStateMap::iterator state = _shutterDevice->deviceType->deviceStates->begin();
+	       state != _shutterDevice->deviceType->deviceStates->end(); ++state)
+	    {
+	      if ((*state).second->name == "CLOSED")
+		{
+		  _shutterClosedStatus = (*state).second->value;
+		  return true;
+		}
+	    }
+	}
+    }
+
+  return false;
+}
+
 bool Engine::isInitialized()
 {
     return _initialized;
@@ -277,17 +309,54 @@ void Engine::setTentativeBeamClass()
 /**
  * After checking the faults move the final tentativeBeamClass into the
  * allowedBeamClass for the beam destinations
+ *
+ * Return true if FW configuration must be reloaded.
  */
-void Engine::setAllowedBeamClass()
+bool Engine::setAllowedBeamClass()
 {
+    bool reload = false;
     for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
         it != _mpsDb->beamDestinations->end(); ++it)
     {
-        (*it).second->setAllowedBeamClass();
-        //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
-        LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
-            << (*it).second->allowedBeamClass->number);
+      // Enable AOM only if
+      // 1) mechanical shutter is CLOSED and
+      // 2) the current mitigation for the Linac destination is 0
+      if (_shutterDevice->value == _shutterClosedStatus)
+	{
+	  if ((*it).second->name == "AOM")
+	    {
+	      uint32_t mitigation[2];
+	      uint32_t linac_mitigation = mitigation[0] & 0xF; 
+	      if (linac_mitigation == 0)
+		{
+		  // Set the SW mitigation
+		  (*it).second->tentativeBeamClass = _highestBeamClass;
+		  if (_forceAomAllow == false) // If AOM is currently not enabled, and it should be 
+		    {
+		      _forceAomAllow = true; // Indicate AOM is enabled 
+		      _aomAllowEnableCounter++;
+		      reload = true;
+		    }
+		}
+	    }
+	}
+      // If shutter is not CLOSED, then restore AOM destination if needed
+      else 
+	{
+	  if (_forceAomAllow == true) 
+	    {
+	      _forceAomAllow = false;
+	      _aomAllowDisableCounter++;
+	      reload = true;
+	    }
+	}
+
+      (*it).second->setAllowedBeamClass();
+      //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
+      LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
+		<< (*it).second->allowedBeamClass->number);
     }
+    return reload;
 }
 
 /**
@@ -554,13 +623,15 @@ void Engine::mitigate()
                                 (*allowed).second->beamDestination->tentativeBeamClass =
                                     (*allowed).second->beamClass;
 
-                                LOG_TRACE("ENGINE", (*allowed).second->beamDestination->name << " tentative class set to "
+                                LOG_TRACE("ENGINE", (*allowed).second->beamDestination->name
+					  << " tentative class set to "
                                     << (*allowed).second->beamClass->number);
                             }
                         }
                     }
 		    else {
-		      LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for " << (*fault).second->name << " fault");
+		      LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for "
+				<< (*fault).second->name << " fault");
 		    }
                 }
             }
@@ -616,7 +687,9 @@ int Engine::checkFaults()
       evaluateFaults();
       reload = evaluateIgnoreConditions();
       mitigate();
-      setAllowedBeamClass();
+      if (setAllowedBeamClass()) {
+	reload = true;
+      }
     }
     _checkFaultTime.tick();
 
@@ -679,6 +752,16 @@ void Engine::showStats()
         _evaluationCycleTime.show();
         hb.printReport();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
+	std::cout << "Shutter Status: " << Engine::_shutterDevice->value
+		  << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
+	std::cout << "AOM Status: ";
+	if (Engine::_forceAomAllow)
+	  std::cout << " ALLOWED ";
+	else
+	  std::cout << " Normal ";
+	  
+	std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
+		  << Engine::_aomAllowDisableCounter << "]" << std::endl;
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
         std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter
             << " (timed out waiting on FW 360Hz updates)" << std::endl;

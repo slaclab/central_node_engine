@@ -849,12 +849,15 @@ void MpsDb::configureApplicationCards() {
 }
 
 void MpsDb::configureBeamDestinations() {
+  std::cout << "BeamDestinations: ";
   for (DbBeamDestinationMap::iterator it = beamDestinations->begin();
        it != beamDestinations->end(); ++it) {
+    std::cout << (*it).second->name << " ";
     (*it).second->setSoftwareMitigationBuffer( &softwareMitigationBuffer );
     (*it).second->previousAllowedBeamClass = lowestBeamClass;
     (*it).second->allowedBeamClass = lowestBeamClass;
   }
+  std::cout << std::endl;
 }
 
 void MpsDb::clearMitigationBuffer() {
@@ -904,13 +907,13 @@ void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassI
   }
 }
 
-void MpsDb::writeFirmwareConfiguration() {
+void MpsDb::writeFirmwareConfiguration(bool forceAomAllow) {
   // Write configuration for each application in the system
   LOG_TRACE("DATABASE", "Writing config to firmware, num applications: " << applicationCards->size());
   int i = 0;
   for (DbApplicationCardMap::iterator card = applicationCards->begin();
        card != applicationCards->end(); ++card) {
-    (*card).second->writeConfiguration();
+    (*card).second->writeConfiguration(forceAomAllow);
     Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
 					(*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
 					APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);

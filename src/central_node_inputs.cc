@@ -329,12 +329,12 @@ void DbApplicationCard::updateInputs() {
 /**
  *
  */
-void DbApplicationCard::writeConfiguration() {
+void DbApplicationCard::writeConfiguration(bool forceAomAllow) {
   if (digitalDevices) {
-    writeDigitalConfiguration();
+    writeDigitalConfiguration(forceAomAllow);
   }
   else if (analogDevices) {
-    writeAnalogConfiguration();
+    writeAnalogConfiguration(forceAomAllow);
   }
   else {
     //    throw(DbException("Can't configure application card - no devices configured"));
@@ -359,7 +359,7 @@ void DbApplicationCard::writeConfiguration() {
 // |    M63     |    ...    |     M1     |     M0     |
 //
 // where Mxx is the mask for bit xx
-void DbApplicationCard::writeDigitalConfiguration() {
+void DbApplicationCard::writeDigitalConfiguration(bool forceAomAllow) {
   // First set all bits to zero
   applicationConfigBuffer->reset();
 
@@ -384,8 +384,10 @@ void DbApplicationCard::writeDigitalConfiguration() {
 	if ((*deviceInput).second->bypass->status != BYPASS_VALID) {
 	  offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
 	  for (uint32_t i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
-	    applicationConfigBuffer->set(channelOffset + offset + i,
-					 ((*digitalDevice).second->fastDestinationMask >> i) & 0x01);
+	    bool bit = ((*digitalDevice).second->fastDestinationMask >> i) & 0x01;
+	    if (forceAomAllow && i == 1)
+	      bit = false;
+	    applicationConfigBuffer->set(channelOffset + offset + i, bit);
 	  }
 	}
 
@@ -434,7 +436,7 @@ void DbApplicationCard::writeDigitalConfiguration() {
 // EIC Version: there is only one integrator per channel, therefore
 // only B0 though B6 are actually used
 // ***
-void DbApplicationCard::writeAnalogConfiguration() {
+void DbApplicationCard::writeAnalogConfiguration(bool forceAomAllow) {
   // First set all bits to zero
   applicationConfigBuffer->reset();
 
@@ -480,6 +482,11 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	  if (((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01) {
 	    bitValue = true;
 	  }
+
+	  if (forceAomAllow && i == 1) {
+	    bitValue = false;
+	  }
+
 	  // If bypass for the integrator is valid, set destination mask to zero - i.e. no mitigation
 	  // No mitigation also if the analogDevice is currently ignored
 	  if ((*analogDevice).second->bypass[i]->status == BYPASS_VALID ||

@@ -100,8 +100,10 @@ public:
 private:
     void mitigate();
 
+    bool findShutterDevice();
+
     void setTentativeBeamClass();
-    void setAllowedBeamClass();
+    bool setAllowedBeamClass();
 
     void evaluateFaults();
     bool evaluateIgnoreConditions();
@@ -112,6 +114,12 @@ private:
 
     DbBeamClassPtr _highestBeamClass;
     DbBeamClassPtr _lowestBeamClass;
+
+    DbDigitalDevicePtr _shutterDevice;
+    uint32_t _shutterClosedStatus;
+    bool _forceAomAllow;
+    uint32_t _aomAllowEnableCounter;
+    uint32_t _aomAllowDisableCounter;
 
     std::stringstream _errorStream;
     Timer<double> _checkFaultTime;
