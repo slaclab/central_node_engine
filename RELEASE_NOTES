@@ -8,6 +8,11 @@
 #  Auth: xx-Dec-2012, XXX         (xxx)
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
+central_node_engine-R1-5-0-eic:
+  * Change to support AOM enable while mechanical laser shutter
+    is closed (works with mps_configuration EIC branch and
+    central_node_ioc branches)
+
 central_node_engine-R1-4-1: 
   * Change to how the charge integration time is written to FW.
     The value is broken up into bits 0:9 and 16:25. 
