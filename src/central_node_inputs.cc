@@ -483,9 +483,11 @@ void DbApplicationCard::writeAnalogConfiguration(bool forceAomAllow) {
 	    bitValue = true;
 	  }
 
-	  if (forceAomAllow && i == 1) {
+	  if (forceAomAllow && j == 1) {
 	    bitValue = false;
 	  }
+	  // TEST
+	  //	  if (forceAomAllow && (i == 3)) bitValue=true;
 
 	  // If bypass for the integrator is valid, set destination mask to zero - i.e. no mitigation
 	  // No mitigation also if the analogDevice is currently ignored

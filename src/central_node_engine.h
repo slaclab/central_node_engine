@@ -62,6 +62,7 @@ public:
     int reloadConfigFromIgnore();
     int checkFaults();
     bool isInitialized();
+    void clearSoftwareLatch();
 
     void threadExit();
     void threadJoin();
@@ -101,13 +102,18 @@ private:
     void mitigate();
 
     bool findShutterDevice();
+    bool findBeamDestinations();
 
     void setTentativeBeamClass();
     bool setAllowedBeamClass();
 
+    // Methods for enable/disable AOM when shutter is closed
+    bool checkAomState();
+    bool shouldShutterBeClosed(bool linacMitigation);
+    bool shouldShutterBeOpened(bool linacFwLatchedMitigation, bool linacMitigation);
+
     void evaluateFaults();
     bool evaluateIgnoreConditions();
-    void mitgate();
 
     MpsDbPtr _mpsDb;
     BypassManagerPtr _bypassManager;
@@ -115,15 +121,16 @@ private:
     DbBeamClassPtr _highestBeamClass;
     DbBeamClassPtr _lowestBeamClass;
 
-    DbDigitalDevicePtr _shutterDevice;
-    uint32_t _shutterClosedStatus;
-    bool _forceAomAllowFW;
-    bool _forceAomAllowSW;
-    bool _aomRestoredFW;
-    uint32_t _aomAllowEnableCounterFW;
-    uint32_t _aomAllowDisableCounterFW;
-    uint32_t _aomAllowEnableCounterSW;
-    uint32_t _aomAllowDisableCounterSW;
+    DbDigitalDevicePtr _shutterDevice; // Needed to monitor shutter closed status
+    uint32_t _shutterClosedStatus; // Current shutter closed status
+    bool _aomAllowWhileShutterClosed; // When true enable AOM while shutter is closed
+    uint32_t _aomAllowEnableCounter; // Increase every time AOM is enabled while shutter is closed
+    uint32_t _aomAllowDisableCounter; // Decrease every time AOM is enabled while shutter is closed
+    bool _linacFwLatch; // Latches in SW if the FW is latched during config reloads
+    uint32_t _reloadCount; // Counts the number of FW config reloads (after ignore and AOM enable)
+
+    DbBeamDestinationPtr _linacDestination; // Used to directly set PC by the engine
+    DbBeamDestinationPtr _aomDestination; // Used to directly set PC by the engine
 
     std::stringstream _errorStream;
     Timer<double> _checkFaultTime;

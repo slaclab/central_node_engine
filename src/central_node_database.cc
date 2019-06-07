@@ -1285,24 +1285,30 @@ void MpsDb::fwUpdateReader()
         }
 
 
-        while ( ! (Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
-                       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
-                       NUM_APPLICATIONS *
-                       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
-                       _inputUpdateTimeout)))
-        {
-#ifndef FW_ENABLED
-	  if (!run) {
-	    std::cout << "FW Update Data reader interrupted" << std::endl;
-	    return;
-	  } 	    
-#endif
-            ++_updateTimeoutCounter;
-            fwUpdateTimer.start();
-        }
+	uint32_t expected_size = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
+	  NUM_APPLICATIONS *
+	  APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
+	uint32_t received_size = 0;
 
+	while (received_size != expected_size) 
+	  {
+	    received_size = Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
+								     expected_size, _inputUpdateTimeout);
+#ifndef FW_ENABLED
+	    if (!run) {
+	      std::cout << "FW Update Data reader interrupted" << std::endl;
+	      return;
+	    } 	    
+#endif
+	    if (received_size == 0) 
+	      {
+		++_updateTimeoutCounter;
+	      }
+	  }
+	 
         fwUpdateBuffer.doneWriting();
         fwUpdateTimer.tick();
+	fwUpdateTimer.start();
     }
 }
 

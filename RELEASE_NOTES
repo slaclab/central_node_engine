@@ -8,6 +8,11 @@
 #  Auth: xx-Dec-2012, XXX         (xxx)
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
+central_node_engine-R1-6-0-eic:
+  * Changed logic to allow AOM
+  * Bug fixed on the FW configuration with AOM bypassed - wrong
+    bits were being changed
+
 central_node_engine-R1-5-0-eic:
   * Change to support AOM enable while mechanical laser shutter
     is closed (works with mps_configuration EIC branch and
