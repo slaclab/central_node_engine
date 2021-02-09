@@ -25,7 +25,7 @@ ARCHES += buildroot-2016.11.1-x86_64
 # Next, you need to define prefixes (which may include
 # absolute paths) so that e.g., $(CROSS_xxx)gcc can be
 # used as a C compiler e.g.,
-# 
+#
 # CROSS_xxx = path_to_xxx_tools/xxx-
 # CROSS_yyy = path_to_yyy_tools/yyy-
 #
@@ -76,7 +76,7 @@ $(foreach brarnam,$(BR_ARNAMS),$(eval CROSS_$(brarnam)=$$(BR_CROSS)))
 #
 # Likewise, you must set
 # boostlib_DIR_xxx, boostlib_DIR_default, boostlib_DIR
-# (or any of boost_DIR, boost_DIR_xxx, boost_DIR_default in 
+# (or any of boost_DIR, boost_DIR_xxx, boost_DIR_default in
 # which case a '/lib' suffix is attached) if 'boost' libraries
 # cannot be found automatically by the (cross) tools.
 #
@@ -84,8 +84,8 @@ $(foreach brarnam,$(BR_ARNAMS),$(eval CROSS_$(brarnam)=$$(BR_CROSS)))
 # or relative to $(CPSW_DIR).
 #
 
-# 
-BOOST_VERSION=1.63.0
+#
+BOOST_VERSION=1.64.0
 BOOST_PATH=$(PACKAGE_TOP)/boost/$(BOOST_VERSION)
 
 boost_DIR_default=$(BOOST_PATH)/$(TARCH)
@@ -95,8 +95,8 @@ boost_DIR_default=$(BOOST_PATH)/$(TARCH)
 # Analogous to the boost-specific variables a set of
 # variables prefixed by 'yaml_cpp_' is used to identify
 # the install location of yaml-cpp headers and library.
-# 
-YAML_CPP_VERSION         = yaml-cpp-0.5.3
+#
+YAML_CPP_VERSION         = yaml-cpp-0.5.3_boost-1.64.0
 YAML_CPP_PATH            = $(PACKAGE_TOP)/yaml-cpp/$(YAML_CPP_VERSION)
 
 yaml_cpp_DIR_default=$(YAML_CPP_PATH)/$(TARCH)
@@ -104,7 +104,7 @@ yaml_cpp_DIR_default=$(YAML_CPP_PATH)/$(TARCH)
 
 # CPSW
 #
-CPSW_VERSION         = R3.6.4
+CPSW_VERSION         = R4.4.2
 CPSW_PATH            = $(PACKAGE_TOP)/cpsw/framework/$(CPSW_VERSION)
 
 cpsw_DIR_default=$(CPSW_PATH)/$(TARCH)
