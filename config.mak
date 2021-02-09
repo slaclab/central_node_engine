@@ -104,7 +104,7 @@ yaml_cpp_DIR_default=$(YAML_CPP_PATH)/$(TARCH)
 
 # CPSW
 #
-CPSW_VERSION         = R4.4.2
+CPSW_VERSION         = R4.4.1
 CPSW_PATH            = $(PACKAGE_TOP)/cpsw/framework/$(CPSW_VERSION)
 
 cpsw_DIR_default=$(CPSW_PATH)/$(TARCH)
