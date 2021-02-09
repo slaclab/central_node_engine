@@ -19,7 +19,7 @@ HARCH=rhel6-x86_64
 
 # ARCHES += xxx yyy
 
-ARCHES += buildroot-2016.11.1-x86_64
+ARCHES += buildroot-2019.08-x86_64
 
 
 # Next, you need to define prefixes (which may include
