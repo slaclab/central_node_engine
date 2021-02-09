@@ -42,9 +42,14 @@ class IYamlSetIP : public IYamlFixup
     public:
         IYamlSetIP( std::string ip_addr ) : ip_addr_(ip_addr) {}
 
-        void operator()(YAML::Node &node)
+        virtual void operator()(YAML::Node &root, YAML::Node &top)
         {
-            node["ipAddr"] = ip_addr_.c_str();
+            YAML::Node ipAddrNode = IYamlFixup::findByName(root, "ipAddr");
+
+            if ( ! ipAddrNode )
+                throw std::runtime_error("ERROR on IYamlSetIP::operator(): 'ipAddr' node was not found!");
+
+            ipAddrNode = ip_addr_.c_str();
         }
 
         ~IYamlSetIP() {}
