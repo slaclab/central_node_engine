@@ -21,8 +21,6 @@
 #include <thread>
 #include <mutex>
 
-using boost::weak_ptr;
-
 /**
  * Class containing all YAML MPS configuration
  */

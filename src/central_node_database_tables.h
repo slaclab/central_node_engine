@@ -16,8 +16,6 @@
 
 #include "buffer.h"
 
-using boost::weak_ptr;
-
 /**
  * DbException class
  *
