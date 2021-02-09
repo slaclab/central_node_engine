@@ -7,14 +7,12 @@
 #include <central_node_database.h>
 #include <central_node_engine.h>
 
-#include <boost/shared_ptr.hpp>
 //#include <log.h>
 #include <log_wrapper.h>
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
-#endif 
-using boost::shared_ptr;
+#endif
 
 class TestFailed {};
 
@@ -98,19 +96,19 @@ class EngineTest {
       if (testInputFile.eof()) {
 	testInputFile.clear();
 	testInputFile.seekg(0, std::ios::beg);
-	
+
 	testInputFile >> s;
 	testInputFile >> testInputCount;
 	testInputFile >> testCycle;
       }
-      
+
       //      std::cout << "=== Testing digital cycle " << testCycle << " ===" << std::endl;
       for (int i = 0; i < testInputCount; ++i) {
 	testInputFile >> deviceId;
 	testInputFile >> deviceValue;
-	
+
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
-	
+
 	int size = Engine::getInstance()._mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
@@ -135,7 +133,7 @@ class EngineTest {
       if (analogInputFile.eof()) {
 	analogInputFile.clear();
 	analogInputFile.seekg(0, std::ios::beg);
-	
+
 	analogInputFile >> s;
 	analogInputFile >> analogInputCount;
 	analogInputFile >> analogCycle;
@@ -145,11 +143,11 @@ class EngineTest {
       for (int i = 0; i < analogInputCount; ++i) {
 	analogInputFile >> deviceId;
 	analogInputFile >> analogValue;
-	/*	
+	/*
 	std::cout << deviceId << ": " << analogValue << " analogSize: "
-	  	  << Engine::getInstance()._mpsDb->analogDevices->size() 
+	  	  << Engine::getInstance()._mpsDb->analogDevices->size()
 	  	  << " digitalSize: "
-         	  << Engine::getInstance()._mpsDb->digitalDevices->size() 
+         	  << Engine::getInstance()._mpsDb->digitalDevices->size()
 	    	  << std::endl;
 	*/
 	int size = Engine::getInstance()._mpsDb->analogDevices->size() + 1 + Engine::getInstance()._mpsDb->digitalDevices->size();
@@ -179,7 +177,7 @@ int main(int argc, char **argv) {
   bool trace = false;
 #endif
   int repeat = 1;
-  
+
   for (int opt; (opt = getopt(argc, argv, "tvhf:i:a:r:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
@@ -243,7 +241,7 @@ int main(int argc, char **argv) {
   }
 
   EngineTest *t = new EngineTest();//EnginePtr(e));
-  
+
   if (inputFileName != "") {
     if (t->loadInputTestFile(inputFileName, 0) != 0) {
       std::cerr << "ERROR: Failed to open input test file" << std::endl;
@@ -267,7 +265,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  //  if (verbose) {  
+  //  if (verbose) {
     std::cout << "-------------------------" << std::endl;
     Engine::getInstance().showStats();
     //  }

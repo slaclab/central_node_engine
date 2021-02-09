@@ -9,11 +9,7 @@
 #include <central_node_engine.h>
 #include <central_node_firmware.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include <pthread.h> // MUTEX TEST
-
-using boost::shared_ptr;
 
 class TestFailed {};
 
@@ -45,7 +41,7 @@ public:
     try {
       Firmware::getInstance().createRoot(fwFileName);
       Firmware::getInstance().createRegisters();
-    
+
       if (verbose) {
 	//	std::cout << &Firmware::getInstance();
 	//	std::cout << std::endl;
@@ -116,7 +112,7 @@ int main(int argc, char **argv) {
   std::string inputFileName = "";
   std::string analogFileName = "";
   bool verbose = false;
-  
+
   for (int opt; (opt = getopt(argc, argv, "vhw:")) > 0;) {
     switch (opt) {
     case 'w':

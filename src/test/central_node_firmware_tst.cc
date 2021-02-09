@@ -8,11 +8,7 @@
 #include <central_node_engine.h>
 #include <central_node_firmware.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include <pthread.h> // MUTEX TEST
-
-using boost::shared_ptr;
 
 class TestFailed {};
 
@@ -33,7 +29,7 @@ public:
     try {
       Firmware::getInstance().createRoot(fwFileName);
       Firmware::getInstance().createRegisters();
-    
+
       if (verbose) {
 	std::cout << &Firmware::getInstance();
 	std::cout << std::endl;
@@ -69,7 +65,7 @@ public:
       std::cout << "INFO: Reading back MPS configuration from firmware... ";
     }
     uint32_t appFwConfig[APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4];
-    
+
     for (uint32_t appId = 0; appId < 2; ++appId) {
       try {
 	Firmware::getInstance()._configSV[0]->getVal(&appFwConfig[appId], APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4);
@@ -135,7 +131,7 @@ int main(int argc, char **argv) {
   std::string inputFileName = "";
   std::string analogFileName = "";
   bool verbose = false;
-  
+
   for (int opt; (opt = getopt(argc, argv, "vhf:w:")) > 0;) {
     switch (opt) {
     case 'f' :

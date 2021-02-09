@@ -6,10 +6,7 @@
 #include <central_node_yaml.h>
 #include <central_node_database.h>
 #include <central_node_engine.h>
-#include <boost/shared_ptr.hpp>
 #include <log.h>
-
-using boost::shared_ptr;
 
 class TestFailed {};
 
@@ -81,14 +78,14 @@ class BypassTest {
       // YAG01_IN - IN
       Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
 				       0 /* bypass value */, 100 /* until*/, true);
-      
+
       // GUN_TEMP - Fault
       Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
 				       0 /* bypass value */, 110 /* until */, true);
       // Waveguide TEMP Ok
       Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
 				       1 /* bypass value */, 110 /* until*/, true);
-      
+
       // BPM01 - Threshold 0 for X (thresholdIndex = 0)
       Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 9, 0, 300, 0, true);
 
@@ -96,7 +93,7 @@ class BypassTest {
       Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 10, 0, 300, 8, true);
 
       Engine::getInstance()._bypassManager->printBypassQueue();
-      
+
     } catch (CentralNodeException e) {
       std::cerr << e.what() << std::endl;
     }
@@ -173,7 +170,7 @@ class BypassTest {
       if (testInputFile.eof()) {
 	testInputFile.clear();
 	testInputFile.seekg(0, std::ios::beg);
-	
+
 	testInputFile >> s;
 	testInputFile >> testInputCount;
 	testInputFile >> testCycle;
@@ -185,9 +182,9 @@ class BypassTest {
       for (int i = 0; i < testInputCount; ++i) {
 	testInputFile >> deviceId;
 	testInputFile >> deviceValue;
-	
+
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
-	/* this check is wrong	
+	/* this check is wrong
 	uint32_t size = Engine::getInstance()._mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
@@ -208,7 +205,7 @@ class BypassTest {
       if (analogInputFile.eof()) {
 	analogInputFile.clear();
 	analogInputFile.seekg(0, std::ios::beg);
-	
+
 	analogInputFile >> s;
 	analogInputFile >> analogInputCount;
 	analogInputFile >> analogCycle;
@@ -220,9 +217,9 @@ class BypassTest {
       for (int i = 0; i < analogInputCount; ++i) {
 	analogInputFile >> deviceId;
 	analogInputFile >> analogValue;
-	
+
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
-	/* this check may not work	
+	/* this check may not work
 	uint32_t size = Engine::getInstance()._mpsDb->deviceInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
@@ -297,7 +294,7 @@ int main(int argc, char **argv) {
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
   }
-#endif 
+#endif
 
   try {
     if (Engine::getInstance().loadConfig(mpsFileName) != 0) {
@@ -310,7 +307,7 @@ int main(int argc, char **argv) {
   }
 
   BypassTest *t = new BypassTest();
-  
+
   if (inputFileName != "") {
     if (t->loadInputTestFile(inputFileName, 0) != 0) {
       std::cerr << "ERROR: Failed to open input test file" << std::endl;
@@ -395,7 +392,7 @@ int main(int argc, char **argv) {
   }
   t->checkBypass(93);
   //t->showFaults();
-  
+
   t->updateInputsFromTestFile(verbose);
   t->checkFaultState(false, false, verbose);
   if (verbose) {
@@ -411,7 +408,7 @@ int main(int argc, char **argv) {
     std::cout << "### DIGITAL BYPASSES EXPIRED" << std::endl;
     Engine::getInstance().getBypassManager()->printBypassQueue();
   }
- 
+
   // Next four updates with digital bypass EXPIRED
   t->updateInputsFromTestFile(verbose);
   t->checkFaultState(false, false, verbose);

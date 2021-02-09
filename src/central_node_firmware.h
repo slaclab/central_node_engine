@@ -21,8 +21,6 @@
 #include <arpa/inet.h>
 #endif
 
-using boost::shared_ptr;
-
 const uint32_t FW_NUM_APPLICATIONS = 8;
 const uint32_t FW_NUM_BEAM_CLASSES = 16;
 const uint32_t FW_NUM_MITIGATION_DEVICES = 16;
@@ -192,6 +190,6 @@ class Firmware {
   friend std::ostream & operator<<(std::ostream &os, Firmware * const firmware);
 };
 
-typedef shared_ptr<Firmware> FirmwarePtr;
+typedef boost::shared_ptr<Firmware> FirmwarePtr;
 
 #endif

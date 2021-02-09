@@ -21,7 +21,6 @@
 #include <thread>
 #include <mutex>
 
-using boost::shared_ptr;
 using boost::weak_ptr;
 
 /**
@@ -64,7 +63,7 @@ class MpsDb {
   static const uint32_t          fwUpdateBuferSize = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
 
   boost::atomic<bool>     run;
- 
+
   std::thread fwUpdateThread;
   std::thread updateInputThread;
   std::thread mitigationThread;
@@ -189,6 +188,6 @@ class MpsDb {
   friend std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb);
 };
 
-typedef shared_ptr<MpsDb> MpsDbPtr;
+typedef boost::shared_ptr<MpsDb> MpsDbPtr;
 
 #endif

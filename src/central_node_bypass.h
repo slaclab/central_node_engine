@@ -6,8 +6,6 @@
 #include <queue>
 #include <stdint.h>
 
-using boost::shared_ptr;
-
 enum BypassType {
   BYPASS_DIGITAL,
   BYPASS_ANALOG
@@ -84,8 +82,8 @@ class InputBypass {
   }
 };
 
-typedef shared_ptr<InputBypass> InputBypassPtr;
+typedef boost::shared_ptr<InputBypass> InputBypassPtr;
 typedef std::map<int, InputBypassPtr> InputBypassMap;
-typedef shared_ptr<InputBypassMap> InputBypassMapPtr;
+typedef boost::shared_ptr<InputBypassMap> InputBypassMapPtr;
 
 #endif

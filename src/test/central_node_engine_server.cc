@@ -10,14 +10,12 @@
 #include <central_node_firmware.h>
 #include <central_node_history.h>
 
-#include <boost/shared_ptr.hpp>
 //#include <log.h>
 #include <log_wrapper.h>
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
-#endif 
-using boost::shared_ptr;
+#endif
 
 class TestFailed {};
 
@@ -53,7 +51,7 @@ int main(int argc, char **argv) {
   uint32_t powerClassId = CLEAR_BEAM_CLASS;
 
   signal(SIGINT, intHandler);
-  
+
   for (int opt; (opt = getopt(argc, argv, "tvhf:w:cl:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
@@ -104,7 +102,7 @@ int main(int argc, char **argv) {
   Firmware::getInstance().softwareClear();
   Firmware::getInstance().setSoftwareEnable(false);
   Firmware::getInstance().setEnable(false);
-  
+
   if (clear) {
     std::cout << &(Firmware::getInstance());
 
