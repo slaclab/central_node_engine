@@ -47,10 +47,10 @@ namespace YAML {
 
 	  field = "shelf_number";
 	  crate->shelfNumber = (*it)[field].as<unsigned int>();
-	} catch(YAML::InvalidNode e) {
+	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for Crate.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Crate (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -96,10 +96,10 @@ namespace YAML {
 
 	  field = "md5sum";
 	  dbInfo->md5sum = (*it)[field].as<std::string>();
-	} catch(YAML::InvalidNode e) {
+	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for DatabaseInfo.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DatabaseInfo (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -154,13 +154,13 @@ namespace YAML {
 
 	  field = "name";
 	  appType->description = (*it)[field].as<std::string>();
-	} catch(YAML::InvalidNode e) {
+	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for ApplicationType.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -220,13 +220,13 @@ namespace YAML {
 
 	  field = "description";
 	  appCard->description = (*it)[field].as<std::string>();
-	} catch(YAML::InvalidNode e) {
+	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for ApplicationCard.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationCard (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationCard (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -282,10 +282,10 @@ namespace YAML {
 
 	  field = "card_id";
 	  channel->cardId = (*it)[field].as<unsigned int>();
-	} catch(YAML::InvalidNode e) {
+	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for " << key << ".";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for " << key << " (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -323,13 +323,13 @@ namespace YAML {
 
 	  field = "num_integrators";
 	  deviceType->numIntegrators = (*it)[field].as<unsigned int>();
-	} catch(YAML::InvalidNode e) {
+	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for DeviceType.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceType (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceType (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -376,13 +376,13 @@ namespace YAML {
 
 	  field = "name";
 	  deviceState->name = (*it)[field].as<std::string>();
- 	} catch(YAML::InvalidNode e) {
+ 	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for DeviceState.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceState (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceState (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -432,10 +432,10 @@ namespace YAML {
 	  digitalDevice->cardId = (*it)[field].as<unsigned int>();
 
 	  digitalDevice->value = 0;
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for DigitalDevice.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  // There may be devices that do not have cards assigned, but have secondary measurement
 	  // devices that read some of its properties.
 	  if (field == "card_id") {
@@ -445,7 +445,7 @@ namespace YAML {
 	    errorStream << "ERROR: Failed to convert contents of field " << field << " for DigitalDevice (expected unsigned int).";
 	    throw(DbException(errorStream.str()));
 	  }
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DigitalDevice (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -495,10 +495,10 @@ namespace YAML {
 	  deviceInput->channelId = (*it)[field].as<unsigned int>();
 
 	  deviceInput->value = 0;
- 	} catch(YAML::InvalidNode e) {
+ 	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for DeviceInput.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceInput (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -542,13 +542,13 @@ namespace YAML {
 
 	  field = "value";
 	  condition->mask = (*it)[field].as<unsigned int>();
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for Condition.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Condition (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Condition (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -587,10 +587,10 @@ namespace YAML {
 
 	  field = "condition_id";
 	  ignoreCondition->conditionId = (*it)[field].as<unsigned int>();
- 	} catch(YAML::InvalidNode e) {
+ 	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for IgnoreCondition (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -600,10 +600,10 @@ namespace YAML {
 	  field = "fault_state_id";
 	  ignoreCondition->faultStateId = (*it)[field].as<unsigned int>();
 	  found = true;
- 	} catch(YAML::InvalidNode e) {
+ 	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  // ... just continue, this exception is fine as long an there is an analogDeviceId defined next
 	}
 
@@ -611,10 +611,10 @@ namespace YAML {
 	  field = "analog_device_id";
 	  ignoreCondition->analogDeviceId = (*it)[field].as<unsigned int>();
 	  found = true;
-	} catch(YAML::InvalidNode e) {
+	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for IgnoreCondition (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -662,10 +662,10 @@ namespace YAML {
 
 	  field = "condition_id";
 	  conditionInput->conditionId = (*it)[field].as<unsigned int>();
- 	} catch(YAML::InvalidNode e) {
+ 	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for ConditionInput.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ConditionInput (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -705,13 +705,13 @@ namespace YAML {
 	  field = "description";
 	  fault->description = (*it)[field].as<std::string>();
 	  fault->value = 0;
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for Fault.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -756,10 +756,10 @@ namespace YAML {
 	  faultInput->faultId = (*it)[field].as<unsigned int>();
 
 	  faultInput->value = 0;
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for FaultInput.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultInput (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -803,13 +803,13 @@ namespace YAML {
 
 	  field = "default";
 	  faultState->defaultState = (*it)[field].as<bool>();
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for FaultState.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<bool> e) {
+	} catch(YAML::TypedBadConversion<bool> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected bool).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -863,13 +863,13 @@ namespace YAML {
 	  analogDevice->cardId = (*it)[field].as<unsigned int>();
 	  analogDevice->value = 0;
 	  analogDevice->bypassMask = 0xFFFFFFFF;
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for AnalogDevice.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for AnalogDevice (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for AnalogDevice (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -939,16 +939,16 @@ namespace YAML {
 	      }
 	    }
 	  }
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for BeamDestination.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<short> e) {
+	} catch(YAML::TypedBadConversion<short> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -1001,13 +1001,13 @@ namespace YAML {
 
 	  field = "description";
 	  beamClass->description = (*it)[field].as<std::string>();
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for BeamClass.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> e) {
+	} catch(YAML::TypedBadConversion<std::string> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected string).";
 	  throw(DbException(errorStream.str()));
 	}
@@ -1050,10 +1050,10 @@ namespace YAML {
 
 	  field = "beam_destination_id";
 	  allowedClass->beamDestinationId = (*it)[field].as<unsigned int>();
-  	} catch(YAML::InvalidNode e) {
+  	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for AllowedClass.";
 	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> e) {
+	} catch(YAML::TypedBadConversion<unsigned int> &e) {
 	  errorStream << "ERROR: Failed to convert contents of field " << field << " for AllowedClass (expected unsigned int).";
 	  throw(DbException(errorStream.str()));
 	}

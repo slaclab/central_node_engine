@@ -37,7 +37,7 @@ enum MPSLinkProtocolMessageTypes {
     MPSLinkNodeMessageTypeStatusBlm             = 0x81,
     MPSLinkNodeMessageTypeStatusPic             = 0x82,
     MPSLinkNodeMessageTypeStatusAnalog          = 0x83,
-    
+
     /* Beam Synchronous Acquisition Messages */
     MPSBSAMessageTypeEnble                      = 0x70,
     MPSBSAMessageTypeBsaData                    = 0xB0
@@ -82,16 +82,13 @@ struct linkNodeMessage
 void broadcast_msg(uint8_t *mess, int mess_size){
   std::cout << "Size: " << mess_size << std::endl;
 
-  int sock;                        
-  struct sockaddr_in broadcastAddr; 
-  char *broadcastIP;                
-  unsigned short broadcastPort;     
-  char *sendString;                 
-  int broadcastPermission;         
-  int sendStringLen;                
-
-  broadcastIP = "255.255.255.255";  
-  broadcastPort = 56789;
+  int sock;
+  struct sockaddr_in broadcastAddr;
+  const char *broadcastIP = "255.255.255.255";
+  unsigned short broadcastPort = 56789;
+  char *sendString;
+  int broadcastPermission;
+  int sendStringLen;
 
   sendString = (char *)mess;             /*  string to broadcast */
 
@@ -107,10 +104,10 @@ void broadcast_msg(uint8_t *mess, int mess_size){
   }
 
   /* Construct local address structure */
-  memset(&broadcastAddr, 0, sizeof(broadcastAddr));   
-  broadcastAddr.sin_family = AF_INET;                 
+  memset(&broadcastAddr, 0, sizeof(broadcastAddr));
+  broadcastAddr.sin_family = AF_INET;
   broadcastAddr.sin_addr.s_addr = inet_addr(broadcastIP);
-  broadcastAddr.sin_port = htons(broadcastPort);       
+  broadcastAddr.sin_port = htons(broadcastPort);
 
   sendStringLen = mess_size;
 
@@ -139,7 +136,7 @@ int main(int argc, char *argv[]) {
   LINK_SYNC_TIMESLOT(data)               = 0xCC;
 
   broadcast_msg(message,LINK_SYNC_MESSAGE_SIZE );
-    
+
   return 0;
 }
 

@@ -252,7 +252,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
     os << "  ignored=no";
   }
   os << " [";
-  for (int i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
+  for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
     if (analogDevice->ignoredIntegrator[i]) {
       os << "I";
     }
@@ -318,24 +318,24 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
 DbApplicationCard::DbApplicationCard() {};
 
 void DbApplicationCard::setUpdateBufferPtr(DataBuffer<uint8_t>* p)
-{ 
-    fwUpdateBuffer = p; 
+{
+    fwUpdateBuffer = p;
 
-    wasLowBufferOffset = 
+    wasLowBufferOffset =
       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +            // Skip header (timestamp + zeroes)
       globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;  // Jump to correct area according to the globalId
 
-    wasHighBufferOffset = 
-        wasLowBufferOffset + 
+    wasHighBufferOffset =
+        wasLowBufferOffset +
         (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2);        // Skip 192 bits from wasLow
 }
 
 ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasLowBuffer()
-{ 
+{
     if (!fwUpdateBuffer)
         return NULL;
 
-    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasLowBufferOffset));  
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasLowBufferOffset));
 }
 
 ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasHighBuffer()

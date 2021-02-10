@@ -25,7 +25,6 @@ static void usage(const char *nm) {
 #ifdef FW_ENABLED
   std::cerr << "       -w <file>   :  central node firmware YAML config file" << std::endl;
 #endif
-  std::cerr << "       -v          :  verbose output" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -c          :  clear firmware - disable MPS" << std::endl;
   std::cerr << "       -l <PC ID>  :  force linac power class" << std::endl;
@@ -45,7 +44,6 @@ void intHandler(int) {
 int main(int argc, char **argv) {
   std::string mpsFileName = "";
   std::string fwFileName = "";
-  bool verbose = false;
   bool trace = false;
   bool clear = false;
   uint32_t powerClassId = CLEAR_BEAM_CLASS;
@@ -60,9 +58,6 @@ int main(int argc, char **argv) {
       break;
     case 'w':
       fwFileName = optarg;
-      break;
-    case 'v':
-      verbose = true;
       break;
     case 't':
       trace = true;
@@ -110,13 +105,13 @@ int main(int argc, char **argv) {
   }
 #endif
 
-#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
-  }
 #endif
+  }
 
   History::getInstance().startSenderThread();
 
@@ -127,7 +122,7 @@ int main(int argc, char **argv) {
       std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
       return 1;
     }
-  } catch (DbException ex) {
+  } catch (DbException &ex) {
     std::cerr << ex.what() << std::endl;
     return -1;
   }

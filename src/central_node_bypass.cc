@@ -19,7 +19,7 @@ static Logger *bypassLogger;
 bool BypassManager::refreshFirmwareConfiguration = false;
 
 BypassManager::BypassManager() :
-  initialized(false), threadDone(false), _bypassThread(NULL) {
+  threadDone(false), _bypassThread(NULL), initialized(false) {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   bypassLogger = Loggers::getLogger("BYPASS");
   LOG_TRACE("BYPASS", "Created BypassManager");
@@ -52,7 +52,7 @@ void BypassManager::stopBypassThread() {
     _bypassThread->join();
   }
   std::cout << "INFO: bypassThread stopped..." << std::endl;
-}  
+}
 
 /**
  * This creates bypasses for all digital/analog inputs. Should be invoked
@@ -134,7 +134,7 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   LOG_TRACE("BYPASS", "Assigning bypass slots to MPS database inputs (analog/digital)");
 
   std::unique_lock<std::mutex> lock(mutex);
-  
+
   for (InputBypassMap::iterator bypass = bypassMap->begin();
        bypass != bypassMap->end(); ++bypass) {
     int inputId = (*bypass).second->deviceId;
@@ -463,7 +463,7 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 	  uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
 	  *bypassMask &= m;
 	}
-	
+
 	bypassQueue.push(newEntry);
       }
     }

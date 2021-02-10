@@ -94,7 +94,7 @@ class BypassTest {
 
       Engine::getInstance()._bypassManager->printBypassQueue();
 
-    } catch (CentralNodeException e) {
+    } catch (CentralNodeException &e) {
       std::cerr << e.what() << std::endl;
     }
   }
@@ -106,7 +106,7 @@ class BypassTest {
 
        // BPM02 Y T0
       Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 10, 0, 0, 8, true);
-    } catch (CentralNodeException e) {
+    } catch (CentralNodeException &e) {
       std::cerr << e.what() << std::endl;
     }
   }
@@ -230,7 +230,7 @@ class BypassTest {
 	*/
 	try {
 	  Engine::getInstance()._mpsDb->analogDevices->at(deviceId)->update(analogValue);
-	} catch (std::exception e) {
+	} catch (std::exception &e) {
 	  std::cerr << "Bad deviceId " << deviceId << "." << std::endl;
 	  exit(-1);
 	}
@@ -288,20 +288,20 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
-  }
 #endif
+  }
 
   try {
     if (Engine::getInstance().loadConfig(mpsFileName) != 0) {
       std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
       return 1;
     }
-  } catch (DbException ex) {
+  } catch (DbException &ex) {
     std::cerr << ex.what() << std::endl;
     return -1;
   }

@@ -118,7 +118,7 @@ class EngineTest {
 	}
 	try {
 	  Engine::getInstance()._mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
-	} catch (std::exception e) {
+	} catch (std::exception &e) {
 	  std::cerr << "ERROR: invalid device input index of " << deviceId << std::endl;
 	  return -1;
 	}
@@ -234,7 +234,7 @@ int main(int argc, char **argv) {
       std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
       return 1;
     }
-  } catch (DbException ex) {
+  } catch (DbException &ex) {
     std::cerr << ex.what() << std::endl;
     //    delete e;
     return -1;

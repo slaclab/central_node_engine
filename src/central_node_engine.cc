@@ -187,7 +187,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
 	{
 	  mpsDb->configure();
 	}
-      catch (DbException e)
+      catch (DbException &e)
 	{
 	  throw e;
 	}
@@ -199,7 +199,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
 	{
 	  _bypassManager->assignBypass(mpsDb);
 	}
-      catch (CentralNodeException e)
+      catch (CentralNodeException &e)
 	{
 	  _initialized = true;
 	  _evaluate = true;

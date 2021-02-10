@@ -29,7 +29,6 @@ static void usage(const char *nm) {
 int main(int argc, char **argv) {
   YAML::Node doc;
   bool loaded = false;
-  bool dump = false;
   std::vector<YAML::Node> nodes;
   std::string fileName;
   bool trace = false;
@@ -54,18 +53,20 @@ int main(int argc, char **argv) {
 
   boost::shared_ptr<MpsDb> mpsDb = boost::shared_ptr<MpsDb>(new MpsDb());
 
-#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
+
   if (!trace) {
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
-  }
 #endif
+  }
+
   if (loaded) {
     try {
       mpsDb->load(fileName);
       mpsDb->configure();
-    } catch (DbException e) {
+    } catch (DbException &e) {
       std::cerr << e.what() << std::endl;
       return -1;
     }

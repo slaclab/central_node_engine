@@ -34,7 +34,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   fwUpdateBuffer( fwUpdateBuferSize ),
   run( true ),
   fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
-  updateInputThread( std::thread( &MpsDb::updateInputs, this ) ), 
+  updateInputThread( std::thread( &MpsDb::updateInputs, this ) ),
   mitigationThread( std::thread( &MpsDb::mitigationWriter, this ) ),
   inputsUpdated(false),
   _fastUpdateTimeStamp(0),
@@ -42,10 +42,10 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _maxDiff(0),
   _diffCount(0),
   softwareMitigationBuffer(NUM_DESTINATIONS / 8),
-  _inputUpdateTimeout(inputUpdateTimeout),
   _inputUpdateTime("Input update time", 360),
   _clearUpdateTime(false),
   fwUpdateTimer("FW Update Period", 360),
+  _inputUpdateTimeout(inputUpdateTimeout),
   _updateCounter(0),
   _updateTimeoutCounter(0),
   mitigationTxTime( "Mitigation Transmission time", 360 )
@@ -343,7 +343,6 @@ void MpsDb::configureFaultInputs() {
       // Found the DbAnalogDevice, configure it
       else {
 	(*it).second->analogDevice = (*aDeviceIt).second;
-	uint32_t integratorsPerChannel = 4;//(*it).second->analogDevice->deviceType->numIntegrators;
 
 	if ((*aDeviceIt).second->evaluation == FAST_EVALUATION) {
 	  LOG_TRACE("DATABASE", "AnalogDevice " << (*aDeviceIt).second->name
@@ -958,7 +957,7 @@ int MpsDb::load(std::string yamlFileName) {
   LOG_TRACE("DATABASE", "Loading YAML from file " << yamlFileName);
   try {
     nodes = YAML::LoadAllFromFile(yamlFileName);
-  } catch (YAML::BadFile e) {
+  } catch (YAML::BadFile &e) {
     errorStream << "ERROR: Please check if YAML file is readable";
     throw(DbException(errorStream.str()));
   } catch (...) {
@@ -1277,7 +1276,7 @@ void MpsDb::fwUpdateReader()
                 {
                     std::cout << "FW Update Data reader interrupted" << std::endl;
                     return;
-                } 
+                }
             }
         }
 
@@ -1292,7 +1291,7 @@ void MpsDb::fwUpdateReader()
 	  if (!run) {
 	    std::cout << "FW Update Data reader interrupted" << std::endl;
 	    return;
-	  } 	    
+	  }
 #endif
             ++_updateTimeoutCounter;
             fwUpdateTimer.start();

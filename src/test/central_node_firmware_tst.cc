@@ -42,7 +42,7 @@ public:
       if (verbose) {
 	std::cout << "INFO: Loaded MPS configuration (" << mpsFileName << ")" << std::endl;
       }
-    } catch (DbException ex) {
+    } catch (DbException &ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
     }
