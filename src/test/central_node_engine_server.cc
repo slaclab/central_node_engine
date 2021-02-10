@@ -10,14 +10,12 @@
 #include <central_node_firmware.h>
 #include <central_node_history.h>
 
-#include <boost/shared_ptr.hpp>
 //#include <log.h>
 #include <log_wrapper.h>
 
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
-#endif 
-using boost::shared_ptr;
+#endif
 
 class TestFailed {};
 
@@ -27,7 +25,6 @@ static void usage(const char *nm) {
 #ifdef FW_ENABLED
   std::cerr << "       -w <file>   :  central node firmware YAML config file" << std::endl;
 #endif
-  std::cerr << "       -v          :  verbose output" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -c          :  clear firmware - disable MPS" << std::endl;
   std::cerr << "       -l <PC ID>  :  force linac power class" << std::endl;
@@ -47,13 +44,12 @@ void intHandler(int) {
 int main(int argc, char **argv) {
   std::string mpsFileName = "";
   std::string fwFileName = "";
-  bool verbose = false;
   bool trace = false;
   bool clear = false;
   uint32_t powerClassId = CLEAR_BEAM_CLASS;
 
   signal(SIGINT, intHandler);
-  
+
   for (int opt; (opt = getopt(argc, argv, "tvhf:w:cl:")) > 0;) {
     switch (opt) {
       //    case 'f': doc = YAML::LoadFile(optarg); break;
@@ -62,9 +58,6 @@ int main(int argc, char **argv) {
       break;
     case 'w':
       fwFileName = optarg;
-      break;
-    case 'v':
-      verbose = true;
       break;
     case 't':
       trace = true;
@@ -104,7 +97,7 @@ int main(int argc, char **argv) {
   Firmware::getInstance().softwareClear();
   Firmware::getInstance().setSoftwareEnable(false);
   Firmware::getInstance().setEnable(false);
-  
+
   if (clear) {
     std::cout << &(Firmware::getInstance());
 
@@ -112,13 +105,13 @@ int main(int argc, char **argv) {
   }
 #endif
 
-#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
-  }
 #endif
+  }
 
   History::getInstance().startSenderThread();
 
@@ -129,7 +122,7 @@ int main(int argc, char **argv) {
       std::cerr << "ERROR: Failed to load MPS configuration" << std::endl;
       return 1;
     }
-  } catch (DbException ex) {
+  } catch (DbException &ex) {
     std::cerr << ex.what() << std::endl;
     return -1;
   }

@@ -25,12 +25,12 @@
 
 #define BUFFER_SIZE_MAX (100*1024) // 100 kbytes
 
-#define HISTOGRAM_SIZE  (1000)      // Size of the bandwidth histogram array. 
+#define HISTOGRAM_SIZE  (1000)      // Size of the bandwidth histogram array.
                                     // The histogram is on MB/s from 0 to this value
 
 static volatile int run = 1;
 
-void stack_prefault(void) 
+void stack_prefault(void)
 {
     unsigned char dummy[MAX_SAFE_STACK];
 
@@ -62,9 +62,9 @@ static void *rxThread(void *arg)
     struct sched_param  param;
     Hub                 *root = static_cast<Hub*>(arg);
 
-    
+
     printf("Rx thread started\n");
-    
+
     Path       pre      = IPath::create       (*root);
     Stream     strm     = IStream::create     (pre->findByName("/Stream0"));
     ScalVal    swClear  = IScalVal::create    (pre->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareClear"));
@@ -77,14 +77,14 @@ static void *rxThread(void *arg)
 
     // Declare as real time task
     param.sched_priority = MY_PRIORITY;
-    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) 
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
     {
         perror("sched_setscheduler failed");
         exit(-1);
     }
-        
+
     // Lock memory
-    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) 
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
     {
         perror("mlockall failed");
         exit(-2);
@@ -102,7 +102,7 @@ static void *rxThread(void *arg)
     {
         got = strm->read(buf, sizeof(buf), CTimeout(20000000));
         if ( ! got )
-        { 
+        {
             fprintf(stderr,"RX thread timed out\n");
         }
         else
@@ -119,32 +119,32 @@ static void *rxThread(void *arg)
 
         	// Bandwidth statistics
         	bwSum += bw;
-			
+
         	if (bw > bwMax)
         		bwMax = bw;
-			
+
         	if (bw < bwMin)
         		bwMin = bw;
 
         	// FPGA clock statistics
         	txClkSum += u32;
-   
+
         	if (u32 < txClkMin)
         		txClkMin = u32;
-   
+
         	if (u32 > txClkMax)
         		txClkMax = u32;
 
             // Global clock statistics
             if (u32 < txClkMinGlobal)
                 txClkMinGlobal = u32;
-   
+
             if (u32 > txClkMaxGlobal)
                 txClkMaxGlobal = u32;
 
             if (bw > bwMaxGlobal)
                 bwMaxGlobal = bw;
-            
+
             if (bw < bwMinGlobal)
                 bwMinGlobal = bw;
 
@@ -162,7 +162,7 @@ static void *rxThread(void *arg)
         		printf("Max RX Rate:       %f MB/s\n",        bwMax);
         		printf("Min RX Rate:       %f MB/s\n",        bwMin);
         		printf("Average RX Rate:   %f MB/s\n",        (bwSum / AvePointCnt));
-	
+
         		txClkSum = 0;
         		txClkMin = 0xffffffff;
         		txClkMax = 0;
@@ -222,7 +222,7 @@ int main(int argc, char const *argv[])
     printf("Loading YAML description...\n");
     root = IPath::loadYamlFile("./CentralNodeYAML/000TopLevel.yaml", "NetIODev")->origin();
     Path pre = IPath::create       (root );
-    
+
     //char* Register = "/mmio/Kcu105MpsCentralNode/AxiVersion/FpgaVersion";
     //char* Register = "/mmio/Kcu105MpsCentralNode/AxiVersion/ScratchPad";
      char* Register = "/Stream0";
@@ -238,7 +238,7 @@ int main(int argc, char const *argv[])
         r = IScalVal::create(pre->findByName(Register));
         printf("Interface created succesfully\n");
     }
-    catch(CPSWError &e) 
+    catch(CPSWError &e)
     {
         std::cout << "Interface could not be attahced: " << e.getInfo() << std::endl;
     }
@@ -252,7 +252,7 @@ int main(int argc, char const *argv[])
             ro = IScalVal_RO::create(pre->findByName(Register));
             printf("Interface created succesfully\n");
         }
-        catch(CPSWError &e) 
+        catch(CPSWError &e)
         {
             std::cout << "Interface could not be attahced: " << e.getInfo() << std::endl;
         }
@@ -266,11 +266,11 @@ int main(int argc, char const *argv[])
                 cmd = ICommand::create(pre->findByName(Register));
                 printf("Interface created succesfully\n");
             }
-            catch(CPSWError &e) 
+            catch(CPSWError &e)
             {
                 std::cout << "Interface could not be attahced: " << e.getInfo() << std::endl;
             }
-         
+
             if (!cmd)
             {
                 Stream stm;
@@ -280,7 +280,7 @@ int main(int argc, char const *argv[])
                     stm = IStream::create(pre->findByName(Register));
                     printf("Interface created succesfully\n");
                 }
-                catch(CPSWError &e) 
+                catch(CPSWError &e)
                 {
                     std::cout << "Interface could not be attahced: " << e.getInfo() << std::endl;
                 }
@@ -290,7 +290,7 @@ int main(int argc, char const *argv[])
 
     return 0;
     // printf("sysconf(_SC_CLK_TCK) = %lu\nCLOCKS_PER_SEC = %lu\n", sysconf(_SC_CLK_TCK), CLOCKS_PER_SEC);
-    
+
 //    // Declare as real time task
 //    param.sched_priority = MY_PRIORITY;
 //    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
@@ -298,7 +298,7 @@ int main(int argc, char const *argv[])
 //        perror("sched_setscheduler failed");
 //        exit(-1);
 //    }
-//    
+//
 //    // Lock memory
 //    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
 //    {
@@ -308,7 +308,7 @@ int main(int argc, char const *argv[])
 //
 //    // Pre-fault our stack
 //    stack_prefault();
-//    
+//
 //    printf("Loading YAML description...\n");
 //    root = IPath::loadYamlFile("../yaml/Kcu105MpsCentralNode_project.yaml/000TopLevel.yaml", "NetIODev")->origin();
 //
@@ -334,7 +334,7 @@ int main(int argc, char const *argv[])
 //    printf("\n");
 //
 //    pthread_t tid;
-//    if ( pthread_create(&tid, 0, rxThread, &root )) 
+//    if ( pthread_create(&tid, 0, rxThread, &root ))
 //        perror("pthread_create");
 //
 //    printf("\n");

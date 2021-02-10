@@ -57,6 +57,6 @@ class BypassManager {
   friend class BypassTest;
 };
 
-typedef shared_ptr<BypassManager> BypassManagerPtr;
+typedef boost::shared_ptr<BypassManager> BypassManagerPtr;
 
 #endif

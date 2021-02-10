@@ -150,7 +150,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     _evaluate = false;
 
     MpsDb *db = new MpsDb(inputUpdateTimeout);
-    shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(db);
+    boost::shared_ptr<MpsDb> mpsDb = boost::shared_ptr<MpsDb>(db);
 
     {
       std::unique_lock<std::mutex> lock(*mpsDb->getMutex()); // the database mutex is static - is the same for all instances
@@ -187,7 +187,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
 	{
 	  mpsDb->configure();
 	}
-      catch (DbException e)
+      catch (DbException &e)
 	{
 	  throw e;
 	}
@@ -199,7 +199,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
 	{
 	  _bypassManager->assignBypass(mpsDb);
 	}
-      catch (CentralNodeException e)
+      catch (CentralNodeException &e)
 	{
 	  _initialized = true;
 	  _evaluate = true;
@@ -894,7 +894,7 @@ void Engine::engineThread()
             // Inputs were processed
             Engine::getInstance()._mpsDb->inputProcessed();
 
-            // The mitigation buffer was written        
+            // The mitigation buffer was written
             Engine::getInstance()._mpsDb->mitBufferDoneWriting();
 
             _updateCounter++;
@@ -959,7 +959,7 @@ void Engine::clearMaxTimers() {
   _checkFaultTime.clear();
   _evaluationCycleTime.clear();
   _mpsDb->clearUpdateTime();
-}   
+}
 
 long Engine::getAvgWdUpdatePeriod()
 {

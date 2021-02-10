@@ -9,7 +9,7 @@
 #include <sstream>
 #include <netdb.h>
 
-History::History() : _counter(0), enabled(true), _done(false) {
+History::History() : _counter(0), _done(false), enabled(true) {
 }
 
 void History::startSenderThread(std::string serverName, int port) {
@@ -138,8 +138,6 @@ int History::send(Message &message) {
 
 void History::senderThread() {
   if (History::getInstance().enabled) {
-    Message message;
-    unsigned int priority;
 
     std::cout << "INFO: History sender thread ready." << std::endl;
     while (true) {

@@ -11,10 +11,9 @@
 #include <log.h>
 #include "buffer.h"
 
-using boost::shared_ptr;
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
 using namespace easyloggingpp;
-#endif 
+#endif
 
 class TestFailed {};
 
@@ -55,20 +54,21 @@ int main(int argc, char **argv) {
     }
   }
 
-  shared_ptr<MpsDb> mpsDb = shared_ptr<MpsDb>(new MpsDb());
+  boost::shared_ptr<MpsDb> mpsDb = boost::shared_ptr<MpsDb>(new MpsDb());
 
-#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   if (!trace) {
+#if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     Configurations c;
     c.setAll(ConfigurationType::Enabled, "false");
     Loggers::setDefaultConfigurations(c, true);
+#endif
   }
-#endif 
+
   if (loaded) {
     try {
       mpsDb->load(fileName);
       mpsDb->configure();
-    } catch (DbException e) {
+    } catch (DbException &e) {
       std::cerr << e.what() << std::endl;
       return -1;
     }
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   //  c.set(Level::All,  ConfigurationType::Enabled, "false");
   c.setAll(ConfigurationType::Format, "[%datetime] %level: %log [%logger]");
   //  c.setAll(ConfigurationType::Filename, "/tmp/custom.log");
-  
+
   CLOG(INFO, "testLogger") << "Done.";
 
   // Set default configuration for any future logger - existing logger will not use this configuration unless

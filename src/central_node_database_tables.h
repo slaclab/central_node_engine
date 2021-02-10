@@ -16,9 +16,6 @@
 
 #include "buffer.h"
 
-using boost::shared_ptr;
-using boost::weak_ptr;
-
 /**
  * DbException class
  *
@@ -56,9 +53,9 @@ class DbCrate : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbCrate * const crate);
 };
 
-typedef shared_ptr<DbCrate> DbCratePtr;
+typedef boost::shared_ptr<DbCrate> DbCratePtr;
 typedef std::map<uint32_t, DbCratePtr> DbCrateMap;
-typedef shared_ptr<DbCrateMap> DbCrateMapPtr;
+typedef boost::shared_ptr<DbCrateMap> DbCrateMapPtr;
 
 /**
  * DbInfo YAML class
@@ -74,9 +71,9 @@ class DbInfo {
   friend std::ostream & operator<<(std::ostream &os, DbInfo * const dbInfo);
 };
 
-typedef shared_ptr<DbInfo> DbInfoPtr;
+typedef boost::shared_ptr<DbInfo> DbInfoPtr;
 typedef std::map<uint32_t, DbInfoPtr> DbInfoMap;
-typedef shared_ptr<DbInfoMap> DbInfoMapPtr;
+typedef boost::shared_ptr<DbInfoMap> DbInfoMapPtr;
 
 /**
  * DbApplicationType YAML class
@@ -94,9 +91,9 @@ class DbApplicationType : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType);
 };
 
-typedef shared_ptr<DbApplicationType> DbApplicationTypePtr;
+typedef boost::shared_ptr<DbApplicationType> DbApplicationTypePtr;
 typedef std::map<uint32_t, DbApplicationTypePtr> DbApplicationTypeMap;
-typedef shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
+typedef boost::shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
 
 /**
  * DbChannel class for DbDigitalChannel and DbAnalogChannel
@@ -111,9 +108,9 @@ class DbChannel : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbChannel * const channel);
 };
 
-typedef shared_ptr<DbChannel> DbChannelPtr;
+typedef boost::shared_ptr<DbChannel> DbChannelPtr;
 typedef std::map<uint32_t, DbChannelPtr> DbChannelMap;
-typedef shared_ptr<DbChannelMap> DbChannelMapPtr;
+typedef boost::shared_ptr<DbChannelMap> DbChannelMapPtr;
 
 /**
  * DbDeviceState YAML class
@@ -130,9 +127,9 @@ class DbDeviceState : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState);
 };
 
-typedef shared_ptr<DbDeviceState> DbDeviceStatePtr;
+typedef boost::shared_ptr<DbDeviceState> DbDeviceStatePtr;
 typedef std::map<uint32_t, DbDeviceStatePtr> DbDeviceStateMap;
-typedef shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
+typedef boost::shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
 
 class DbApplicationCardInput {
  public:
@@ -165,9 +162,9 @@ class DbDeviceType : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType);
 };
 
-typedef shared_ptr<DbDeviceType> DbDeviceTypePtr;
+typedef boost::shared_ptr<DbDeviceType> DbDeviceTypePtr;
 typedef std::map<uint32_t, DbDeviceTypePtr> DbDeviceTypeMap;
-typedef shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
+typedef boost::shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
 
 /**
  * DbDeviceInput YAML class
@@ -211,14 +208,14 @@ class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
   friend std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput);
 };
 
-typedef shared_ptr<DbDeviceInput> DbDeviceInputPtr;
+typedef boost::shared_ptr<DbDeviceInput> DbDeviceInputPtr;
 typedef std::map<uint32_t, DbDeviceInputPtr> DbDeviceInputMap;
-typedef shared_ptr<DbDeviceInputMap> DbDeviceInputMapPtr;
+typedef boost::shared_ptr<DbDeviceInputMap> DbDeviceInputMapPtr;
 
 class DbFaultState;
-typedef shared_ptr<DbFaultState> DbFaultStatePtr;
+typedef boost::shared_ptr<DbFaultState> DbFaultStatePtr;
 typedef std::map<uint32_t, DbFaultStatePtr> DbFaultStateMap;
-typedef shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
+typedef boost::shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
 
 /**
  * DbDigitalDevice YAML class
@@ -261,9 +258,9 @@ class DbDigitalDevice : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevice);
 };
 
-typedef shared_ptr<DbDigitalDevice> DbDigitalDevicePtr;
+typedef boost::shared_ptr<DbDigitalDevice> DbDigitalDevicePtr;
 typedef std::map<uint32_t, DbDigitalDevicePtr> DbDigitalDeviceMap;
-typedef shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
+typedef boost::shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
 
 
 /**
@@ -347,9 +344,9 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   friend std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice);
 };
 
-typedef shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
+typedef boost::shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
 typedef std::map<uint32_t, DbAnalogDevicePtr> DbAnalogDeviceMap;
-typedef shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
+typedef boost::shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
 
 
 /**
@@ -412,9 +409,9 @@ class DbApplicationCard : public DbEntry {
   size_t               wasHighBufferOffset;
 };
 
-typedef shared_ptr<DbApplicationCard> DbApplicationCardPtr;
+typedef boost::shared_ptr<DbApplicationCard> DbApplicationCardPtr;
 typedef std::map<uint32_t, DbApplicationCardPtr> DbApplicationCardMap;
-typedef shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
+typedef boost::shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 
 /**
  * DbFaultInput YAML class
@@ -443,9 +440,9 @@ class DbFaultInput : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate);
 };
 
-typedef shared_ptr<DbFaultInput> DbFaultInputPtr;
+typedef boost::shared_ptr<DbFaultInput> DbFaultInputPtr;
 typedef std::map<uint32_t, DbFaultInputPtr> DbFaultInputMap;
-typedef shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
+typedef boost::shared_ptr<DbFaultInputMap> DbFaultInputMapPtr;
 
 
 /**
@@ -464,9 +461,9 @@ class DbBeamClass : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass);
 };
 
-typedef shared_ptr<DbBeamClass> DbBeamClassPtr;
+typedef boost::shared_ptr<DbBeamClass> DbBeamClassPtr;
 typedef std::map<uint32_t, DbBeamClassPtr> DbBeamClassMap;
-typedef shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
+typedef boost::shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
 
 /**
  * DbBeamDestination YAML class
@@ -521,9 +518,9 @@ class DbBeamDestination : public DbEntry {
   DataBuffer<uint32_t>* softwareMitigationBuffer;
 };
 
-typedef shared_ptr<DbBeamDestination> DbBeamDestinationPtr;
+typedef boost::shared_ptr<DbBeamDestination> DbBeamDestinationPtr;
 typedef std::map<uint32_t, DbBeamDestinationPtr> DbBeamDestinationMap;
-typedef shared_ptr<DbBeamDestinationMap> DbBeamDestinationMapPtr;
+typedef boost::shared_ptr<DbBeamDestinationMap> DbBeamDestinationMapPtr;
 
 
 /**
@@ -544,9 +541,9 @@ class DbAllowedClass : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbAllowedClass * const allowedClass);
 };
 
-typedef shared_ptr<DbAllowedClass> DbAllowedClassPtr;
+typedef boost::shared_ptr<DbAllowedClass> DbAllowedClassPtr;
 typedef std::map<uint32_t, DbAllowedClassPtr> DbAllowedClassMap;
-typedef shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
+typedef boost::shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
 
 
 /**
@@ -599,9 +596,9 @@ class DbFault : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbFault * const fault);
 };
 
-typedef shared_ptr<DbFault> DbFaultPtr;
+typedef boost::shared_ptr<DbFault> DbFaultPtr;
 typedef std::map<uint32_t, DbFaultPtr> DbFaultMap;
-typedef shared_ptr<DbFaultMap> DbFaultMapPtr;
+typedef boost::shared_ptr<DbFaultMap> DbFaultMapPtr;
 
 /**
  * DbConditionInput YAML class
@@ -622,9 +619,9 @@ class DbConditionInput : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbConditionInput * const input);
 };
 
-typedef shared_ptr<DbConditionInput> DbConditionInputPtr;
+typedef boost::shared_ptr<DbConditionInput> DbConditionInputPtr;
 typedef std::map<uint32_t, DbConditionInputPtr> DbConditionInputMap;
-typedef shared_ptr<DbConditionInputMap> DbConditionInputMapPtr;
+typedef boost::shared_ptr<DbConditionInputMap> DbConditionInputMapPtr;
 
 
 /**
@@ -648,9 +645,9 @@ class DbIgnoreCondition : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input);
 };
 
-typedef shared_ptr<DbIgnoreCondition> DbIgnoreConditionPtr;
+typedef boost::shared_ptr<DbIgnoreCondition> DbIgnoreConditionPtr;
 typedef std::map<uint32_t, DbIgnoreConditionPtr> DbIgnoreConditionMap;
-typedef shared_ptr<DbIgnoreConditionMap> DbIgnoreConditionMapPtr;
+typedef boost::shared_ptr<DbIgnoreConditionMap> DbIgnoreConditionMapPtr;
 
 /**
  * DbCondition YAML class
@@ -670,8 +667,8 @@ class DbCondition : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbCondition * const fault);
 };
 
-typedef shared_ptr<DbCondition> DbConditionPtr;
+typedef boost::shared_ptr<DbCondition> DbConditionPtr;
 typedef std::map<uint32_t, DbConditionPtr> DbConditionMap;
-typedef shared_ptr<DbConditionMap> DbConditionMapPtr;
+typedef boost::shared_ptr<DbConditionMap> DbConditionMapPtr;
 
 #endif

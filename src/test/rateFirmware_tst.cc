@@ -26,12 +26,12 @@
 
 #define BUFFER_SIZE_MAX (100*1024) // 100 kbytes
 
-#define HISTOGRAM_SIZE  (1000)      // Size of the bandwidth histogram array. 
+#define HISTOGRAM_SIZE  (1000)      // Size of the bandwidth histogram array.
                                     // The histogram is on MB/s from 0 to this value
 
 static volatile int run = 1;
 
-void stack_prefault(void) 
+void stack_prefault(void)
 {
     unsigned char dummy[MAX_SAFE_STACK];
 
@@ -56,21 +56,21 @@ static void *rxThread(void *arg)
     uint32_t            i;
     struct sched_param  param;
 
-    
+
     printf("Rx thread started\n");
-    
+
     Firmware::getInstance().softwareClear();
 
     // Declare as real time task
     param.sched_priority = MY_PRIORITY;
-    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) 
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
     {
         perror("sched_setscheduler failed");
         exit(-1);
     }
-        
+
     // Lock memory
-    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) 
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
     {
         perror("mlockall failed");
         exit(-2);
@@ -89,7 +89,7 @@ static void *rxThread(void *arg)
       got = Firmware::getInstance().readUpdateStream(buf, sizeof(buf), 20000000);
 	cnt++;
         if ( ! got )
-        { 
+        {
             fprintf(stderr,"RX thread timed out\n");
         }
         else
@@ -123,29 +123,24 @@ static void *rxThread(void *arg)
     for (i = 0; i < HISTOGRAM_SIZE; i++)
     {
         aux +=  bwHistogram[i];
-        fprintf(fp, "%4d           %d\n", i, bwHistogram[i]);
+        fprintf(fp, "%4d           %" PRIu64 "\n", i, bwHistogram[i]);
     }
     fclose(fp);
     printf("done!\n");
     // printf("Total number of packages received: %"PRIu64"\n", numPackagesTotal);
 
+    return NULL;
 }
 
 
 int main(int argc, char const *argv[])
 {
     Hub         root;
-    uint8_t     hb=0;
-    uint8_t     str[256];
-    uint8_t     u8;
-    uint32_t    u32;
-    uint64_t    u64;
-    uint8_t     hash[21];
     struct sched_param  param;
     signal(SIGINT, intHandler);
 
     // printf("sysconf(_SC_CLK_TCK) = %lu\nCLOCKS_PER_SEC = %lu\n", sysconf(_SC_CLK_TCK), CLOCKS_PER_SEC);
-    
+
     // Declare as real time task
     param.sched_priority = MY_PRIORITY;
     if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
@@ -153,7 +148,7 @@ int main(int argc, char const *argv[])
         perror("sched_setscheduler failed");
 	exit(-1);
     }
-    
+
     // Lock memory
     if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
     {
@@ -163,7 +158,7 @@ int main(int argc, char const *argv[])
 
     // Pre-fault our stack
     stack_prefault();
-    
+
     printf("Loading YAML description...\n");
     Firmware::getInstance().createRoot("./CentralNodeYAML/000TopLevel.yaml");
     Firmware::getInstance().createRegisters();
@@ -171,7 +166,7 @@ int main(int argc, char const *argv[])
     std::cout << &(Firmware::getInstance());
 
     pthread_t tid;
-    if ( pthread_create(&tid, 0, rxThread, &root )) 
+    if ( pthread_create(&tid, 0, rxThread, &root ))
         perror("pthread_create");
 
     printf("\n");
@@ -200,8 +195,8 @@ int main(int argc, char const *argv[])
     pthread_join(tid, NULL);
 
     printf("\n");
-    printf("Software packet loss error: %"PRIu8"\n", Firmware::getInstance().getSoftwareLossError());
-    printf("Number of packets loss:     %"PRIu32"\n", Firmware::getInstance().getSoftwareLossCount());
+    printf("Software packet loss error: %" PRIu8 "\n", Firmware::getInstance().getSoftwareLossError());
+    printf("Number of packets loss:     %" PRIu32 "\n", Firmware::getInstance().getSoftwareLossCount());
 
     return 0;
 }

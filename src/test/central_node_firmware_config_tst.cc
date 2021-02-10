@@ -9,11 +9,7 @@
 #include <central_node_engine.h>
 #include <central_node_firmware.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include <pthread.h> // MUTEX TEST
-
-using boost::shared_ptr;
 
 class TestFailed {};
 
@@ -30,11 +26,11 @@ public:
   uint32_t appConfigWrite[APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4];
   uint32_t appConfigWrite2[APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4];
   uint32_t appConfigRead[APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4];
-  int numApps;
+  uint32_t numApps;
 
-  FirmwareTest(bool v) : verbose(v), numApps(8) {
+  FirmwareTest(bool v) : numApps(8), verbose(v) {
     srandom(time(0));
-    for (int i = 0; i < APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4; ++i) {
+    for (uint32_t i = 0; i < APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4; ++i) {
       appConfigWrite[i] = random();
       appConfigWrite2[i] = random();
       appConfigRead[i] = 0;
@@ -45,13 +41,13 @@ public:
     try {
       Firmware::getInstance().createRoot(fwFileName);
       Firmware::getInstance().createRegisters();
-    
+
       if (verbose) {
 	//	std::cout << &Firmware::getInstance();
 	//	std::cout << std::endl;
       }
 
-    } catch (DbException ex) {
+    } catch (DbException &ex) {
       std::cerr << ex.what() << std::endl;
       return -1;
     }
@@ -60,7 +56,7 @@ public:
 
   int writeFirmwareConfig(int buffer = 0) {
     try {
-      for (int appId = 0; appId < numApps; ++appId) {
+      for (uint32_t appId = 0; appId < numApps; ++appId) {
 	if (buffer == 0) {
 	  Firmware::getInstance()._configSV[appId]->setVal(appConfigWrite, APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES / 4);
 	}
@@ -116,7 +112,7 @@ int main(int argc, char **argv) {
   std::string inputFileName = "";
   std::string analogFileName = "";
   bool verbose = false;
-  
+
   for (int opt; (opt = getopt(argc, argv, "vhw:")) > 0;) {
     switch (opt) {
     case 'w':

@@ -16,8 +16,6 @@
 #include "buffer.h"
 #include "heartbeat.h"
 
-using boost::shared_ptr;
-
 class EngineException: public CentralNodeException
 {
 public:
@@ -134,6 +132,6 @@ public:
     friend class MpsDb;
 };
 
-typedef shared_ptr<Engine> EnginePtr;
+typedef boost::shared_ptr<Engine> EnginePtr;
 
 #endif
