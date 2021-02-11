@@ -9,11 +9,21 @@
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
 
-central_node_engine-R1-5-0:
+central_node_engine-R1-7-0:
   * Update buildroot to version 2019.08.
   * Update CPSW to version R4.4.1. This implied update boost to version
     1.64.0 and yaml-cpp to version yaml-cpp-0.5.3_boost-1.64.0.
   * Fix all compilation warnings.
+
+central_node_engine-R1-6-0-eic:
+  * Changed logic to allow AOM
+  * Bug fixed on the FW configuration with AOM bypassed - wrong
+    bits were being changed
+
+ central_node_engine-R1-5-0-eic:
+  * Change to support AOM enable while mechanical laser shutter
+    is closed (works with mps_configuration EIC branch and
+    central_node_ioc branches)
 
 central_node_engine-R1-4-1:
   * Change to how the charge integration time is written to FW.
