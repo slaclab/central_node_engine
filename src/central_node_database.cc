@@ -848,12 +848,15 @@ void MpsDb::configureApplicationCards() {
 }
 
 void MpsDb::configureBeamDestinations() {
+  std::cout << "BeamDestinations: ";
   for (DbBeamDestinationMap::iterator it = beamDestinations->begin();
        it != beamDestinations->end(); ++it) {
+    std::cout << (*it).second->name << " ";
     (*it).second->setSoftwareMitigationBuffer( &softwareMitigationBuffer );
     (*it).second->previousAllowedBeamClass = lowestBeamClass;
     (*it).second->allowedBeamClass = lowestBeamClass;
   }
+  std::cout << std::endl;
 }
 
 void MpsDb::clearMitigationBuffer() {
@@ -903,13 +906,13 @@ void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassI
   }
 }
 
-void MpsDb::writeFirmwareConfiguration() {
+void MpsDb::writeFirmwareConfiguration(bool forceAomAllow) {
   // Write configuration for each application in the system
   LOG_TRACE("DATABASE", "Writing config to firmware, num applications: " << applicationCards->size());
   int i = 0;
   for (DbApplicationCardMap::iterator card = applicationCards->begin();
        card != applicationCards->end(); ++card) {
-    (*card).second->writeConfiguration();
+    (*card).second->writeConfiguration(forceAomAllow);
     Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
 					(*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
 					APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
@@ -1281,24 +1284,30 @@ void MpsDb::fwUpdateReader()
         }
 
 
-        while ( ! (Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
-                       APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
-                       NUM_APPLICATIONS *
-                       APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES,
-                       _inputUpdateTimeout)))
-        {
+	uint32_t expected_size = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
+	  NUM_APPLICATIONS *
+	  APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
+	uint32_t received_size = 0;
+
+	while (received_size != expected_size)
+	  {
+	    received_size = Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
+								     expected_size, _inputUpdateTimeout);
 #ifndef FW_ENABLED
-	  if (!run) {
-	    std::cout << "FW Update Data reader interrupted" << std::endl;
-	    return;
-	  }
+	    if (!run) {
+	      std::cout << "FW Update Data reader interrupted" << std::endl;
+	      return;
+	    }
 #endif
-            ++_updateTimeoutCounter;
-            fwUpdateTimer.start();
-        }
+	    if (received_size == 0)
+	      {
+		++_updateTimeoutCounter;
+	      }
+	  }
 
         fwUpdateBuffer.doneWriting();
         fwUpdateTimer.tick();
+	fwUpdateTimer.start();
     }
 }
 

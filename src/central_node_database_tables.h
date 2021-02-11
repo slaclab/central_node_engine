@@ -390,9 +390,9 @@ class DbApplicationCard : public DbEntry {
 
   DbApplicationCard();
 
-  void writeConfiguration();
-  void writeDigitalConfiguration();
-  void writeAnalogConfiguration();
+  void writeConfiguration(bool forceAomAllow = false);
+  void writeDigitalConfiguration(bool forceAomAllow = false);
+  void writeAnalogConfiguration(bool forceAomAllow = false);
 
   void printAnalogConfiguration();
 
