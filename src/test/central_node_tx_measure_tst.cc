@@ -217,7 +217,7 @@ void Tester::rxHandler()
     std::cout << "Rx Thread interrupted" << std::endl;
     std::cout << std::endl;
 
-    uint8_t  u8;
+    uint8_t  packetLossError;
     uint32_t packetLossCnt;
 
     std::cout << "Rx Thread report:" << std::endl;
@@ -232,8 +232,8 @@ void Tester::rxHandler()
         std::cout << "Max RX time (us)          : " << h.rbegin()->first << std::endl;
     }
 
-    swLossError->getVal(&u8);
-    std::cout << "FW SoftwareLossError      : " << unsigned(u8) << std::endl;
+    swLossError->getVal(&packetLossError);
+    std::cout << "FW SoftwareLossError      : " << unsigned(packetLossError) << std::endl;
     swLossCnt->getVal(&packetLossCnt);
     std::cout << "FW SoftwareLossCnt        : " << unsigned(packetLossCnt) << std::endl;
 
