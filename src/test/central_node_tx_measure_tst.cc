@@ -223,26 +223,41 @@ void Tester::rxHandler()
     std::cout << "Rx Thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
     std::cout << "Number of packet received : " << rxPackages << std::endl;
-    std::cout << "Number of timeouts        : " << rxTimeouts << std::endl;
-    std::cout << "Min RX time (us)          : " << h.begin()->first << std::endl;
-    std::cout << "Max RX time (us)          : " << h.rbegin()->first << std::endl;
+
+    // Do not print this info if not package was received
+    if (rxPackages)
+    {
+        std::cout << "Number of timeouts        : " << rxTimeouts << std::endl;
+        std::cout << "Min RX time (us)          : " << h.begin()->first << std::endl;
+        std::cout << "Max RX time (us)          : " << h.rbegin()->first << std::endl;
+    }
+
     swLossError->getVal(&u8);
     std::cout << "FW SoftwareLossError      : " << unsigned(u8) << std::endl;
     swLossCnt->getVal(&packetLossCnt);
     std::cout << "FW SoftwareLossCnt        : " << unsigned(packetLossCnt) << std::endl;
-    std::cout << "Writing data to           : '" << outFile.getName() << "' ... ";
 
-    // Write the histogram result to the output file
-    outFile << "# FW version                : " << gitHash              << "\n";
-    outFile << "# FW version                : " << gitHash.c_str()      << "\n";
-    outFile << "# Number of packet received : " << rxPackages           << "\n";
-    outFile << "# Number of timeouts        : " << rxTimeouts           << "\n";
-    outFile << "# Min RX time (us)          : " << h.begin()->first     << "\n";
-    outFile << "# Max RX time (us)          : " << h.rbegin()->first    << "\n";
-    outFile << "# FW SoftwareLossCnt        : " << packetLossCnt        << "\n";
-    outFile << "#\n";
-    outFile << "# RxTime (us)     Counts\n";
-    std::for_each(h.begin(), h.end(), std::bind(&RAIIFile::writePair<uint32_t, std::size_t>, &outFile, std::placeholders::_1));
+    // Do not create the data file is not package was received
+    if (rxPackages)
+    {
+        std::cout << "Writing data to           : '" << outFile.getName() << "' ... ";
+
+        // Write the histogram result to the output file
+        outFile << "# FW version                : " << gitHash              << "\n";
+        outFile << "# FW version                : " << gitHash.c_str()      << "\n";
+        outFile << "# Number of packet received : " << rxPackages           << "\n";
+        outFile << "# Number of timeouts        : " << rxTimeouts           << "\n";
+        outFile << "# Min RX time (us)          : " << h.begin()->first     << "\n";
+        outFile << "# Max RX time (us)          : " << h.rbegin()->first    << "\n";
+        outFile << "# FW SoftwareLossCnt        : " << packetLossCnt        << "\n";
+        outFile << "#\n";
+        outFile << "# RxTime (us)     Counts\n";
+        std::for_each(h.begin(), h.end(), std::bind(&RAIIFile::writePair<uint32_t, std::size_t>, &outFile, std::placeholders::_1));
+    }
+    else
+    {
+        std::cout << "Data file not created, as no package was received." << std::endl;
+    }
 
     std::cout << "done!" << std::endl;
 
