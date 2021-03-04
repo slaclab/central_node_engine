@@ -186,7 +186,8 @@ void Tester::rxHandler()
     uint8_t                         buf[100*1024];  // 100KBytes buffer
 
     // Wait for the first package
-    strm->read(buf, sizeof(buf), CTimeout(-1));
+    if ( ! strm->read(buf, sizeof(buf), CTimeout(3500)) )
+        ++rxTimeouts;
 
     // Clear the software error flags before starting
     swClear->setVal((uint64_t)1);
@@ -201,8 +202,8 @@ void Tester::rxHandler()
         }
         else
         {
-        	// Number of FPGA clock it took the current TX
-        	txClkCnt->getVal(&u32);
+      	    // Number of FPGA clock it took the current TX
+       	    txClkCnt->getVal(&u32);
 
             // Round the time to us and update the histogram
             ++h[u32/fpgaClkPerUs];
