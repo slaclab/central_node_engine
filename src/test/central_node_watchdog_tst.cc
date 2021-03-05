@@ -150,7 +150,7 @@ void usage(char* name)
     std::cout << "This program starts the FW engine and receives the update packets comming from FW." << std::endl;
     std::cout << "Each time a packet is received, a heartbeat is send to the FW." << std::endl;
     std::cout << "The program runs for the specified number of seconds, printing a report at the end." << std::endl;
-    std::cout << "Usege: " << name << " -a <IP_address> -Y <Yaml_top> -s <Seconds to run the test> [-T <Watchdog timeout>]i [-h]" << std::endl;
+    std::cout << "Usege: " << name << " -a <IP_address> -Y <Yaml_top> -s <Seconds to run the test> [-T <Watchdog timeout>] [-h]" << std::endl;
     std::cout << std::endl;
 }
 
