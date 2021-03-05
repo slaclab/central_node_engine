@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 #include <iostream>
+#include <iomanip>
 #include <yaml-cpp/yaml.h>
 #include <arpa/inet.h>
 #include <thread>
@@ -225,10 +226,37 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    printf("Loading YAML description...\n");
+    std::cout << "Loading YAML description..." << std::endl;
     IYamlSetIP setIP(ipAddr);
     Path root = IPath::loadYamlFile(yamlDoc.c_str(), "NetIODev", NULL, &setIP);
 
+    // Create CPSW interfaces for AxiVersion registers
+    ScalVal_RO fpgaVers = IScalVal_RO::create (root->findByName("/mmio/AmcCarrierCore/AxiVersion/FpgaVersion"));
+    ScalVal_RO bldStamp = IScalVal_RO::create (root->findByName("/mmio/AmcCarrierCore/AxiVersion/BuildStamp"));
+    ScalVal_RO gitHash  = IScalVal_RO::create (root->findByName("/mmio/AmcCarrierCore/AxiVersion/GitHash"));
+
+    // Print Version Information
+    std::cout << std::endl;
+    std::cout << "Version Information:" << std::endl;
+
+    uint64_t u64;
+    fpgaVers->getVal(&u64);
+    std::cout << "FPGA Version : " << u64 << std::endl;
+
+    uint8_t str[256];
+    bldStamp->getVal(str, sizeof(str)/sizeof(str[0]));
+    std::cout << "Build String : " << str << std::endl;
+
+    uint8_t hash[20];
+    gitHash->getVal(hash, 20);
+    std::cout << "Git hash     : ";
+    std::ostringstream aux;
+    for (int i = 19; i >= 0; --i)
+        aux << std::hex << std::setfill('0') << std::setw(2) << unsigned(hash[i]);
+    std::string gitHashStr(aux.str());
+    std::cout << gitHashStr << std::endl;
+
+    // Start test
     Tester t( root, timeout, seconds*360 );
 
     // Now wait for the defined time
