@@ -39,23 +39,22 @@ void intHandler(int dummy) {}
 
 class IYamlSetIP : public IYamlFixup
 {
-    public:
-        IYamlSetIP( std::string ip_addr ) : ip_addr_(ip_addr) {}
+public:
+    IYamlSetIP( std::string ip_addr ) : ip_addr_(ip_addr) {}
+    ~IYamlSetIP() {}
 
-        virtual void operator()(YAML::Node &root, YAML::Node &top)
-        {
-            YAML::Node ipAddrNode = IYamlFixup::findByName(root, "ipAddr");
+    virtual void operator()(YAML::Node &root, YAML::Node &top)
+    {
+        YAML::Node ipAddrNode = IYamlFixup::findByName(root, "ipAddr");
 
-            if ( ! ipAddrNode )
-                throw std::runtime_error("ERROR on IYamlSetIP::operator(): 'ipAddr' node was not found!");
+        if ( ! ipAddrNode )
+            throw std::runtime_error("ERROR on IYamlSetIP::operator(): 'ipAddr' node was not found!");
 
-            ipAddrNode = ip_addr_.c_str();
-        }
+        ipAddrNode = ip_addr_.c_str();
+    }
 
-        ~IYamlSetIP() {}
-
-    private:
-        std::string ip_addr_;
+private:
+    std::string ip_addr_;
 };
 
 class RAIIFile
