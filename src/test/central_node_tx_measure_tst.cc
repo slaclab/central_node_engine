@@ -187,7 +187,7 @@ void Tester::rxHandler()
     std::map<uint32_t, std::size_t> h;                         // Histogram (rxTime(us))
     uint32_t                        fpgaTxClk;                 // FPGA TX clocks
 
-    // Wait for the first package
+    // Wait for the first packet
     if ( ! strm->read(buf, sizeof(buf), CTimeout(3500)) )
         ++rxTimeouts;
 
@@ -232,7 +232,7 @@ void Tester::rxHandler()
     std::cout << "Number of packet with bad sizes : " << rxBadSizes << std::endl;
     std::cout << "Number of timeouts              : " << rxTimeouts        << std::endl;
 
-    // Do not print this info if not package was received
+    // Do not print this info if not packet was received
     if (rxPackages)
     {
         std::cout << "Min RX time (us)                : " << h.begin()->first  << std::endl;
@@ -244,7 +244,7 @@ void Tester::rxHandler()
     swLossCnt->getVal(&packetLossCnt);
     std::cout << "FW SoftwareLossCnt              : " << unsigned(packetLossCnt) << std::endl;
 
-    // Do not create the data file is not package was received
+    // Do not create the data file is not packet was received
     if (rxPackages)
     {
         std::cout << "Writing data to                 : '" << outFile.getName() << "'... ";
@@ -264,7 +264,7 @@ void Tester::rxHandler()
     }
     else
     {
-        std::cout << "Data file not created, as no valid package was received." << std::endl;
+        std::cout << "Data file not created, as no valid packet was received." << std::endl;
     }
 
     std::cout << "done!" << std::endl;
