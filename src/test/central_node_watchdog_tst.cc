@@ -107,10 +107,16 @@ void Tester::rxData()
     }
 
     // Wait for the first package
-    strm->read(buf, 102400, CTimeout(-1));
+    if ( 0 != strm->read(buf, 102400, CTimeout(3500)) )
+    {
+        ++rxCounter;
+        hb.beat();
+    }
+    else
+    {
+        ++toCounter;
+    }
     rxT.start();
-    ++rxCounter;
-    hb.beat();
 
     while(run)
     {
