@@ -371,19 +371,19 @@ int main(int argc, char **argv)
     ScalVal_RO bldStamp    = IScalVal_RO::create (root->findByName("/mmio/AmcCarrierCore/AxiVersion/BuildStamp"));
     ScalVal_RO gitHash     = IScalVal_RO::create (root->findByName("/mmio/AmcCarrierCore/AxiVersion/GitHash"));
 
-    // Print AxiVersion Information
+    // Print Version Information
     std::cout << std::endl;
-    std::cout << "AxiVersion:\n" << std::endl;
+    std::cout << "Version Information:" << std::endl;
 
     fpgaVers->getVal(&u64);
-    std::cout << "FPGAVersion: " << u64 << std::endl;
+    std::cout << "FPGA Version : " << u64 << std::endl;
 
     bldStamp->getVal(str, sizeof(str)/sizeof(str[0]));
-    std::cout << "Buil String:" << str << std::endl;
+    std::cout << "Build String : " << str << std::endl;
 
     std::ostringstream aux;
     gitHash->getVal(hash, 20);
-    std::cout << "Git hash: ";
+    std::cout << "Git hash     : ";
     for (int i = 19; i >= 0; --i)
         aux << std::hex << std::setfill('0') << std::setw(2) << unsigned(hash[i]);
     std::string gitHashStr(aux.str());
