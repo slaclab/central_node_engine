@@ -178,12 +178,14 @@ void Tester::rxHandler()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t                     rxPackages = 0; // Number of packet received
-    int                             rxTimeouts = 0; // Number of RX timeouts
-    std::map<uint32_t, std::size_t> h;              // Histogram (rxTime(us))
-    int64_t                         got;
-    uint32_t                        u32;
-    uint8_t                         buf[100*1024];  // 100KBytes buffer
+    const int64_t                   expectedPacketSize { 24 + 1024*192*2/8 + 1 }; // header + 1024 apps x (192 x 2) bits/app + footer (bytes)
+    std::size_t                     rxPackages { 0 };          // Number of packet received
+    std::size_t                     rxTimeouts { 0 };          // Number of RX timeouts
+    std::size_t                     rxBadSizes { 0 };          // Number of RX packets with unexpected size
+    int64_t                         got;                       // Number of bytes received
+    uint8_t                         buf[2*expectedPacketSize]; // Data buffer. Double of the expected size
+    std::map<uint32_t, std::size_t> h;                         // Histogram (rxTime(us))
+    uint32_t                        fpgaTxClk;                 // FPGA TX clocks
 
     // Wait for the first package
     if ( ! strm->read(buf, sizeof(buf), CTimeout(3500)) )
@@ -200,13 +202,17 @@ void Tester::rxHandler()
         {
             ++rxTimeouts;
         }
+        else if ( expectedPacketSize != got)
+        {
+            ++rxBadSizes;
+        }
         else
         {
       	    // Number of FPGA clock it took the current TX
-       	    txClkCnt->getVal(&u32);
+            txClkCnt->getVal(&fpgaTxClk);
 
             // Round the time to us and update the histogram
-            ++h[u32/fpgaClkPerUs];
+            ++h[fpgaTxClk/fpgaClkPerUs];
 
             // Increase RX packet counter
             ++rxPackages;
@@ -222,41 +228,43 @@ void Tester::rxHandler()
 
     std::cout << "Rx Thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
-    std::cout << "Number of packet received : " << rxPackages << std::endl;
+    std::cout << "Number of valid packet received : " << rxPackages << std::endl;
+    std::cout << "Number of packet with bad sizes : " << rxBadSizes << std::endl;
+    std::cout << "Number of timeouts              : " << rxTimeouts        << std::endl;
 
     // Do not print this info if not package was received
     if (rxPackages)
     {
-        std::cout << "Number of timeouts        : " << rxTimeouts << std::endl;
-        std::cout << "Min RX time (us)          : " << h.begin()->first << std::endl;
-        std::cout << "Max RX time (us)          : " << h.rbegin()->first << std::endl;
+        std::cout << "Min RX time (us)                : " << h.begin()->first  << std::endl;
+        std::cout << "Max RX time (us)                : " << h.rbegin()->first << std::endl;
     }
 
     swLossError->getVal(&packetLossError);
-    std::cout << "FW SoftwareLossError      : " << unsigned(packetLossError) << std::endl;
+    std::cout << "FW SoftwareLossError            : " << unsigned(packetLossError) << std::endl;
     swLossCnt->getVal(&packetLossCnt);
-    std::cout << "FW SoftwareLossCnt        : " << unsigned(packetLossCnt) << std::endl;
+    std::cout << "FW SoftwareLossCnt              : " << unsigned(packetLossCnt) << std::endl;
 
     // Do not create the data file is not package was received
     if (rxPackages)
     {
-        std::cout << "Writing data to           : '" << outFile.getName() << "' ... ";
+        std::cout << "Writing data to                 : '" << outFile.getName() << "'... ";
 
         // Write the histogram result to the output file
-        outFile << "# FW version                : " << gitHash              << "\n";
-        outFile << "# FW version                : " << gitHash.c_str()      << "\n";
-        outFile << "# Number of packet received : " << rxPackages           << "\n";
-        outFile << "# Number of timeouts        : " << rxTimeouts           << "\n";
-        outFile << "# Min RX time (us)          : " << h.begin()->first     << "\n";
-        outFile << "# Max RX time (us)          : " << h.rbegin()->first    << "\n";
-        outFile << "# FW SoftwareLossCnt        : " << packetLossCnt        << "\n";
+        outFile << "# FW version                      : " << gitHash              << "\n";
+        outFile << "# FW version                      : " << gitHash.c_str()      << "\n";
+        outFile << "# Number of valid packet received : " << rxPackages           << "\n";
+        outFile << "# Number of packet with bad sizes : " << rxBadSizes           << "\n";
+        outFile << "# Number of timeouts              : " << rxTimeouts           << "\n";
+        outFile << "# Min RX time (us)                : " << h.begin()->first     << "\n";
+        outFile << "# Max RX time (us)                : " << h.rbegin()->first    << "\n";
+        outFile << "# FW SoftwareLossCnt              : " << packetLossCnt        << "\n";
         outFile << "#\n";
         outFile << "# RxTime (us)     Counts\n";
         std::for_each(h.begin(), h.end(), std::bind(&RAIIFile::writePair<uint32_t, std::size_t>, &outFile, std::placeholders::_1));
     }
     else
     {
-        std::cout << "Data file not created, as no package was received." << std::endl;
+        std::cout << "Data file not created, as no valid package was received." << std::endl;
     }
 
     std::cout << "done!" << std::endl;
