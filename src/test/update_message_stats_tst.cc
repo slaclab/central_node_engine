@@ -418,10 +418,6 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    uint8_t     str[256];
-    uint64_t    u64;
-    uint8_t     hash[20];
-
     // Capture CRTL+C to allow the program to finish normally, and write
     // the histogram data to file.
     signal(SIGINT, intHandler);
@@ -440,15 +436,18 @@ int main(int argc, char **argv)
     std::cout << std::endl;
     std::cout << "Version Information:" << std::endl;
 
+    uint64_t u64;
     fpgaVers->getVal(&u64);
     std::cout << "FPGA Version : " << u64 << std::endl;
 
+    uint8_t str[256];
     bldStamp->getVal(str, sizeof(str)/sizeof(str[0]));
     std::cout << "Build String : " << str << std::endl;
 
-    std::ostringstream aux;
+    uint8_t hash[20];
     gitHash->getVal(hash, 20);
     std::cout << "Git hash     : ";
+    std::ostringstream aux;
     for (int i = 19; i >= 0; --i)
         aux << std::hex << std::setfill('0') << std::setw(2) << unsigned(hash[i]);
     std::string gitHashStr(aux.str());
