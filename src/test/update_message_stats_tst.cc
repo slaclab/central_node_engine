@@ -378,7 +378,7 @@ int main(int argc, char **argv)
                 if (1 != sscanf(optarg, "%zu", &timeout))
                 {
                     printf("Invalid timeout\n");
-                    exist(1);
+                    exit(1);
                 }
                 break;
             case 'h':
