@@ -83,6 +83,12 @@ public:
         file << rhs.first << "                       " << rhs.second << "\n";
     };
 
+    template<typename T>
+    void write(const T& rhs)
+    {
+        file << rhs << "\n";
+    };
+
 private:
     std::string     fileName;
     std::ofstream   file;
@@ -107,6 +113,7 @@ private:
     std::string         outDir;
     RAIIFile            outFileSizes;
     RAIIFile            outFileTSDelta;
+    RAIIFile            outFileTS;
     boost::atomic<bool> run;
     std::thread         rxThread;
 };
@@ -123,6 +130,7 @@ gitHash         ( fwGitHash ),
 outDir          ( outputDir ),
 outFileSizes    ( outDir + "/" + gitHash.substr(0, 7) + "_sizes.data" ),
 outFileTSDelta  ( outDir + "/" + gitHash.substr(0, 7) + "_ts_delta.data" ),
+outFileTS       ( outDir + "/" + gitHash.substr(0, 7) + "_ts.data" ),
 run             ( true ),
 rxThread        ( std::thread( &Tester::rxHandler, this ) )
 {
@@ -279,11 +287,29 @@ void Tester::rxHandler()
         outFileTSDelta << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileTSDelta << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
         outFileTSDelta << "#\n";
-        outFileTSDelta << "# MessageSize (bytes)     Counts\n";
+        outFileTSDelta << "# Timestamp delta (ns)    Counts\n";
         std::for_each(
             histTSDelta.begin(),
             histTSDelta.end(),
             std::bind(&RAIIFile::writePair<int64_t, std::size_t>, &outFileTSDelta, std::placeholders::_1));
+        std::cout << "done!" << std::endl;
+
+        // Write the full list of timestamps to the output file
+        std::cout << "Writing data to                 : '" << outFileTS.getName() << "'... ";
+
+        outFileTS << "# FW version                      : " << gitHash                  << "\n";
+        outFileTS << "# FW version                      : " << gitHash.c_str()          << "\n";
+        outFileTS << "# Number of valid packet received : " << rxPackages               << "\n";
+        outFileTS << "# Number of timeouts              : " << rxTimeouts               << "\n";
+        outFileTS << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
+        outFileTS << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
+        outFileTS << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
+        outFileTS << "#\n";
+        outFileTS << "# Timestamp (ns)\n";
+        std::for_each(
+            timeStamps.begin(),
+            timeStamps.end(),
+            std::bind(&RAIIFile::write<uint64_t>, &outFileTS, std::placeholders::_1));
         std::cout << "done!" << std::endl;
     }
     else
@@ -302,6 +328,8 @@ void usage(char* name)
     std::cout << " The histogram files are written to the specified directory. The file name will be firmware short githash (7 chars) "
                  "plus the suffix \"_sizes\" for the message size histogram file, and \"_ts_deta\" for the timestamp delta histogram "
                  "the plus a \".data\" extension." << std::endl;
+    std::cout << "Additionally, the program generate a third file with the full list of the received timestamps. The file name will be "
+                 "firmware short githash (7 chars), plus the suffix \"_ts\", plus a \".data\" extension." << std::endl;
     std::cout << std::endl;
     std::cout << "Usage: " << name << " -a <IP_address> -Y <Yaml_top> -s <seconds to run the test> -d <output directory> [-h]" << std::endl;
     std::cout << std::endl;
