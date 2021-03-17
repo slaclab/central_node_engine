@@ -67,8 +67,8 @@ central_node_tx_measure_tst_SRCS         = central_node_tx_measure_tst.cc
 central_node_tx_measure_tst_LIBS         = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS                            += central_node_tx_measure_tst
 
-central_node_tx_measure_tst_SRCS         = update_message_stats_tst.cc
-central_node_tx_measure_tst_LIBS         = $(CENTRAL_NODE_ENGINE_LIBS)
+update_message_stats_tst_SRCS            = update_message_stats_tst.cc
+update_message_stats_tst_LIBS            = $(CENTRAL_NODE_ENGINE_LIBS)
 TESTPROGRAMS                            += update_message_stats_tst
 
 PROGRAMS =

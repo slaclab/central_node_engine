@@ -217,9 +217,9 @@ void Tester::rxHandler()
 
     // Create the message time stamp delta histogram
     std::vector<int64_t> timeStampsDelta;
-    std::adjacent_difference (timeStamps.begin(), timeStamps.end(), timeStampsDelta);
+    std::adjacent_difference (timeStamps.begin(), timeStamps.end(), timeStampsDelta.begin());
     std::map<uint32_t, std::size_t> histTSDelta;
-    for (std::vector<uint64_t>::const_iterator it = timeStampsDelta.begin(); it != timeStampsDelta.end(); ++it)
+    for (std::vector<int64_t>::const_iterator it = timeStampsDelta.begin(); it != timeStampsDelta.end(); ++it)
         ++histTSDelta[*it];
 
     std::cout << "Rx Thread report:" << std::endl;
