@@ -97,7 +97,7 @@ private:
 class Tester
 {
 public:
-    Tester(Path root, const std::string &fwGitHash, const std::string& outputDir);
+    Tester(Path root, const std::string &fwGitHash, const std::string& outputDir, std::size_t strmTimeout);
     ~Tester();
 
     void rxHandler();
@@ -114,11 +114,12 @@ private:
     RAIIFile            outFileSizes;
     RAIIFile            outFileTSDelta;
     RAIIFile            outFileTS;
+    std::size_t         timeout;
     boost::atomic<bool> run;
     std::thread         rxThread;
 };
 
-Tester::Tester(Path root, const std::string &fwGitHash, const std::string& outputDir)
+Tester::Tester(Path root, const std::string &fwGitHash, const std::string& outputDir, std::size_t strmTimeout)
 :
 enable          ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/Enable" ) ) ),
 swEnable        ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareEnable" ) ) ),
@@ -131,6 +132,7 @@ outDir          ( outputDir ),
 outFileSizes    ( outDir + "/" + gitHash.substr(0, 7) + "_sizes.data" ),
 outFileTSDelta  ( outDir + "/" + gitHash.substr(0, 7) + "_ts_delta.data" ),
 outFileTS       ( outDir + "/" + gitHash.substr(0, 7) + "_ts.data" ),
+timeout         ( strmTimeout ),
 run             ( true ),
 rxThread        ( std::thread( &Tester::rxHandler, this ) )
 {
@@ -203,7 +205,7 @@ void Tester::rxHandler()
 
     while (run)
     {
-        got = strm->read(buf, sizeof(buf), CTimeout(3500));
+        got = strm->read(buf, sizeof(buf), CTimeout(timeout));
         if ( ! got )
         {
             ++rxTimeouts;
@@ -238,6 +240,7 @@ void Tester::rxHandler()
     std::cout << "===========================" << std::endl;
     std::cout << "Number of valid packet received : " << rxPackages << std::endl;
     std::cout << "Number of timeouts              : " << rxTimeouts << std::endl;
+    std::cout << "Stream read timeout used (us)   : " << timeout    << std::endl;
 
     // Do not print this info if not packet was received
     if (rxPackages)
@@ -331,7 +334,7 @@ void usage(char* name)
     std::cout << "Additionally, the program generate a third file with the full list of the received timestamps. The file name will be "
                  "firmware short githash (7 chars), plus the suffix \"_ts\", plus a \".data\" extension." << std::endl;
     std::cout << std::endl;
-    std::cout << "Usage: " << name << " -a <IP_address> -Y <Yaml_top> -s <seconds to run the test> -d <output directory> [-h]" << std::endl;
+    std::cout << "Usage: " << name << " -a <IP_address> -Y <Yaml_top> -s <seconds to run the test> -d <output directory> [-t <timeout>] [-h]" << std::endl;
     std::cout << std::endl;
 }
 
@@ -344,8 +347,9 @@ int main(int argc, char **argv)
     std::string   ipAddr;
     std::string   yamlDoc;
     std::string   outputDir;
+    std::size_t   timeout { 3500 };
 
-    while((c =  getopt(argc, argv, "a:Y:s:d:h")) != -1)
+    while((c =  getopt(argc, argv, "a:Y:s:d:t:h")) != -1)
     {
         switch (c)
         {
@@ -369,6 +373,13 @@ int main(int argc, char **argv)
                 break;
             case 'd':
                 outputDir = std::string(optarg);
+                break;
+            case 't':
+                if (1 != sscanf(optarg, "%zu", &timeout))
+                {
+                    printf("Invalid timeout\n");
+                    exist(1);
+                }
                 break;
             case 'h':
                 usage( argv[0] );
@@ -444,7 +455,7 @@ int main(int argc, char **argv)
     std::cout << gitHashStr << std::endl;
 
     // Start test
-    Tester t(root, gitHashStr, outputDir);
+    Tester t(root, gitHashStr, outputDir, timeout);
 
     // Now wait for the defined time
     std::cout << "Now waiting for " << seconds << " seconds..."<< std::endl;
