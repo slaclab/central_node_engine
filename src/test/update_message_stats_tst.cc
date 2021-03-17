@@ -272,7 +272,7 @@ void Tester::rxHandler()
         outFileSizes << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileSizes << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
         outFileSizes << "#\n";
-        outFileSizes << "#" <<std::setw(23) << "MessageSize (bytes)" << std::setw(16) << "Counts" << "\n";
+        outFileSizes << "#" << std::setw(23) << "MessageSize (bytes)" << std::setw(16) << "Counts" << "\n";
         std::for_each(
             histSize.begin(),
             histSize.end(),
