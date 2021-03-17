@@ -23,49 +23,49 @@ ln_tst_SRCS                              = ln_tst.cc
 ln_tst_LIBS                              =
 TESTPROGRAMS                            += ln_tst
 
-rateFirmware_tst_SRCS       			 = rateFirmware_tst.cc
-rateFirmware_tst_LIBS       			 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= rateFirmware_tst
+rateFirmware_tst_SRCS                    = rateFirmware_tst.cc
+rateFirmware_tst_LIBS                    = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += rateFirmware_tst
 
-central_node_database_tst_SRCS       	 = central_node_database_tst.cc
-central_node_database_tst_LIBS       	 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= central_node_database_tst
+central_node_database_tst_SRCS           = central_node_database_tst.cc
+central_node_database_tst_LIBS           = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_database_tst
 
-central_node_config_tst_SRCS       		 = central_node_config_tst.cc
-central_node_config_tst_LIBS       		 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= central_node_config_tst
+central_node_config_tst_SRCS             = central_node_config_tst.cc
+central_node_config_tst_LIBS             = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_config_tst
 
-central_node_engine_tst_SRCS       		 = central_node_engine_tst.cc
-central_node_engine_tst_LIBS       		 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= central_node_engine_tst
+central_node_engine_tst_SRCS             = central_node_engine_tst.cc
+central_node_engine_tst_LIBS             = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_engine_tst
 
-central_node_engine_server_SRCS       	 = central_node_engine_server.cc
-central_node_engine_server_LIBS       	 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= central_node_engine_server
+central_node_engine_server_SRCS          = central_node_engine_server.cc
+central_node_engine_server_LIBS          = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_engine_server
 
-central_node_firmware_tst_SRCS       	 = central_node_firmware_tst.cc
-central_node_firmware_tst_LIBS       	 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= central_node_firmware_tst
+central_node_firmware_tst_SRCS           = central_node_firmware_tst.cc
+central_node_firmware_tst_LIBS           = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_firmware_tst
 
 central_node_firmware_config_tst_SRCS    = central_node_firmware_config_tst.cc
 central_node_firmware_config_tst_LIBS    = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= central_node_firmware_config_tst
+TESTPROGRAMS                            += central_node_firmware_config_tst
 
-central_node_bypass_tst_SRCS       		 = central_node_bypass_tst.cc
-central_node_bypass_tst_LIBS       		 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS            				+= central_node_bypass_tst
+central_node_bypass_tst_SRCS             = central_node_bypass_tst.cc
+central_node_bypass_tst_LIBS             = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_bypass_tst
 
-central_node_watchdog_tst_SRCS       	 = central_node_watchdog_tst.cc
-central_node_watchdog_tst_LIBS       	 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS                        	+= central_node_watchdog_tst
+central_node_watchdog_tst_SRCS           = central_node_watchdog_tst.cc
+central_node_watchdog_tst_LIBS           = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_watchdog_tst
 
-central_node_watchdog_measure_tst_SRCS	 = central_node_watchdog_measure_tst.cc
-central_node_watchdog_measure_tst_LIBS	 = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS                     		+= central_node_watchdog_measure_tst
+central_node_watchdog_measure_tst_SRCS   = central_node_watchdog_measure_tst.cc
+central_node_watchdog_measure_tst_LIBS   = $(CENTRAL_NODE_ENGINE_LIBS)
+TESTPROGRAMS                            += central_node_watchdog_measure_tst
 
 central_node_tx_measure_tst_SRCS         = central_node_tx_measure_tst.cc
 central_node_tx_measure_tst_LIBS         = $(CENTRAL_NODE_ENGINE_LIBS)
-TESTPROGRAMS                           	+= central_node_tx_measure_tst
+TESTPROGRAMS                            += central_node_tx_measure_tst
 
 PROGRAMS =
 include $(CENTRAL_NODE_ENGINE_DIR)/rules.mak
