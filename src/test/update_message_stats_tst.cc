@@ -105,9 +105,12 @@ public:
 private:
     ScalVal             enable;
     ScalVal             swEnable;
-    ScalVal             swClear;
+    Command             swErrorClear;
+    ScalVal_RO          swBusy;
+    ScalVal_RO          swPause;
     ScalVal_RO          swLossError;
     ScalVal_RO          swLossCnt;
+    ScalVal_RO          swOvflCnt;
     Stream              strm;
     std::string         gitHash;
     std::string         outDir;
@@ -121,17 +124,20 @@ private:
 
 Tester::Tester(Path root, const std::string &fwGitHash, const std::string& outputDir, std::size_t strmTimeout)
 :
-enable          ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/Enable" ) ) ),
-swEnable        ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareEnable" ) ) ),
-swClear         ( IScalVal::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareClear") ) ),
-swLossError     ( IScalVal_RO::create (root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareLossError") ) ),
-swLossCnt       ( IScalVal_RO::create (root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareLossCnt") ) ),
-strm            ( IStream::create( root->findByName("/Stream0") ) ),
+enable          ( IScalVal::create(    root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/Enable"           ) ) ),
+swEnable        ( IScalVal::create(    root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareEnable"   ) ) ),
+swErrorClear    ( ICommand::create(    root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SwErrClear"        ) ) ),
+swBusy          ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareBusy"      ) ) ),
+swPause         ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwarePause"     ) ) ),
+swLossError     ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareLossError" ) ) ),
+swLossCnt       ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareLossCnt"   ) ) ),
+swOvflCnt       ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareOvflCnt"   ) ) ),
+strm            ( IStream::create(     root->findByName("/Stream0"                                                         ) ) ),
 gitHash         ( fwGitHash ),
 outDir          ( outputDir ),
-outFileSizes    ( outDir + "/" + gitHash.substr(0, 7) + "_sizes.data" ),
+outFileSizes    ( outDir + "/" + gitHash.substr(0, 7) + "_sizes.data"    ),
 outFileTSDelta  ( outDir + "/" + gitHash.substr(0, 7) + "_ts_delta.data" ),
-outFileTS       ( outDir + "/" + gitHash.substr(0, 7) + "_ts.data" ),
+outFileTS       ( outDir + "/" + gitHash.substr(0, 7) + "_ts.data"       ),
 timeout         ( strmTimeout ),
 run             ( true ),
 rxThread        ( std::thread( &Tester::rxHandler, this ) )
@@ -192,8 +198,7 @@ void Tester::rxHandler()
     std::map<int64_t, std::size_t>  histSize;           // Histogram (message sizes)
 
     // Clear the software error flags before starting
-    swClear->setVal((uint64_t)1);
-    swClear->setVal((uint64_t)0);
+    swErrorClear->execute();
 
     // Start the software engine
     std::cout << "Enabling MPS FW Software engine..." << std::endl;
@@ -251,12 +256,17 @@ void Tester::rxHandler()
         std::cout << "Max timestamp delta (ns)        : " << histTSDelta.rbegin()->first << std::endl;
     }
 
-    uint8_t  packetLossError;
-    uint32_t packetLossCnt;
-    swLossError->getVal(&packetLossError);
-    std::cout << "FW SoftwareLossError            : " << unsigned(packetLossError) << std::endl;
-    swLossCnt->getVal(&packetLossCnt);
-    std::cout << "FW SoftwareLossCnt              : " << unsigned(packetLossCnt) << std::endl;
+    uint32_t u32;
+    swBusy->getVal(&u32);
+    std::cout << "FW SoftwareBusy                 : " << unsigned(u32) << std::endl;
+    swPause->getVal(&u32);
+    std::cout << "FW SoftwarePause                : " << unsigned(u32) << std::endl;
+    swLossError->getVal(&u32);
+    std::cout << "FW SoftwareLossError            : " << unsigned(u32) << std::endl;
+    swLossCnt->getVal(&u32);
+    std::cout << "FW SoftwareLossCnt              : " << unsigned(u32) << std::endl;
+    swOvflCnt->getVal(&u32);
+    std::cout << "FW SoftwareOvflCnt              : " << unsigned(u32) << std::endl;
 
     // Do not create the data file is not packet was received
     if (rxPackages)
