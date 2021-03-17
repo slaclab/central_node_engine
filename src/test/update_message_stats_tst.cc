@@ -277,8 +277,8 @@ void Tester::rxHandler()
         outFileTSDelta << "#\n";
         outFileTSDelta << "# MessageSize (bytes)     Counts\n";
         std::for_each(
-            histSize.begin(),
-            histSize.end(),
+            histTSDelta.begin(),
+            histTSDelta.end(),
             std::bind(&RAIIFile::writePair<int64_t, std::size_t>, &outFileTSDelta, std::placeholders::_1));
         std::cout << "done!" << std::endl;
     }
