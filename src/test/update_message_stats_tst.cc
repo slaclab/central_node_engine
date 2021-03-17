@@ -190,6 +190,9 @@ void Tester::rxHandler()
     enable->setVal( static_cast<uint64_t>(1) );
     swEnable->setVal( static_cast<uint64_t>(1) );
 
+    // Wait for the first packet
+    strm->read(buf, sizeof(buf), CTimeout(10000));
+
     while (run)
     {
         got = strm->read(buf, sizeof(buf), CTimeout(3500));
