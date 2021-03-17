@@ -256,17 +256,20 @@ void Tester::rxHandler()
         std::cout << "Max timestamp delta (ns)        : " << histTSDelta.rbegin()->first << std::endl;
     }
 
-    uint32_t u32;
-    swBusy->getVal(&u32);
-    std::cout << "FW SoftwareBusy                 : " << unsigned(u32) << std::endl;
-    swPause->getVal(&u32);
-    std::cout << "FW SoftwarePause                : " << unsigned(u32) << std::endl;
-    swLossError->getVal(&u32);
-    std::cout << "FW SoftwareLossError            : " << unsigned(u32) << std::endl;
-    swLossCnt->getVal(&u32);
-    std::cout << "FW SoftwareLossCnt              : " << unsigned(u32) << std::endl;
-    swOvflCnt->getVal(&u32);
-    std::cout << "FW SoftwareOvflCnt              : " << unsigned(u32) << std::endl;
+    uint8_t u8;
+    swBusy->getVal(&u8);
+    std::cout << "FW SoftwareBusy                 : " << unsigned(u8) << std::endl;
+    swPause->getVal(&u8);
+    std::cout << "FW SoftwarePause                : " << unsigned(u8) << std::endl;
+    swLossError->getVal(&u8);
+    std::cout << "FW SoftwareLossError            : " << unsigned(u8) << std::endl;
+
+    uint32_t packetLossCnt;
+    uint32_t packetOverflowCnt;
+    swLossCnt->getVal(&packetLossCnt);
+    std::cout << "FW SoftwareLossCnt              : " << unsigned(packetLossCnt) << std::endl;
+    swOvflCnt->getVal(&packetOverflowCnt);
+    std::cout << "FW SoftwareOvflCnt              : " << unsigned(packetOverflowCnt) << std::endl;
 
     // Do not create the data file is not packet was received
     if (rxPackages)
@@ -281,6 +284,7 @@ void Tester::rxHandler()
         outFileSizes << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileSizes << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileSizes << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
+        outFileSizes << "# FW SoftwareOvflCnt              : " << packetOverflowCnt        << "\n";
         outFileSizes << "#\n";
         outFileSizes << "#" << std::setw(23) << "MessageSize (bytes)" << std::setw(16) << "Counts" << "\n";
         std::for_each(
@@ -299,6 +303,7 @@ void Tester::rxHandler()
         outFileTSDelta << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileTSDelta << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileTSDelta << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
+        outFileTSDelta << "# FW SoftwareOvflCnt              : " << packetOverflowCnt        << "\n";
         outFileTSDelta << "#\n";
         outFileTSDelta << "#" << std::setw(23) << "Timestamp delta (ns)" << std::setw(16) << "Counts" << "\n";
         std::for_each(
