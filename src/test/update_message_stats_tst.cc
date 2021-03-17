@@ -323,11 +323,11 @@ void Tester::rxHandler()
     std::cout << std::endl;
 }
 
-void usage(char* name)
+void usage(const std::string& name)
 {
     std::cout << "Usage: " << name << " -a <FPGA_IP> -Y <YAML_FILE>" << std::endl;
-    std::cout << "                                   -s <TEST_DURATION> -d <OUTPUT_DIR>" << std::endl;
-    std::cout << "                                   [-t <TIMEOUT>] [-h]" << std::endl;
+    std::cout << "                                -s <TEST_DURATION> -d <OUTPUT_DIR>" << std::endl;
+    std::cout << "                                [-t <TIMEOUT>] [-h]" << std::endl;
     std::cout << std::endl;
     std::cout << "    -a <FPGA_IP>       : FPGA IP Address." <<std::endl;
     std::cout << "    -Y <YAML_FILE>     : Path to the top level YAML file." <<std::endl;
@@ -360,6 +360,7 @@ int main(int argc, char **argv)
     std::string   outputDir;
     std::size_t   seconds {    0 };
     std::size_t   timeout { 3500 };
+    std::string   appName { basename(argv[0]) };
 
     while((c =  getopt(argc, argv, "a:Y:s:d:t:h")) != -1)
     {
@@ -394,13 +395,13 @@ int main(int argc, char **argv)
                 }
                 break;
             case 'h':
-                usage( argv[0] );
+                usage(appName);
                 exit(0);
                 break;
             default:
                 std::cout << "Invalid option." << std::endl;
                 std::cout << std::endl;
-                usage( argv[0]  );
+                usage(appName);
                 exit(1);
                 break;
         }
