@@ -80,13 +80,13 @@ public:
     template<typename T, typename U>
     void writePair(const std::pair<T, U>& rhs)
     {
-        file << rhs.first << "                       " << rhs.second << "\n";
+        file << std::setw(24) << rhs.first << std::setw(16) << rhs.second << "\n";
     };
 
     template<typename T>
     void write(const T& rhs)
     {
-        file << rhs << "\n";
+        file << std::setw(24) << rhs << "\n";
     };
 
 private:
@@ -272,7 +272,7 @@ void Tester::rxHandler()
         outFileSizes << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileSizes << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
         outFileSizes << "#\n";
-        outFileSizes << "# MessageSize (bytes)     Counts\n";
+        outFileSizes << "#" <<std::setw(23) << "MessageSize (bytes)" << std::setw(16) << "Counts" << "\n";
         std::for_each(
             histSize.begin(),
             histSize.end(),
@@ -290,7 +290,7 @@ void Tester::rxHandler()
         outFileTSDelta << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileTSDelta << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
         outFileTSDelta << "#\n";
-        outFileTSDelta << "# Timestamp delta (ns)    Counts\n";
+        outFileTSDelta << "#" << std::setw(23) << "Timestamp delta (ns)" << std::setw(16) << "Counts" << "\n";
         std::for_each(
             histTSDelta.begin(),
             histTSDelta.end(),
@@ -308,7 +308,7 @@ void Tester::rxHandler()
         outFileTS << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileTS << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
         outFileTS << "#\n";
-        outFileTS << "# Timestamp (ns)\n";
+        outFileTS << "#" << std::setw(23) << "Timestamp (ns)" << "\n";
         std::for_each(
             timeStamps.begin(),
             timeStamps.end(),
