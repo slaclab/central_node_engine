@@ -342,11 +342,11 @@ void usage(char* name)
 int main(int argc, char **argv)
 {
     int           c;
-    size_t        seconds = 0;
     unsigned char buf[sizeof(struct in6_addr)];
     std::string   ipAddr;
     std::string   yamlDoc;
     std::string   outputDir;
+    std::size_t   seconds {    0 };
     std::size_t   timeout { 3500 };
 
     while((c =  getopt(argc, argv, "a:Y:s:d:t:h")) != -1)
