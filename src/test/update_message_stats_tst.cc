@@ -325,16 +325,28 @@ void Tester::rxHandler()
 
 void usage(char* name)
 {
-    std::cout << "This program collects the messages sizes and timestamp from the update messages send from FW to SW." << std::endl;
-    std::cout << "The program runs for the specified number of seconds printing a report at the end." << std::endl;
-    std::cout << "The program generates 2 histograms for the message size and the timestamp difference between adjacent messages." << std::endl;
-    std::cout << " The histogram files are written to the specified directory. The file name will be firmware short githash (7 chars) "
-                 "plus the suffix \"_sizes\" for the message size histogram file, and \"_ts_deta\" for the timestamp delta histogram "
-                 "the plus a \".data\" extension." << std::endl;
-    std::cout << "Additionally, the program generate a third file with the full list of the received timestamps. The file name will be "
-                 "firmware short githash (7 chars), plus the suffix \"_ts\", plus a \".data\" extension." << std::endl;
+    std::cout << "Usage: " << name << " -a <FPGA_IP> -Y <YAML_FILE>" << std::endl;
+    std::cout << "                                   -s <TEST_DURATION> -d <OUTPUT_DIR>" << std::endl;
+    std::cout << "                                   [-t <TIMEOUT>] [-h]" << std::endl;
     std::cout << std::endl;
-    std::cout << "Usage: " << name << " -a <IP_address> -Y <Yaml_top> -s <seconds to run the test> -d <output directory> [-t <timeout>] [-h]" << std::endl;
+    std::cout << "    -a <FPGA_IP>       : FPGA IP Address." <<std::endl;
+    std::cout << "    -Y <YAML_FILE>     : Path to the top level YAML file." <<std::endl;
+    std::cout << "    -s <TEST_DURATION> : Number of second to run the test." <<std::endl;
+    std::cout << "    -d <OUTPUT_DIR>    : Path to the output directory for the report files." <<std::endl;
+    std::cout << "    -t <TIMEOUT>       : Timeout, in us, while waiting for update messages." << std::endl;
+    std::cout << "                         Optional. Defaults to 3500." <<std::endl;
+    std::cout << "    -h                 : Show this message." <<std::endl;
+    std::cout << std::endl;
+    std::cout << "This program collects the size and timestamp from the update messages send" << std::endl;
+    std::cout << "from the central node firmware. The program runs for the specified number of" << std::endl;
+    std::cout << "seconds, and it prints a report at the end of the test. Additionally, it" << std::endl;
+    std::cout << "generates 3 reports files in the specified output directory:" << std::endl;
+    std::cout << "- A histogram of the received messages sizes, in bytes." << std::endl;
+    std::cout << "  The file name is \"<fw_short_githash>_sizes.data\"." << std::endl;
+    std::cout << "- A histogram of the timestamp difference between adjacent messages." << std::endl;
+    std::cout << "  The file name is \"<fw_short_githash>_ts_delta.data\"." << std::endl;
+    std::cout << "- The full list of timestamps of all received messages." << std::endl;
+    std::cout << "  The file name is \"<fw_short_githash>_ts.data\"." << std::endl;
     std::cout << std::endl;
 }
 
