@@ -6,7 +6,6 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
-#include <numeric>
 #include <thread>
 #include <signal.h>
 #include <sys/mman.h>
@@ -143,7 +142,7 @@ private:
     std::string         outDir;
     RAIIFile            outFileSizes;
     RAIIFile            outFileTSDelta;
-    RAIIFile            outFileTS;
+    RAIIFile            outFileInfo;
     std::size_t         timeout;
     boost::atomic<bool> run;
     std::thread         rxThread;
@@ -164,7 +163,7 @@ gitHash         ( fwGitHash ),
 outDir          ( outputDir ),
 outFileSizes    ( outDir + "/" + gitHash.substr(0, 7) + "_sizes.data"    ),
 outFileTSDelta  ( outDir + "/" + gitHash.substr(0, 7) + "_ts_delta.data" ),
-outFileTS       ( outDir + "/" + gitHash.substr(0, 7) + "_ts.data"       ),
+outFileInfo     ( outDir + "/" + gitHash.substr(0, 7) + "_info.data"       ),
 timeout         ( strmTimeout ),
 run             ( true ),
 rxThread        ( std::thread( &Tester::rxHandler, this ) )
@@ -217,12 +216,12 @@ void Tester::rxHandler()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t                     rxPackages { 0 };   // Number of packet received
-    std::size_t                     rxTimeouts { 0 };   // Number of RX timeouts
-    int64_t                         got;                // Number of bytes received
-    uint8_t                         buf[100*1024];      // 100KBytes buffer
-    std::vector<uint64_t>           timeStamps;         // Messages Timestamps
-    std::map<int64_t, std::size_t>  histSize;           // Histogram (message sizes)
+    std::size_t                                 rxPackages { 0 }; // Number of packet received
+    std::size_t                                 rxTimeouts { 0 }; // Number of RX timeouts
+    int64_t                                     got;              // Number of bytes received
+    uint8_t                                     buf[100*1024];    // 100KBytes buffer
+    std::vector< std::pair<int64_t, uint64_t> > msgInfo;          // Information about each message (size, timestamp)
+    std::map<int64_t, std::size_t>              histSize;         // Histogram (message sizes)
 
     // Clear the software error flags before starting
     swErrorClear->execute();
@@ -252,7 +251,7 @@ void Tester::rxHandler()
 
       	    // Extract the time stamp from the header, and save it
             const uint64_t* ts = reinterpret_cast<const uint64_t*>(&(*(buf + 8)));
-            timeStamps.push_back(*ts);
+            msgInfo.push_back( std::make_pair(got, *ts) );
         }
 
     }
@@ -262,10 +261,15 @@ void Tester::rxHandler()
 
     // Create the message time stamp delta histogram
     std::vector<int64_t> timeStampsDelta;
-    std::adjacent_difference (timeStamps.begin(), timeStamps.end(), back_inserter(timeStampsDelta));
-    timeStampsDelta.erase(timeStampsDelta.begin()); // Remove the first element which is not a difference
+    for (std::vector< std::pair<int64_t, uint64_t> >::const_iterator it = msgInfo.begin() + 1;
+         it != msgInfo.end();
+         ++it)
+        timeStampsDelta.push_back( it->second - (it - 1)->second );
+
     std::map<uint32_t, std::size_t> histTSDelta;
-    for (std::vector<int64_t>::const_iterator it = timeStampsDelta.begin(); it != timeStampsDelta.end(); ++it)
+    for (std::vector<int64_t>::const_iterator it = timeStampsDelta.begin();
+         it != timeStampsDelta.end();
+         ++it)
         ++histTSDelta[*it];
 
     std::cout << "Rx Thread report:" << std::endl;
@@ -340,21 +344,22 @@ void Tester::rxHandler()
         std::cout << "done!" << std::endl;
 
         // Write the full list of timestamps to the output file
-        std::cout << "Writing data to                 : '" << outFileTS.getName() << "'... ";
+        std::cout << "Writing data to                 : '" << outFileInfo.getName() << "'... ";
 
-        outFileTS << "# FW version                      : " << gitHash                  << "\n";
-        outFileTS << "# FW version                      : " << gitHash.c_str()          << "\n";
-        outFileTS << "# Number of valid packet received : " << rxPackages               << "\n";
-        outFileTS << "# Number of timeouts              : " << rxTimeouts               << "\n";
-        outFileTS << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
-        outFileTS << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
-        outFileTS << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
-        outFileTS << "#\n";
-        outFileTS << "#" << std::setw(23) << "Timestamp (ns)" << "\n";
+        outFileInfo << "# FW version                      : " << gitHash                  << "\n";
+        outFileInfo << "# FW version                      : " << gitHash.c_str()          << "\n";
+        outFileInfo << "# Number of valid packet received : " << rxPackages               << "\n";
+        outFileInfo << "# Number of timeouts              : " << rxTimeouts               << "\n";
+        outFileInfo << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
+        outFileInfo << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
+        outFileInfo << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
+        outFileInfo << "#\n";
+        outFileInfo << "#" << std::setw(23) << "Message size (bytes)" << std::setw(24) << "Timestamp (ns)" << "\n";
+        outFileInfo.setWidth(std::make_pair(24, 24));
         std::for_each(
-            timeStamps.begin(),
-            timeStamps.end(),
-            std::bind(&RAIIFile::write<uint64_t>, &outFileTS, std::placeholders::_1));
+            msgInfo.begin(),
+            msgInfo.end(),
+            std::bind(&RAIIFile::writePair<int64_t, uint64_t>, &outFileInfo, std::placeholders::_1));
         std::cout << "done!" << std::endl;
     }
     else
@@ -387,8 +392,8 @@ void usage(const std::string& name)
     std::cout << "  The file name is \"<fw_short_githash>_sizes.data\"." << std::endl;
     std::cout << "- A histogram of the timestamp difference between adjacent messages." << std::endl;
     std::cout << "  The file name is \"<fw_short_githash>_ts_delta.data\"." << std::endl;
-    std::cout << "- The full list of timestamps of all received messages." << std::endl;
-    std::cout << "  The file name is \"<fw_short_githash>_ts.data\"." << std::endl;
+    std::cout << "- The full list of message sizes and timestamps of all received messages." << std::endl;
+    std::cout << "  The file name is \"<fw_short_githash>_info.data\"." << std::endl;
     std::cout << std::endl;
 }
 
