@@ -317,7 +317,7 @@ void Tester::rxHandlerMain()
                 // == 0 : packet with same seq. number
                 // <  0 : packet received out of order
                 // >  0 : lost packets (the difference less one is the number of missing packets)
-                int32_t seqDelta { *sn - prevSeqNumber };
+                int64_t seqDelta { *sn - prevSeqNumber };
                 if ( 1 != seqDelta )
                 {
                     if ( 0 == seqDelta)
