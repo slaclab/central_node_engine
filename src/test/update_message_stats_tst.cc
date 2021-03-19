@@ -251,17 +251,18 @@ void Tester::rxHandlerMain()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t                     rxPackages      { 0 };    // Number of packet received
-    std::size_t                     rxTimeouts      { 0 };    // Number of RX timeouts
-    std::size_t                     lostPackets     { 0 };    // Number of lost packets (based on seq. number)
-    std::size_t                     outOrderPackets { 0 };    // Number of out of order packets (based on seq. number)
-    std::size_t                     sameSeqPackets  { 0 };    // Number of packets with the same previous seq. number
-    bool                            firstPaket      { true }; // Flag to indicate the first received packet
-    std::size_t                     prevSeqNumber   { 0 };    // Sequence number of the previous packet
-    int64_t                         got;                      // Number of bytes received
-    uint8_t                         buf[100*1024];            // 100KBytes buffer
-    std::vector<msg_info_t>         msgInfo;                  // Information about each message (size, seq. number, timestamp)
-    std::map<int64_t, std::size_t>  histSize;                 // Histogram (message sizes)
+    std::size_t                     rxPackages      { 0 };     // Number of packet received
+    std::size_t                     rxTimeouts      { 0 };     // Number of RX timeouts
+    std::size_t                     lostPackets     { 0 };     // Number of lost packets (based on seq. number)
+    std::size_t                     outOrderPackets { 0 };     // Number of out of order packets (based on seq. number)
+    std::size_t                     sameSeqPackets  { 0 };     // Number of packets with the same previous seq. number
+    bool                            firstPaket      { true };  // Flag to indicate the first received packet
+    std::size_t                     prevSeqNumber   { 0 };     // Sequence number of the previous packet
+    std::size_t                     strmReadTimeout { 10000 }; // Timeout for the Stream read. We use 10ms for the first read.
+    int64_t                         got;                       // Number of bytes received
+    uint8_t                         buf[100*1024];             // 100KBytes buffer
+    std::vector<msg_info_t>         msgInfo;                   // Information about each message (size, seq. number, timestamp)
+    std::map<int64_t, std::size_t>  histSize;                  // Histogram (message sizes)
 
     // Clear the software error flags before starting
     swErrorClear->execute();
@@ -271,12 +272,9 @@ void Tester::rxHandlerMain()
     enable->setVal( static_cast<uint64_t>(1) );
     swEnable->setVal( static_cast<uint64_t>(1) );
 
-    // Wait for the first packet
-    strm0->read(buf, sizeof(buf), CTimeout(10000));
-
     while (run)
     {
-        got = strm0->read(buf, sizeof(buf), CTimeout(timeout));
+        got = strm0->read(buf, sizeof(buf), CTimeout(strmReadTimeout));
         if ( ! got )
         {
             ++rxTimeouts;
@@ -303,6 +301,10 @@ void Tester::rxHandlerMain()
             {
                 // We don't process the first packet, as we don't
                 // have anything to compare.
+
+                // After the first packet, we used the defined timeout for reading
+                // the update messages.
+                strmReadTimeout = timeout;
 
                 // Clear flag so that the next packet is processed
                 firstPaket = false;
