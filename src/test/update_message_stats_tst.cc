@@ -151,6 +151,8 @@ public:
     void rxHandlerSeconday();
 
 private:
+    typedef std::tuple<int64_t, uint32_t, uint64_t> msg_info_t;
+
     ScalVal             enable;
     ScalVal             swEnable;
     Command             swErrorClear;
@@ -224,6 +226,8 @@ Tester::~Tester()
     std::cout << std::endl;
 }
 
+typedef std::tuple<int64_t, uint32_t, uint64_t> msg_info_t;
+
 void Tester::rxHandlerMain()
 {
     std::cout << "Rx main thread started" << std::endl;
@@ -247,17 +251,17 @@ void Tester::rxHandlerMain()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t                                 rxPackages      { 0 };    // Number of packet received
-    std::size_t                                 rxTimeouts      { 0 };    // Number of RX timeouts
-    std::size_t                                 lostPackets     { 0 };    // Number of lost packets (based on seq. number)
-    std::size_t                                 outOrderPackets { 0 };    // Number of out of order packets (based on seq. number)
-    std::size_t                                 sameSeqPackets  { 0 };    // Number of packets with the same previous seq. number
-    bool                                        firstPaket      { true }; // Flag to indicate the first received packet
-    std::size_t                                 prevSeqNumber   { 0 };    // Sequence number of the previous packet
-    int64_t                                     got;                      // Number of bytes received
-    uint8_t                                     buf[100*1024];            // 100KBytes buffer
-    std::vector< std::pair<int64_t, uint64_t> > msgInfo;                  // Information about each message (size, timestamp)
-    std::map<int64_t, std::size_t>              histSize;                 // Histogram (message sizes)
+    std::size_t                     rxPackages      { 0 };    // Number of packet received
+    std::size_t                     rxTimeouts      { 0 };    // Number of RX timeouts
+    std::size_t                     lostPackets     { 0 };    // Number of lost packets (based on seq. number)
+    std::size_t                     outOrderPackets { 0 };    // Number of out of order packets (based on seq. number)
+    std::size_t                     sameSeqPackets  { 0 };    // Number of packets with the same previous seq. number
+    bool                            firstPaket      { true }; // Flag to indicate the first received packet
+    std::size_t                     prevSeqNumber   { 0 };    // Sequence number of the previous packet
+    int64_t                         got;                      // Number of bytes received
+    uint8_t                         buf[100*1024];            // 100KBytes buffer
+    std::vector<msg_info_t>         msgInfo;                  // Information about each message (size, seq. number, timestamp)
+    std::map<int64_t, std::size_t>  histSize;                 // Histogram (message sizes)
 
     // Clear the software error flags before starting
     swErrorClear->execute();
@@ -285,12 +289,14 @@ void Tester::rxHandlerMain()
             // Update the message size histogram
             ++histSize[got];
 
-      	    // Extract the time stamp from the header, and save it
+      	    // Extract the time stamp from the header
             const uint64_t* ts = reinterpret_cast<const uint64_t*>(&(*(buf + 8)));
-            msgInfo.push_back( std::make_pair(got, *ts) );
 
-            // Extract the sequence number from the header, and save it
+            // Extract the sequence number from the header
             const uint32_t* sn = reinterpret_cast<const uint32_t*>(&(*(buf + 16)));
+
+            // Save the message information
+            msgInfo.push_back( std::make_tuple(got, *sn, *ts) );
 
             // Check for lost and out of order packets, based on the sequence number
             if (firstPaket)
@@ -332,15 +338,15 @@ void Tester::rxHandlerMain()
     std::cout << std::endl;
 
     // Create the message time stamp delta histogram
-    std::vector<int64_t> timeStampsDelta;
-    for (std::vector< std::pair<int64_t, uint64_t> >::const_iterator it = msgInfo.begin() + 1;
+    std::vector<int64_t> timeStampDelta;
+    for (std::vector<msg_info_t>::const_iterator it = msgInfo.begin() + 1;
          it != msgInfo.end();
          ++it)
-        timeStampsDelta.push_back( it->second - (it - 1)->second );
+        timeStampDelta.push_back( std::get<2>(*it) - std::get<2>(*(it - 1)) );
 
     std::map<uint32_t, std::size_t> histTSDelta;
-    for (std::vector<int64_t>::const_iterator it = timeStampsDelta.begin();
-         it != timeStampsDelta.end();
+    for (std::vector<int64_t>::const_iterator it = timeStampDelta.begin();
+         it != timeStampDelta.end();
          ++it)
         ++histTSDelta[*it];
 
@@ -429,12 +435,12 @@ void Tester::rxHandlerMain()
         outFileInfo << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileInfo << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
         outFileInfo << "#\n";
-        outFileInfo << "#" << std::setw(23) << "Message size (bytes)" << std::setw(24) << "Timestamp (ns)" << "\n";
-        outFileInfo.setWidth(std::make_pair(24, 24));
+        outFileInfo << "#" << std::setw(23) << "Message size (bytes)" << std::setw(24) << "Sequence Number" << std::setw(24) << "Timestamp (ns)" << "\n";
+        outFileInfo.setWidth( std::make_tuple<std::size_t, std::size_t, std::size_t>(24, 24, 24) );
         std::for_each(
             msgInfo.begin(),
             msgInfo.end(),
-            std::bind(&RAIIFile::writePair<int64_t, uint64_t>, &outFileInfo, std::placeholders::_1));
+            std::bind(&RAIIFile::writeTriple<int64_t, uint32_t, uint64_t>, &outFileInfo, std::placeholders::_1));
         std::cout << "done!" << std::endl;
     }
     else
@@ -509,7 +515,8 @@ void usage(const std::string& name)
     std::cout << "  The file name is \"<fw_short_githash>_sizes.data\"." << std::endl;
     std::cout << "- A histogram of the timestamp difference between adjacent messages." << std::endl;
     std::cout << "  The file name is \"<fw_short_githash>_ts_delta.data\"." << std::endl;
-    std::cout << "- The full list of message sizes and timestamps of all received messages." << std::endl;
+    std::cout << "- The full list of message sizes, sequence number and timestamps of all " << std::endl;
+    std::cout << "  received messages." << std::endl;
     std::cout << "  The file name is \"<fw_short_githash>_info.data\"." << std::endl;
     std::cout << std::endl;
 }
