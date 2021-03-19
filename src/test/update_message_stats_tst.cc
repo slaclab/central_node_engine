@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iomanip>
 #include <thread>
+#include <tuple>
 #include <signal.h>
 #include <sys/mman.h>
 #include <boost/atomic.hpp>
@@ -65,7 +66,8 @@ public:
         fileName(name),
         file(name, std::ofstream::out | std::ofstream::binary),
         w1(w1_default),
-        w2(w2_default)
+        w2(w2_default),
+        w3(w3_default)
     {
         if (!file.is_open())
             throw std::ofstream::failure("Could not open " + fileName);
@@ -81,17 +83,28 @@ public:
         return *this;
     };
 
-    template<typename T, typename U>
-    void writePair(const std::pair<T, U>& rhs)
-    {
-        file << std::setw(w1) << rhs.first << std::setw(w2) << rhs.second << "\n";
-    };
-
     template<typename T>
     void write(const T& rhs)
     {
         file << std::setw(w1) << rhs << "\n";
     };
+
+    template<typename T, typename U>
+    void writePair(const std::pair<T, U>& rhs)
+    {
+        file << std::setw(w1) << rhs.first \
+             << std::setw(w2) << rhs.second \
+             << "\n";
+    };
+
+    template<typename T, typename U, typename V>
+    void writeTriple(const std::tuple<T, U, V>& rhs)
+    {
+        file << std::setw(w1) << std::get<0>(rhs) \
+             << std::setw(w2) << std::get<1>(rhs) \
+             << std::setw(w3) << std::get<2>(rhs) \
+             << "\n";
+    }
 
     void setWidth(std::size_t w)
     {
@@ -104,20 +117,28 @@ public:
         w2 = w.second;
     }
 
+    void setWidth(const std::tuple<std::size_t, std::size_t, std::size_t>& w)
+    {
+        w1 = std::get<0>(w);
+        w2 = std::get<1>(w);
+        w3 = std::get<2>(w);
+    }
+
     void resetWidth()
     {
         w1 = w1_default;
         w2 = w2_default;
+        w3 = w3_default;
     }
 
 private:
     std::string     fileName;
     std::ofstream   file;
-    std::size_t     w1;
-    std::size_t     w2;
+    std::size_t     w1, w2, w3;
 
     static const std::size_t w1_default = 24;
     static const std::size_t w2_default = 16;
+    static const std::size_t w3_default = 16;
 };
 
 class Tester
