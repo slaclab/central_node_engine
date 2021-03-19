@@ -257,7 +257,7 @@ void Tester::rxHandlerMain()
     std::size_t                     outOrderPackets { 0 };     // Number of out of order packets (based on seq. number)
     std::size_t                     sameSeqPackets  { 0 };     // Number of packets with the same previous seq. number
     bool                            firstPaket      { true };  // Flag to indicate the first received packet
-    std::size_t                     prevSeqNumber   { 0 };     // Sequence number of the previous packet
+    uint32_t                        prevSeqNumber   { 0 };     // Sequence number of the previous packet
     std::size_t                     strmReadTimeout { 10000 }; // Timeout for the Stream read. We use 10ms for the first read.
     int64_t                         got;                       // Number of bytes received
     uint8_t                         buf[100*1024];             // 100KBytes buffer
