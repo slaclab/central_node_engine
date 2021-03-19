@@ -170,7 +170,7 @@ outFileInfo     ( outDir + "/" + gitHash.substr(0, 7) + "_info.data"       ),
 timeout         ( strmTimeout ),
 run             ( true ),
 rxThread0       ( std::thread( &Tester::rxHandlerMain,     this ) ),
-rxThread1       ( std::thread( &Tester::rxHandlerSeconday, this ) ),
+rxThread1       ( std::thread( &Tester::rxHandlerSeconday, this ) )
 {
     std::cout << "Creating Tester object..." << std::endl;
 
