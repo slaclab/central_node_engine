@@ -253,6 +253,7 @@ void Tester::rxHandlerMain()
 
     std::size_t                     rxPackets       { 0 };     // Number of packet received
     std::size_t                     rxTimeouts      { 0 };     // Number of RX timeouts
+    std::size_t                     rxBadSizes      { 0 };     // Number of RX packets with unexpected size
     std::size_t                     lostPackets     { 0 };     // Number of lost packets (based on seq. number)
     std::size_t                     outOrderPackets { 0 };     // Number of out of order packets (based on seq. number)
     std::size_t                     sameSeqPackets  { 0 };     // Number of packets with the same previous seq. number
@@ -263,6 +264,10 @@ void Tester::rxHandlerMain()
     uint8_t                         buf[100*1024];             // 100KBytes buffer
     std::vector<msg_info_t>         msgInfo;                   // Information about each message (size, seq. number, timestamp)
     std::map<int64_t, std::size_t>  histSize;                  // Histogram (message sizes)
+
+    // This is the expected message size, in bytes:
+    //   header + 1024 apps x (192 x 2) bits/app + footer
+    const int64_t expectedPacketSize { 24 + 1024*192*2/8 + 1 };
 
     // Clear the software error flags before starting
     swErrorClear->execute();
@@ -278,6 +283,10 @@ void Tester::rxHandlerMain()
         if ( ! got )
         {
             ++rxTimeouts;
+        }
+        else if ( expectedPacketSize != got)
+        {
+            ++rxBadSizes;
         }
         else
         {
@@ -331,7 +340,6 @@ void Tester::rxHandlerMain()
 
             // Save the sequence number for the next loop
             prevSeqNumber = *sn;
-
         }
 
     }
@@ -356,6 +364,7 @@ void Tester::rxHandlerMain()
     std::cout << "===========================" << std::endl;
     std::cout << "Number of valid packet received : " << rxPackets       << std::endl;
     std::cout << "Number of lost packets          : " << lostPackets     << std::endl;
+    std::cout << "Number of packet with bad sizes : " << rxBadSizes      << std::endl;
     std::cout << "Number of packet with same seq. : " << sameSeqPackets  << std::endl;
     std::cout << "Number of out-of-order packets  : " << outOrderPackets << std::endl;
     std::cout << "Number of timeouts              : " << rxTimeouts      << std::endl;
