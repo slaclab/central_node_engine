@@ -126,7 +126,8 @@ public:
     Tester(Path root, const std::string &fwGitHash, const std::string& outputDir, std::size_t strmTimeout);
     ~Tester();
 
-    void rxHandler();
+    void rxHandlerMain();
+    void rxHandlerSeconday();
 
 private:
     ScalVal             enable;
@@ -137,7 +138,8 @@ private:
     ScalVal_RO          swLossError;
     ScalVal_RO          swLossCnt;
     ScalVal_RO          swOvflCnt;
-    Stream              strm;
+    Stream              strm0;
+    Stream              strm1;
     std::string         gitHash;
     std::string         outDir;
     RAIIFile            outFileSizes;
@@ -145,7 +147,8 @@ private:
     RAIIFile            outFileInfo;
     std::size_t         timeout;
     boost::atomic<bool> run;
-    std::thread         rxThread;
+    std::thread         rxThread0;
+    std::thread         rxThread1;
 };
 
 Tester::Tester(Path root, const std::string &fwGitHash, const std::string& outputDir, std::size_t strmTimeout)
@@ -158,7 +161,7 @@ swPause         ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplica
 swLossError     ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareLossError" ) ) ),
 swLossCnt       ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareLossCnt"   ) ) ),
 swOvflCnt       ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareOvflCnt"   ) ) ),
-strm            ( IStream::create(     root->findByName("/Stream0"                                                         ) ) ),
+strm0           ( IStream::create(     root->findByName("/Stream0"                                                         ) ) ),
 gitHash         ( fwGitHash ),
 outDir          ( outputDir ),
 outFileSizes    ( outDir + "/" + gitHash.substr(0, 7) + "_sizes.data"    ),
@@ -166,12 +169,17 @@ outFileTSDelta  ( outDir + "/" + gitHash.substr(0, 7) + "_ts_delta.data" ),
 outFileInfo     ( outDir + "/" + gitHash.substr(0, 7) + "_info.data"       ),
 timeout         ( strmTimeout ),
 run             ( true ),
-rxThread        ( std::thread( &Tester::rxHandler, this ) )
+rxThread0       ( std::thread( &Tester::rxHandlerMain,     this ) ),
+rxThread1       ( std::thread( &Tester::rxHandlerSeconday, this ) ),
 {
     std::cout << "Creating Tester object..." << std::endl;
 
-    if ( pthread_setname_np( rxThread.native_handle(), "rxThread" ) )
-      perror( "pthread_setname_np failed for rxThread" );
+    if ( pthread_setname_np( rxThread0.native_handle(), "rxThread0" ) )
+      perror( "pthread_setname_np failed for rxThread0" );
+
+
+    if ( pthread_setname_np( rxThread1.native_handle(), "rxThread1" ) )
+      perror( "pthread_setname_np failed for rxThread1" );
 
     std::cout << "Tester created." << std::endl;
     std::cout << std::endl;
@@ -183,7 +191,8 @@ Tester::~Tester()
 
     std::cout << "Stopping the Rx Thread..." << std::endl;
     run = false;
-    rxThread.join();
+    rxThread0.join();
+    rxThread1.join();
 
     std::cout << "Disabling MPS FW Software engine..." << std::endl;
     swEnable->setVal( static_cast<uint64_t>(0) );
@@ -193,9 +202,9 @@ Tester::~Tester()
     std::cout << std::endl;
 }
 
-void Tester::rxHandler()
+void Tester::rxHandlerMain()
 {
-    std::cout << "Rx Thread started" << std::endl;
+    std::cout << "Rx main thread started" << std::endl;
 
     // Declare as real time task
     struct sched_param  param;
@@ -232,11 +241,11 @@ void Tester::rxHandler()
     swEnable->setVal( static_cast<uint64_t>(1) );
 
     // Wait for the first packet
-    strm->read(buf, sizeof(buf), CTimeout(10000));
+    strm0->read(buf, sizeof(buf), CTimeout(10000));
 
     while (run)
     {
-        got = strm->read(buf, sizeof(buf), CTimeout(timeout));
+        got = strm0->read(buf, sizeof(buf), CTimeout(timeout));
         if ( ! got )
         {
             ++rxTimeouts;
@@ -256,7 +265,7 @@ void Tester::rxHandler()
 
     }
 
-    std::cout << "Rx Thread interrupted" << std::endl;
+    std::cout << "Rx main thread interrupted" << std::endl;
     std::cout << std::endl;
 
     // Create the message time stamp delta histogram
@@ -272,7 +281,7 @@ void Tester::rxHandler()
          ++it)
         ++histTSDelta[*it];
 
-    std::cout << "Rx Thread report:" << std::endl;
+    std::cout << "Rx main thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
     std::cout << "Number of valid packet received : " << rxPackages << std::endl;
     std::cout << "Number of timeouts              : " << rxTimeouts << std::endl;
@@ -367,6 +376,48 @@ void Tester::rxHandler()
         std::cout << "Data files not created, as no valid packet was received." << std::endl;
     }
 
+    std::cout << std::endl;
+}
+
+void Tester::rxHandlerSeconday()
+{
+    std::cout << "Rx secondary thread started" << std::endl;
+
+    // Declare as real time task
+    struct sched_param  param;
+    param.sched_priority = rtPriority;
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
+    {
+        perror("sched_setscheduler failed");
+        exit(-1);
+    }
+
+    // Lock memory
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
+    {
+        perror("mlockall failed");
+        exit(-2);
+    }
+
+    // Pre-fault our stack
+    stack_prefault();
+
+    std::size_t rxPackages { 0 }; // Number of packet received
+    uint8_t     buf[100*1024];    // 100KBytes buffer
+
+    while(run)
+    {
+        if(strm1->read(buf, sizeof(buf), CTimeout(timeout)))
+            // Increase RX packet counter
+            ++rxPackages;
+    }
+
+    std::cout << "Rx secondary thread interrupted" << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Rx secondary thread report:" << std::endl;
+    std::cout << "===========================" << std::endl;
+    std::cout << "Number of packet received : " << rxPackages << std::endl;
     std::cout << std::endl;
 }
 
