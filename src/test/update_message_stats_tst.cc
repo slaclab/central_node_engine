@@ -162,6 +162,7 @@ swLossError     ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplica
 swLossCnt       ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareLossCnt"   ) ) ),
 swOvflCnt       ( IScalVal_RO::create( root->findByName("/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareOvflCnt"   ) ) ),
 strm0           ( IStream::create(     root->findByName("/Stream0"                                                         ) ) ),
+strm1           ( IStream::create(     root->findByName("/Stream1"                                                         ) ) ),
 gitHash         ( fwGitHash ),
 outDir          ( outputDir ),
 outFileSizes    ( outDir + "/" + gitHash.substr(0, 7) + "_sizes.data"    ),
