@@ -251,7 +251,7 @@ void Tester::rxHandlerMain()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t                     rxPackages      { 0 };     // Number of packet received
+    std::size_t                     rxPackets       { 0 };     // Number of packet received
     std::size_t                     rxTimeouts      { 0 };     // Number of RX timeouts
     std::size_t                     lostPackets     { 0 };     // Number of lost packets (based on seq. number)
     std::size_t                     outOrderPackets { 0 };     // Number of out of order packets (based on seq. number)
@@ -282,7 +282,7 @@ void Tester::rxHandlerMain()
         else
         {
             // Increase RX packet counter
-            ++rxPackages;
+            ++rxPackets;
 
             // Update the message size histogram
             ++histSize[got];
@@ -354,7 +354,7 @@ void Tester::rxHandlerMain()
 
     std::cout << "Rx main thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
-    std::cout << "Number of valid packet received : " << rxPackages      << std::endl;
+    std::cout << "Number of valid packet received : " << rxPackets       << std::endl;
     std::cout << "Number of lost packets          : " << lostPackets     << std::endl;
     std::cout << "Number of packet with same seq. : " << sameSeqPackets  << std::endl;
     std::cout << "Number of out-of-order packets  : " << outOrderPackets << std::endl;
@@ -362,7 +362,7 @@ void Tester::rxHandlerMain()
     std::cout << "Stream read timeout used (us)   : " << timeout         << std::endl;
 
     // Do not print this info if not packet was received
-    if (rxPackages)
+    if (rxPackets)
     {
         std::cout << "Min message size (bytes)        : " << histSize.begin()->first    << std::endl;
         std::cout << "Max message size (bytes)        : " << histSize.rbegin()->first   << std::endl;
@@ -386,14 +386,14 @@ void Tester::rxHandlerMain()
     std::cout << "FW SoftwareOvflCnt              : " << unsigned(packetOverflowCnt) << std::endl;
 
     // Do not create the data file is not packet was received
-    if (rxPackages)
+    if (rxPackets)
     {
         // Write the message size histogram result to the output file
         std::cout << "Writing data to                 : '" << outFileSizes.getName() << "'... ";
 
         outFileSizes << "# FW version                      : " << gitHash                  << "\n";
         outFileSizes << "# FW version                      : " << gitHash.c_str()          << "\n";
-        outFileSizes << "# Number of valid packet received : " << rxPackages               << "\n";
+        outFileSizes << "# Number of valid packet received : " << rxPackets                << "\n";
         outFileSizes << "# Number of timeouts              : " << rxTimeouts               << "\n";
         outFileSizes << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileSizes << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
@@ -412,7 +412,7 @@ void Tester::rxHandlerMain()
 
         outFileTSDelta << "# FW version                      : " << gitHash                  << "\n";
         outFileTSDelta << "# FW version                      : " << gitHash.c_str()          << "\n";
-        outFileTSDelta << "# Number of valid packet received : " << rxPackages               << "\n";
+        outFileTSDelta << "# Number of valid packet received : " << rxPackets                << "\n";
         outFileTSDelta << "# Number of timeouts              : " << rxTimeouts               << "\n";
         outFileTSDelta << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileTSDelta << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
@@ -431,7 +431,7 @@ void Tester::rxHandlerMain()
 
         outFileInfo << "# FW version                      : " << gitHash                  << "\n";
         outFileInfo << "# FW version                      : " << gitHash.c_str()          << "\n";
-        outFileInfo << "# Number of valid packet received : " << rxPackages               << "\n";
+        outFileInfo << "# Number of valid packet received : " << rxPackets                << "\n";
         outFileInfo << "# Number of timeouts              : " << rxTimeouts               << "\n";
         outFileInfo << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileInfo << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
@@ -476,14 +476,14 @@ void Tester::rxHandlerSeconday()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t rxPackages { 0 }; // Number of packet received
-    uint8_t     buf[100*1024];    // 100KBytes buffer
+    std::size_t rxPackets      { 0 }; // Number of packet received
+    uint8_t     buf[100*1024];        // 100KBytes buffer
 
     while(run)
     {
         if(strm1->read(buf, sizeof(buf), CTimeout(timeout)))
             // Increase RX packet counter
-            ++rxPackages;
+            ++rxPackets;
     }
 
     std::cout << "Rx secondary thread interrupted" << std::endl;
@@ -491,7 +491,7 @@ void Tester::rxHandlerSeconday()
 
     std::cout << "Rx secondary thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
-    std::cout << "Number of packet received : " << rxPackages << std::endl;
+    std::cout << "Number of packet received : " << rxPackets << std::endl;
     std::cout << std::endl;
 }
 
