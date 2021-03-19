@@ -247,12 +247,17 @@ void Tester::rxHandlerMain()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t                                 rxPackages { 0 }; // Number of packet received
-    std::size_t                                 rxTimeouts { 0 }; // Number of RX timeouts
-    int64_t                                     got;              // Number of bytes received
-    uint8_t                                     buf[100*1024];    // 100KBytes buffer
-    std::vector< std::pair<int64_t, uint64_t> > msgInfo;          // Information about each message (size, timestamp)
-    std::map<int64_t, std::size_t>              histSize;         // Histogram (message sizes)
+    std::size_t                                 rxPackages      { 0 };    // Number of packet received
+    std::size_t                                 rxTimeouts      { 0 };    // Number of RX timeouts
+    std::size_t                                 lostPackets     { 0 };    // Number of lost packets (based on seq. number)
+    std::size_t                                 outOrderPackets { 0 };    // Number of out of order packets (based on seq. number)
+    std::size_t                                 sameSeqPackets  { 0 };    // Number of packets with the same previous seq. number
+    bool                                        firstPaket      { true }; // Flag to indicate the first received packet
+    std::size_t                                 prevSeqNumber   { 0 };    // Sequence number of the previous packet
+    int64_t                                     got;                      // Number of bytes received
+    uint8_t                                     buf[100*1024];            // 100KBytes buffer
+    std::vector< std::pair<int64_t, uint64_t> > msgInfo;                  // Information about each message (size, timestamp)
+    std::map<int64_t, std::size_t>              histSize;                 // Histogram (message sizes)
 
     // Clear the software error flags before starting
     swErrorClear->execute();
@@ -283,6 +288,42 @@ void Tester::rxHandlerMain()
       	    // Extract the time stamp from the header, and save it
             const uint64_t* ts = reinterpret_cast<const uint64_t*>(&(*(buf + 8)));
             msgInfo.push_back( std::make_pair(got, *ts) );
+
+            // Extract the sequence number from the header, and save it
+            const uint32_t* sn = reinterpret_cast<const uint32_t*>(&(*(buf + 16)));
+
+            // Check for lost and out of order packets, based on the sequence number
+            if (firstPaket)
+            {
+                // We don't process the first packet, as we don't
+                // have anything to compare.
+
+                // Clear flag so that the next packet is processed
+                firstPaket = false;
+            }
+            else
+            {
+                // Calculate the difference between the sequence number of the current
+                // and previous packet. This difference will be:
+                // == 1 : Ok.
+                // == 0 : packet with same seq. number
+                // <  0 : packet received out of order
+                // >  0 : lost packets (the difference less one is the number of missing packets)
+                int32_t seqDelta { *sn - prevSeqNumber };
+                if ( 1 != seqDelta )
+                {
+                    if ( 0 == seqDelta)
+                        ++sameSeqPackets;
+                    else if ( seqDelta > 0 )
+                        lostPackets += (seqDelta - 1);
+                    else
+                        ++outOrderPackets;
+                }
+            }
+
+            // Save the sequence number for the next loop
+            prevSeqNumber = *sn;
+
         }
 
     }
@@ -305,9 +346,12 @@ void Tester::rxHandlerMain()
 
     std::cout << "Rx main thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
-    std::cout << "Number of valid packet received : " << rxPackages << std::endl;
-    std::cout << "Number of timeouts              : " << rxTimeouts << std::endl;
-    std::cout << "Stream read timeout used (us)   : " << timeout    << std::endl;
+    std::cout << "Number of valid packet received : " << rxPackages      << std::endl;
+    std::cout << "Number of lost packets          : " << lostPackets     << std::endl;
+    std::cout << "Number of packet with same seq. : " << sameSeqPackets  << std::endl;
+    std::cout << "Number of out-of-order packets  : " << outOrderPackets << std::endl;
+    std::cout << "Number of timeouts              : " << rxTimeouts      << std::endl;
+    std::cout << "Stream read timeout used (us)   : " << timeout         << std::endl;
 
     // Do not print this info if not packet was received
     if (rxPackages)
