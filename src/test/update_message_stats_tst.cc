@@ -156,7 +156,15 @@ public:
 
     const uint64_t getTimeStamp() const
     {
-        return getWord<uint64_t>(TimeStampOffset);
+        // The Timestamp structure is:
+        // - High 32-bit word : seconds.
+        // - Low 32-bit word  : nanoseconds.
+        // So, we need to read both word and do the conversion to ns.
+        uint64_t ts { getWord<uint32_t>(TimeStampOffset+4) }; // Extract the seconds
+        ts *= 1e9;                                            // Convert seconds to nanoseconds
+        ts += getWord<uint32_t>(TimeStampOffset);             // Extract and add the nanonseconds
+
+        return (ts);
     }
 
     const uint32_t getSequenceNumber() const
