@@ -337,72 +337,71 @@ void Tester::rxHandlerMain()
         }
         else
         {
-
             if (expectedPacketSize != got)
-            {
                 // We got a packet with an unexpected size.
                 // Increment the bad size RX packet counter.
                 ++rxBadSizes;
-
-                // If the packet has a size lower than the header size, we only store
-                // is size, and we put '0' in the other fields.
-                // Otherwise, we will continue with the rest of the code, and try to
-                // at least extract the header information.
-                if (got < MpsHeader::HeaderSize)
-                {
-                    msgInfo.push_back( std::make_tuple(got, 0, 0) );
-                    continue;
-                }
-            }
             else
-            {
                 // We got a packet with the expected size.
                 // Increase valid RX packet counter.
                 ++rxPackets;
+
+            uint64_t timeStamp;
+            uint32_t seqNum;
+
+            // If the packet has a size lower than the header size, we can not extract
+            // the header information, and therefore we can not do the message sequence
+            // checks. We only store the message size, and put '0' in the other fields.
+            if (got < MpsHeader::HeaderSize)
+            {
+                timeStamp = 0;
+                seqNum    = 0;
+            }
+            else
+            {
+                // Create a header object and extract the info from it
+                MpsHeader h(buf, got);
+                timeStamp = h.getTimeStamp();
+                seqNum    = h.getSequenceNumber();
+
+                // Check for lost and out of order packets, based on the sequence number
+                if (firstPacket)
+                {
+                    // We don't process the first packet, as we don't
+                    // have anything to compare.
+
+                    // Clear flag so that the next packet is processed
+                    firstPacket = false;
+                }
+                else
+                {
+                    // Calculate the difference between the sequence number of the current
+                    // and previous packet. This difference will be:
+                    // == 1 : Ok.
+                    // == 0 : packet with same seq. number
+                    // <  0 : packet received out of order
+                    // >  0 : lost packets (the difference less one is the number of missing packets)
+                    int64_t seqDelta { seqNum - prevSeqNumber };
+                    if ( 1 != seqDelta )
+                    {
+                        if ( 0 == seqDelta)
+                            ++sameSeqPackets;
+                        else if ( seqDelta > 0 )
+                            lostPackets += (seqDelta - 1);
+                        else
+                            ++outOrderPackets;
+                    }
+                }
+
+                // Save the sequence number for the next loop
+                prevSeqNumber = seqNum;
             }
 
             // Update the message size histogram
             ++histSize[got];
 
-            // Create a header object and extract the info from it
-            MpsHeader h(buf, got);
-            uint64_t timeStamp { h.getTimeStamp()      };
-            uint32_t seqNum    { h.getSequenceNumber() };
-
             // Save the message information
             msgInfo.push_back( std::make_tuple(got, seqNum, timeStamp) );
-
-            // Check for lost and out of order packets, based on the sequence number
-            if (firstPacket)
-            {
-                // We don't process the first packet, as we don't
-                // have anything to compare.
-
-                // Clear flag so that the next packet is processed
-                firstPacket = false;
-            }
-            else
-            {
-                // Calculate the difference between the sequence number of the current
-                // and previous packet. This difference will be:
-                // == 1 : Ok.
-                // == 0 : packet with same seq. number
-                // <  0 : packet received out of order
-                // >  0 : lost packets (the difference less one is the number of missing packets)
-                int64_t seqDelta { seqNum - prevSeqNumber };
-                if ( 1 != seqDelta )
-                {
-                    if ( 0 == seqDelta)
-                        ++sameSeqPackets;
-                    else if ( seqDelta > 0 )
-                        lostPackets += (seqDelta - 1);
-                    else
-                        ++outOrderPackets;
-                }
-            }
-
-            // Save the sequence number for the next loop
-            prevSeqNumber = seqNum;
         }
 
     }
