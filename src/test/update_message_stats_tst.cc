@@ -462,10 +462,14 @@ void Tester::rxHandlerMain()
         // Write the message size histogram result to the output file
         std::cout << "Writing data to                 : '" << outFileSizes.getName() << "'... ";
 
-        outFileSizes << "# FW version                      : " << gitHash                  << "\n";
         outFileSizes << "# FW version                      : " << gitHash.c_str()          << "\n";
         outFileSizes << "# Number of valid packet received : " << rxPackets                << "\n";
+        outFileSizes << "# Number of lost packets          : " << lostPackets              << "\n";
+        outFileSizes << "# Number of packet with bad sizes : " << rxBadSizes               << "\n";
+        outFileSizes << "# Number of packet with same seq. : " << sameSeqPackets           << "\n";
+        outFileSizes << "# Number of out-of-order packets  : " << outOrderPackets          << "\n";
         outFileSizes << "# Number of timeouts              : " << rxTimeouts               << "\n";
+        outFileSizes << "# Stream read timeout used (us)   : " << timeout                  << "\n";
         outFileSizes << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileSizes << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileSizes << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
@@ -481,10 +485,14 @@ void Tester::rxHandlerMain()
         // Write the timestamp delta histogram result to the output file
         std::cout << "Writing data to                 : '" << outFileTSDelta.getName() << "'... ";
 
-        outFileTSDelta << "# FW version                      : " << gitHash                  << "\n";
         outFileTSDelta << "# FW version                      : " << gitHash.c_str()          << "\n";
         outFileTSDelta << "# Number of valid packet received : " << rxPackets                << "\n";
+        outFileTSDelta << "# Number of lost packets          : " << lostPackets              << "\n";
+        outFileTSDelta << "# Number of packet with bad sizes : " << rxBadSizes               << "\n";
+        outFileTSDelta << "# Number of packet with same seq. : " << sameSeqPackets           << "\n";
+        outFileTSDelta << "# Number of out-of-order packets  : " << outOrderPackets          << "\n";
         outFileTSDelta << "# Number of timeouts              : " << rxTimeouts               << "\n";
+        outFileTSDelta << "# Stream read timeout used (us)   : " << timeout                  << "\n";
         outFileTSDelta << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileTSDelta << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileTSDelta << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
@@ -500,10 +508,14 @@ void Tester::rxHandlerMain()
         // Write the full list of timestamps to the output file
         std::cout << "Writing data to                 : '" << outFileInfo.getName() << "'... ";
 
-        outFileInfo << "# FW version                      : " << gitHash                  << "\n";
         outFileInfo << "# FW version                      : " << gitHash.c_str()          << "\n";
         outFileInfo << "# Number of valid packet received : " << rxPackets                << "\n";
+        outFileInfo << "# Number of lost packets          : " << lostPackets              << "\n";
+        outFileInfo << "# Number of packet with bad sizes : " << rxBadSizes               << "\n";
+        outFileInfo << "# Number of packet with same seq. : " << sameSeqPackets           << "\n";
+        outFileInfo << "# Number of out-of-order packets  : " << outOrderPackets          << "\n";
         outFileInfo << "# Number of timeouts              : " << rxTimeouts               << "\n";
+        outFileInfo << "# Stream read timeout used (us)   : " << timeout                  << "\n";
         outFileInfo << "# Min message size (bytes)        : " << histSize.begin()->first  << "\n";
         outFileInfo << "# Max message size (bytes)        : " << histSize.rbegin()->first << "\n";
         outFileInfo << "# FW SoftwareLossCnt              : " << packetLossCnt            << "\n";
