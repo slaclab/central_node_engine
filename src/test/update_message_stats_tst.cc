@@ -42,7 +42,7 @@ void intHandler(int dummy) {}
 class IYamlSetIP : public IYamlFixup
 {
 public:
-    IYamlSetIP( std::string ip_addr ) : ip_addr_(ip_addr) {}
+    explicit IYamlSetIP(const std::string& ip_addr) : ip_addr_(ip_addr) {}
     ~IYamlSetIP() {}
 
     virtual void operator()(YAML::Node &root, YAML::Node &top)
@@ -62,7 +62,7 @@ private:
 class RAIIFile
 {
 public:
-    RAIIFile(const std::string &name)
+    explicit RAIIFile(const std::string &name)
     :
         fileName(name),
         file(name, std::ofstream::out | std::ofstream::binary),
@@ -145,7 +145,7 @@ private:
 class MpsHeader
 {
 public:
-    MpsHeader(uint8_t* header, std::size_t size)
+    MpsHeader(uint8_t* header, int64_t size)
     :
         _header(header),
         _size(size)
@@ -165,7 +165,7 @@ public:
     }
 
     // Size of the header, in bytes
-    static const std::size_t HeaderSize = 24;
+    static const int64_t HeaderSize = 24;
 
 private:
     // Header word offsets
@@ -178,9 +178,8 @@ private:
         return *( reinterpret_cast<const T*>(&(*(_header + offset))) );
     }
 
-    uint8_t*    _header;
-    std::size_t _size;
-
+    uint8_t* _header;
+    int64_t  _size;
 };
 
 class Tester
@@ -302,7 +301,6 @@ void Tester::rxHandlerMain()
     bool                            firstPacket     { true };  // Flag to indicate the first received packet
     uint32_t                        prevSeqNumber   { 0 };     // Sequence number of the previous packet
     std::size_t                     strmReadTimeout { 10000 }; // Timeout for the Stream read. We use 10ms for the first read.
-    int64_t                         got;                       // Number of bytes received
     uint8_t                         buf[100*1024];             // 100KBytes buffer
     std::vector<msg_info_t>         msgInfo;                   // Information about each message (size, seq. number, timestamp)
     std::map<int64_t, std::size_t>  histSize;                  // Histogram (message sizes)
@@ -321,7 +319,7 @@ void Tester::rxHandlerMain()
 
     while (run)
     {
-        got = strm0->read(buf, sizeof(buf), CTimeout(strmReadTimeout));
+        int64_t got = strm0->read(buf, sizeof(buf), CTimeout(strmReadTimeout));
 
         // After the first packet, we use the defined timeout for reading
         // the update messages.
@@ -675,7 +673,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if (seconds <= 0)
+    if (0 == seconds)
     {
         std::cout << "Number of iterations must be greater that 0" << std::endl;
         exit(1);
