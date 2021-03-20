@@ -366,11 +366,11 @@ void Tester::rxHandlerMain()
 
             // Create a header object and extract the info from it
             MpsHeader h(buf, got);
-            std::size_t timeStamp { h.getTimeStamp()      };
-            std::size_t seqNum    { h.getSequenceNumber() };
+            uint64_t timeStamp { h.getTimeStamp()      };
+            uint32_t seqNum    { h.getSequenceNumber() };
 
             // Save the message information
-            msgInfo.push_back( std::make_tuple(got, timeStamp, seqNum) );
+            msgInfo.push_back( std::make_tuple(got, seqNum, timeStamp) );
 
             // Check for lost and out of order packets, based on the sequence number
             if (firstPacket)
