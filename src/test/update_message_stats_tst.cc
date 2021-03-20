@@ -151,7 +151,7 @@ public:
         _size(size)
     {
         if (_size < HeaderSize)
-            throw std::runtime_error("Trying to construct a MpsHeader object on buffer with size %zu", _size);
+            throw std::runtime_error("Trying to construct a MpsHeader object on buffer too small");
     };
 
     const uint64_t getTimeStamp() const
@@ -173,7 +173,7 @@ private:
     static const std::size_t SequenceNumberOffset = 16;
 
     template<typename T>
-    T getWord(std::size_t offset)
+    const T getWord(std::size_t offset) const
     {
         return *( reinterpret_cast<const T*>(&(*(_header + offset))) );
     }
