@@ -365,7 +365,7 @@ void Tester::rxHandlerMain()
             ++histSize[got];
 
             // Create a header object and extract the info from it
-            h = MpsHeader(buf, got);
+            MpsHeader h(buf, got);
             std::size_t timeStamp { h.getTimeStamp()      };
             std::size_t seqNum    { h.getSequenceNumber() };
 
