@@ -299,7 +299,7 @@ void Tester::rxHandlerMain()
     std::size_t                     lostPackets     { 0 };     // Number of lost packets (based on seq. number)
     std::size_t                     outOrderPackets { 0 };     // Number of out of order packets (based on seq. number)
     std::size_t                     sameSeqPackets  { 0 };     // Number of packets with the same previous seq. number
-    bool                            firstPaket      { true };  // Flag to indicate the first received packet
+    bool                            firstPacket     { true };  // Flag to indicate the first received packet
     uint32_t                        prevSeqNumber   { 0 };     // Sequence number of the previous packet
     std::size_t                     strmReadTimeout { 10000 }; // Timeout for the Stream read. We use 10ms for the first read.
     int64_t                         got;                       // Number of bytes received
@@ -322,43 +322,64 @@ void Tester::rxHandlerMain()
     while (run)
     {
         got = strm0->read(buf, sizeof(buf), CTimeout(strmReadTimeout));
-        if ( ! got )
+
+        // After the first packet, we use the defined timeout for reading
+        // the update messages.
+        // Note: the "firstPacket" flag will be clear after the first packet
+        // with at least a header size is received.
+        if (firstPacket)
+            strmReadTimeout = timeout;
+
+        if ( 0 == got )
         {
+            // We got a timeout if read returns 0.
             ++rxTimeouts;
-        }
-        else if ( expectedPacketSize != got)
-        {
-            ++rxBadSizes;
         }
         else
         {
-            // Increase RX packet counter
-            ++rxPackets;
+
+            if (expectedPacketSize != got)
+            {
+                // We got a packet with an unexpected size.
+                // Increment the bad size RX packet counter.
+                ++rxBadSizes;
+
+                // If the packet has a size lower than the header size, we only store
+                // is size, and we put '0' in the other fields.
+                // Otherwise, we will continue with the rest of the code, and try to
+                // at least extract the header information.
+                if (got < MpsHeader::HeaderSize)
+                {
+                    msgInfo.push_back( std::make_tuple(got, 0, 0) );
+                    continue;
+                }
+            }
+            else
+            {
+                // We got a packet with the expected size.
+                // Increase valid RX packet counter.
+                ++rxPackets;
+            }
 
             // Update the message size histogram
             ++histSize[got];
 
-      	    // Extract the time stamp from the header
-            const uint64_t* ts = reinterpret_cast<const uint64_t*>(&(*(buf + 8)));
-
-            // Extract the sequence number from the header
-            const uint32_t* sn = reinterpret_cast<const uint32_t*>(&(*(buf + 16)));
+            // Create a header object and extract the info from it
+            h = MpsHeader(buf, got);
+            std::size_t timeStamp { h.getTimeStamp()      };
+            std::size_t seqNum    { h.getSequenceNumber() };
 
             // Save the message information
-            msgInfo.push_back( std::make_tuple(got, *sn, *ts) );
+            msgInfo.push_back( std::make_tuple(got, timeStamp, seqNum) );
 
             // Check for lost and out of order packets, based on the sequence number
-            if (firstPaket)
+            if (firstPacket)
             {
                 // We don't process the first packet, as we don't
                 // have anything to compare.
 
-                // After the first packet, we used the defined timeout for reading
-                // the update messages.
-                strmReadTimeout = timeout;
-
                 // Clear flag so that the next packet is processed
-                firstPaket = false;
+                firstPacket = false;
             }
             else
             {
@@ -368,7 +389,7 @@ void Tester::rxHandlerMain()
                 // == 0 : packet with same seq. number
                 // <  0 : packet received out of order
                 // >  0 : lost packets (the difference less one is the number of missing packets)
-                int64_t seqDelta { *sn - prevSeqNumber };
+                int64_t seqDelta { seqNum - prevSeqNumber };
                 if ( 1 != seqDelta )
                 {
                     if ( 0 == seqDelta)
@@ -381,7 +402,7 @@ void Tester::rxHandlerMain()
             }
 
             // Save the sequence number for the next loop
-            prevSeqNumber = *sn;
+            prevSeqNumber = seqNum;
         }
 
     }
