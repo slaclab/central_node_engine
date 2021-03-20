@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <thread>
 #include <tuple>
+#include <stdexcept>
 #include <signal.h>
 #include <sys/mman.h>
 #include <boost/atomic.hpp>
@@ -139,6 +140,47 @@ private:
     static const std::size_t w1_default = 24;
     static const std::size_t w2_default = 16;
     static const std::size_t w3_default = 16;
+};
+
+class MpsHeader
+{
+public:
+    MpsHeader(uint8_t* header, std::size_t size)
+    :
+        _header(header),
+        _size(size)
+    {
+        if (_size < HeaderSize)
+            throw std::runtime_error("Trying to construct a MpsHeader object on buffer with size %zu", _size);
+    };
+
+    const uint64_t getTimeStamp() const
+    {
+        return getWord<uint64_t>(TimeStampOffset);
+    }
+
+    const uint32_t getSequenceNumber() const
+    {
+        return getWord<uint32_t>(SequenceNumberOffset);
+    }
+
+    // Size of the header, in bytes
+    static const std::size_t HeaderSize = 24;
+
+private:
+    // Header word offsets
+    static const std::size_t TimeStampOffset      =  8;
+    static const std::size_t SequenceNumberOffset = 16;
+
+    template<typename T>
+    T getWord(std::size_t offset)
+    {
+        return *( reinterpret_cast<const T*>(&(*(_header + offset))) );
+    }
+
+    uint8_t*    _header;
+    std::size_t _size;
+
 };
 
 class Tester
