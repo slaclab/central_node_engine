@@ -107,6 +107,7 @@ class Firmware {
   ScalVal_RO _swWdErrorSV;
   ScalVal_RO _swOvflCntSV;
   Stream     _updateStreamSV;
+  Stream     _pcChangeStreamSV;
 
   Command    _swHeartbeatCmd;
   Command    _monErrClearCmd;
@@ -130,6 +131,24 @@ class Firmware {
 #endif
 
  public:
+  // Power class asynchronous message structure (data type)
+  typedef struct
+  {
+                          // Header:
+    uint32_t header[2];   //   - Non-MPS related words
+    uint16_t tag;         //   - Message tag (counter)
+    uint8_t  flags;       //   - Status flags
+    uint8_t  gap_0;       //   - Unsed byte
+                          // Payload:
+    uint16_t timeStamp;   //   - Timestamp
+    uint16_t gap_1[3];    //   - The timestamp only used the lower 16-bit word.
+    uint64_t powerClass;  //   - Power class word (4 dest * 4-bit/dest)
+                          // Tail:
+    uint8_t  tail;        //   - Non-MPS related byte
+  }
+  __attribute__((packed, aligned(1)))
+  pc_change_t;
+
   uint64_t fpgaVersion;
   uint8_t buildStamp[256];
   char gitHashString[21];
@@ -179,6 +198,7 @@ class Firmware {
   bool clearAll();
 
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
+  int64_t readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
   void writeMitigation(uint32_t *mitigation);
   void writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]);
 
