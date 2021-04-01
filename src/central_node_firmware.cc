@@ -622,7 +622,7 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
   return val;
 }
 
-int64_t Firmware::readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t timeout)
+int64_t Firmware::readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t timeout) const
 {
     int64_t ret {0};
 

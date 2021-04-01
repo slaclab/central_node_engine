@@ -72,7 +72,7 @@ class MpsDb {
   void mitigationWriter();
 
   void fwPCChangeReader();
-  void printPCChangeLastPacketInfo();
+  void printPCChangeLastPacketInfo() const;
 
   bool                    inputsUpdated;
   std::mutex              inputsUpdatedMutex;
@@ -167,9 +167,9 @@ class MpsDb {
   void showFault(DbFaultPtr fault);
   void showMitigation();
   void showInfo();
-  void printPCChangeInfo();
+  void printPCChangeInfo() const;
   void PCChangeSetDebug(bool debug);
-  void printPCCounters();
+  void printPCCounters() const;
 
   void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void writeFirmwareConfiguration(bool forceAomAllow = false);

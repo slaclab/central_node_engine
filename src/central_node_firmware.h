@@ -198,7 +198,7 @@ class Firmware {
   bool clearAll();
 
   uint64_t readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
-  int64_t readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t timeout);
+  int64_t readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t timeout) const;
   void writeMitigation(uint32_t *mitigation);
   void writeTimingChecking(uint32_t time[], uint32_t period[], uint32_t charge[]);
 

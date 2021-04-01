@@ -1189,7 +1189,7 @@ void MpsDb::showInfo() {
   std::cout << "Update timout counter : " << _updateTimeoutCounter << std::endl;
 }
 
-void MpsDb::printPCChangeLastPacketInfo()
+void MpsDb::printPCChangeLastPacketInfo() const
 {
     std::cout << "Tag        : "   << _pcChangeTag << std::endl;
     std::cout << "Flags      : 0x" << std::setw(2) << std::setfill('0') << std::hex << unsigned(_pcChangeFlags) << std::dec << std::endl;
@@ -1197,7 +1197,7 @@ void MpsDb::printPCChangeLastPacketInfo()
     std::cout << "PowerClass : 0x" << std::setw(16) << std::setfill('0') << std::hex << _pcChangePowerClass << std::dec << std::endl;
 }
 
-void MpsDb::printPCChangeInfo()
+void MpsDb::printPCChangeInfo() const
 {
     std::cout << "Power Class Change Messages Info:" << std::endl;
     std::cout << "---------------------------------" << std::endl;
@@ -1212,7 +1212,7 @@ void MpsDb::printPCChangeInfo()
     std::cout << "---------------------------------" << std::endl;
 }
 
-void MpsDb::printPCCounters()
+void MpsDb::printPCCounters() const
 {
 
     std::cout << "Power Class Counters:"<< std::endl;
