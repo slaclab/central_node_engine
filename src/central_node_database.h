@@ -117,6 +117,9 @@ class MpsDb {
   uint8_t     _pcChangeFlags;           // Last received message flags
   uint16_t    _pcChangeTimeStamp;       // Last received message timestamp
   uint64_t    _pcChangePowerClass;      // Last received message power class
+  // Power class ttansition counters. One counter for each power class, for each destination.
+  // Each word counts the number of transition to that power class/destination combination.
+  std::size_t _pcCounters[NUM_DESTINATIONS][1<<POWER_CLASS_BIT_SIZE];
 
   Timer<double> mitigationTxTime;
 
@@ -166,6 +169,7 @@ class MpsDb {
   void showInfo();
   void printPCChangeInfo();
   void PCChangeSetDebug(bool debug);
+  void printPCCounters();
 
   void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void writeFirmwareConfiguration(bool forceAomAllow = false);

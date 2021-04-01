@@ -66,6 +66,11 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   if (!_initialized) {
     _initialized = true;
 
+    // Initialize the Power class ttansition counters
+    for (std::size_t i {0}; i < NUM_DESTINATIONS; ++i)
+      for (std::size_t j {0}; j < (1<<POWER_CLASS_BIT_SIZE); ++j)
+        _pcCounters[i][j] = 0;
+
     //  Set thread names
     if ( pthread_setname_np( updateInputThread.native_handle(), "InputUpdates" ) )
       perror( "pthread_setname_np failed for updateInputThread" );
@@ -1207,6 +1212,34 @@ void MpsDb::printPCChangeInfo()
     std::cout << "---------------------------------" << std::endl;
 }
 
+void MpsDb::printPCCounters()
+{
+
+    std::cout << "Power Class Counters:"<< std::endl;
+    std::cout << std::setw(124) << std::setfill('-') << "" << std::setfill(' ') << std::endl;
+
+    // Print the header
+    std::cout << std::setw(9) << "";
+    for (std::size_t j {0}; j < (1<<POWER_CLASS_BIT_SIZE); ++j)
+        std::cout << "pc[" << std::setw(2) << std::setfill('0') << j << "] " << std::setfill(' ');
+    std::cout << std::endl;
+
+    // Print the matrix
+    for (std::size_t i {0}; i < NUM_DESTINATIONS; ++i) {
+        std::cout << "dest[" << std::setw(2) << std::setfill('0') << i << "] " << std::setfill(' ');
+        for (std::size_t j {0}; j < (1<<POWER_CLASS_BIT_SIZE); ++j) {
+            std::cout << std::setw(6) << _pcCounters[i][j];
+            std::cout << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::setw(124) << std::setfill('-') << "" << std::setfill(' ') << std::endl;
+    std::cout << std::endl;
+
+    printPCChangeInfo();
+}
+
 void MpsDb::clearUpdateTime() {
   _clearUpdateTime = true;
 }
@@ -1387,15 +1420,25 @@ void MpsDb::fwPCChangeReader()
 
             }
 
-            // Count the number of packet with MonitorReady flag = 0
-            if (0 == (pData->flags & 0x01))
-                ++_pcMonNotReadyCounter;
-
             // Save the message information
             _pcChangeTag = pData->tag;
             _pcChangeFlags = pData->flags;
             _pcChangeTimeStamp = pData->timeStamp;
             _pcChangePowerClass = pData->powerClass;
+
+            // Count the number of packet with MonitorReady flag = 0
+            // If the 'MonitorFlag' is set, increase the corresponding power class ttansition counters.
+            // Otherwise, increase the '_pcMonNotReadyCounter' counter instead.
+            if (_pcChangeFlags & 0x01) {
+                uint64_t pcw { _pcChangePowerClass };
+                for (std::size_t dest {0}; dest < NUM_DESTINATIONS; ++dest) {
+                    uint8_t pc { static_cast<uint8_t>( pcw & ( (1<<POWER_CLASS_BIT_SIZE) - 1) ) };
+                    ++_pcCounters[dest][pc];
+                    pcw >>= POWER_CLASS_BIT_SIZE;
+                }
+            } else {
+                ++_pcMonNotReadyCounter;
+            }
 
             // Print the received packet content if the debug flag is set
             if (_pcChangeDebug) {
