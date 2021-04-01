@@ -34,6 +34,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   fwUpdateBuffer( fwUpdateBuferSize ),
   run( true ),
   fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
+  fwPCChangeThread( std::thread( &MpsDb::fwPCChangeReader, this ) ),
   updateInputThread( std::thread( &MpsDb::updateInputs, this ) ),
   mitigationThread( std::thread( &MpsDb::mitigationWriter, this ) ),
   inputsUpdated(false),
@@ -48,6 +49,14 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _inputUpdateTimeout(inputUpdateTimeout),
   _updateCounter(0),
   _updateTimeoutCounter(0),
+  _pcChangeCounter(0),
+  _pcChangeBadSizeCounter(0),
+  _pcChangeOutOrderCounter(0),
+  _pcChangeLossCounter(0),
+  _pcChangeSameTagCounter(0),
+  _pcMonNotReadyCounter(0),
+  _pcChangeFirstPacket(true),
+  _pcChangeDebug(false),
   mitigationTxTime( "Mitigation Transmission time", 360 )
   {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -1155,6 +1164,7 @@ void MpsDb::showInfo() {
   std::cout << "File: " << name << std::endl;
   std::cout << "Update counter: " << _updateCounter << std::endl;
   std::cout << "Input update timeout " << _inputUpdateTimeout << " usec" << std::endl;
+  printPCChangeInfo();
 
   printMap<DbInfoMapPtr, DbInfoMap::iterator>
     (std::cout, databaseInfo, "DatabaseInfo");
@@ -1172,6 +1182,29 @@ void MpsDb::showInfo() {
   std::cout << "Current TimeStamp diff: " << _diff << std::endl;
   std::cout << "Diff > 12ms count     : " << _diffCount << std::endl;
   std::cout << "Update timout counter : " << _updateTimeoutCounter << std::endl;
+}
+
+void MpsDb::printPCChangeLastPacketInfo()
+{
+    std::cout << "Tag        : "   << _pcChangeTag << std::endl;
+    std::cout << "Flags      : 0x" << std::setw(2) << std::setfill('0') << std::hex << unsigned(_pcChangeFlags) << std::dec << std::endl;
+    std::cout << "Timestamp  : "   << _pcChangeTimeStamp << std::endl;
+    std::cout << "PowerClass : 0x" << std::setw(16) << std::setfill('0') << std::hex << _pcChangePowerClass << std::dec << std::endl;
+}
+
+void MpsDb::printPCChangeInfo()
+{
+    std::cout << "Power Class Change Messages Info:" << std::endl;
+    std::cout << "---------------------------------" << std::endl;
+    std::cout << "- Number of valid packet received        : " << _pcChangeCounter << std::endl;
+    std::cout << "- Number of lost packets                 : " << _pcChangeLossCounter << std::endl;
+    std::cout << "- Number of packet with bad sizes        : " << _pcChangeBadSizeCounter << std::endl;
+    std::cout << "- Number of out-of-order packets         : " << _pcChangeOutOrderCounter << std::endl;
+    std::cout << "- Number of packet with same tag         : " << _pcChangeSameTagCounter << std::endl;
+    std::cout << "- Number of packet with MonitorReady = 0 : " << _pcMonNotReadyCounter << std::endl;
+    std::cout << "- Last packet content: " << std::endl;
+    printPCChangeLastPacketInfo();
+    std::cout << "---------------------------------" << std::endl;
 }
 
 void MpsDb::clearUpdateTime() {
@@ -1309,6 +1342,88 @@ void MpsDb::fwUpdateReader()
         fwUpdateTimer.tick();
 	fwUpdateTimer.start();
     }
+}
+
+void MpsDb::fwPCChangeReader()
+{
+    std::cout << "*** FW Power Class Change reader started" << std::endl;
+
+    // 1k buffer, more than enough for "pc_change_t".
+    uint8_t buffer[1024];
+
+    while(run) {
+        int64_t got {0};
+
+        // Try to read, with a 10ms timeout, until we get a packet
+        while(0 == got)
+            got = Firmware::getInstance().readPCChangeStream(buffer, sizeof(buffer), 100000);
+
+        if (got == sizeof(Firmware::pc_change_t)) {
+            // Extract the message information
+            Firmware::pc_change_t* pData { (Firmware::pc_change_t*)(buffer) };
+
+            if (_pcChangeFirstPacket) {
+                // On the first packet, we can not compare it with a previous one
+                // so, we only count it as valid.
+                ++_pcChangeCounter;
+                _pcChangeFirstPacket = false;
+            } else {
+                // Calculate the difference between the tag number of the current
+                // and previous packet. This difference will be:
+                // == 1 : Ok, valid packet.
+                // == 0 : packet with same seq. number
+                // >  0 : lost packets (the difference less one is the number of missing packets)
+                // <  0 : packet received out of order
+                int64_t tagDelta { pData->tag - _pcChangeTag };
+
+                if (1 == tagDelta)
+                    ++_pcChangeCounter;
+                else if (0 == tagDelta)
+                    ++_pcChangeSameTagCounter;
+                else if (tagDelta > 0)
+                    _pcChangeLossCounter += (tagDelta - 1);
+                else
+                    ++_pcChangeOutOrderCounter;
+
+            }
+
+            // Count the number of packet with MonitorReady flag = 0
+            if (0 == (pData->flags & 0x01))
+                ++_pcMonNotReadyCounter;
+
+            // Save the message information
+            _pcChangeTag = pData->tag;
+            _pcChangeFlags = pData->flags;
+            _pcChangeTimeStamp = pData->timeStamp;
+            _pcChangePowerClass = pData->powerClass;
+
+            // Print the received packet content if the debug flag is set
+            if (_pcChangeDebug) {
+                std::cout << "== Power Class Change Message ====" << std::endl;
+                // Print packet bytes in hex
+                for(std::size_t i {0}; i < sizeof(Firmware::pc_change_t); ++i) {
+                    if (0 != i && 0 == i % 8)
+                        std::cout << std::endl;
+                    std::cout << std::setw(2) << std::setfill('0') << std::hex << unsigned(buffer[i]) << std::dec << " ";
+                }
+
+                // Print extracted info
+                printPCChangeLastPacketInfo();
+                std::cout << "==================================" << std::endl;
+            }
+
+        } else {
+            // Increment bad size counter
+            ++_pcChangeBadSizeCounter;
+        }
+    }
+
+    std::cout << "FW Power Class Change reader interrupted" << std::endl;
+}
+
+void MpsDb::PCChangeSetDebug(bool debug)
+{
+    _pcChangeDebug = debug;
 }
 
 void MpsDb::mitigationWriter()
