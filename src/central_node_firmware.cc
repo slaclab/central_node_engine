@@ -222,6 +222,9 @@ int Firmware::createRegisters() {
     name = "/Stream0";
     _updateStreamSV = IStream::create(_root->findByName(name.c_str()));
 
+    name = "/Stream1";
+    _pcChangeStreamSV = IStream::create(_root->findByName(name.c_str()));
+
     // ScalVal for configuration
     for (uint32_t i = 0; i < FW_NUM_APPLICATIONS; ++i) {
       std::stringstream appId;
@@ -617,6 +620,20 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
     val = 0;
   }
   return val;
+}
+
+int64_t Firmware::readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t timeout) const
+{
+    int64_t ret {0};
+
+    try {
+        ret =  _pcChangeStreamSV->read(buffer, size, CTimeout(timeout));
+    } catch (CPSWError& e) {
+       std::cerr << "Failed to read the power class change stream exception: " << e.getInfo() << std::endl;
+       ret = 0;
+    }
+
+    return ret;
 }
 
 void Firmware::writeMitigation(uint32_t *mitigation) {
