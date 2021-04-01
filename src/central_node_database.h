@@ -63,12 +63,16 @@ class MpsDb {
   boost::atomic<bool>     run;
 
   std::thread fwUpdateThread;
+  std::thread fwPCChangeThread;
   std::thread updateInputThread;
   std::thread mitigationThread;
 
   void fwUpdateReader();
   void updateInputs();
   void mitigationWriter();
+
+  void fwPCChangeReader();
+  void printPCChangeLastPacketInfo() const;
 
   bool                    inputsUpdated;
   std::mutex              inputsUpdatedMutex;
@@ -99,6 +103,23 @@ class MpsDb {
 
   uint32_t _updateCounter;
   uint32_t _updateTimeoutCounter;
+
+  // Power class change messages related variables
+  std::size_t _pcChangeCounter;         // Number of valid packet received
+  std::size_t _pcChangeBadSizeCounter;  // Number of received packets with unexpected size
+  std::size_t _pcChangeOutOrderCounter; // Number of packets received out of ourder (based on tag)
+  std::size_t _pcChangeLossCounter;     // Number of loss packets (based on tag)
+  std::size_t _pcChangeSameTagCounter;  // Number of packets received with the same tag
+  std::size_t _pcMonNotReadyCounter;    // Number of received packets with "MonitorReady" flag = 0
+  bool        _pcChangeFirstPacket;     // Flag to indicate the first received packet
+  bool        _pcChangeDebug;           // Debug flag. When true, the content of each received packet will be printed
+  uint16_t    _pcChangeTag;             // Last received message tag
+  uint8_t     _pcChangeFlags;           // Last received message flags
+  uint16_t    _pcChangeTimeStamp;       // Last received message timestamp
+  uint64_t    _pcChangePowerClass;      // Last received message power class
+  // Power class ttansition counters. One counter for each power class, for each destination.
+  // Each word counts the number of transition to that power class/destination combination.
+  std::size_t _pcCounters[NUM_DESTINATIONS][1<<POWER_CLASS_BIT_SIZE];
 
   Timer<double> mitigationTxTime;
 
@@ -146,6 +167,9 @@ class MpsDb {
   void showFault(DbFaultPtr fault);
   void showMitigation();
   void showInfo();
+  void printPCChangeInfo() const;
+  void PCChangeSetDebug(bool debug);
+  void printPCCounters() const;
 
   void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void writeFirmwareConfiguration(bool forceAomAllow = false);
