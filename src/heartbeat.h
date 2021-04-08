@@ -22,6 +22,7 @@ public:
     void setWdTime( const uint32_t& timeout );
 
     void printReport();
+    void clear();
     int  getWdErrorCnt() const       { return wdErrorCnt; };
 
     const double getMinTxPeriod()    { return txPeriod.getMinPeriod();  };
@@ -40,12 +41,14 @@ private:
     Command                 swHeartBeat;
     int                     hbCnt;
     int                     wdErrorCnt;
+    std::size_t             reqTimeoutCnt;
+    std::size_t             reqTimeout;
     bool                    beatReq;
     std::mutex              beatMutex;
     std::condition_variable beatCondVar;
     boost::atomic<bool>     run;
     std::thread             beatThread;
-    
+
     void        beatWriter();
 };
 

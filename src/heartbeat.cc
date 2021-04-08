@@ -3,16 +3,18 @@
 #ifdef FW_ENABLED
 HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
 :
-    txPeriod     ( "Time Between Heartbeats", timerBufferSize ),
-    txDuration   ( "Time to send Heartbeats", timerBufferSize ),
-    swWdTime     ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
-    swWdError    ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
-    swHeartBeat  ( ICommand::create     ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
-    hbCnt        ( 0 ),
-    wdErrorCnt   ( 0 ),
-    beatReq      ( false ),
-    run          ( true ),
-    beatThread   ( std::thread( &HeartBeat::beatWriter, this ) )
+    txPeriod      ( "Time Between Heartbeats", timerBufferSize ),
+    txDuration    ( "Time to send Heartbeats", timerBufferSize ),
+    swWdTime      ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
+    swWdError     ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
+    swHeartBeat   ( ICommand::create     ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
+    hbCnt         ( 0 ),
+    wdErrorCnt    ( 0 ),
+    reqTimeoutCnt ( 0 ),
+    reqTimeout    ( 5 ),
+    beatReq       ( false ),
+    run           ( true ),
+    beatThread    ( std::thread( &HeartBeat::beatWriter, this ) )
 {
     printf("\n");
     printf("Central Node HeartBeat started.\n");
@@ -33,6 +35,15 @@ HeartBeat::~HeartBeat()
     printReport();
 }
 
+void HeartBeat::clear()
+{
+    txPeriod.clear();
+    txDuration.clear();
+    hbCnt = 0;
+    wdErrorCnt = 0;
+    reqTimeoutCnt = 0;
+}
+
 void HeartBeat::printReport()
 {
     printf( "\n" );
@@ -40,17 +51,21 @@ void HeartBeat::printReport()
     printf( "===============================================\n" );
     uint32_t u32;
     swWdTime->getVal( &u32 );
-    printf( "Software watchdog timer:           %" PRIu32 " us\n", u32 );
-    printf( "Heartbeat count:                   %d\n",    hbCnt );
-    printf( "Software watchdog error count:     %d\n",    wdErrorCnt );
+    printf( "Software watchdog timer       : %" PRIu32 " us\n", u32 );
+    printf( "Request timeout               : %zu ms\n", reqTimeout );
+    printf( "Heartbeat count               : %d\n",    hbCnt );
+    printf( "Software watchdog error count : %d\n",    wdErrorCnt );
+    printf( "Timeouts waiting for requests : %zu\n",   reqTimeoutCnt );
     if ( 0 != hbCnt)
     {
-        printf( "Maximum period between heartbeats: %f us\n", ( txPeriod.getAllMaxPeriod()    * 1000000 ) );
-        printf( "Average period between heartbeats: %f us\n", ( txPeriod.getMeanPeriod()   * 1000000 ) );
-        printf( "Minimum period between heartbeats: %f us\n", ( txPeriod.getMinPeriod()    * 1000000 ) );
-        printf( "Maximum period to send heartbeats: %f us\n", ( txDuration.getAllMaxPeriod()  * 1000000 ) );
-        printf( "Average period to send heartbeats: %f us\n", ( txDuration.getMeanPeriod() * 1000000 ) );
-        printf( "Minimum period to send heartbeats: %f us\n", ( txDuration.getMinPeriod()  * 1000000 ) );
+        printf( "Maximum period between heartbeats (All) : %f us\n", ( txPeriod.getAllMaxPeriod()   * 1000000 ) );
+        printf( "Maximum period between heartbeats       : %f us\n", ( txPeriod.getMaxPeriod()      * 1000000 ) );
+        printf( "Average period between heartbeats       : %f us\n", ( txPeriod.getMeanPeriod()     * 1000000 ) );
+        printf( "Minimum period between heartbeats       : %f us\n", ( txPeriod.getMinPeriod()      * 1000000 ) );
+        printf( "Maximum period to send heartbeats (All) : %f us\n", ( txDuration.getAllMaxPeriod() * 1000000 ) );
+        printf( "Maximum period to send heartbeats       : %f us\n", ( txDuration.getMaxPeriod()    * 1000000 ) );
+        printf( "Average period to send heartbeats       : %f us\n", ( txDuration.getMeanPeriod()   * 1000000 ) );
+        printf( "Minimum period to send heartbeats       : %f us\n", ( txDuration.getMinPeriod()    * 1000000 ) );
     }
     printf( "===============================================\n" );
     printf( "\n" );
@@ -88,7 +103,11 @@ void HeartBeat::beatWriter()
             std::unique_lock<std::mutex> lock(beatMutex);
             while(!beatReq)
             {
-                beatCondVar.wait_for( lock, std::chrono::milliseconds(5) );
+                beatCondVar.wait_for( lock, std::chrono::milliseconds(reqTimeout) );
+
+                if (!beatReq)
+                    ++reqTimeoutCnt;
+
                 if(!run)
                 {
                     std::cout << "Heartbeat writer thread interrupted" << std::endl;
