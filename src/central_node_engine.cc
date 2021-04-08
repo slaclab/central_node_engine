@@ -119,7 +119,7 @@ int Engine::reloadConfigFromIgnore()
     std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
     _mpsDb->writeFirmwareConfiguration(_aomAllowWhileShutterClosed);
   }
-  
+
   Firmware::getInstance().setEnable(true);
   Firmware::getInstance().clearAll();
   //  Firmware::getInstance().softwareClear();
@@ -286,7 +286,7 @@ bool Engine::findBeamDestinations() {
 bool Engine::findShutterDevice()
 {
   for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
-       device != _mpsDb->digitalDevices->end(); ++device) 
+       device != _mpsDb->digitalDevices->end(); ++device)
     {
       if ((*device).second->name == "Mech. Shutter")
 	{
@@ -369,7 +369,7 @@ bool Engine::setAllowedBeamClass()
  * - Shutter is supposed to be closed: Linac mitigation read from FW is 0 (PC0)
  *   [Observation: the PC0 is caused by SW or FW logic evaluation, OR
  *    CN getting timeouts from apps, Watchdog faults, etc]
- * 
+ *
  * -> This condition causes the SW to force Linac to PC0
  * -> The FW configuration is reloaded with AOM destination out
  *    The _forceAom=true causes the FW configuration to bypass AOM
@@ -382,7 +382,7 @@ bool Engine::setAllowedBeamClass()
  *    Condition signaled by _aomAllowWhileShutterClosed variable
  *
  * 2) Condition to restore AOM mitigation by SW/FW
- * - Shutter is NOT CLOSED; and 
+ * - Shutter is NOT CLOSED; and
  * - _aomAllowWhileShutterClosed is active (i.e. AOM mitigation disabled,
  *   allowing beam through AOM); and
  * - Shutter is supposed to be opened:
@@ -390,7 +390,7 @@ bool Engine::setAllowedBeamClass()
  *   * Linac FW latch mitigation read from FW is not 0
  * -> Reset _aomAllowWhileShutterClosed (set false)
  * -> This causes the FW configuration to be reloaded with AOM destination in
- * 
+ *
  * Return true if FW configuration must be reloaded.
  */
 bool Engine::checkAomState() {
@@ -400,11 +400,11 @@ bool Engine::checkAomState() {
   uint32_t latchedMitigation[2];
   Firmware::getInstance().getLatchedMitigation(&latchedMitigation[0]);
   uint32_t linacLatchedMitigation = latchedMitigation[1] & 0xF;
-  
+
   // Read the current mitigation (result of both SW/FW evaluations)
   uint32_t mitigation[2];
   Firmware::getInstance().getMitigation(&mitigation[0]);
-  uint32_t linacMitigation = mitigation[1] & 0xF; 
+  uint32_t linacMitigation = mitigation[1] & 0xF;
 
   bool shutterClosed = false;
   if (_shutterDevice->value == _shutterClosedStatus) {
@@ -414,7 +414,7 @@ bool Engine::checkAomState() {
   // First condition - shutter is closed, it is supposed to be closed and
   // we are not in the force AOM mode already
   // then removes AOM from FW evaluation (by reloading)
-  if (shutterClosed && 
+  if (shutterClosed &&
       !_aomAllowWhileShutterClosed &&
     shouldShutterBeClosed(linacMitigation==0)) {
 
@@ -448,7 +448,7 @@ bool Engine::checkAomState() {
     ++_aomAllowDisableCounter;
     reload = true;
   }
-  // Otherwise, if shutter is not closed - then disallow AOM 
+  // Otherwise, if shutter is not closed - then disallow AOM
   else if (!shutterClosed && _aomAllowWhileShutterClosed) {
     ++_aomAllowDisableCounter;
     _aomAllowWhileShutterClosed = false;
@@ -891,7 +891,7 @@ void Engine::showStats()
 	  std::cout << " ALLOWED ";
 	else
 	  std::cout << " Normal ";
-	  
+
 	std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
 		  << Engine::_aomAllowDisableCounter << "]" << std::endl;
 
@@ -1175,6 +1175,7 @@ long Engine::getAvgEvalTime()
 }
 
 void Engine::clearMaxTimers() {
+  hb.clear();
   _checkFaultTime.clear();
   _evaluationCycleTime.clear();
   _mpsDb->clearUpdateTime();
