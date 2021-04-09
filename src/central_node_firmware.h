@@ -137,8 +137,7 @@ class Firmware {
                           // Header:
     uint32_t header[2];   //   - Non-MPS related words
     uint16_t tag;         //   - Message tag (counter)
-    uint8_t  flags;       //   - Status flags
-    uint8_t  gap_0;       //   - Unsed byte
+    uint16_t flags;       //   - Status flags
                           // Payload:
     uint16_t timeStamp;   //   - Timestamp
     uint16_t gap_1[3];    //   - The timestamp only used the lower 16-bit word.
@@ -148,6 +147,15 @@ class Firmware {
   }
   __attribute__((packed, aligned(1)))
   pc_change_t;
+
+  // This is the normal expected mask of the bits in the
+  // pc_change_t.flags word. The read flag status word will be
+  // xor'ed with this value to detect which bits are active.
+  static const uint16_t PcChangePacketFlagsMask = 0x7fff;
+
+  // This is the labels of the bits in the pc_change_t.flags words.
+  // They label itslef are defined in central_node_firmware.cc
+  static const std::vector<std::string> PcChangePacketFlagsLabels;
 
   uint64_t fpgaVersion;
   uint8_t buildStamp[256];

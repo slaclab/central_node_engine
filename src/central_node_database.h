@@ -110,13 +110,13 @@ class MpsDb {
   std::size_t _pcChangeOutOrderCounter; // Number of packets received out of ourder (based on tag)
   std::size_t _pcChangeLossCounter;     // Number of loss packets (based on tag)
   std::size_t _pcChangeSameTagCounter;  // Number of packets received with the same tag
-  std::size_t _pcMonNotReadyCounter;    // Number of received packets with "MonitorReady" flag = 0
   bool        _pcChangeFirstPacket;     // Flag to indicate the first received packet
   bool        _pcChangeDebug;           // Debug flag. When true, the content of each received packet will be printed
   uint16_t    _pcChangeTag;             // Last received message tag
-  uint8_t     _pcChangeFlags;           // Last received message flags
+  uint16_t    _pcChangeFlags;           // Last received message flags
   uint16_t    _pcChangeTimeStamp;       // Last received message timestamp
   uint64_t    _pcChangePowerClass;      // Last received message power class
+  std::vector<std::size_t> _pcFlagsCounters;
   // Power class ttansition counters. One counter for each power class, for each destination.
   // Each word counts the number of transition to that power class/destination combination.
   std::size_t _pcCounters[NUM_DESTINATIONS][1<<POWER_CLASS_BIT_SIZE];
