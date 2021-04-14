@@ -34,6 +34,7 @@ HeartBeat::~HeartBeat()
 
     // Print final report
     printReport();
+    std::cout << std::flush;
 }
 
 void HeartBeat::clear()
