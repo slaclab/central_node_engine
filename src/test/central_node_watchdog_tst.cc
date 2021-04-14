@@ -6,9 +6,27 @@
 #include <yaml-cpp/yaml.h>
 #include <arpa/inet.h>
 #include <thread>
+#include <sys/mman.h>
 #include <boost/atomic.hpp>
 #include <cpsw_api_user.h>
 #include "heartbeat.h"
+
+const int rtPriority   = 49;        /* we use 49 as the PRREMPT_RT use 50
+                                       as the priority of kernel tasklets
+                                       and interrupt handler by default */
+
+const int maxSafeStack = 8*1024;    /* The maximum stack size which is
+                                       guaranteed safe to access without
+                                       faulting */
+
+// Function and Class definitions
+void stack_prefault(void)
+{
+    unsigned char dummy[maxSafeStack];
+
+    memset(dummy, 0, maxSafeStack);
+    return;
+}
 
 class IYamlSetIP : public IYamlFixup
 {
@@ -40,33 +58,39 @@ public:
 private:
     ScalVal             enable;
     ScalVal             swEnable;
-    Stream              strm;
+    Stream              strm0;
+    Stream              strm1;
+    Command             swErrClr;
     HeartBeat           hb;
     Timer<double>       rxT;
     boost::atomic<bool> run;
-    std::thread         rxThread;
+    std::thread         rxThreadMain;
+    std::thread         rxThreadSecondary;
 
-    void rxData();
+    void rxHandlerMain();
+    void rxHandlerSecondary();
 };
 
 Tester::Tester( Path root, uint32_t timeout, size_t timerBufferSize )
 :
-enable   ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/Enable" ) ) ),
-swEnable ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareEnable" ) ) ),
-strm     ( IStream::create ( root->findByName( "/Stream0" ) ) ),
-hb       ( root, timeout, timerBufferSize ),
-rxT      ( "Rx Periods", timerBufferSize ),
-run      (true),
-rxThread ( std::thread( &Tester::rxData, this ) )
+enable            ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/Enable" ) ) ),
+swEnable          ( IScalVal::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareEnable" ) ) ),
+strm0             ( IStream::create ( root->findByName( "/Stream0" ) ) ),
+strm1             ( IStream::create ( root->findByName( "/Stream1" ) ) ),
+swErrClr          ( ICommand::create( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwErrClear" ) ) ),
+hb                ( root, timeout, timerBufferSize ),
+rxT               ( "Rx Periods", timerBufferSize ),
+run               ( true ),
+rxThreadMain      ( std::thread( &Tester::rxHandlerMain, this ) ),
+rxThreadSecondary ( std::thread( &Tester::rxHandlerSecondary, this ) )
 {
     std::cout << "Creating Tester object..." << std::endl;
 
-    if ( pthread_setname_np( rxThread.native_handle(), "rxThread" ) )
-      perror( "pthread_setname_np failed for rxThread" );
+    if ( pthread_setname_np( rxThreadMain.native_handle(), "rxThreadMain" ) )
+      perror( "pthread_setname_np failed for rxThreadMain" );
 
-    std::cout << "Enabling MPS FW Software engine..." << std::endl;
-    enable->setVal( static_cast<uint64_t>(1) );
-    swEnable->setVal( static_cast<uint64_t>(1) );
+    if ( pthread_setname_np( rxThreadSecondary.native_handle(), "rxThreadSecond" ) )
+      perror( "pthread_setname_np failed for rxThreadSecondary" );
 
     std::cout << "Tester created." << std::endl;
     std::cout << std::endl;
@@ -79,7 +103,8 @@ Tester::~Tester()
 
     std::cout << "Stopping the Rx Thread..." << std::endl;
     run = false;
-    rxThread.join();
+    rxThreadMain.join();
+    rxThreadSecondary.join();
 
     std::cout << "Disabling MPS FW Software engine..." << std::endl;
     swEnable->setVal( static_cast<uint64_t>(0) );
@@ -87,41 +112,61 @@ Tester::~Tester()
 
     std::cout << "Tester destroyed." << std::endl;
     std::cout << std::endl;
+    std::cout << std::flush;
 }
 
-void Tester::rxData()
+void Tester::rxHandlerMain()
 {
-    std::cout << "Rx Thread started" << std::endl;
+    std::cout << "Rx main thread started" << std::endl;
     std::cout << std::endl;
 
-    uint8_t buf[102400];
-    int     rxCounter = 0;
-    int     toCounter = 0;
-
-    // Declare this thread as RT
+    // Declare as real time task
     struct sched_param  param;
-    param.sched_priority = 20;
+    param.sched_priority = rtPriority;
     if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
     {
-        perror("Set priority");
-        std::cerr << "WARN: Setting thread RT priority failed on Heartbeat thread." << std::endl;
+        perror("sched_setscheduler failed");
+        exit(-1);
     }
 
-    // Wait for the first package
-    if ( 0 != strm->read(buf, 102400, CTimeout(3500)) )
+    // Lock memory
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
     {
-        ++rxCounter;
-        hb.beat();
+        perror("mlockall failed");
+        exit(-2);
     }
-    else
+
+    // Pre-fault our stack
+    stack_prefault();
+
+    uint8_t     buf[100*1024];
+    int         rxCounter       { 0 };     // Number of packet received
+    int         toCounter       { 0 };     // Number of RX timeouts
+
+    std::cout << "Enabling MPS FW Software engine..." << std::endl;
+    enable->setVal( static_cast<uint64_t>(1) );
+    swEnable->setVal( static_cast<uint64_t>(1) );
+
+    // Wait for the first packet, for 100ms. If we timeout here, we abort the test
+    if ( 0 == strm0->read(buf, 102400, CTimeout(100000)) )
     {
-        ++toCounter;
+        std::cerr << "We didn't receive the first stream packet after 100ms. Aborting test" << std::endl;
+        exit(-3);
     }
+
+    // Clear the software error flags before starting
+    swErrClr->execute();
+
+    // Reset all heart beat counters
+    hb.beat();
+    hb.clear();
+
+    // Start the receiver timer
     rxT.start();
 
     while(run)
     {
-        if (0 != strm->read(buf, 102400, CTimeout(3500)))
+        if (0 != strm0->read(buf, sizeof(buf), CTimeout(3500)))
         {
             rxT.tick();
             ++rxCounter;
@@ -133,17 +178,67 @@ void Tester::rxData()
             rxT.start();
         }
 
+        // After 2 heartbeats have been sent, we need to clear the software
+        // errors in order to reset the SoftwareHbUpCntMax register.
+        if (2 == rxCounter)
+            swErrClr->execute();
     }
 
-    std::cout << "Rx Thread interrupted" << std::endl;
+    std::cout << "Rx main thread interrupted" << std::endl;
     std::cout << std::endl;
 
-    std::cout << "Rx Thread report:" << std::endl;
+    std::cout << "Rx main thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
     std::cout << "Rx packet counter  = " << rxCounter << std::endl;
     std::cout << "Rx timeout counter = " << toCounter << std::endl;
     rxT.show();
     std::cout << std::endl;
+
+    std::cout << std::flush;
+}
+
+void Tester::rxHandlerSecondary()
+{
+    std::cout << "Rx secondary thread started" << std::endl;
+
+    // Declare as real time task
+    struct sched_param  param;
+    param.sched_priority = rtPriority - 1;
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
+    {
+        perror("sched_setscheduler failed");
+        exit(-1);
+    }
+
+    // Lock memory
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
+    {
+        perror("mlockall failed");
+        exit(-2);
+    }
+
+    // Pre-fault our stack
+    stack_prefault();
+
+    std::size_t rxPackets      { 0 }; // Number of packet received
+    uint8_t     buf[100*1024];        // 100KBytes buffer
+
+    while(run)
+    {
+        if(strm1->read(buf, sizeof(buf), CTimeout(3500)))
+            // Increase RX packet counter
+            ++rxPackets;
+    }
+
+    std::cout << "Rx secondary thread interrupted" << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Rx secondary thread report:" << std::endl;
+    std::cout << "===========================" << std::endl;
+    std::cout << "Number of packet received : " << rxPackets << std::endl;
+    std::cout << std::endl;
+
+    std::cout << std::flush;
 }
 
 void usage(char* name)
