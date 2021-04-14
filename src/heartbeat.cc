@@ -98,21 +98,19 @@ void HeartBeat::beatWriter()
 
     for(;;)
     {
+        // Wait for a request
+        std::unique_lock<std::mutex> lock(beatMutex);
+        while(!beatReq)
         {
-            // Wait for a request
-            std::unique_lock<std::mutex> lock(beatMutex);
-            while(!beatReq)
+            beatCondVar.wait_for( lock, std::chrono::milliseconds(reqTimeout) );
+
+            if (!beatReq)
+                ++reqTimeoutCnt;
+
+            if(!run)
             {
-                beatCondVar.wait_for( lock, std::chrono::milliseconds(reqTimeout) );
-
-                if (!beatReq)
-                    ++reqTimeoutCnt;
-
-                if(!run)
-                {
-                    std::cout << "Heartbeat writer thread interrupted" << std::endl;
-                    return;
-                }
+                std::cout << "Heartbeat writer thread interrupted" << std::endl;
+                return;
             }
         }
 
