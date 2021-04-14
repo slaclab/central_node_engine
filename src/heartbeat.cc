@@ -114,7 +114,7 @@ void HeartBeat::beatWriter()
             }
         }
 
-        // Start the TX duration Timer
+        // Start the TX duration timer
         txDuration.start();
 
         // Check if there was a WD error, and increase counter accordingly
@@ -126,9 +126,6 @@ void HeartBeat::beatWriter()
         // Set heartbeat bit
         swHeartBeat->execute();
 
-        // Tick the duration timer
-        txDuration.tick();
-
         // Tick period timer;
         txPeriod.tick();
 
@@ -136,6 +133,9 @@ void HeartBeat::beatWriter()
         ++hbCnt;
 
         beatReq = false;
+
+        // Tick the TX duration timer
+        txDuration.tick();
     }
 }
 #endif
