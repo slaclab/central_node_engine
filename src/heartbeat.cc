@@ -7,6 +7,7 @@ HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize
     txDuration    ( "Time to send Heartbeats", timerBufferSize ),
     swWdTime      ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
     swWdError     ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
+    swHbCntMax    ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareHbUpCntMax" ) ) ),
     swHeartBeat   ( ICommand::create     ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
     hbCnt         ( 0 ),
     wdErrorCnt    ( 0 ),
@@ -58,6 +59,11 @@ void HeartBeat::printReport()
     printf( "Timeouts waiting for requests : %zu\n",   reqTimeoutCnt );
     if ( 0 != hbCnt)
     {
+        // Print the maximum period measured by the FW application
+        uint32_t u32;
+        swHbCntMax->getVal(&u32);
+        printf( "Maximum period between heartbeats (FW)  : %zu us\n", u32/fpgaClkPerUs );
+
         printf( "Maximum period between heartbeats (All) : %f us\n", ( txPeriod.getAllMaxPeriod()   * 1000000 ) );
         printf( "Maximum period between heartbeats       : %f us\n", ( txPeriod.getMaxPeriod()      * 1000000 ) );
         printf( "Average period between heartbeats       : %f us\n", ( txPeriod.getMeanPeriod()     * 1000000 ) );

@@ -34,10 +34,15 @@ public:
     const double getMeanTxDuration() { return txDuration.getMeanPeriod(); };
 
 private:
+    // FPGA clocks per microsecond. Used to convert the
+    // maximum heartbeat period measured by the FW application.
+    static const std::size_t fpgaClkPerUs = 250;
+
     Timer<double>           txPeriod;
     Timer<double>           txDuration;
     ScalVal                 swWdTime;
     ScalVal_RO              swWdError;
+    ScalVal_RO              swHbCntMax;
     Command                 swHeartBeat;
     int                     hbCnt;
     int                     wdErrorCnt;
