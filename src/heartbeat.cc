@@ -38,6 +38,10 @@ HeartBeat::~HeartBeat()
 
 void HeartBeat::clear()
 {
+    // Wait for any heartbeat generation in progress
+    std::unique_lock<std::mutex> lock(beatMutex);
+    beatCondVar.wait( lock, std::bind(&HeartBeat::predN, this) );
+
     txPeriod.clear();
     txDuration.clear();
     hbCnt = 0;
@@ -86,7 +90,7 @@ void HeartBeat::beat()
 {
     std::unique_lock<std::mutex> lock(beatMutex);
     beatReq = true;
-    beatCondVar.notify_all();
+    beatCondVar.notify_one();
 }
 
 void HeartBeat::beatWriter()
@@ -106,42 +110,47 @@ void HeartBeat::beatWriter()
     {
         // Wait for a request
         std::unique_lock<std::mutex> lock(beatMutex);
-        while(!beatReq)
+        if (beatCondVar.wait_for(lock, std::chrono::milliseconds(reqTimeout), std::bind(&HeartBeat::pred, this)))
         {
-            beatCondVar.wait_for( lock, std::chrono::milliseconds(reqTimeout) );
+            // Start the TX duration timer
+            txDuration.start();
 
-            if (!beatReq)
+            // Check if there was a WD error, and increase counter accordingly
+            uint32_t u32;
+            swWdError->getVal(&u32);
+            if (u32)
+                ++wdErrorCnt;
+
+            // Set heartbeat bit
+            swHeartBeat->execute();
+
+            // Tick period timer;
+            txPeriod.tick();
+
+            // Increase counter
+            ++hbCnt;
+
+            // Tick the TX duration timer
+            txDuration.tick();
+
+            // Notify that we are done with the heartbeat generation.
+            // Manual unlocking is done before notifying, to avoid waking up
+            // the waiting thread only to block again (see notify_one for details)
+            beatReq = false;
+            lock.unlock();
+            beatCondVar.notify_one();
+        }
+        else
+        {
+            if (run)
                 ++reqTimeoutCnt;
-
-            if(!run)
-            {
-                std::cout << "Heartbeat writer thread interrupted" << std::endl;
-                return;
-            }
         }
 
-        // Start the TX duration timer
-        txDuration.start();
-
-        // Check if there was a WD error, and increase counter accordingly
-        uint32_t u32;
-        swWdError->getVal( &u32 );
-        if ( u32 )
-            ++wdErrorCnt;
-
-        // Set heartbeat bit
-        swHeartBeat->execute();
-
-        // Tick period timer;
-        txPeriod.tick();
-
-        // Increase counter
-        ++hbCnt;
-
-        beatReq = false;
-
-        // Tick the TX duration timer
-        txDuration.tick();
+        if (!run)
+        {
+            std::cout << "Heartbeat writer thread interrupted" << std::endl;
+            return;
+        }
     }
 }
 #endif

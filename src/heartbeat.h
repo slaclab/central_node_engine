@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <thread>
+#include <functional>
 #include <boost/atomic.hpp>
 #include <cpsw_api_user.h>
 
@@ -55,6 +56,12 @@ private:
     std::thread             beatThread;
 
     void        beatWriter();
+
+    // Helper predicate functions used for the conditional variable
+    // 'wait_for' methods. We need this as our old rhel6 host don't
+    // support C++11 , otherwise we could have used lambda expressions.
+    bool pred()  { return beatReq;  };
+    bool predN() { return !beatReq; };
 };
 
 #endif
