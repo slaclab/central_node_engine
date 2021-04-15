@@ -1029,7 +1029,7 @@ void Engine::engineThread()
     std::cout << "INFO: Engine: update thread started." << std::endl;
 
     // Declare as real time task
-    param.sched_priority = 70;
+    param.sched_priority = 75;
     if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
     {
         perror("Set priority");

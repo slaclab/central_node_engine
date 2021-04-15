@@ -100,7 +100,7 @@ void HeartBeat::beatWriter()
 
     // Declare as real time task
     struct sched_param  param;
-    param.sched_priority = 20;
+    param.sched_priority = 74;
     if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
     {
         perror("Set priority");
