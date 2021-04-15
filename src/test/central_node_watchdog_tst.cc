@@ -56,16 +56,16 @@ public:
     ~Tester();
 
 private:
-    ScalVal             enable;
-    ScalVal             swEnable;
-    Stream              strm0;
-    Stream              strm1;
-    Command             swErrClr;
-    HeartBeat           hb;
-    Timer<double>       rxT;
-    boost::atomic<bool> run;
-    std::thread         rxThreadMain;
-    std::thread         rxThreadSecondary;
+    ScalVal              enable;
+    ScalVal              swEnable;
+    Stream               strm0;
+    Stream               strm1;
+    Command              swErrClr;
+    NonBlockingHeartBeat hb;
+    Timer<double>        rxT;
+    boost::atomic<bool>  run;
+    std::thread          rxThreadMain;
+    std::thread          rxThreadSecondary;
 
     void rxHandlerMain();
     void rxHandlerSecondary();

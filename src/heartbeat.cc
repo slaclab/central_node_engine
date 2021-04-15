@@ -1,56 +1,29 @@
 #include "heartbeat.h"
 
 #ifdef FW_ENABLED
-HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
+template <typename BeatPolicy>
+HeartBeat<BeatPolicy>::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
 :
-    txPeriod      ( "Time Between Heartbeats", timerBufferSize ),
-    txDuration    ( "Time to send Heartbeats", timerBufferSize ),
+    BeatPolicy    ( root, timerBufferSize ),
     swWdTime      ( IScalVal::create    ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdTime" ) ) ),
-    swWdError     ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
-    swHbCntMax    ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareHbUpCntMax" ) ) ),
-    swHeartBeat   ( ICommand::create     ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
-    hbCnt         ( 0 ),
-    wdErrorCnt    ( 0 ),
-    reqTimeoutCnt ( 0 ),
-    reqTimeout    ( 5 ),
-    beatReq       ( false ),
-    run           ( true ),
-    beatThread    ( std::thread( &HeartBeat::beatWriter, this ) )
+    swHbCntMax    ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareHbUpCntMax" ) ) )
 {
     printf("\n");
     printf("Central Node HeartBeat started.\n");
     swWdTime->setVal( timeout );
     printf("Software Watchdog timer set to: %" PRIu32 "\n", timeout);
-
-    if( pthread_setname_np( beatThread.native_handle(), "HeartBeat" ) )
-        perror( "pthread_setname_np failed for HeartBeat thread" );
 }
 
-HeartBeat::~HeartBeat()
+template<typename BeatPolicy>
+HeartBeat<BeatPolicy>::~HeartBeat()
 {
-    // Stop the heartbeat thread
-    run = false;
-    beatThread.join();
-
     // Print final report
     printReport();
     std::cout << std::flush;
 }
 
-void HeartBeat::clear()
-{
-    // Wait for any heartbeat generation in progress
-    std::unique_lock<std::mutex> lock(beatMutex);
-    beatCondVar.wait( lock, std::bind(&HeartBeat::predN, this) );
-
-    txPeriod.clear();
-    txDuration.clear();
-    hbCnt = 0;
-    wdErrorCnt = 0;
-    reqTimeoutCnt = 0;
-}
-
-void HeartBeat::printReport()
+template<typename BeatPolicy>
+void HeartBeat<BeatPolicy>::printReport()
 {
     printf( "\n" );
     printf( "HeartBeat report:\n" );
@@ -58,43 +31,143 @@ void HeartBeat::printReport()
     uint32_t u32;
     swWdTime->getVal( &u32 );
     printf( "Software watchdog timer       : %" PRIu32 " us\n", u32 );
-    printf( "Request timeout               : %zu ms\n", reqTimeout );
-    printf( "Heartbeat count               : %d\n",    hbCnt );
-    printf( "Software watchdog error count : %d\n",    wdErrorCnt );
-    printf( "Timeouts waiting for requests : %zu\n",   reqTimeoutCnt );
-    if ( 0 != hbCnt)
-    {
-        // Print the maximum period measured by the FW application
-        uint32_t u32;
-        swHbCntMax->getVal(&u32);
-        printf( "Maximum period between heartbeats (FW)  : %zu us\n", u32/fpgaClkPerUs );
-
-        printf( "Maximum period between heartbeats (All) : %f us\n", ( txPeriod.getAllMaxPeriod()   * 1000000 ) );
-        printf( "Maximum period between heartbeats       : %f us\n", ( txPeriod.getMaxPeriod()      * 1000000 ) );
-        printf( "Average period between heartbeats       : %f us\n", ( txPeriod.getMeanPeriod()     * 1000000 ) );
-        printf( "Minimum period between heartbeats       : %f us\n", ( txPeriod.getMinPeriod()      * 1000000 ) );
-        printf( "Maximum period to send heartbeats (All) : %f us\n", ( txDuration.getAllMaxPeriod() * 1000000 ) );
-        printf( "Maximum period to send heartbeats       : %f us\n", ( txDuration.getMaxPeriod()    * 1000000 ) );
-        printf( "Average period to send heartbeats       : %f us\n", ( txDuration.getMeanPeriod()   * 1000000 ) );
-        printf( "Minimum period to send heartbeats       : %f us\n", ( txDuration.getMinPeriod()    * 1000000 ) );
-    }
-    printf( "===============================================\n" );
-    printf( "\n" );
+    swHbCntMax->getVal(&u32);
+    printf( "Maximum heartbeat period (FW) : %zu us\n", u32/fpgaClkPerUs );
+    this->printBeatReport();
 }
 
-void HeartBeat::setWdTime( const uint32_t& timeout )
+template<typename BeatPolicy>
+void HeartBeat<BeatPolicy>::setWdTime( const uint32_t& timeout )
 {
     swWdTime->setVal( timeout );
 }
 
-void HeartBeat::beat()
+////////////////////////////////
+// BeatBase class definitions //
+////////////////////////////////
+BeatBase::BeatBase(Path root, size_t timerBufferSize)
+:
+    txPeriod      ( "Time Between Heartbeats", timerBufferSize ),
+    txDuration    ( "Time to send Heartbeats", timerBufferSize ),
+    swWdError     ( IScalVal_RO::create ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SoftwareWdError" ) ) ),
+    swHeartBeat   ( ICommand::create     ( root->findByName( "/mmio/MpsCentralApplication/MpsCentralNodeCore/SwHeartbeat" ) ) ),
+    hbCnt         ( 0 ),
+    wdErrorCnt    ( 0 )
 {
+}
+
+void BeatBase::defaultClear()
+{
+    txPeriod.clear();
+    txDuration.clear();
+    hbCnt = 0;
+    wdErrorCnt = 0;
+}
+
+void BeatBase::defaultBeat()
+{
+    // Start the TX duration timer
+    txDuration.start();
+
+    // Check if there was a WD error, and increase counter accordingly
+    uint32_t u32;
+    swWdError->getVal(&u32);
+    if (u32)
+        ++wdErrorCnt;
+
+    // Set heartbeat bit
+    swHeartBeat->execute();
+
+    // Tick period timer;
+    txPeriod.tick();
+
+    // Increase counter
+    ++hbCnt;
+
+    // Tick the TX duration timer
+    txDuration.tick();
+}
+
+void BeatBase::defaultPrintReport()
+{
+    printf( "Heartbeat count               : %d\n",    hbCnt );
+    printf( "Software watchdog error count : %d\n",    wdErrorCnt );
+    txPeriod.show();
+    txDuration.show();
+}
+
+////////////////////////////////////
+// BlockingBeat class definitions //
+////////////////////////////////////
+BlockingBeat::BlockingBeat(Path root, size_t timerBufferSize)
+:
+    BeatBase ( root, timerBufferSize )
+{
+}
+
+void BlockingBeat::clear()
+{
+    defaultClear();
+}
+
+void BlockingBeat::beat()
+{
+    defaultBeat();
+}
+
+void BlockingBeat::printBeatReport()
+{
+    defaultPrintReport();
+}
+
+///////////////////////////////////////
+// NonBlockingBeat class definitions //
+///////////////////////////////////////
+NonBlockingBeat::NonBlockingBeat(Path root, size_t timerBufferSize)
+:
+    BeatBase      ( root, timerBufferSize ),
+    reqTimeoutCnt ( 0 ),
+    reqTimeout    ( 5 ),
+    beatReq       ( false ),
+    run           ( true ),
+    beatThread    ( std::thread( &NonBlockingBeat::beatWriter, this ) )
+{
+    if( pthread_setname_np( beatThread.native_handle(), "HeartBeat" ) )
+       perror( "pthread_setname_np failed for HeartBeat thread" );
+}
+
+NonBlockingBeat::~NonBlockingBeat()
+{
+    // Stop the heartbeat thread
+    run = false;
+    beatThread.join();
+}
+
+void NonBlockingBeat::clear()
+{
+    // Wait for any heartbeat generation in progress
+    std::unique_lock<std::mutex> lock(beatMutex);
+    beatCondVar.wait( lock, std::bind(&NonBlockingBeat::predN, this) );
+
+    defaultClear();
+
+    reqTimeoutCnt = 0;
+}
+
+void NonBlockingBeat::beat()
+{
+    // Wait for any heartbeat generation in progress
+    {
+        std::unique_lock<std::mutex> lock(beatMutex);
+        beatCondVar.wait( lock, std::bind(&NonBlockingBeat::predN, this) );
+    }
+
     std::unique_lock<std::mutex> lock(beatMutex);
     beatReq = true;
     beatCondVar.notify_one();
 }
 
-void HeartBeat::beatWriter()
+void NonBlockingBeat::beatWriter()
 {
     std::cout << "Heartbeat writer thread started..." << std::endl;
 
@@ -111,35 +184,16 @@ void HeartBeat::beatWriter()
     {
         // Wait for a request
         std::unique_lock<std::mutex> lock(beatMutex);
-        if (beatCondVar.wait_for(lock, std::chrono::milliseconds(reqTimeout), std::bind(&HeartBeat::pred, this)))
+        if (beatCondVar.wait_for(lock, std::chrono::milliseconds(reqTimeout), std::bind(&NonBlockingBeat::pred, this)))
         {
-            // Start the TX duration timer
-            txDuration.start();
-
-            // Check if there was a WD error, and increase counter accordingly
-            uint32_t u32;
-            swWdError->getVal(&u32);
-            if (u32)
-                ++wdErrorCnt;
-
-            // Set heartbeat bit
-            swHeartBeat->execute();
-
-            // Tick period timer;
-            txPeriod.tick();
-
-            // Increase counter
-            ++hbCnt;
-
-            // Tick the TX duration timer
-            txDuration.tick();
+            defaultBeat();
 
             // Notify that we are done with the heartbeat generation.
             // Manual unlocking is done before notifying, to avoid waking up
             // the waiting thread only to block again (see notify_one for details)
             beatReq = false;
             lock.unlock();
-            beatCondVar.notify_one();
+            beatCondVar.notify_all();
         }
         else
         {
@@ -154,4 +208,16 @@ void HeartBeat::beatWriter()
         }
     }
 }
+
+void NonBlockingBeat::printBeatReport()
+{
+    printf( "Request timeout               : %zu ms\n", reqTimeout );
+    printf( "Timeouts waiting for requests : %zu\n",   reqTimeoutCnt );
+    defaultPrintReport();
+}
+
+// Explicit template instantiations
+template class HeartBeat<BlockingBeat>;
+template class HeartBeat<NonBlockingBeat>;
+
 #endif

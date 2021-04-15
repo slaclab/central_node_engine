@@ -136,7 +136,7 @@ private:
     Timer<double>  _evaluationCycleTime;
 
     // Heartbeat control class
-    HeartBeat hb;
+    NonBlockingHeartBeat hb;
 
 public:
     static Engine &getInstance()
