@@ -54,9 +54,9 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout) :
   _pcChangeOutOrderCounter(0),
   _pcChangeLossCounter(0),
   _pcChangeSameTagCounter(0),
-  _pcMonNotReadyCounter(0),
   _pcChangeFirstPacket(true),
   _pcChangeDebug(false),
+  _pcFlagsCounters(Firmware::PcChangePacketFlagsLabels.size(), 0),
   mitigationTxTime( "Mitigation Transmission time", 360 )
   {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -1192,7 +1192,7 @@ void MpsDb::showInfo() {
 void MpsDb::printPCChangeLastPacketInfo() const
 {
     std::cout << "Tag        : "   << _pcChangeTag << std::endl;
-    std::cout << "Flags      : 0x" << std::setw(2) << std::setfill('0') << std::hex << unsigned(_pcChangeFlags) << std::dec << std::endl;
+    std::cout << "Flags      : 0x" << std::setw(4) << std::setfill('0') << std::hex << unsigned(_pcChangeFlags) << std::dec << std::endl;
     std::cout << "Timestamp  : "   << _pcChangeTimeStamp << std::endl;
     std::cout << "PowerClass : 0x" << std::setw(16) << std::setfill('0') << std::hex << _pcChangePowerClass << std::dec << std::endl;
 }
@@ -1206,7 +1206,11 @@ void MpsDb::printPCChangeInfo() const
     std::cout << "- Number of packet with bad sizes        : " << _pcChangeBadSizeCounter << std::endl;
     std::cout << "- Number of out-of-order packets         : " << _pcChangeOutOrderCounter << std::endl;
     std::cout << "- Number of packet with same tag         : " << _pcChangeSameTagCounter << std::endl;
-    std::cout << "- Number of packet with MonitorReady = 0 : " << _pcMonNotReadyCounter << std::endl;
+    std::cout << "- Flag error counters:" << std::endl;
+    auto countIt = _pcFlagsCounters.begin();
+    auto labelIt = Firmware::PcChangePacketFlagsLabels.begin();
+    for( ; (countIt != _pcFlagsCounters.end()) && (labelIt != Firmware::PcChangePacketFlagsLabels.end()); ++countIt, ++labelIt )
+        std::cout << "  * " << std::left << std::setw(13) << *labelIt << " = " << *countIt << std::endl;
     std::cout << "- Last packet content: " << std::endl;
     printPCChangeLastPacketInfo();
     std::cout << "---------------------------------" << std::endl;
@@ -1426,18 +1430,24 @@ void MpsDb::fwPCChangeReader()
             _pcChangeTimeStamp = pData->timeStamp;
             _pcChangePowerClass = pData->powerClass;
 
-            // Count the number of packet with MonitorReady flag = 0
-            // If the 'MonitorFlag' is set, increase the corresponding power class ttansition counters.
-            // Otherwise, increase the '_pcMonNotReadyCounter' counter instead.
-            if (_pcChangeFlags & 0x01) {
+            // Apply the mask to the flags, to detect which error are set
+            uint16_t errors { static_cast<uint16_t>(_pcChangeFlags ^ Firmware::PcChangePacketFlagsMask) };
+
+            // Update the flag counters
+            for (std::size_t i {0}; i < _pcFlagsCounters.size(); ++i)
+                if (errors & (1<<i))
+                    ++_pcFlagsCounters[i];
+
+            // Valid packets doesn't have MonitorReady errors.
+            // Count the number of packet that don't have MonitorReady errors, and increase the
+            // corresponding power class transition counters.
+            if (!(errors & 0x01)) {
                 uint64_t pcw { _pcChangePowerClass };
                 for (std::size_t dest {0}; dest < NUM_DESTINATIONS; ++dest) {
                     uint8_t pc { static_cast<uint8_t>( pcw & ( (1<<POWER_CLASS_BIT_SIZE) - 1) ) };
                     ++_pcCounters[dest][pc];
                     pcw >>= POWER_CLASS_BIT_SIZE;
                 }
-            } else {
-                ++_pcMonNotReadyCounter;
             }
 
             // Print the received packet content if the debug flag is set
@@ -1449,6 +1459,7 @@ void MpsDb::fwPCChangeReader()
                         std::cout << std::endl;
                     std::cout << std::setw(2) << std::setfill('0') << std::hex << unsigned(buffer[i]) << std::dec << " ";
                 }
+                std::cout << std::endl;
 
                 // Print extracted info
                 printPCChangeLastPacketInfo();

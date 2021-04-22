@@ -18,6 +18,29 @@ static Logger *firmwareLogger;
 // uint32_t Firmware::_monitorNotReadyCounter = 0;
 // bool     Firmware::_skipHeartbeat = false;
 
+// These are the labels for the bit in the flag word, in the power
+// class asynchronous message (defined in the pc_counter_t structure)
+// Note: the method that print them, assumens that the longer string
+// is 12 char long.
+const std::vector<std::string> Firmware::PcChangePacketFlagsLabels = {
+  "MonReady",     // Bit  0
+  "ExtRxErr",     // Bit  1
+  "RxErr",        // Bit  2
+  "Pause",        // Bit  3
+  "Ovfl",         // Bit  4
+  "Drop",         // Bit  5
+  "ConWdErr2",    // Bit  6
+  "ConWdErr1",    // Bit  7
+  "ConWdErr0",    // Bit  8
+  "ConStallErr2", // Bit  9
+  "ConStallErr1", // Bit 10
+  "ConStallErr0", // Bit 11
+  "TimeoutErr",   // Bit 12
+  "SwErr",        // Bit 13
+  "Enables"       // Bit 14
+  // Bit 15 is not used at the moment
+};
+
 #ifdef FW_ENABLED
 Firmware::Firmware()
   {

@@ -39,23 +39,22 @@ void intHandler(int dummy) {}
 
 class IYamlSetIP : public IYamlFixup
 {
-    public:
-        IYamlSetIP( std::string ip_addr ) : ip_addr_(ip_addr) {}
+public:
+    IYamlSetIP( std::string ip_addr ) : ip_addr_(ip_addr) {}
+    ~IYamlSetIP() {}
 
-        virtual void operator()(YAML::Node &root, YAML::Node &top)
-        {
-            YAML::Node ipAddrNode = IYamlFixup::findByName(root, "ipAddr");
+    virtual void operator()(YAML::Node &root, YAML::Node &top)
+    {
+        YAML::Node ipAddrNode = IYamlFixup::findByName(root, "ipAddr");
 
-            if ( ! ipAddrNode )
-                throw std::runtime_error("ERROR on IYamlSetIP::operator(): 'ipAddr' node was not found!");
+        if ( ! ipAddrNode )
+            throw std::runtime_error("ERROR on IYamlSetIP::operator(): 'ipAddr' node was not found!");
 
-            ipAddrNode = ip_addr_.c_str();
-        }
+        ipAddrNode = ip_addr_.c_str();
+    }
 
-        ~IYamlSetIP() {}
-
-    private:
-        std::string ip_addr_;
+private:
+    std::string ip_addr_;
 };
 
 class RAIIFile
@@ -178,15 +177,18 @@ void Tester::rxHandler()
     // Pre-fault our stack
     stack_prefault();
 
-    std::size_t                     rxPackages = 0; // Number of packet received
-    int                             rxTimeouts = 0; // Number of RX timeouts
-    std::map<uint32_t, std::size_t> h;              // Histogram (rxTime(us))
-    int64_t                         got;
-    uint32_t                        u32;
-    uint8_t                         buf[100*1024];  // 100KBytes buffer
+    const int64_t                   expectedPacketSize { 24 + 1024*192*2/8 + 1 }; // header + 1024 apps x (192 x 2) bits/app + footer (bytes)
+    std::size_t                     rxPackages { 0 };          // Number of packet received
+    std::size_t                     rxTimeouts { 0 };          // Number of RX timeouts
+    std::size_t                     rxBadSizes { 0 };          // Number of RX packets with unexpected size
+    int64_t                         got;                       // Number of bytes received
+    uint8_t                         buf[2*expectedPacketSize]; // Data buffer. Double of the expected size
+    std::map<uint32_t, std::size_t> h;                         // Histogram (rxTime(us))
+    uint32_t                        fpgaTxClk;                 // FPGA TX clocks
 
-    // Wait for the first package
-    strm->read(buf, sizeof(buf), CTimeout(-1));
+    // Wait for the first packet
+    if ( ! strm->read(buf, sizeof(buf), CTimeout(3500)) )
+        ++rxTimeouts;
 
     // Clear the software error flags before starting
     swClear->setVal((uint64_t)1);
@@ -199,13 +201,17 @@ void Tester::rxHandler()
         {
             ++rxTimeouts;
         }
+        else if ( expectedPacketSize != got)
+        {
+            ++rxBadSizes;
+        }
         else
         {
-        	// Number of FPGA clock it took the current TX
-        	txClkCnt->getVal(&u32);
+      	    // Number of FPGA clock it took the current TX
+            txClkCnt->getVal(&fpgaTxClk);
 
             // Round the time to us and update the histogram
-            ++h[u32/fpgaClkPerUs];
+            ++h[fpgaTxClk/fpgaClkPerUs];
 
             // Increase RX packet counter
             ++rxPackages;
@@ -216,32 +222,49 @@ void Tester::rxHandler()
     std::cout << "Rx Thread interrupted" << std::endl;
     std::cout << std::endl;
 
-    uint8_t  u8;
+    uint8_t  packetLossError;
     uint32_t packetLossCnt;
 
     std::cout << "Rx Thread report:" << std::endl;
     std::cout << "===========================" << std::endl;
-    std::cout << "Number of packet received : " << rxPackages << std::endl;
-    std::cout << "Number of timeouts        : " << rxTimeouts << std::endl;
-    std::cout << "Min RX time (us)          : " << h.begin()->first << std::endl;
-    std::cout << "Max RX time (us)          : " << h.rbegin()->first << std::endl;
-    swLossError->getVal(&u8);
-    std::cout << "FW SoftwareLossError      : " << unsigned(u8) << std::endl;
-    swLossCnt->getVal(&packetLossCnt);
-    std::cout << "FW SoftwareLossCnt        : " << unsigned(packetLossCnt) << std::endl;
-    std::cout << "Writing data to           : '" << outFile.getName() << "' ... ";
+    std::cout << "Number of valid packet received : " << rxPackages << std::endl;
+    std::cout << "Number of packet with bad sizes : " << rxBadSizes << std::endl;
+    std::cout << "Number of timeouts              : " << rxTimeouts        << std::endl;
 
-    // Write the histogram result to the output file
-    outFile << "# FW version                : " << gitHash              << "\n";
-    outFile << "# FW version                : " << gitHash.c_str()      << "\n";
-    outFile << "# Number of packet received : " << rxPackages           << "\n";
-    outFile << "# Number of timeouts        : " << rxTimeouts           << "\n";
-    outFile << "# Min RX time (us)          : " << h.begin()->first     << "\n";
-    outFile << "# Max RX time (us)          : " << h.rbegin()->first    << "\n";
-    outFile << "# FW SoftwareLossCnt        : " << packetLossCnt        << "\n";
-    outFile << "#\n";
-    outFile << "# RxTime (us)     Counts\n";
-    std::for_each(h.begin(), h.end(), std::bind(&RAIIFile::writePair<uint32_t, std::size_t>, &outFile, std::placeholders::_1));
+    // Do not print this info if not packet was received
+    if (rxPackages)
+    {
+        std::cout << "Min RX time (us)                : " << h.begin()->first  << std::endl;
+        std::cout << "Max RX time (us)                : " << h.rbegin()->first << std::endl;
+    }
+
+    swLossError->getVal(&packetLossError);
+    std::cout << "FW SoftwareLossError            : " << unsigned(packetLossError) << std::endl;
+    swLossCnt->getVal(&packetLossCnt);
+    std::cout << "FW SoftwareLossCnt              : " << unsigned(packetLossCnt) << std::endl;
+
+    // Do not create the data file is not packet was received
+    if (rxPackages)
+    {
+        std::cout << "Writing data to                 : '" << outFile.getName() << "'... ";
+
+        // Write the histogram result to the output file
+        outFile << "# FW version                      : " << gitHash              << "\n";
+        outFile << "# FW version                      : " << gitHash.c_str()      << "\n";
+        outFile << "# Number of valid packet received : " << rxPackages           << "\n";
+        outFile << "# Number of packet with bad sizes : " << rxBadSizes           << "\n";
+        outFile << "# Number of timeouts              : " << rxTimeouts           << "\n";
+        outFile << "# Min RX time (us)                : " << h.begin()->first     << "\n";
+        outFile << "# Max RX time (us)                : " << h.rbegin()->first    << "\n";
+        outFile << "# FW SoftwareLossCnt              : " << packetLossCnt        << "\n";
+        outFile << "#\n";
+        outFile << "# RxTime (us)     Counts\n";
+        std::for_each(h.begin(), h.end(), std::bind(&RAIIFile::writePair<uint32_t, std::size_t>, &outFile, std::placeholders::_1));
+    }
+    else
+    {
+        std::cout << "Data file not created, as no valid packet was received." << std::endl;
+    }
 
     std::cout << "done!" << std::endl;
 
@@ -348,19 +371,19 @@ int main(int argc, char **argv)
     ScalVal_RO bldStamp    = IScalVal_RO::create (root->findByName("/mmio/AmcCarrierCore/AxiVersion/BuildStamp"));
     ScalVal_RO gitHash     = IScalVal_RO::create (root->findByName("/mmio/AmcCarrierCore/AxiVersion/GitHash"));
 
-    // Print AxiVersion Information
+    // Print Version Information
     std::cout << std::endl;
-    std::cout << "AxiVersion:\n" << std::endl;
+    std::cout << "Version Information:" << std::endl;
 
     fpgaVers->getVal(&u64);
-    std::cout << "FPGAVersion: " << u64 << std::endl;
+    std::cout << "FPGA Version : " << u64 << std::endl;
 
     bldStamp->getVal(str, sizeof(str)/sizeof(str[0]));
-    std::cout << "Buil String:" << str << std::endl;
+    std::cout << "Build String : " << str << std::endl;
 
     std::ostringstream aux;
     gitHash->getVal(hash, 20);
-    std::cout << "Git hash: ";
+    std::cout << "Git hash     : ";
     for (int i = 19; i >= 0; --i)
         aux << std::hex << std::setfill('0') << std::setw(2) << unsigned(hash[i]);
     std::string gitHashStr(aux.str());
@@ -379,3 +402,4 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
