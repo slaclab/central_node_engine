@@ -9,6 +9,13 @@
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
 
+central_node_engine-R1-8-0:
+  * Implement power class change asynchronous notification message
+    handler.
+  * Fix bugs the HeartBeat class, which was generating long periods
+    between heartbeats.
+  * Fix bugs and improve the CN engine.
+
 central_node_engine-R1-7-0:
   * Update buildroot to version 2019.08.
   * Update CPSW to version R4.4.1. This implied update boost to version
