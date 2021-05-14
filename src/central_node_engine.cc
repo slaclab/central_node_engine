@@ -222,12 +222,17 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
 
       // Search for Mech. Shutter device - this is needed to keep track
       // of the shutter status, and allow AOM when the shutter is closed
+      // If it is not found, we will let the system run, but we won't be
+      // able to keep track of the shutter status. This is needed for the
+      // dual-core operation.
       if (!findShutterDevice()) {
-	throw(EngineException("Failed to find Mech. Shutter device - cannot continue, please check DB."));
+        std::cout << "Mech. Shutter device not found." << std::endl;
       }
 
+      // We allow the system to run without finding both the Linac and the AOM.
+      // This is needed for the dual-core operation.
       if (!findBeamDestinations()) {
-	throw(EngineException("Failed to find AOM and Linac beam destinations - cannot continue, please check DB."));
+        std::cout << "AOM and/or Linac beam destination not found." << std::endl;
       }
 
       // Find the lowest/highest BeamClasses - used when checking faults
@@ -392,8 +397,19 @@ bool Engine::setAllowedBeamClass()
  * -> This causes the FW configuration to be reloaded with AOM destination in
  *
  * Return true if FW configuration must be reloaded.
+ *
+ * Note: this check will run ony when:
+ * - Both the Linac and the AOM destination, and
+ * - The Mech. shutter device
+ * are all defined in the DB. Otherwise, this check will
+ * do nothing and simply return false.
  */
 bool Engine::checkAomState() {
+  // Check if the shutter device and both the Linac and AOM destinations
+  // are defined. Otherwise just reutrn false.
+  if (!_aomDestination or !_linacDestination or !_shutterDevice)
+      return false;
+
   bool reload = false;
 
   // Check whether there is an active FW latch mitigation
@@ -884,20 +900,29 @@ void Engine::showStats()
         _evaluationCycleTime.show();
         hb.printReport();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
-	std::cout << "Shutter Status: " << Engine::_shutterDevice->value
-		  << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
-	std::cout << "AOM Status: ";
-	if (Engine::_aomAllowWhileShutterClosed)
-	  std::cout << " ALLOWED ";
-	else
-	  std::cout << " Normal ";
 
-	std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
-		  << Engine::_aomAllowDisableCounter << "]" << std::endl;
+        if (_shutterDevice)
+	        std::cout << "Shutter Status: " << Engine::_shutterDevice->value
+		        << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
 
-	std::cout << "Reload latch: " << Engine::_linacFwLatch << std::endl;
-	std::cout << "Reload Config Count: " << Engine::_reloadCount << std::endl;
-	std::cout << "Allow AOM (shutter closed): " << Engine::_aomAllowWhileShutterClosed << std::endl;
+        if (_aomDestination)
+        {
+	        std::cout << "AOM Status: ";
+	        if (Engine::_aomAllowWhileShutterClosed)
+	            std::cout << " ALLOWED ";
+            else
+	            std::cout << " Normal ";
+
+	        std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
+		        << Engine::_aomAllowDisableCounter << "]" << std::endl;
+        }
+
+	    std::cout << "Reload latch: " << Engine::_linacFwLatch << std::endl;
+	    std::cout << "Reload Config Count: " << Engine::_reloadCount << std::endl;
+
+        if (_aomDestination)
+	        std::cout << "Allow AOM (shutter closed): " << Engine::_aomAllowWhileShutterClosed << std::endl;
+
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
         std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter
             << " (timed out waiting on FW 360Hz updates)" << std::endl;
