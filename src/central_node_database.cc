@@ -81,6 +81,9 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
 
     if( pthread_setname_np( mitigationThread.native_handle(), "MitWriter" ) )
         perror( "pthread_setname_np failed for mitigationThread" );
+
+    if( pthread_setname_np( fwPCChangeThread.native_handle(), "PCChange" ) )
+        perror( "pthread_setname_np failed for fwPCChangeThread" );
   }
 }
 
