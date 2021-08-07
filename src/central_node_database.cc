@@ -13,6 +13,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <sys/mman.h>
 
 #include <stdio.h>
 #include <log_wrapper.h>
@@ -130,6 +131,13 @@ void MpsDb::unlatchAll() {
  */
 void MpsDb::updateInputs()
 {
+    struct sched_param  param;
+    param.sched_priority = 86;
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
+        perror("sched_setscheduler failed");
+
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
+        perror("mlockall failed");
 
     std::cout << "Update input thread started" << std::endl;
 
@@ -140,6 +148,19 @@ void MpsDb::updateInputs()
             while(!fwUpdateBuffer.isReadReady())
             {
                 fwUpdateBuffer.getCondVar()->wait_for( lock, std::chrono::milliseconds(5) );
+                if(!run)
+                {
+                    std::cout << "FW Update Data reader interrupted" << std::endl;
+                    return;
+                }
+            }
+        }
+
+        {
+            std::unique_lock<std::mutex> lock(inputsUpdatedMutex);
+            while(inputsUpdated)
+            {
+                inputsUpdatedCondVar.wait_for( lock, std::chrono::milliseconds(5) );
                 if(!run)
                 {
                     std::cout << "FW Update Data reader interrupted" << std::endl;
@@ -1558,6 +1579,14 @@ std::vector<uint8_t> MpsDb::getFastUpdateBuffer()
 
 void MpsDb::fwUpdateReader()
 {
+    struct sched_param  param;
+    param.sched_priority = 85;
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
+        perror("sched_setscheduler failed");
+
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
+        perror("mlockall failed");
+
     std::cout << "*** FW Update Data reader started" << std::endl;
     fwUpdateTimer.start();
 
@@ -1716,6 +1745,14 @@ void MpsDb::PCChangeSetDebug(bool debug)
 
 void MpsDb::mitigationWriter()
 {
+    struct sched_param  param;
+    param.sched_priority = 87;
+    if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
+        perror("sched_setscheduler failed");
+
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
+        perror("mlockall failed");
+
     std::cout << "Mitigation writer started" << std::endl;
 
     for(;;)
