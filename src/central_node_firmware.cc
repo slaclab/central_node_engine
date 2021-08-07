@@ -773,7 +773,8 @@ int64_t Firmware::readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t ti
     try
     {
         ret =  _pcChangeStreamSV->read(buffer, size, CTimeout(timeout));
-    } catch (CPSWError& e)
+    }
+    catch (CPSWError& e)
     {
        std::cerr << "Failed to read the power class change stream exception: " << e.getInfo() << std::endl;
        ret = 0;
