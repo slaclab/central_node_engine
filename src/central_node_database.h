@@ -190,7 +190,7 @@ class MpsDb {
   bool                     isInputReady()          const { return inputsUpdated;         };
   std::mutex*              getInputUpdateMutex()         { return &inputsUpdatedMutex;   };
   std::condition_variable* getInputUpdateCondVar()       { return &inputsUpdatedCondVar; };
-  void                     inputProcessed()              { inputsUpdated = false;        };
+  void                     inputProcessed();
 
   bool                     isMitBufferWriteReady() const { return softwareMitigationBuffer.isWriteReady(); };
   std::mutex*              getMitBufferMutex()           { return softwareMitigationBuffer.getMutex();     };

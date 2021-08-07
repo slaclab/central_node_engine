@@ -194,8 +194,8 @@ void MpsDb::updateInputs()
         {
             std::lock_guard<std::mutex> lock(inputsUpdatedMutex);
             inputsUpdated = true;
-            inputsUpdatedCondVar.notify_all();
         }
+        inputsUpdatedCondVar.notify_one();
     }
 }
 
@@ -1742,3 +1742,13 @@ void MpsDb::mitigationWriter()
 
     }
 }
+
+void MpsDb::inputProcessed()
+{
+    {
+        std::lock_guard<std::mutex> lock(inputsUpdatedMutex);
+        inputsUpdated = false;
+    }
+    inputsUpdatedCondVar.notify_one();
+};
+
