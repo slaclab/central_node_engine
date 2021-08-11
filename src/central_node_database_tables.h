@@ -14,8 +14,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "buffer.h"
-
 /**
  * DbException class
  *
@@ -137,15 +135,15 @@ class DbApplicationCardInput {
   ApplicationUpdateBufferBitSetHalf* getWasLowBuffer();
   ApplicationUpdateBufferBitSetHalf* getWasHighBuffer();
 
-  void setUpdateBuffers(DataBuffer<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff);
+  void setUpdateBuffers(std::vector<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff);
 
   uint32_t getWasLow(int channel);
   uint32_t getWasHigh(int channel);
 
  private:
-  DataBuffer<uint8_t>* fwUpdateBuffer;
-  size_t               wasLowBufferOffset;
-  size_t               wasHighBufferOffset;
+  std::vector<uint8_t>* fwUpdateBuffer;
+  size_t                wasLowBufferOffset;
+  size_t                wasHighBufferOffset;
 };
 
 /**
@@ -384,7 +382,7 @@ class DbApplicationCard : public DbEntry {
   DbAnalogDeviceMapPtr analogDevices;
   DbDigitalDeviceMapPtr digitalDevices;
 
-  void setUpdateBufferPtr(DataBuffer<uint8_t>* p);
+  void setUpdateBufferPtr(std::vector<uint8_t>* p);
   ApplicationUpdateBufferBitSetHalf* getWasLowBuffer();
   ApplicationUpdateBufferBitSetHalf* getWasHighBuffer();
 
@@ -404,9 +402,9 @@ class DbApplicationCard : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard);
 
  private:
-  DataBuffer<uint8_t>* fwUpdateBuffer;
-  size_t               wasLowBufferOffset;
-  size_t               wasHighBufferOffset;
+  std::vector<uint8_t>* fwUpdateBuffer;
+  size_t                wasLowBufferOffset;
+  size_t                wasHighBufferOffset;
 };
 
 typedef boost::shared_ptr<DbApplicationCard> DbApplicationCardPtr;

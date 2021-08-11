@@ -14,7 +14,6 @@
 #include <stdint.h>
 #include <time_util.h>
 #include "timer.h"
-#include "buffer.h"
 #include "queue.h"
 
 #include <boost/shared_ptr.hpp>
@@ -58,8 +57,15 @@ class MpsDb {
   // uint8_t fastUpdateBuffer[APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
 		// 	   NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES];
 
-  DataBuffer<uint8_t>     fwUpdateBuffer;
-  static const uint32_t          fwUpdateBuferSize = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
+
+  typedef std::vector<uint8_t>       update_buffer_t;
+  typedef Queue<update_buffer_t>     update_queue_t;
+
+  update_buffer_t fwUpdateBuffer;
+  update_queue_t  fwUpdateQueue;
+  std::mutex      fwUpdateBufferMutex;
+
+  static const uint32_t fwUpdateBuferSize = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + NUM_APPLICATIONS * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
 
   boost::atomic<bool>     run;
 

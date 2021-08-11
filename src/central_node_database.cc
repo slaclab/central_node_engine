@@ -33,7 +33,7 @@ bool MpsDb::_initialized = false;
 
 MpsDb::MpsDb(uint32_t inputUpdateTimeout)
 :
-    fwUpdateBuffer( fwUpdateBuferSize ),
+    fwUpdateBuffer( fwUpdateBuferSize, 0 ),
     run( true ),
     fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
     fwPCChangeThread( std::thread( &MpsDb::fwPCChangeReader, this ) ),
@@ -143,17 +143,12 @@ void MpsDb::updateInputs()
 
     for(;;)
     {
+        update_buffer_t buffer(fwUpdateBuferSize);
+        fwUpdateQueue.pop(buffer);
+
         {
-            std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
-            while(!fwUpdateBuffer.isReadReady())
-            {
-                fwUpdateBuffer.getCondVar()->wait_for( lock, std::chrono::milliseconds(5) );
-                if(!run)
-                {
-                    std::cout << "FW Update Data reader interrupted" << std::endl;
-                    return;
-                }
-            }
+            std::lock_guard<std::mutex> lock(fwUpdateBufferMutex);
+            fwUpdateBuffer = std::move(buffer);
         }
 
         {
@@ -170,7 +165,7 @@ void MpsDb::updateInputs()
         }
 
         uint64_t t;
-        memcpy(&t, &fwUpdateBuffer.getReadPtr()->at(8), sizeof(t));
+        memcpy(&t, &fwUpdateBuffer.at(8), sizeof(t));
         uint64_t diff = t - _fastUpdateTimeStamp;
         _fastUpdateTimeStamp = t;
 
@@ -196,6 +191,7 @@ void MpsDb::updateInputs()
             fwUpdateTimer.clear();
             mitigationTxTime.clear();
             softwareMitigationQueue.clear_counters();
+            fwUpdateQueue.clear_counters();
         }
 
         _inputUpdateTime.start();
@@ -207,8 +203,6 @@ void MpsDb::updateInputs()
         {
             (*applicationCardIt).second->updateInputs();
         }
-
-        fwUpdateBuffer.doneReading();
 
         _updateCounter++;
         _inputUpdateTime.tick();
@@ -920,7 +914,7 @@ void MpsDb::configureApplicationCards()
         //   aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES); // Jump to correct area according to the globalId
 
         // For debugging purposes only
-        aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(fwUpdateBuffer.getReadPtr());
+        aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(&fwUpdateBuffer);
 
         // New mapping
         aPtr->setUpdateBufferPtr(&fwUpdateBuffer);
@@ -1287,6 +1281,10 @@ void MpsDb::showFaults()
 
 void MpsDb::showFastUpdateBuffer(uint32_t begin, uint32_t size)
 {
+    // Make a (thread-safe) copy of the buffer, instead of holding
+    // the mutex while iterating over the buffer.
+    std::vector<uint8_t> buffer( getFastUpdateBuffer() );
+
     for (uint32_t address = begin; address < begin + size; ++address)
     {
         if (address % 16 == 0)
@@ -1297,8 +1295,8 @@ void MpsDb::showFastUpdateBuffer(uint32_t begin, uint32_t size)
 
         std::cout << " ";
 
-        char c1 = fwUpdateBuffer.getReadPtr()->at(address) & 0x0F;
-        char c2 = (fwUpdateBuffer.getReadPtr()->at(address) & 0xF0) >> 4;
+        char c1 = buffer.at(address) & 0x0F;
+        char c2 = (buffer.at(address) & 0xF0) >> 4;
 
         if (c1 <= 9)
             c1 += 0x30;
@@ -1431,6 +1429,7 @@ void MpsDb::showInfo()
     std::cout << "Diff > 12ms count     : " << _diffCount << std::endl;
     std::cout << "Update timout counter : " << _updateTimeoutCounter << std::endl;
     std::cout << "Mit. Queue max size   : " << softwareMitigationQueue.get_max_size() << std::endl;
+    std::cout << "Update Queue max size : " << fwUpdateQueue.get_max_size() << std::endl;
 }
 
 void MpsDb::printPCChangeLastPacketInfo() const
@@ -1574,8 +1573,10 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb)
 
 std::vector<uint8_t> MpsDb::getFastUpdateBuffer()
 {
-    std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
-    return std::vector<uint8_t>( fwUpdateBuffer.getReadPtr()->begin(), fwUpdateBuffer.getReadPtr()->end() );
+    // Return a copy of the update buffer. We hold the mutex to avoid the buffer
+    // to be re-write during the copy.
+    std::lock_guard<std::mutex> lock(fwUpdateBufferMutex);
+    return std::vector<uint8_t>( fwUpdateBuffer.begin(), fwUpdateBuffer.end() );
 }
 
 void MpsDb::fwUpdateReader()
@@ -1593,29 +1594,12 @@ void MpsDb::fwUpdateReader()
 
     for(;;)
     {
-        {
-            std::unique_lock<std::mutex> lock(*(fwUpdateBuffer.getMutex()));
-            while(!fwUpdateBuffer.isWriteReady())
-            {
-                fwUpdateBuffer.getCondVar()->wait_for( lock, std::chrono::milliseconds(5) );
-                if (!run)
-                {
-                    std::cout << "FW Update Data reader interrupted" << std::endl;
-                    return;
-                }
-            }
-        }
-
-
-        uint32_t expected_size = APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +
-            NUM_APPLICATIONS *
-            APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;
         uint32_t received_size = 0;
-
-        while (received_size != expected_size)
+        update_buffer_t buffer( fwUpdateBuferSize, 0 );
+        while (received_size != buffer.size())
         {
-            received_size = Firmware::getInstance().readUpdateStream(fwUpdateBuffer.getWritePtr()->data(),
-                expected_size, _inputUpdateTimeout);
+            received_size = Firmware::getInstance().readUpdateStream(buffer.data(),
+                buffer.size(), _inputUpdateTimeout);
 #ifndef FW_ENABLED
             if (!run)
             {
@@ -1627,7 +1611,7 @@ void MpsDb::fwUpdateReader()
                 ++_updateTimeoutCounter;
         }
 
-        fwUpdateBuffer.doneWriting();
+        fwUpdateQueue.push(buffer);
         fwUpdateTimer.tick();
         fwUpdateTimer.start();
     }
