@@ -783,7 +783,7 @@ int64_t Firmware::readPCChangeStream(uint8_t *buffer, uint32_t size, uint64_t ti
     return ret;
 }
 
-void Firmware::writeMitigation(uint32_t *mitigation)
+void Firmware::writeMitigation(const std::vector<uint32_t>& mitigation)
 {
     //DEBUG
     //  mitigation[0] = 0x55667788;
@@ -791,7 +791,7 @@ void Firmware::writeMitigation(uint32_t *mitigation)
     //DEBUG
     try
     {
-        _swMitigationSV->setVal(mitigation, 2);
+        _swMitigationSV->setVal(const_cast<uint32_t*>(mitigation.data()), mitigation.size());
     }
     catch (IOError &e)
     {

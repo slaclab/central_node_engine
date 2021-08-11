@@ -44,7 +44,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
     _diff(0),
     _maxDiff(0),
     _diffCount(0),
-    softwareMitigationBuffer(NUM_DESTINATIONS / 8),
+    softwareMitigationBuffer(NUM_DESTINATIONS / 8, 0),
     _inputUpdateTime("Input update time", 360),
     _clearUpdateTime(false),
     fwUpdateTimer("FW Update Period", 360),
@@ -195,6 +195,7 @@ void MpsDb::updateInputs()
             _inputUpdateTime.clear();
             fwUpdateTimer.clear();
             mitigationTxTime.clear();
+            softwareMitigationQueue.clear_counters();
         }
 
         _inputUpdateTime.start();
@@ -1017,8 +1018,7 @@ void MpsDb::configureBeamDestinations()
 
 void MpsDb::clearMitigationBuffer()
 {
-    for (uint32_t i = 0; i < NUM_DESTINATIONS / 8; ++i)
-        softwareMitigationBuffer.getWritePtr()->at(i) = 0;
+    mit_buffer_t( NUM_DESTINATIONS/8, 0 ).swap(softwareMitigationBuffer);
 }
 
 /**
@@ -1430,6 +1430,7 @@ void MpsDb::showInfo()
     std::cout << "Current TimeStamp diff: " << _diff << std::endl;
     std::cout << "Diff > 12ms count     : " << _diffCount << std::endl;
     std::cout << "Update timout counter : " << _updateTimeoutCounter << std::endl;
+    std::cout << "Mit. Queue max size   : " << softwareMitigationQueue.get_max_size() << std::endl;
 }
 
 void MpsDb::printPCChangeLastPacketInfo() const
@@ -1757,26 +1758,14 @@ void MpsDb::mitigationWriter()
 
     for(;;)
     {
-        {
-            std::unique_lock<std::mutex> lock(*(softwareMitigationBuffer.getMutex()));
-            while(!softwareMitigationBuffer.isReadReady())
-            {
-                softwareMitigationBuffer.getCondVar()->wait_for( lock, std::chrono::milliseconds(5) );
-                if(!run)
-                {
-                    std::cout << "Mitigation writer interrupted" << std::endl;
-                    return;
-                }
-            }
-        }
+        // Pop a mitigation message from the queue, using the blocking call
+        // (i.e. the thread will wait here until a value is available).
+        mit_buffer_ptr_t p { softwareMitigationQueue.pop() };
 
         // Write the mitigation to FW
         mitigationTxTime.start();
-        Firmware::getInstance().writeMitigation(softwareMitigationBuffer.getReadPtr()->data());
+        Firmware::getInstance().writeMitigation(*p);
         mitigationTxTime.tick();
-
-        softwareMitigationBuffer.doneReading();
-
     }
 }
 
@@ -1788,4 +1777,9 @@ void MpsDb::inputProcessed()
     }
     inputsUpdatedCondVar.notify_one();
 };
+
+void MpsDb::pushMitBuffer()
+{
+    softwareMitigationQueue.push(softwareMitigationBuffer);
+}
 

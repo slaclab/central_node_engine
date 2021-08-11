@@ -1126,21 +1126,6 @@ void Engine::engineThread()
                 }
             }
 
-            // Wait for the mitigation buffer to be ready to write
-            {
-                std::unique_lock<std::mutex> lock(*(Engine::getInstance()._mpsDb->getMitBufferMutex()));
-                while(!Engine::getInstance()._mpsDb->isMitBufferWriteReady())
-                {
-                    Engine::getInstance()._mpsDb->getMitBufferCondVar()->wait_for(lock, std::chrono::milliseconds(5));
-                    if (!_evaluate)
-                    {
-                        engineLock.unlock();
-                        std::cout << "INFO: EngineThread: Exiting..." << std::endl;
-                        return;
-                    }
-                }
-            }
-
             reload = false;
             if (Engine::getInstance().checkFaults() > 0)
             {
@@ -1150,8 +1135,8 @@ void Engine::engineThread()
             // Inputs were processed
             Engine::getInstance()._mpsDb->inputProcessed();
 
-            // The mitigation buffer was written
-            Engine::getInstance()._mpsDb->mitBufferDoneWriting();
+            // The mitigation buffer is ready, push it to the queue.
+            Engine::getInstance()._mpsDb->pushMitBuffer();
 
             _updateCounter++;
             counter++;

@@ -15,6 +15,7 @@
 #include <time_util.h>
 #include "timer.h"
 #include "buffer.h"
+#include "queue.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/atomic.hpp>
@@ -86,7 +87,13 @@ class MpsDb {
   /**
    * Each destination takes 4-bits for the allowed power class.
    */
-  DataBuffer<uint32_t> softwareMitigationBuffer;
+  // Convinient typedefs
+  typedef std::vector<uint32_t>   mit_buffer_t;
+  typedef Queue<mit_buffer_t>     mit_queue_t;
+  typedef mit_queue_t::value_type mit_buffer_ptr_t;
+
+  mit_buffer_t softwareMitigationBuffer;
+  mit_queue_t  softwareMitigationQueue;
 
   Timer<double> _inputUpdateTime;
   bool _clearUpdateTime;
@@ -192,10 +199,7 @@ class MpsDb {
   std::condition_variable* getInputUpdateCondVar()       { return &inputsUpdatedCondVar; };
   void                     inputProcessed();
 
-  bool                     isMitBufferWriteReady() const { return softwareMitigationBuffer.isWriteReady(); };
-  std::mutex*              getMitBufferMutex()           { return softwareMitigationBuffer.getMutex();     };
-  std::condition_variable* getMitBufferCondVar()         { return softwareMitigationBuffer.getCondVar();   };
-  void                     mitBufferDoneWriting()        { softwareMitigationBuffer.doneWriting();         };
+  void                     pushMitBuffer();
 
   template<class MapPtrType, class IteratorType>
     void printMap(std::ostream &os, MapPtrType map,

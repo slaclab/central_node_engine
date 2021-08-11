@@ -461,9 +461,10 @@ class DbBeamClass : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass);
 };
 
-typedef boost::shared_ptr<DbBeamClass> DbBeamClassPtr;
+typedef boost::shared_ptr<DbBeamClass>     DbBeamClassPtr;
 typedef std::map<uint32_t, DbBeamClassPtr> DbBeamClassMap;
-typedef boost::shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
+typedef boost::shared_ptr<DbBeamClassMap>  DbBeamClassMapPtr;
+typedef std::vector<uint32_t>              DbMitBuffer;
 
 /**
  * DbBeamDestination YAML class
@@ -481,7 +482,7 @@ class DbBeamDestination : public DbEntry {
 
   // Memory location where the allowed beam class for this device
   // is written and sent to firmware
-  void    setSoftwareMitigationBuffer(DataBuffer<uint32_t>* bufPtr) { softwareMitigationBuffer = bufPtr; };
+  void    setSoftwareMitigationBuffer(DbMitBuffer* bufPtr) { softwareMitigationBuffer = bufPtr; }
   uint8_t softwareMitigationBufferIndex;
   uint8_t bitShift; // define if mitigation uses high/low 4-bits in the softwareMitigationBuffer
 
@@ -496,7 +497,7 @@ class DbBeamDestination : public DbEntry {
       allowedBeamClass = tentativeBeamClass;
     }
 
-    softwareMitigationBuffer->getWritePtr()->at(softwareMitigationBufferIndex) |= ((allowedBeamClass->number & 0xF) << bitShift);
+    softwareMitigationBuffer->at(softwareMitigationBufferIndex) |= ((allowedBeamClass->number & 0xF) << bitShift);
 
     if (previousAllowedBeamClass->number != allowedBeamClass->number) {
       History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
@@ -515,7 +516,7 @@ class DbBeamDestination : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination);
 
  private:
-  DataBuffer<uint32_t>* softwareMitigationBuffer;
+  DbMitBuffer* softwareMitigationBuffer;
 };
 
 typedef boost::shared_ptr<DbBeamDestination> DbBeamDestinationPtr;
