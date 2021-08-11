@@ -114,7 +114,8 @@ public:
 private:
     std::size_t             reqTimeoutCnt;
     std::size_t             reqTimeout;
-    bool                    beatReq;
+    std::size_t             beatReqCount;
+    std::size_t             beatReqCountMax;
     std::mutex              beatMutex;
     std::condition_variable beatCondVar;
     boost::atomic<bool>     run;
@@ -122,11 +123,10 @@ private:
 
     void beatWriter();
 
-    // Helper predicate functions used for the conditional variable
+    // Helper predicate function used for the conditional variable
     // 'wait_for' methods. We need this as our old rhel6 host don't
     // support C++11 , otherwise we could have used lambda expressions.
-    bool pred()  { return beatReq;  };
-    bool predN() { return !beatReq; };
+    bool pred()  { return beatReqCount;  };
 };
 
 #endif

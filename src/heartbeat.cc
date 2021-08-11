@@ -125,12 +125,13 @@ void BlockingBeat::printBeatReport()
 ///////////////////////////////////////
 NonBlockingBeat::NonBlockingBeat(Path root, size_t timerBufferSize)
 :
-    BeatBase      ( root, timerBufferSize ),
-    reqTimeoutCnt ( 0 ),
-    reqTimeout    ( 5 ),
-    beatReq       ( false ),
-    run           ( true ),
-    beatThread    ( std::thread( &NonBlockingBeat::beatWriter, this ) )
+    BeatBase        ( root, timerBufferSize ),
+    reqTimeoutCnt   ( 0 ),
+    reqTimeout      ( 5 ),
+    beatReqCount    ( 0 ),
+    beatReqCountMax ( 0 ),
+    run             ( true ),
+    beatThread      ( std::thread( &NonBlockingBeat::beatWriter, this ) )
 {
     if( pthread_setname_np( beatThread.native_handle(), "HeartBeat" ) )
        perror( "pthread_setname_np failed for HeartBeat thread" );
@@ -145,25 +146,26 @@ NonBlockingBeat::~NonBlockingBeat()
 
 void NonBlockingBeat::clear()
 {
-    // Wait for any heartbeat generation in progress
-    std::unique_lock<std::mutex> lock(beatMutex);
-    beatCondVar.wait( lock, std::bind(&NonBlockingBeat::predN, this) );
-
+    {
+        std::lock_guard<std::mutex> lock(beatMutex);
+        beatReqCountMax = 0;
+        reqTimeoutCnt = 0;
+    }
     defaultClear();
-
-    reqTimeoutCnt = 0;
 }
 
 void NonBlockingBeat::beat()
 {
-    // Wait for any heartbeat generation in progress
     {
-        std::unique_lock<std::mutex> lock(beatMutex);
-        beatCondVar.wait( lock, std::bind(&NonBlockingBeat::predN, this) );
+        std::lock_guard<std::mutex> lock(beatMutex);
+        // Increase the request counter
+        ++beatReqCount;
+
+        // Keep track of the maximum number of requests without handling
+        if (beatReqCount > beatReqCountMax)
+            beatReqCountMax = beatReqCount;
     }
 
-    std::unique_lock<std::mutex> lock(beatMutex);
-    beatReq = true;
     beatCondVar.notify_one();
 }
 
@@ -186,19 +188,14 @@ void NonBlockingBeat::beatWriter()
         std::unique_lock<std::mutex> lock(beatMutex);
         if (beatCondVar.wait_for(lock, std::chrono::milliseconds(reqTimeout), std::bind(&NonBlockingBeat::pred, this)))
         {
-            defaultBeat();
-
-            // Notify that we are done with the heartbeat generation.
-            // Manual unlocking is done before notifying, to avoid waking up
-            // the waiting thread only to block again (see notify_one for details)
-            beatReq = false;
+            --beatReqCount;
             lock.unlock();
-            beatCondVar.notify_all();
+
+            defaultBeat();
         }
         else
         {
-            if (run)
-                ++reqTimeoutCnt;
+            ++reqTimeoutCnt;
         }
 
         if (!run)
@@ -211,8 +208,17 @@ void NonBlockingBeat::beatWriter()
 
 void NonBlockingBeat::printBeatReport()
 {
+    std::size_t max, cnt;
+
+    {
+        std::lock_guard<std::mutex> lock(beatMutex);
+        max = beatReqCountMax;
+        cnt = reqTimeoutCnt;
+    }
+
     printf( "Request timeout               : %zu ms\n", reqTimeout );
-    printf( "Timeouts waiting for requests : %zu\n",   reqTimeoutCnt );
+    printf( "Timeouts waiting for requests : %zu\n",    cnt        );
+    printf( "Maximum queued requests       : %zu\n",    max        );
     defaultPrintReport();
 }
 
