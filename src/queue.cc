@@ -33,7 +33,15 @@ typename Queue<T>::value_type Queue<T>::pop()
 {
     std::unique_lock<std::mutex> lock(m);
     cv.wait(lock, std::bind(&Queue::pred, this));
-    return pop_and_get();
+    return std::make_shared<T>( pop_and_get() );
+}
+
+template<typename T>
+void Queue<T>::pop(T& val)
+{
+    std::unique_lock<std::mutex> lock(m);
+    cv.wait(lock, std::bind(&Queue::pred, this));
+    val = pop_and_get();
 }
 
 template<typename T>
@@ -42,13 +50,13 @@ typename Queue<T>::value_type Queue<T>::try_pop()
     std::lock_guard<std::mutex> lock(m);
     if (q.empty())
         return value_type();
-    return pop_and_get();
+    return std::make_shared<T>( pop_and_get() );
 }
 
 template<typename T>
-typename Queue<T>::value_type Queue<T>::pop_and_get()
+T Queue<T>::pop_and_get()
 {
-    value_type val { std::make_shared<T>( std::move(q.front()) ) };
+    T val ( std::move(q.front()) );
     q.pop();
     return val;
 }
@@ -67,4 +75,6 @@ void Queue<T>::clear_counters()
     watermark = 0;
 }
 
+template class Queue< std::vector<uint8_t> >;
 template class Queue< std::vector<uint32_t> >;
+

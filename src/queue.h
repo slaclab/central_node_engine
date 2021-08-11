@@ -20,11 +20,13 @@ public:
     // Push a nee value to the queue.
     void push(T val);
 
-    // Blocking call. The thread will wait (sleeping) until a value
+    // Blocking calls. The thread will wait (sleeping) until a value
     // is available in the queue.
     value_type pop();
 
-    // Non-blocking call. If not value is available, the call will
+    void pop(T& val);
+
+    // Non-blocking calls. If not value is available, the call will
     // return immediatelly with a null pointer.
     value_type try_pop();
 
@@ -48,7 +50,7 @@ private:
     // from the queue, to avoid code duplication between pop()
     // and try_pop(). It is call when we are sure there is at
     // least one element in the queue.
-    value_type pop_and_get();
+    T pop_and_get();
 
     // Helper predicate function used for the conditional variable
     // wait methods. We need this as our old rhel6 host don't
