@@ -27,7 +27,7 @@ ApplicationUpdateBufferBitSetHalf* DbApplicationCardInput::getWasLowBuffer()
     if (!fwUpdateBuffer)
         return NULL;
 
-    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasLowBufferOffset));
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->at(wasLowBufferOffset));
 }
 
 ApplicationUpdateBufferBitSetHalf* DbApplicationCardInput::getWasHighBuffer()
@@ -35,7 +35,7 @@ ApplicationUpdateBufferBitSetHalf* DbApplicationCardInput::getWasHighBuffer()
     if (!fwUpdateBuffer)
         return NULL;
 
-    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->getReadPtr()->at(wasHighBufferOffset));
+    return reinterpret_cast<ApplicationUpdateBufferBitSetHalf *>(&fwUpdateBuffer->at(wasHighBufferOffset));
 }
 
 uint32_t DbApplicationCardInput::getWasLow(int channel) {
@@ -46,7 +46,7 @@ uint32_t DbApplicationCardInput::getWasHigh(int channel) {
   return (*getWasHighBuffer())[channel];
 }
 
-void DbApplicationCardInput::setUpdateBuffers(DataBuffer<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff) 
+void DbApplicationCardInput::setUpdateBuffers(std::vector<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff)
 {
     fwUpdateBuffer      = bufPtr;
     wasLowBufferOffset  = wasLowBufferOff;

@@ -23,18 +23,19 @@ time_t          Engine::_startTime;
 uint32_t        Engine::_inputUpdateFailCounter;
 bool            Engine::_enableMps = false;
 
-Engine::Engine() :
-  _initialized(false),
-  _engineThread(NULL),
-  _debugCounter(0),
-  _aomAllowWhileShutterClosed(false),
-  _aomAllowEnableCounter(0),
-  _aomAllowDisableCounter(0),
-  _linacFwLatch(false),
-  _reloadCount(0),
-  _checkFaultTime( "Evaluation only time", 720 ),
-  _evaluationCycleTime( "Evaluation Cycle time", 720 ),
-  hb( Firmware::getInstance().getRoot(), 3500, 720 )
+Engine::Engine()
+:
+    _initialized(false),
+    _engineThread(NULL),
+    _debugCounter(0),
+    _aomAllowWhileShutterClosed(false),
+    _aomAllowEnableCounter(0),
+    _aomAllowDisableCounter(0),
+    _linacFwLatch(false),
+    _reloadCount(0),
+    _checkFaultTime( "Evaluation only time", 720 ),
+    _evaluationCycleTime( "Evaluation Cycle time", 720 ),
+    hb( Firmware::getInstance().getRoot(), 3500, 720 )
 {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
     engineLogger = Loggers::getLogger("ENGINE");
@@ -57,7 +58,6 @@ Engine::Engine() :
 
 Engine::~Engine()
 {
-
 #if defined(LOG_ENABLED)
     //  Firmware::getInstance().showStats();
 #endif
@@ -97,8 +97,8 @@ int Engine::reloadConfig()
     }
 
     {
-      std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-      _mpsDb->writeFirmwareConfiguration();
+        std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+        _mpsDb->writeFirmwareConfiguration();
     }
 
     _evaluate = true;
@@ -111,24 +111,24 @@ int Engine::reloadConfig()
 // This is called when analog devices need to be ignored (and un-ignored)
 int Engine::reloadConfigFromIgnore()
 {
-  Firmware::getInstance().setEvaluationEnable(false);
-  Firmware::getInstance().setSoftwareEnable(false);
-  Firmware::getInstance().setEnable(false);
+    Firmware::getInstance().setEvaluationEnable(false);
+    Firmware::getInstance().setSoftwareEnable(false);
+    Firmware::getInstance().setEnable(false);
 
-  {
-    std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-    _mpsDb->writeFirmwareConfiguration(_aomAllowWhileShutterClosed);
-  }
+    {
+        std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+        _mpsDb->writeFirmwareConfiguration(_aomAllowWhileShutterClosed);
+    }
 
-  Firmware::getInstance().setEnable(true);
-  Firmware::getInstance().clearAll();
-  //  Firmware::getInstance().softwareClear();
-  Firmware::getInstance().setSoftwareEnable(true);
-  Firmware::getInstance().setEvaluationEnable(true);
+    Firmware::getInstance().setEnable(true);
+    Firmware::getInstance().clearAll();
+    //  Firmware::getInstance().softwareClear();
+    Firmware::getInstance().setSoftwareEnable(true);
+    Firmware::getInstance().setEvaluationEnable(true);
 
-  ++_reloadCount;
+    ++_reloadCount;
 
-  return 0;
+    return 0;
 }
 
 int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
@@ -151,9 +151,9 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     if (_evaluate)
     {
         _evaluate = false;
-	engineLock.unlock();
+        engineLock.unlock();
         threadJoin();
-	engineLock.lock();
+        engineLock.lock();
     }
 
     _evaluate = false;
@@ -162,99 +162,99 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     boost::shared_ptr<MpsDb> mpsDb = boost::shared_ptr<MpsDb>(db);
 
     {
-      std::unique_lock<std::mutex> lock(*mpsDb->getMutex()); // the database mutex is static - is the same for all instances
+        std::unique_lock<std::mutex> lock(*mpsDb->getMutex()); // the database mutex is static - is the same for all instances
 
-      if (mpsDb->load(yamlFileName) != 0)
-	{
-	  _errorStream.str(std::string());
-	  _errorStream << "ERROR: Failed to load yaml database ("
-		       << yamlFileName << ")";
-	  throw(EngineException(_errorStream.str()));
-	}
+        if (mpsDb->load(yamlFileName) != 0)
+        {
+            _errorStream.str(std::string());
+            _errorStream << "ERROR: Failed to load yaml database ("
+                << yamlFileName << ")";
+            throw(EngineException(_errorStream.str()));
+        }
 
-      LOG_TRACE("ENGINE", "YAML Database loaded from " << yamlFileName);
+        LOG_TRACE("ENGINE", "YAML Database loaded from " << yamlFileName);
 
-      // When the first yaml configuration file is loaded the bypassMap
-      // must be created.
-      //
-      // TODO/Database/Important: the bypasses are created for each device input and
-      // analog channel in the database, this happens for the first time
-      // a database is loaded. If there are subsequent database changes
-      // they must have the same device inputs and analog channels.
-      // Currently if the number of channels differ between the loaded
-      // databases the central node engine must be restarted.
-      if (!_bypassManager)
-	{
-	  _bypassManager = BypassManagerPtr(new BypassManager());
-	  _bypassManager->createBypassMap(mpsDb);
-	  _bypassManager->startBypassThread();
-	}
+        // When the first yaml configuration file is loaded the bypassMap
+        // must be created.
+        //
+        // TODO/Database/Important: the bypasses are created for each device input and
+        // analog channel in the database, this happens for the first time
+        // a database is loaded. If there are subsequent database changes
+        // they must have the same device inputs and analog channels.
+        // Currently if the number of channels differ between the loaded
+        // databases the central node engine must be restarted.
+        if (!_bypassManager)
+        {
+            _bypassManager = BypassManagerPtr(new BypassManager());
+            _bypassManager->createBypassMap(mpsDb);
+            _bypassManager->startBypassThread();
+        }
 
-      LOG_TRACE("ENGINE", "BypassManager created");
+        LOG_TRACE("ENGINE", "BypassManager created");
 
-      try
-	{
-	  mpsDb->configure();
-	}
-      catch (DbException &e)
-	{
-	  throw e;
-	}
+        try
+        {
+            mpsDb->configure();
+        }
+        catch (DbException &e)
+        {
+            throw e;
+        }
 
-      LOG_TRACE("ENGINE", "MPS Database configured from YAML");
+        LOG_TRACE("ENGINE", "MPS Database configured from YAML");
 
-      // Assign bypass to each digital/analog input
-      try
-	{
-	  _bypassManager->assignBypass(mpsDb);
-	}
-      catch (CentralNodeException &e)
-	{
-	  _initialized = true;
-	  _evaluate = true;
-	  startUpdateThread();
-	  throw e;
-	}
+        // Assign bypass to each digital/analog input
+        try
+        {
+            _bypassManager->assignBypass(mpsDb);
+        }
+        catch (CentralNodeException &e)
+        {
+            _initialized = true;
+            _evaluate = true;
+            startUpdateThread();
+            throw e;
+        }
 
-      // Now that the database has been loaded and configured
-      // successfully, assign to _mpsDb shared_ptr
-      _mpsDb = mpsDb;//shared_ptr<MpsDb>(db);
+        // Now that the database has been loaded and configured
+        // successfully, assign to _mpsDb shared_ptr
+        _mpsDb = mpsDb;//shared_ptr<MpsDb>(db);
 
-      // Search for Mech. Shutter device - this is needed to keep track
-      // of the shutter status, and allow AOM when the shutter is closed
-      // If it is not found, we will let the system run, but we won't be
-      // able to keep track of the shutter status. This is needed for the
-      // dual-core operation.
-      if (!findShutterDevice()) {
-        std::cout << "Mech. Shutter device not found." << std::endl;
-      }
+        // Search for Mech. Shutter device - this is needed to keep track
+        // of the shutter status, and allow AOM when the shutter is closed
+        // If it is not found, we will let the system run, but we won't be
+        // able to keep track of the shutter status. This is needed for the
+        // dual-core operation.
+        if (!findShutterDevice())
+            std::cout << "Mech. Shutter device not found." << std::endl;
 
-      // We allow the system to run without finding both the Linac and the AOM.
-      // This is needed for the dual-core operation.
-      if (!findBeamDestinations()) {
-        std::cout << "AOM and/or Linac beam destination not found." << std::endl;
-      }
 
-      // Find the lowest/highest BeamClasses - used when checking faults
-      uint32_t num = 0;
-      uint32_t lowNum = 100;
-      for (DbBeamClassMap::iterator beamClass = _mpsDb->beamClasses->begin();
-	   beamClass != _mpsDb->beamClasses->end(); ++beamClass)
-	{
-	  if ((*beamClass).second->number > num)
-	    {
-	      _highestBeamClass = (*beamClass).second;
-	      num = (*beamClass).second->number;
-	    }
+        // We allow the system to run without finding both the Linac and the AOM.
+        // This is needed for the dual-core operation.
+        if (!findBeamDestinations())
+            std::cout << "AOM and/or Linac beam destination not found." << std::endl;
 
-	  if ((*beamClass).second->number < lowNum)
-	    {
-	      _lowestBeamClass = (*beamClass).second;
-	      lowNum = (*beamClass).second->number;
-	    }
-	}
+        // Find the lowest/highest BeamClasses - used when checking faults
+        uint32_t num = 0;
+        uint32_t lowNum = 100;
+        for (DbBeamClassMap::iterator beamClass = _mpsDb->beamClasses->begin();
+            beamClass != _mpsDb->beamClasses->end();
+            ++beamClass)
+        {
+            if ((*beamClass).second->number > num)
+            {
+                _highestBeamClass = (*beamClass).second;
+                num = (*beamClass).second->number;
+            }
 
-      _mpsDb->writeFirmwareConfiguration();
+            if ((*beamClass).second->number < lowNum)
+            {
+                _lowestBeamClass = (*beamClass).second;
+                lowNum = (*beamClass).second->number;
+            }
+        }
+
+        _mpsDb->writeFirmwareConfiguration();
     }
 
     LOG_TRACE("ENGINE", "Lowest beam class found: " << _lowestBeamClass->number);
@@ -270,45 +270,47 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
     return 0;
 }
 
-bool Engine::findBeamDestinations() {
-  for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
-       it != _mpsDb->beamDestinations->end(); ++it) {
-    if ((*it).second->name == "AOM") {
-      _aomDestination = (*it).second;
+bool Engine::findBeamDestinations()
+{
+    for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
+        it != _mpsDb->beamDestinations->end();
+        ++it)
+    {
+        if ((*it).second->name == "AOM")
+            _aomDestination = (*it).second;
+        else if ((*it).second->name == "Linac")
+            _linacDestination = (*it).second;
     }
-    else if ((*it).second->name == "Linac") {
-      _linacDestination = (*it).second;
-    }
-  }
 
-  if (!_aomDestination or !_linacDestination) {
-    return false;
-  }
+    if (!_aomDestination or !_linacDestination)
+        return false;
 
-  return true;
+    return true;
 }
 
 bool Engine::findShutterDevice()
 {
-  for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
-       device != _mpsDb->digitalDevices->end(); ++device)
+    for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
+        device != _mpsDb->digitalDevices->end();
+        ++device)
     {
-      if ((*device).second->name == "Mech. Shutter")
-	{
-	  _shutterDevice = (*device).second;
-	  for (DbDeviceStateMap::iterator state = _shutterDevice->deviceType->deviceStates->begin();
-	       state != _shutterDevice->deviceType->deviceStates->end(); ++state)
-	    {
-	      if ((*state).second->name == "CLOSED")
-		{
-		  _shutterClosedStatus = (*state).second->value;
-		  return true;
-		}
-	    }
-	}
+        if ((*device).second->name == "Mech. Shutter")
+        {
+            _shutterDevice = (*device).second;
+            for (DbDeviceStateMap::iterator state = _shutterDevice->deviceType->deviceStates->begin();
+                state != _shutterDevice->deviceType->deviceStates->end();
+                ++state)
+            {
+                if ((*state).second->name == "CLOSED")
+                {
+                    _shutterClosedStatus = (*state).second->value;
+                    return true;
+                }
+            }
+        }
     }
 
-  return false;
+    return false;
 }
 
 bool Engine::isInitialized()
@@ -345,17 +347,18 @@ void Engine::setTentativeBeamClass()
  */
 bool Engine::setAllowedBeamClass()
 {
-  // Set the allowed classes according to the SW evaluation
-  for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
-       it != _mpsDb->beamDestinations->end(); ++it)
+    // Set the allowed classes according to the SW evaluation
+    for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
+        it != _mpsDb->beamDestinations->end();
+        ++it)
     {
-      (*it).second->setAllowedBeamClass();
-      //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
-      LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
-		<< (*it).second->allowedBeamClass->number);
+        (*it).second->setAllowedBeamClass();
+        //    (*it).second->allowedBeamClass = (*it).second->tentativeBeamClass;
+        LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
+            << (*it).second->allowedBeamClass->number);
     }
 
-  return true;
+    return true;
 }
 
 /**
@@ -404,96 +407,97 @@ bool Engine::setAllowedBeamClass()
  * are all defined in the DB. Otherwise, this check will
  * do nothing and simply return false.
  */
-bool Engine::checkAomState() {
-  // Check if the shutter device and both the Linac and AOM destinations
-  // are defined. Otherwise just reutrn false.
-  if (!_aomDestination or !_linacDestination or !_shutterDevice)
-      return false;
+bool Engine::checkAomState()
+{
+    // Check if the shutter device and both the Linac and AOM destinations
+    // are defined. Otherwise just reutrn false.
+    if (!_aomDestination or !_linacDestination or !_shutterDevice)
+        return false;
 
-  bool reload = false;
+    bool reload = false;
 
-  // Check whether there is an active FW latch mitigation
-  uint32_t latchedMitigation[2];
-  Firmware::getInstance().getLatchedMitigation(&latchedMitigation[0]);
-  uint32_t linacLatchedMitigation = latchedMitigation[1] & 0xF;
+    // Check whether there is an active FW latch mitigation
+    uint32_t latchedMitigation[2];
+    Firmware::getInstance().getLatchedMitigation(&latchedMitigation[0]);
+    uint32_t linacLatchedMitigation = latchedMitigation[1] & 0xF;
 
-  // Read the current mitigation (result of both SW/FW evaluations)
-  uint32_t mitigation[2];
-  Firmware::getInstance().getMitigation(&mitigation[0]);
-  uint32_t linacMitigation = mitigation[1] & 0xF;
+    // Read the current mitigation (result of both SW/FW evaluations)
+    uint32_t mitigation[2];
+    Firmware::getInstance().getMitigation(&mitigation[0]);
+    uint32_t linacMitigation = mitigation[1] & 0xF;
 
-  bool shutterClosed = false;
-  if (_shutterDevice->value == _shutterClosedStatus) {
-    shutterClosed = true;
-  }
+    bool shutterClosed = false;
+    if (_shutterDevice->value == _shutterClosedStatus)
+        shutterClosed = true;
 
-  // First condition - shutter is closed, it is supposed to be closed and
-  // we are not in the force AOM mode already
-  // then removes AOM from FW evaluation (by reloading)
-  if (shutterClosed &&
-      !_aomAllowWhileShutterClosed &&
-    shouldShutterBeClosed(linacMitigation==0)) {
+    // First condition - shutter is closed, it is supposed to be closed and
+    // we are not in the force AOM mode already
+    // then removes AOM from FW evaluation (by reloading)
+    if (shutterClosed &&
+        !_aomAllowWhileShutterClosed &&
+        shouldShutterBeClosed(linacMitigation==0))
+    {
+        // If the FW linac mitigation is ON then latch it in SW, because the FW
+        // reload operation will unlatch it
+        if (linacLatchedMitigation == 0)
+            _linacFwLatch = true; // This is cleared only by OPS
 
-    // If the FW linac mitigation is ON then latch it in SW, because the FW
-    // reload operation will unlatch it
-    if (linacLatchedMitigation == 0) {
-      _linacFwLatch = true; // This is cleared only by OPS
+        _aomAllowWhileShutterClosed = true; // This causes AOM to be bypassed by FW
+        ++_aomAllowEnableCounter;
+        reload = true;
     }
 
-    _aomAllowWhileShutterClosed = true; // This causes AOM to be bypassed by FW
-    ++_aomAllowEnableCounter;
-    reload = true;
-  }
+    // Set PC0 to shutter in SW if it was latched in FW before reload
+    if (_linacFwLatch)
+        _linacDestination->tentativeBeamClass = _lowestBeamClass;
 
-  // Set PC0 to shutter in SW if it was latched in FW before reload
-  if (_linacFwLatch) {
-    _linacDestination->tentativeBeamClass = _lowestBeamClass;
-  }
+    // Set high PC to AOM if _aomAllowWhileShutterClosed is active
+    if (_aomAllowWhileShutterClosed)
+        _aomDestination->tentativeBeamClass = _highestBeamClass;
 
-  // Set high PC to AOM if _aomAllowWhileShutterClosed is active
-  if (_aomAllowWhileShutterClosed) {
-    _aomDestination->tentativeBeamClass = _highestBeamClass;
-  }
 
-  // Second condition - shutter is closed, but there are no faults,
-  // it could be opened, first close AOM
-  if (shutterClosed && _aomAllowWhileShutterClosed &&
-      shouldShutterBeOpened(linacLatchedMitigation==0, linacMitigation==0)) {
-    _aomDestination->tentativeBeamClass = _lowestBeamClass;
-    _aomAllowWhileShutterClosed = false;
-    ++_aomAllowDisableCounter;
-    reload = true;
-  }
-  // Otherwise, if shutter is not closed - then disallow AOM
-  else if (!shutterClosed && _aomAllowWhileShutterClosed) {
-    ++_aomAllowDisableCounter;
-    _aomAllowWhileShutterClosed = false;
-    reload = true;
-  }
+    // Second condition - shutter is closed, but there are no faults,
+    // it could be opened, first close AOM
+    if (shutterClosed && _aomAllowWhileShutterClosed &&
+        shouldShutterBeOpened(linacLatchedMitigation==0, linacMitigation==0))
+    {
+        _aomDestination->tentativeBeamClass = _lowestBeamClass;
+        _aomAllowWhileShutterClosed = false;
+        ++_aomAllowDisableCounter;
+        reload = true;
+    }
+    // Otherwise, if shutter is not closed - then disallow AOM
+    else if (!shutterClosed && _aomAllowWhileShutterClosed)
+    {
+        ++_aomAllowDisableCounter;
+        _aomAllowWhileShutterClosed = false;
+        reload = true;
+    }
 
-  return reload;
+    return reload;
 }
 
 /**
  * Returns whether the shutter is supposed to be closed.
  */
-bool Engine::shouldShutterBeClosed(bool linacMitigation) {
-  bool shouldBeClosed = linacMitigation || _linacFwLatch;
-  return shouldBeClosed; // TODO: Include other conditions, e.g. app timed out
+bool Engine::shouldShutterBeClosed(bool linacMitigation)
+{
+    bool shouldBeClosed = linacMitigation || _linacFwLatch;
+    return shouldBeClosed; // TODO: Include other conditions, e.g. app timed out
 }
 
 /**
  * Retuns whether the shutter is supposed to be opened
  */
-bool Engine::shouldShutterBeOpened(bool linacFwLatchedMitigation, bool linacMitigation) {
-  bool swFaultActive = true;
-  if (_linacDestination->tentativeBeamClass != _lowestBeamClass) {
-    swFaultActive = false;
-  }
+bool Engine::shouldShutterBeOpened(bool linacFwLatchedMitigation, bool linacMitigation)
+{
+    bool swFaultActive = true;
+    if (_linacDestination->tentativeBeamClass != _lowestBeamClass)
+        swFaultActive = false;
 
-  bool shouldBeOpened = !swFaultActive && !linacFwLatchedMitigation && !linacMitigation;
+    bool shouldBeOpened = !swFaultActive && !linacFwLatchedMitigation && !linacMitigation;
 
-  return shouldBeOpened;
+    return shouldBeOpened;
 }
 
 /**
@@ -517,53 +521,57 @@ void Engine::evaluateFaults()
     for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
         device != _mpsDb->digitalDevices->end(); ++device)
     {
-      // If device has no card assigned, then it cannot be evaluated.
-      if ((*device).second->cardId != NO_CARD_ID &&
-	  (*device).second->evaluation != NO_EVALUATION) {
-        uint32_t deviceValue = 0;
-        LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
-            << ", there are " << (*device).second->inputDevices->size()
-            << " inputs");
-
-        for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin();
-            input != (*device).second->inputDevices->end(); ++input)
+        // If device has no card assigned, then it cannot be evaluated.
+        if ((*device).second->cardId != NO_CARD_ID &&
+            (*device).second->evaluation != NO_EVALUATION)
         {
-            uint32_t inputValue = 0;
-            // Check if the input has a valid bypass value
-            if ((*input).second->bypass->status == BYPASS_VALID)
+            uint32_t deviceValue = 0;
+            LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
+                << ", there are " << (*device).second->inputDevices->size()
+                << " inputs");
+
+            for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin();
+                input != (*device).second->inputDevices->end();
+                ++input)
             {
-                inputValue = (*input).second->bypass->value;
-                LOG_TRACE("ENGINE", (*device).second->name << " bypassing input value to "
-                    << (*input).second->bypass->value << " (actual value is "
-                    << (*input).second->value << ")");
-            }
-            else
-            {
-                inputValue = (*input).second->value;
+                uint32_t inputValue = 0;
+                // Check if the input has a valid bypass value
+                if ((*input).second->bypass->status == BYPASS_VALID)
+                {
+                    inputValue = (*input).second->bypass->value;
+                    LOG_TRACE("ENGINE", (*device).second->name << " bypassing input value to "
+                        << (*input).second->bypass->value << " (actual value is "
+                        << (*input).second->value << ")");
+                }
+                else
+                {
+                    inputValue = (*input).second->value;
+                }
+
+                inputValue <<= (*input).second->bitPosition;
+                deviceValue |= inputValue;
             }
 
-            inputValue <<= (*input).second->bitPosition;
-            deviceValue |= inputValue;
+            (*device).second->update(deviceValue);
+
+            LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
         }
-
-        (*device).second->update(deviceValue);
-
-        LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
-      }
     }
 
     // At this point all digital devices have an updated value
 
     // Update digital & analog Fault values and BeamDestination allowed class
     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
-        fault != _mpsDb->faults->end(); ++fault)
+        fault != _mpsDb->faults->end();
+        ++fault)
     {
         LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
 
         // First calculate the digital Fault value from its one or more digital device inputs
         uint32_t faultValue = 0;
         for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
-            input != (*fault).second->faultInputs->end(); ++input)
+            input != (*fault).second->faultInputs->end();
+            ++input)
         {
             uint32_t inputValue = 0;
             if ((*input).second->digitalDevice)
@@ -594,7 +602,8 @@ void Engine::evaluateFaults()
         // Now that a Fault has a new value check if it is in the FaultStates list,
         // and update the allowedBeamClass for the BeamDestinations
         for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-            state != (*fault).second->faultStates->end(); ++state)
+            state != (*fault).second->faultStates->end();
+            ++state)
         {
             (*state).second->ignored = false; // Mark not ignored - the ignore logic is evaluated later
             uint32_t maskedValue = faultValue & (*state).second->deviceState->mask;
@@ -650,7 +659,8 @@ bool Engine::evaluateIgnoreConditions()
 
     // Calculate state of conditions
     for (DbConditionMap::iterator condition = _mpsDb->conditions->begin();
-        condition != _mpsDb->conditions->end(); ++condition)
+        condition != _mpsDb->conditions->end();
+        ++condition)
     {
         uint32_t conditionValue = 0;
         for (DbConditionInputMap::iterator input = (*condition).second->conditionInputs->begin();
@@ -660,9 +670,7 @@ bool Engine::evaluateIgnoreConditions()
             if ((*input).second->faultState)
             {
                 if ((*input).second->faultState->faulted)
-                {
                     inputValue = 1;
-                }
             }
 
             conditionValue |= (inputValue << (*input).second->bitPosition);
@@ -675,50 +683,50 @@ bool Engine::evaluateIgnoreConditions()
         // 'mask' is the condition value that needs to be matched in order to ignore faults
         bool newConditionState = false;
         if ((*condition).second->mask == conditionValue)
-        {
             newConditionState = true;
-        }
 
         (*condition).second->state = newConditionState;
         LOG_TRACE("ENGINE",  "Condition " << (*condition).second->name << " is " << (*condition).second->state);
 
-	if ((*condition).second->ignoreConditions) {
-	  for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
-	       ignoreCondition != (*condition).second->ignoreConditions->end(); ++ignoreCondition)
-	    {
-	      if ((*ignoreCondition).second->faultState)
-		{
-		  LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
-			    << ", state=" << (*condition).second->state);
+        if ((*condition).second->ignoreConditions)
+        {
+            for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
+                ignoreCondition != (*condition).second->ignoreConditions->end();
+                ++ignoreCondition)
+            {
+                if ((*ignoreCondition).second->faultState)
+                {
+                    LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
+                        << ", state=" << (*condition).second->state);
 
-		  (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
-		  // This check is needed in case specific faults from an AnalogDevice is
-		  // listed in the ignoreCondition.
-		  if ((*ignoreCondition).second->analogDevice) {
-		    int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
-		    if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state) {
-		      reload = true; // reload configuration!
-		    }
-		    (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
-		  }
-		}
-	      else
-		{
-		  if ((*ignoreCondition).second->analogDevice)
-		    {
-		      LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->analogDeviceId << "]"
-				<< ", state=" << (*condition).second->state);
+                    (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
 
-		      if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state)
-			{
-			  reload = true; // reload configuration!
-			}
+                    // This check is needed in case specific faults from an AnalogDevice is
+                    // listed in the ignoreCondition.
+                    if ((*ignoreCondition).second->analogDevice)
+                    {
+                        int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
+                        if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state)
+                            reload = true; // reload configuration!
 
-		      (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
-		    }
-		}
-	    }
-	}
+                        (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
+                    }
+                }
+                else
+                {
+                    if ((*ignoreCondition).second->analogDevice)
+                    {
+                        LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->analogDeviceId << "]"
+                            << ", state=" << (*condition).second->state);
+
+                        if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state)
+                            reload = true; // reload configuration!
+
+                        (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
+                    }
+                }
+            }
+        }
     }
 
     return reload;
@@ -728,7 +736,8 @@ void Engine::mitigate()
 {
     // Update digital Fault values and BeamDestination allowed class
     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
-        fault != _mpsDb->faults->end(); ++fault)
+        fault != _mpsDb->faults->end();
+        ++fault)
     {
         // Mitigate only those faults that are the result of slow evaluation
 #ifdef FAST_SW_EVALUATION
@@ -739,7 +748,8 @@ void Engine::mitigate()
         if ((*fault).second->evaluation == SLOW_EVALUATION) {
 #endif
             for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-                state != (*fault).second->faultStates->end(); ++state)
+                state != (*fault).second->faultStates->end();
+                ++state)
             {
                 if ((*state).second->faulted && !(*state).second->ignored)
                 {
@@ -752,7 +762,8 @@ void Engine::mitigate()
                     if ((*state).second->allowedClasses)
                     {
                         for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
-                            allowed != (*state).second->allowedClasses->end(); ++allowed)
+                            allowed != (*state).second->allowedClasses->end();
+                            ++allowed)
                         {
                             if ((*allowed).second->beamDestination->tentativeBeamClass->number >
                                 (*allowed).second->beamClass->number)
@@ -761,15 +772,16 @@ void Engine::mitigate()
                                     (*allowed).second->beamClass;
 
                                 LOG_TRACE("ENGINE", (*allowed).second->beamDestination->name
-					  << " tentative class set to "
+                                    << " tentative class set to "
                                     << (*allowed).second->beamClass->number);
                             }
                         }
                     }
-		    else {
-		      LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for "
-				<< (*fault).second->name << " fault");
-		    }
+                    else
+                    {
+                        LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for "
+                            << (*fault).second->name << " fault");
+                    }
                 }
             }
 
@@ -786,7 +798,8 @@ void Engine::mitigate()
                     if ((*fault).second->defaultFaultState->allowedClasses)
                     {
                         for (DbAllowedClassMap::iterator allowed = (*fault).second->defaultFaultState->allowedClasses->begin();
-                            allowed != (*fault).second->defaultFaultState->allowedClasses->end(); ++allowed)
+                            allowed != (*fault).second->defaultFaultState->allowedClasses->end();
+                            ++allowed)
                         {
                             if ((*allowed).second->beamDestination->tentativeBeamClass->number >
                                 (*allowed).second->beamClass->number)
@@ -808,9 +821,7 @@ void Engine::mitigate()
 int Engine::checkFaults()
 {
     if (!_mpsDb)
-    {
         return 0;
-    }
 
     // must first get updated input values
     _checkFaultTime.start();
@@ -818,24 +829,23 @@ int Engine::checkFaults()
     LOG_TRACE("ENGINE", "Checking faults");
     bool reload = false;
     {
-      std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-      _mpsDb->clearMitigationBuffer();
-      setTentativeBeamClass();
-      evaluateFaults();
-      reload = evaluateIgnoreConditions();
-      mitigate();
-      if (checkAomState()) {
-	reload = true;
-      }
-      setAllowedBeamClass();
+        std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+        _mpsDb->clearMitigationBuffer();
+        setTentativeBeamClass();
+        evaluateFaults();
+        reload = evaluateIgnoreConditions();
+        mitigate();
+        if (checkAomState())
+            reload = true;
+
+        setAllowedBeamClass();
     }
+
     _checkFaultTime.tick();
 
     // If FW configuration needs reloading, return non-zero value
     if (reload)
-    {
         return 1;
-    }
 
     return 0;
 }
@@ -847,48 +857,46 @@ int Engine::checkFaults()
  */
 void Engine::clearSoftwareLatch()
 {
-   _linacFwLatch = false;
+    _linacFwLatch = false;
 }
 
 void Engine::showFaults()
 {
     if (!isInitialized())
-    {
         return;
-    }
 
     // Print current faults
     bool faults = false;
 
     // Digital Faults
     {
-      std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-      for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
-	   fault != _mpsDb->faults->end(); ++fault)
-	{
-	  for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-	       state != (*fault).second->faultStates->end(); ++state)
-	    {
-	      if ((*state).second->faulted)
-		{
-		  if (!faults)
-		    {
-		      std::cout << "# Current faults:" << std::endl;
-		      faults = true;
-		    }
+        std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+        for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+            fault != _mpsDb->faults->end();
+            ++fault)
+        {
+            for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+                state != (*fault).second->faultStates->end();
+                ++state)
+            {
+                if ((*state).second->faulted)
+                {
+                    if (!faults)
+                    {
+                        std::cout << "# Current faults:" << std::endl;
+                        faults = true;
+                    }
 
-		  std::cout << "  " << (*fault).second->name << ": " << (*state).second->deviceState->name
-			    << " (value=" << (*state).second->deviceState->value << ", ignored="
-			    << (*state).second->ignored << ")" << std::endl;
-		}
-	    }
-	}
+                    std::cout << "  " << (*fault).second->name << ": " << (*state).second->deviceState->name
+                        << " (value=" << (*state).second->deviceState->value << ", ignored="
+                        << (*state).second->ignored << ")" << std::endl;
+                }
+            }
+        }
     }
 
     if (!faults)
-    {
         std::cout << "# No faults" << std::endl;
-    }
 }
 
 void Engine::showStats()
@@ -902,26 +910,26 @@ void Engine::showStats()
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
 
         if (_shutterDevice)
-	        std::cout << "Shutter Status: " << Engine::_shutterDevice->value
-		        << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
+            std::cout << "Shutter Status: " << Engine::_shutterDevice->value
+                << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
 
         if (_aomDestination)
         {
-	        std::cout << "AOM Status: ";
-	        if (Engine::_aomAllowWhileShutterClosed)
-	            std::cout << " ALLOWED ";
+            std::cout << "AOM Status: ";
+            if (Engine::_aomAllowWhileShutterClosed)
+                std::cout << " ALLOWED ";
             else
-	            std::cout << " Normal ";
+                std::cout << " Normal ";
 
-	        std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
-		        << Engine::_aomAllowDisableCounter << "]" << std::endl;
+            std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
+                << Engine::_aomAllowDisableCounter << "]" << std::endl;
         }
 
-	    std::cout << "Reload latch: " << Engine::_linacFwLatch << std::endl;
-	    std::cout << "Reload Config Count: " << Engine::_reloadCount << std::endl;
+        std::cout << "Reload latch: " << Engine::_linacFwLatch << std::endl;
+        std::cout << "Reload Config Count: " << Engine::_reloadCount << std::endl;
 
         if (_aomDestination)
-	        std::cout << "Allow AOM (shutter closed): " << Engine::_aomAllowWhileShutterClosed << std::endl;
+            std::cout << "Allow AOM (shutter closed): " << Engine::_aomAllowWhileShutterClosed << std::endl;
 
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
         std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter
@@ -1000,11 +1008,10 @@ void Engine::showDatabaseInfo()
 
 void Engine::startUpdateThread()
 {
-  _engineThread = new std::thread(&Engine::engineThread, this);
+    _engineThread = new std::thread(&Engine::engineThread, this);
 
-  if (pthread_setname_np(_engineThread->native_handle(), "EngineThread")) {
-    perror("pthread_setname_np failed");
-  }
+    if (pthread_setname_np(_engineThread->native_handle(), "EngineThread"))
+        perror("pthread_setname_np failed");
 }
 
 uint32_t Engine::getUpdateRate()
@@ -1029,10 +1036,11 @@ void Engine::threadExit()
 
 void Engine::threadJoin()
 {
-  if (_engineThread != NULL) {
-    std::cout << "INFO: Engine::threadJoin()" << std::endl;
-    _engineThread->join();
-  }
+    if (_engineThread != NULL)
+    {
+        std::cout << "INFO: Engine::threadJoin()" << std::endl;
+        _engineThread->join();
+    }
 }
 
 #define MAX_SAFE_STACK (8*1024) /* The maximum stack size which is
@@ -1054,7 +1062,7 @@ void Engine::engineThread()
     std::cout << "INFO: Engine: update thread started." << std::endl;
 
     // Declare as real time task
-    param.sched_priority = 75;
+    param.sched_priority = 88;
     if(sched_setscheduler(0, SCHED_FIFO, &param) == -1)
     {
         perror("Set priority");
@@ -1074,12 +1082,14 @@ void Engine::engineThread()
 
     // Do not start MPS on the first time the thread runs (i.e.
     // when configuration is loaded)
-    if (!_enableMps) {
-      _enableMps = true;
+    if (!_enableMps)
+    {
+        _enableMps = true;
     }
-    else {
-      Firmware::getInstance().setEnable(true);
-      Firmware::getInstance().setSoftwareEnable(true);
+    else
+    {
+        Firmware::getInstance().setEnable(true);
+        Firmware::getInstance().setSoftwareEnable(true);
     }
 
     Firmware::getInstance().clearAll();
@@ -1097,7 +1107,7 @@ void Engine::engineThread()
 
     while(_evaluate)
     {
-      engineLock.lock();
+        engineLock.lock();
 
         if (Engine::getInstance()._mpsDb)
         {
@@ -1106,26 +1116,13 @@ void Engine::engineThread()
                 std::unique_lock<std::mutex> lock(*(Engine::getInstance()._mpsDb->getInputUpdateMutex()));
                 while(!Engine::getInstance()._mpsDb->isInputReady())
                 {
-		  Engine::getInstance()._mpsDb->getInputUpdateCondVar()->wait_for(lock, std::chrono::milliseconds(5));
-		  if (!_evaluate) {
-		    engineLock.unlock();
-		    std::cout << "INFO: EngineThread: Exiting..." << std::endl;
-		    return;
-		  }
-                }
-            }
-
-            // Wait for the mitigation buffer to be ready to write
-            {
-                std::unique_lock<std::mutex> lock(*(Engine::getInstance()._mpsDb->getMitBufferMutex()));
-                while(!Engine::getInstance()._mpsDb->isMitBufferWriteReady())
-                {
-                    Engine::getInstance()._mpsDb->getMitBufferCondVar()->wait_for(lock, std::chrono::milliseconds(5));
-		    if (!_evaluate) {
-		      engineLock.unlock();
-		      std::cout << "INFO: EngineThread: Exiting..." << std::endl;
-		      return;
-		    }
+                    Engine::getInstance()._mpsDb->getInputUpdateCondVar()->wait_for(lock, std::chrono::milliseconds(5));
+                    if (!_evaluate)
+                    {
+                        engineLock.unlock();
+                        std::cout << "INFO: EngineThread: Exiting..." << std::endl;
+                        return;
+                    }
                 }
             }
 
@@ -1138,8 +1135,8 @@ void Engine::engineThread()
             // Inputs were processed
             Engine::getInstance()._mpsDb->inputProcessed();
 
-            // The mitigation buffer was written
-            Engine::getInstance()._mpsDb->mitBufferDoneWriting();
+            // The mitigation buffer is ready, push it to the queue.
+            Engine::getInstance()._mpsDb->pushMitBuffer();
 
             _updateCounter++;
             counter++;
@@ -1170,7 +1167,7 @@ void Engine::engineThread()
             sleep(1);
         }
 
-	engineLock.unlock();
+        engineLock.unlock();
     }
 
     Firmware::getInstance().setSoftwareEnable(false);
@@ -1196,14 +1193,15 @@ long Engine::getMaxEvalTime()
 
 long Engine::getAvgEvalTime()
 {
-  return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
+    return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
 }
 
-void Engine::clearMaxTimers() {
-  hb.clear();
-  _checkFaultTime.clear();
-  _evaluationCycleTime.clear();
-  _mpsDb->clearUpdateTime();
+void Engine::clearMaxTimers()
+{
+    hb.clear();
+    _checkFaultTime.clear();
+    _evaluationCycleTime.clear();
+    _mpsDb->clearUpdateTime();
 }
 
 long Engine::getAvgWdUpdatePeriod()

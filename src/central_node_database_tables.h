@@ -14,8 +14,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "buffer.h"
-
 /**
  * DbException class
  *
@@ -137,15 +135,15 @@ class DbApplicationCardInput {
   ApplicationUpdateBufferBitSetHalf* getWasLowBuffer();
   ApplicationUpdateBufferBitSetHalf* getWasHighBuffer();
 
-  void setUpdateBuffers(DataBuffer<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff);
+  void setUpdateBuffers(std::vector<uint8_t>* bufPtr, const size_t wasLowBufferOff, const size_t wasHighBufferOff);
 
   uint32_t getWasLow(int channel);
   uint32_t getWasHigh(int channel);
 
  private:
-  DataBuffer<uint8_t>* fwUpdateBuffer;
-  size_t               wasLowBufferOffset;
-  size_t               wasHighBufferOffset;
+  std::vector<uint8_t>* fwUpdateBuffer;
+  size_t                wasLowBufferOffset;
+  size_t                wasHighBufferOffset;
 };
 
 /**
@@ -384,7 +382,7 @@ class DbApplicationCard : public DbEntry {
   DbAnalogDeviceMapPtr analogDevices;
   DbDigitalDeviceMapPtr digitalDevices;
 
-  void setUpdateBufferPtr(DataBuffer<uint8_t>* p);
+  void setUpdateBufferPtr(std::vector<uint8_t>* p);
   ApplicationUpdateBufferBitSetHalf* getWasLowBuffer();
   ApplicationUpdateBufferBitSetHalf* getWasHighBuffer();
 
@@ -404,9 +402,9 @@ class DbApplicationCard : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard);
 
  private:
-  DataBuffer<uint8_t>* fwUpdateBuffer;
-  size_t               wasLowBufferOffset;
-  size_t               wasHighBufferOffset;
+  std::vector<uint8_t>* fwUpdateBuffer;
+  size_t                wasLowBufferOffset;
+  size_t                wasHighBufferOffset;
 };
 
 typedef boost::shared_ptr<DbApplicationCard> DbApplicationCardPtr;
@@ -461,9 +459,10 @@ class DbBeamClass : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass);
 };
 
-typedef boost::shared_ptr<DbBeamClass> DbBeamClassPtr;
+typedef boost::shared_ptr<DbBeamClass>     DbBeamClassPtr;
 typedef std::map<uint32_t, DbBeamClassPtr> DbBeamClassMap;
-typedef boost::shared_ptr<DbBeamClassMap> DbBeamClassMapPtr;
+typedef boost::shared_ptr<DbBeamClassMap>  DbBeamClassMapPtr;
+typedef std::vector<uint32_t>              DbMitBuffer;
 
 /**
  * DbBeamDestination YAML class
@@ -481,7 +480,7 @@ class DbBeamDestination : public DbEntry {
 
   // Memory location where the allowed beam class for this device
   // is written and sent to firmware
-  void    setSoftwareMitigationBuffer(DataBuffer<uint32_t>* bufPtr) { softwareMitigationBuffer = bufPtr; };
+  void    setSoftwareMitigationBuffer(DbMitBuffer* bufPtr) { softwareMitigationBuffer = bufPtr; }
   uint8_t softwareMitigationBufferIndex;
   uint8_t bitShift; // define if mitigation uses high/low 4-bits in the softwareMitigationBuffer
 
@@ -496,7 +495,7 @@ class DbBeamDestination : public DbEntry {
       allowedBeamClass = tentativeBeamClass;
     }
 
-    softwareMitigationBuffer->getWritePtr()->at(softwareMitigationBufferIndex) |= ((allowedBeamClass->number & 0xF) << bitShift);
+    softwareMitigationBuffer->at(softwareMitigationBufferIndex) |= ((allowedBeamClass->number & 0xF) << bitShift);
 
     if (previousAllowedBeamClass->number != allowedBeamClass->number) {
       History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
@@ -515,7 +514,7 @@ class DbBeamDestination : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination);
 
  private:
-  DataBuffer<uint32_t>* softwareMitigationBuffer;
+  DbMitBuffer* softwareMitigationBuffer;
 };
 
 typedef boost::shared_ptr<DbBeamDestination> DbBeamDestinationPtr;

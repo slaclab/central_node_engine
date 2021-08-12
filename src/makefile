@@ -17,6 +17,7 @@ HEADERS = central_node_bypass.h \
         time_util.h \
         timer.h \
         buffer.h \
+        queue.h \
         heartbeat.h \
         central_node_history.h \
         central_node_history_protocol.h \
@@ -39,6 +40,7 @@ central_node_engine_SRCS += timer.cc
 central_node_engine_SRCS += heartbeat.cc
 central_node_engine_SRCS += heartbeat_noop.cc
 central_node_engine_SRCS += buffer.cc
+central_node_engine_SRCS += queue.cc
 
 DEP_HEADERS  = $(HEADERS)
 
