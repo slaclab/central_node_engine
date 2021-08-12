@@ -31,35 +31,35 @@ Release notes for the LCLS-II MPS central node engine.
   * Add name to the `fwPCChangeThread` thread.
   * Fix format on some source files to improve readability.
 
-__central_node_engine-R1-8-0__:
+* __central_node_engine-R1-8-0__:
   * Implement power class change asynchronous notification message
     handler.
   * Fix bugs the HeartBeat class, which was generating long periods
     between heartbeats.
   * Fix bugs and improve the CN engine.
 
-__central_node_engine-R1-7-0__:
+* __central_node_engine-R1-7-0__:
   * Update buildroot to version 2019.08.
   * Update CPSW to version R4.4.1. This implied update boost to version
     1.64.0 and yaml-cpp to version yaml-cpp-0.5.3_boost-1.64.0.
   * Fix all compilation warnings.
   * Merge changes from the EIC branch.
 
-__central_node_engine-R1-6-0-eic__:
+* __central_node_engine-R1-6-0-eic__:
   * Changed logic to allow AOM
   * Bug fixed on the FW configuration with AOM bypassed - wrong
     bits were being changed
 
-__central_node_engine-R1-5-0-eic__:
+* __central_node_engine-R1-5-0-eic__:
   * Change to support AOM enable while mechanical laser shutter
     is closed (works with mps_configuration EIC branch and
     central_node_ioc branches)
 
-__central_node_engine-R1-4-1__:
+* __central_node_engine-R1-4-1__:
   * Change to how the charge integration time is written to FW.
     The value is broken up into bits 0:9 and 16:25.
 
-__central_node_engine-R1-4-0__:
+* __central_node_engine-R1-4-0__:
   * Compatible with mps_database-R1-1-0, which has a change in the
     crates.number to crates.crate_id. This required code changes
     in this library.
