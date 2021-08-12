@@ -64,33 +64,33 @@ Release notes for the LCLS-II MPS central node engine.
     crates.number to crates.crate_id. This required code changes
     in this library.
 
-__central_node_engine-R1-3-3__:
+* __central_node_engine-R1-3-3__:
   * Implemented bypass for fast digital devices (they must have
     a single device input). The firmware configuration is reloaded
     when a fast digital input bypass is created or expires.
 
-__central_node_engine-R1-3-2__:
+* __central_node_engine-R1-3-2__:
   * Addition of functionality to allow forcing a power class to
     o beam destination (e.g. allow ops to shut off gun by setting
     a PV).
   * Addition of missing firmware call to run central node stand-alone,
     without connecting to central node card.
 
-__central_node_engine-R1-3-1__:
+* __central_node_engine-R1-3-1__:
   * Change introduced in R1-2-5 stops MPS whenever the update thread
     is stopped/started. Modified so it doesn't start MPS only after
     loading a configuration the first time.
 
-__central_node_engine-R1-3-0__:
+* __central_node_engine-R1-3-0__:
   * Addition of Firmware::beamFaultClear(), for clearing
     faults caused by power class or charge violation
 
-__central_node_engine-R1-2-5__:
+* __central_node_engine-R1-2-5__:
   * After config is loaded MPS is not enabled by default, user
     must enable it on the EDM panel
 
-__central_node_engine-R1-2-4__:
+* __central_node_engine-R1-2-4__:
   * Minor fix on the beam charge table readback - changed from 16 to 32 bits
 
-__central_node_engine-R1-2-3__:
+* __central_node_engine-R1-2-3__:
   * Restored loading beam charge table using database values
