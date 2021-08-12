@@ -9,6 +9,33 @@
 #  Rev:  dd-mmm-yyyy, Reviewer's Name    (USERNAME)
 #--------------------------------------------------------------
 
+  * Adjust RT priorities of all the evaluation threads as described in this
+    table (note that the NIC kernel thread priorities are not set as part of
+    this repository, but instead on the CPU startup script):
+    | Thread               | Priority |
+    |----------------------|----------|
+    | NIC (kernel)         |    80    |
+    | CPSW: UDP            |    81    |
+    | CPSW: RSSI           |    82    |
+    | CPSW: Depack         |    83    |
+    | CPSW: TDESTMux       |    84    |
+    | Engine: FwReader     |    85    |
+    | Engine: InputUpdates |    86    |
+    | Engine: HeartBeat    |    87    |
+    | Engine: MitWriter    |    87    |
+    | Engine: EngineThread |    88    |
+  * Add a thread-safe `Queue` class.
+  * Migrate the update input and the mitigation shared buffers to a `Queue`
+    object. This will give the system more elasticity to absorb delays between
+    threads, instead of blocking the whole pipeline.
+  * heartbeat: modify the `NonBlocking` policy class to keep a request counter,
+    instead of a flag, in order to avoid blocking the requesting thread in case
+    the previous heartbeat takes longer than `2.7ms` to write the FW register.
+  * Bug fix on central_node_database: inputProcessed() should lock the `mutex` and
+    notify using the `condition_variable`.
+  * Add name to the `fwPCChangeThread` thread.
+  * Fix format on some source files to improve readability.
+
 central_node_engine-R1-8-0:
   * Implement power class change asynchronous notification message
     handler.
