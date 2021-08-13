@@ -4,6 +4,7 @@ Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
 
+  * Increases the number of supported applications from `8` to `1024`.
   * Adjust RT priorities of all the evaluation threads as described in this
     table (note that the NIC kernel thread priorities are not set as part of
     this repository, but instead on the CPU startup script):
