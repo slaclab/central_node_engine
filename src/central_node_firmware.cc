@@ -259,7 +259,7 @@ int Firmware::createRegisters()
         for (uint32_t i = 0; i < FW_NUM_APPLICATIONS; ++i)
         {
             std::stringstream appId;
-            appId << "/AppId" << i;
+            appId << "/AppId[" << i << "]/Config";
             name = base + mps + config + appId.str();
             _configSV[i] = IScalVal::create(_root->findByName(name.c_str()));
         }
