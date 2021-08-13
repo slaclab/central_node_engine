@@ -21,7 +21,7 @@
 #include <arpa/inet.h>
 #endif
 
-const uint32_t FW_NUM_APPLICATIONS = 8;
+const uint32_t FW_NUM_APPLICATIONS = 1024;
 const uint32_t FW_NUM_BEAM_CLASSES = 16;
 const uint32_t FW_NUM_MITIGATION_DEVICES = 16;
 const uint32_t FW_NUM_BEAM_DESTINATIONS = 16;
