@@ -3,7 +3,7 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
-
+* __central_node_engine-R2-0-0__:
   * Increases the number of supported applications from `8` to `1024`.
   * Adjust RT priorities of all the evaluation threads as described in this
     table (note that the NIC kernel thread priorities are not set as part of
@@ -27,8 +27,8 @@ Release notes for the LCLS-II MPS central node engine.
   * heartbeat: modify the `NonBlocking` policy class to keep a request counter,
     instead of a flag, in order to avoid blocking the requesting thread in case
     the previous heartbeat takes longer than `2.7ms` to write the FW register.
-  * Bug fix on central_node_database: inputProcessed() should lock the `mutex` and
-    notify using the `condition_variable`.
+  * Bug fix on `central_node_database`: `inputProcessed()` should lock the
+    `mutex` and notify using the `condition_variable`.
   * Add name to the `fwPCChangeThread` thread.
   * Fix format on some source files to improve readability.
 
