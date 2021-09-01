@@ -3,6 +3,12 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+
+  * Add new method to read the application timeout enable bits:
+    `getAppTimeoutEnable()`.
+  * Add a call to `writeAppTimeoutMask()` in `setAppTimeoutEnable()` in order
+    to write to FW the configuration bits when the timeout bits are changed.
+
 * __central_node_engine-R2-0-0__:
   * Increases the number of supported applications from `8` to `1024`.
   * Adjust RT priorities of all the evaluation threads as described in this

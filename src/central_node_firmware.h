@@ -169,6 +169,7 @@ class Firmware {
   void setEvaluationEnable(bool enable);
   void setTimeoutEnable(bool enable);
   void setAppTimeoutEnable(uint32_t appId, bool enable);
+  bool getAppTimeoutEnable(uint32_t appId);
   bool getAppTimeoutStatus(uint32_t appId);
 
   bool getEnable();

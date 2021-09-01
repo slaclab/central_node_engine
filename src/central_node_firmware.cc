@@ -313,8 +313,17 @@ void Firmware::writeAppTimeoutMask()
 
 void Firmware::setAppTimeoutEnable(uint32_t appId, bool enable)
 {
-    if (appId < FW_NUM_APPLICATION_MASKS)
-        _applicationTimeoutMaskBitSet->set(appId, enable);
+    // Ignore invalid App IDs
+    if (appId >= FW_NUM_APPLICATION_MASKS)
+        return;
+
+    _applicationTimeoutMaskBitSet->set(appId, enable);
+    writeAppTimeoutMask();
+}
+
+bool Firmware::getAppTimeoutEnable(uint32_t appId)
+{
+    return _applicationTimeoutMaskBitSet->test(appId);
 }
 
 void Firmware::getAppTimeoutStatus()
