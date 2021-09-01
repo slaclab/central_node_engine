@@ -117,7 +117,7 @@ int Engine::reloadConfigFromIgnore()
 
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-        _mpsDb->writeFirmwareConfiguration(_aomAllowWhileShutterClosed);
+        _mpsDb->writeFirmwareConfiguration(false, _aomAllowWhileShutterClosed);
     }
 
     Firmware::getInstance().setEnable(true);
@@ -254,7 +254,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
             }
         }
 
-        _mpsDb->writeFirmwareConfiguration();
+        _mpsDb->writeFirmwareConfiguration(true);
     }
 
     LOG_TRACE("ENGINE", "Lowest beam class found: " << _lowestBeamClass->number);

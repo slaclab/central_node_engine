@@ -185,7 +185,7 @@ class MpsDb {
   void printPCCounters() const;
 
   void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
-  void writeFirmwareConfiguration(bool forceAomAllow = false);
+  void writeFirmwareConfiguration(bool setTimeoutEnable = false, bool forceAomAllow = false);
   void unlatchAll();
   void clearMitigationBuffer();
 

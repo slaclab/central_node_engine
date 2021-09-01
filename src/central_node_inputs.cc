@@ -329,7 +329,7 @@ void DbApplicationCard::updateInputs() {
 /**
  *
  */
-void DbApplicationCard::writeConfiguration(bool forceAomAllow) {
+void DbApplicationCard::writeConfiguration(bool setTimeoutEnable, bool forceAomAllow) {
   if (digitalDevices) {
     writeDigitalConfiguration(forceAomAllow);
   }
@@ -343,8 +343,10 @@ void DbApplicationCard::writeConfiguration(bool forceAomAllow) {
     return;
   }
   // Enable application timeout mask
-  Firmware::getInstance().setAppTimeoutEnable(globalId, true);
-  Firmware::getInstance().writeAppTimeoutMask(); // TODO: call this only once, not one time per app
+  if (setTimeoutEnable) {
+    Firmware::getInstance().setAppTimeoutEnable(globalId, true);
+    Firmware::getInstance().writeAppTimeoutMask(); // TODO: call this only once, not one time per app
+  }
 }
 
 // Digital input configuration (total size = 1344 bits):
