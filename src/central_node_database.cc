@@ -1079,6 +1079,11 @@ void MpsDb::writeFirmwareConfiguration(bool setTimeoutEnable, bool forceAomAllow
         i++;
     }
 
+    // If the app timeout were set to enable, write the configuration to FW
+    // after looping over all applications in the system
+    if (setTimeoutEnable)
+        Firmware::getInstance().writeAppTimeoutMask();
+
     // Write the timing verifying parameters for each beam class
     uint32_t time[FW_NUM_BEAM_CLASSES];
     uint32_t period[FW_NUM_BEAM_CLASSES];

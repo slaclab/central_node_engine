@@ -344,8 +344,7 @@ void DbApplicationCard::writeConfiguration(bool setTimeoutEnable, bool forceAomA
   }
   // Enable application timeout mask
   if (setTimeoutEnable) {
-    Firmware::getInstance().setAppTimeoutEnable(globalId, true);
-    Firmware::getInstance().writeAppTimeoutMask(); // TODO: call this only once, not one time per app
+    Firmware::getInstance().setAppTimeoutEnable(globalId, true, false);
   }
 }
 
