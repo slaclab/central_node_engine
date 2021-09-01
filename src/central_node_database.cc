@@ -1063,7 +1063,7 @@ void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassI
     }
 }
 
-void MpsDb::writeFirmwareConfiguration(bool setTimeoutEnable, bool forceAomAllow)
+void MpsDb::writeFirmwareConfiguration(bool enableTimeout, bool forceAomAllow)
 {
     // Write configuration for each application in the system
     LOG_TRACE("DATABASE", "Writing config to firmware, num applications: " << applicationCards->size());
@@ -1072,7 +1072,7 @@ void MpsDb::writeFirmwareConfiguration(bool setTimeoutEnable, bool forceAomAllow
         card != applicationCards->end();
         ++card)
     {
-        (*card).second->writeConfiguration(setTimeoutEnable, forceAomAllow);
+        (*card).second->writeConfiguration(enableTimeout, forceAomAllow);
         Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
             (*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
             APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
@@ -1081,7 +1081,7 @@ void MpsDb::writeFirmwareConfiguration(bool setTimeoutEnable, bool forceAomAllow
 
     // If the app timeout were set to enable, write the configuration to FW
     // after looping over all applications in the system
-    if (setTimeoutEnable)
+    if (enableTimeout)
         Firmware::getInstance().writeAppTimeoutMask();
 
     // Write the timing verifying parameters for each beam class

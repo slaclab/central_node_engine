@@ -329,7 +329,7 @@ void DbApplicationCard::updateInputs() {
 /**
  *
  */
-void DbApplicationCard::writeConfiguration(bool setTimeoutEnable, bool forceAomAllow) {
+void DbApplicationCard::writeConfiguration(bool enableTimeout, bool forceAomAllow) {
   if (digitalDevices) {
     writeDigitalConfiguration(forceAomAllow);
   }
@@ -342,8 +342,8 @@ void DbApplicationCard::writeConfiguration(bool setTimeoutEnable, bool forceAomA
     //	      << " (Id: " << this->id << ")" << std::endl;
     return;
   }
-  // Enable application timeout mask
-  if (setTimeoutEnable) {
+  // Enable application timeout
+  if (enableTimeout) {
     Firmware::getInstance().setAppTimeoutEnable(globalId, true, false);
   }
 }
