@@ -3,6 +3,10 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+
+  * Only set the app timeout enable bit to true when loading the
+    configuration YAML file the first time.
+
 * __central_node_engine-R2-1-0__:
   * Add new method to read the application timeout enable bits:
     `getAppTimeoutEnable()`.
