@@ -4,6 +4,9 @@ Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
 
+  * Write the app timeout enable bits to FW all at once when they are
+    set to true by default. When they are set using the API call
+    setAppTimeoutEnable(), by default they are write to FW as well.
   * Only set the app timeout enable bit to true when loading the
     configuration YAML file the first time.
 
