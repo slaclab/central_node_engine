@@ -388,7 +388,7 @@ class DbApplicationCard : public DbEntry {
 
   DbApplicationCard();
 
-  void writeConfiguration(bool forceAomAllow = false);
+  void writeConfiguration(bool enableTimeout = false, bool forceAomAllow = false);
   void writeDigitalConfiguration(bool forceAomAllow = false);
   void writeAnalogConfiguration(bool forceAomAllow = false);
 

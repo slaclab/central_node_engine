@@ -311,14 +311,17 @@ void Firmware::writeAppTimeoutMask()
     }
 }
 
-void Firmware::setAppTimeoutEnable(uint32_t appId, bool enable)
+void Firmware::setAppTimeoutEnable(uint32_t appId, bool enable, bool writeFW)
 {
     // Ignore invalid App IDs
     if (appId >= FW_NUM_APPLICATION_MASKS)
         return;
 
     _applicationTimeoutMaskBitSet->set(appId, enable);
-    writeAppTimeoutMask();
+
+    // Write the configuration to FW
+    if (writeFW)
+        writeAppTimeoutMask();
 }
 
 bool Firmware::getAppTimeoutEnable(uint32_t appId)
@@ -471,7 +474,7 @@ bool Firmware::getEvaluationEnable()
     return getBoolU64(_evaluationEnableSV);
 }
 
-void Firmware::setTimeoutEnable(bool enable)
+void Firmware::enableTimeout(bool enable)
 {
     setBoolU64(_timeoutEnableSV, enable);
 }

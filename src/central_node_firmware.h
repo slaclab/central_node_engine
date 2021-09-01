@@ -167,8 +167,8 @@ class Firmware {
   void setSoftwareEnable(bool enable);
   void setTimingCheckEnable(bool enable);
   void setEvaluationEnable(bool enable);
-  void setTimeoutEnable(bool enable);
-  void setAppTimeoutEnable(uint32_t appId, bool enable);
+  void enableTimeout(bool enable);
+  void setAppTimeoutEnable(uint32_t appId, bool enable, bool writeFW = true);
   bool getAppTimeoutEnable(uint32_t appId);
   bool getAppTimeoutStatus(uint32_t appId);
 

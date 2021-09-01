@@ -89,7 +89,7 @@ int Firmware::createRegisters() {
 void Firmware::writeAppTimeoutMask() {
 }
 
-void Firmware::setAppTimeoutEnable(uint32_t appId, bool enable) {
+void Firmware::setAppTimeoutEnable(uint32_t appId, bool enable, bool writeFW) {
 }
 
 void Firmware::getAppTimeoutStatus() {
@@ -145,7 +145,7 @@ bool Firmware::getEvaluationEnable() {
   return false;
 }
 
-void Firmware::setTimeoutEnable(bool enable) {
+void Firmware::enableTimeout(bool enable) {
 }
 
 bool Firmware::getTimeoutEnable() {

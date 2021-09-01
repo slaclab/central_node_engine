@@ -329,7 +329,7 @@ void DbApplicationCard::updateInputs() {
 /**
  *
  */
-void DbApplicationCard::writeConfiguration(bool forceAomAllow) {
+void DbApplicationCard::writeConfiguration(bool enableTimeout, bool forceAomAllow) {
   if (digitalDevices) {
     writeDigitalConfiguration(forceAomAllow);
   }
@@ -342,9 +342,10 @@ void DbApplicationCard::writeConfiguration(bool forceAomAllow) {
     //	      << " (Id: " << this->id << ")" << std::endl;
     return;
   }
-  // Enable application timeout mask
-  Firmware::getInstance().setAppTimeoutEnable(globalId, true);
-  Firmware::getInstance().writeAppTimeoutMask(); // TODO: call this only once, not one time per app
+  // Enable application timeout
+  if (enableTimeout) {
+    Firmware::getInstance().setAppTimeoutEnable(globalId, true, false);
+  }
 }
 
 // Digital input configuration (total size = 1344 bits):
