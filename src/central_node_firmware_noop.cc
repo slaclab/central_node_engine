@@ -145,7 +145,7 @@ bool Firmware::getEvaluationEnable() {
   return false;
 }
 
-void Firmware::enableTimeout(bool enable) {
+void Firmware::setTimeoutEnable(bool enable) {
 }
 
 bool Firmware::getTimeoutEnable() {

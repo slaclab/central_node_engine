@@ -474,7 +474,7 @@ bool Firmware::getEvaluationEnable()
     return getBoolU64(_evaluationEnableSV);
 }
 
-void Firmware::enableTimeout(bool enable)
+void Firmware::setTimeoutEnable(bool enable)
 {
     setBoolU64(_timeoutEnableSV, enable);
 }
