@@ -127,7 +127,7 @@ DbDeviceInput::DbDeviceInput() : DbEntry(),
 				 bitPosition(999), channelId(999), faultValue(0),
 				 digitalDeviceId(999), value(0), previousValue(0),
 				 latchedValue(0), invalidValueCount(0),
-				 fastEvaluation(false) {
+				 fastEvaluation(false), autoReset(0) {
 }
 
 void DbDeviceInput::unlatch() {
@@ -140,7 +140,8 @@ std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
      << "channelId=" << deviceInput->channelId << " : "
      << "bitPos=" << deviceInput->bitPosition << " : "
      << "faultValue=" << deviceInput->faultValue << " : "
-     << "value=" << deviceInput->value << " [wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]";
+     << "value=" << deviceInput->value << " [wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]" << " : "
+     << "latchedValue=" << deviceInput->latchedValue;
   if (deviceInput->fastEvaluation) {
     os << " [in fast device]";
   }

@@ -6,6 +6,7 @@
 
 const uint32_t SLOW_EVALUATION = 0;
 const uint32_t FAST_EVALUATION = 1;
+const uint32_t AUTO_RESET = 1;
 const uint32_t NO_EVALUATION = 3;
 
 // CardId used when device do not have any card associated with

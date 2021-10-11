@@ -464,6 +464,7 @@ namespace YAML {
    *   fault_value: '0'
    *   channel_id: '1'
    *   digital_device_id: '1'
+   *   auto_reset: True
    *   id: '1'
    */
   template<>
@@ -493,6 +494,9 @@ namespace YAML {
 
 	  field = "channel_id";
 	  deviceInput->channelId = (*it)[field].as<unsigned int>();
+
+	  field = "auto_reset";
+	  deviceInput->autoReset = (*it)[field].as<unsigned int>();
 
 	  deviceInput->value = 0;
  	} catch(YAML::InvalidNode &e) {

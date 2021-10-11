@@ -278,7 +278,7 @@ bool Engine::findBeamDestinations()
     {
         if ((*it).second->name == "AOM")
             _aomDestination = (*it).second;
-        else if ((*it).second->name == "Linac")
+        else if ((*it).second->name == "LINAC")
             _linacDestination = (*it).second;
     }
 
@@ -541,11 +541,11 @@ void Engine::evaluateFaults()
                     inputValue = (*input).second->bypass->value;
                     LOG_TRACE("ENGINE", (*device).second->name << " bypassing input value to "
                         << (*input).second->bypass->value << " (actual value is "
-                        << (*input).second->value << ")");
+                        << (*input).second->latchedValue << ")");
                 }
                 else
                 {
-                    inputValue = (*input).second->value;
+                    inputValue = (*input).second->latchedValue;
                 }
 
                 inputValue <<= (*input).second->bitPosition;
