@@ -173,6 +173,7 @@ class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
   uint32_t channelId;
   uint32_t faultValue;
   uint32_t digitalDeviceId;
+  uint32_t autoReset;
 
   // Device input value must be read from the Central Node Firmware
   uint32_t wasLowBit;
