@@ -88,10 +88,10 @@ void DbDeviceInput::update() {
     // If both are zero the Central Node has not received messages from the device, assume fault
     if (wasLow + wasHigh == 0) {
       invalidValueCount++;
-      value = faultValue;
+      newValue = faultValue;
     }
     else if (wasLow + wasHigh == 2) {
-      value = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
+      newValue = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
     }
     else if (wasLow > 0) {
       newValue = 0;
@@ -105,6 +105,9 @@ void DbDeviceInput::update() {
     // Latch new value if this is a fault
     if (newValue == faultValue) {
       latchedValue = faultValue;
+    }
+    if (autoReset == AUTO_RESET) {
+      latchedValue = value;
     }
 
     if (previousValue != value) {
