@@ -3,6 +3,10 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+# __central_node_engine-R2-2-1__:
+  * Correct destination mask behavior for SW logic to allow multiple bits in mask per destination
+      allow mapping one to many
+
 # __central_node_engine-R2-2-0__:
   * Add auto-unlatch flag for digital inputs.  This will cause latched 
     value to be set to current value if True

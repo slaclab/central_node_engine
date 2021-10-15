@@ -472,6 +472,8 @@ class DbBeamDestination : public DbEntry {
  public:
   std::string name;
   uint16_t destinationMask;
+  uint32_t buffer0DestinationMask;
+  uint32_t buffer1DestinationMask;
 
   // Used after loading the YAML file
   DbBeamClassPtr previousAllowedBeamClass; // beam class set previously
@@ -488,6 +490,8 @@ class DbBeamDestination : public DbEntry {
   DbBeamDestination();
 
   void setAllowedBeamClass() {
+    uint32_t allowedClassExpand = 0;
+    uint8_t shift = 0;
     // If beam destination has a forceBeamClass, then set it
     if (forceBeamClass) {
       allowedBeamClass = forceBeamClass;
@@ -495,8 +499,12 @@ class DbBeamDestination : public DbEntry {
     else {
       allowedBeamClass = tentativeBeamClass;
     }
-
-    softwareMitigationBuffer->at(softwareMitigationBufferIndex) |= ((allowedBeamClass->number & 0xF) << bitShift);
+    for (int i = 0; i < 8; i++) {
+      allowedClassExpand |= ((allowedBeamClass->number & 0xF) << shift);
+      shift +=4;
+    }
+    softwareMitigationBuffer->at(0) |= buffer0DestinationMask & allowedClassExpand;
+    softwareMitigationBuffer->at(1) |= buffer1DestinationMask & allowedClassExpand;
 
     if (previousAllowedBeamClass->number != allowedBeamClass->number) {
       History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
