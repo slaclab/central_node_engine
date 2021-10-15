@@ -919,14 +919,62 @@ namespace YAML {
 	  // position tells in which byte it falls based on the
 	  // destination mask
 
-	  // In FW version from 17-OCT-17 the mitigation buffer is:
 	  // Destination mask
-	  // [09 10 11 12 13 14 15][01 02 03 04 05 06 07 08]
-
+	  // [16 15 14 13 12 11 10 09][08 07 06 05 04 03 02 01]
 	  beamDestination->softwareMitigationBufferIndex = 1; // when FW is fixed this goes back to index 0
 	  beamDestination->bitShift = 0;
 	  uint16_t mask = beamDestination->destinationMask;
-	  if ((mask & 0xFFFF0000) > 0) {
+    beamDestination->buffer0DestinationMask = 0;
+    beamDestination->buffer1DestinationMask = 0;
+    if ((beamDestination->destinationMask & 0x1) > 0) {
+      beamDestination->buffer1DestinationMask |= 0x0000000F;
+    }
+    if ((beamDestination->destinationMask & 0x2) > 0) {
+      beamDestination->buffer1DestinationMask |= 0x000000F0;
+    }
+    if ((beamDestination->destinationMask & 0x4) > 0) {
+      beamDestination->buffer1DestinationMask |= 0x00000F00;
+    }
+    if ((beamDestination->destinationMask & 0x8) > 0) {
+      beamDestination->buffer1DestinationMask |= 0x0000F000;
+    }
+    if ((beamDestination->destinationMask & 0x10) > 0) {
+      beamDestination->buffer1DestinationMask |= 0x000F0000;
+    }
+    if ((beamDestination->destinationMask & 0x20) > 0) {
+      beamDestination->buffer1DestinationMask |= 0x00F00000;
+    }
+    if ((beamDestination->destinationMask & 0x40) > 0) {
+      beamDestination->buffer1DestinationMask |= 0x0F000000;
+    }
+    if ((beamDestination->destinationMask & 0x80) > 0) {
+      beamDestination->buffer1DestinationMask |= 0xF0000000;
+    }
+    if ((beamDestination->destinationMask & 0x100) > 0) {
+      beamDestination->buffer0DestinationMask |= 0x0000000F;
+    }
+    if ((beamDestination->destinationMask & 0x200) > 0) {
+      beamDestination->buffer0DestinationMask |= 0x000000F0;
+    }
+    if ((beamDestination->destinationMask & 0x400) > 0) {
+      beamDestination->buffer0DestinationMask |= 0x00000F00;
+    }
+    if ((beamDestination->destinationMask & 0x800) > 0) {
+      beamDestination->buffer0DestinationMask |= 0x0000F000;
+    }
+    if ((beamDestination->destinationMask & 0x1000) > 0) {
+      beamDestination->buffer0DestinationMask |= 0x000F0000;
+    }
+    if ((beamDestination->destinationMask & 0x2000) > 0) {
+      beamDestination->buffer0DestinationMask |= 0x00F00000;
+    }
+    if ((beamDestination->destinationMask & 0x4000) > 0) {
+      beamDestination->buffer0DestinationMask |= 0x0F000000;
+    }
+    if ((beamDestination->destinationMask & 0x8000) > 0) {
+      beamDestination->buffer0DestinationMask |= 0xF0000000;
+    }
+	  if ((mask & 0xFF00) > 0) {
 	    // beamDestination->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
 	    beamDestination->softwareMitigationBufferIndex = 0; // when FW is fixed this goes back to index 1
 	    mask >>= 8;
@@ -938,12 +986,12 @@ namespace YAML {
 	    }
 	    else {
 	      if (mask > 0) {
-		beamDestination->bitShift += 4;
-		mask >>= 1;
+		      beamDestination->bitShift += 4;
+		      mask >>= 1;
 	      }
 	    }
 	  }
-  	} catch(YAML::InvalidNode &e) {
+  } catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for BeamDestination.";
 	  throw(DbException(errorStream.str()));
 	} catch(YAML::TypedBadConversion<unsigned int> &e) {

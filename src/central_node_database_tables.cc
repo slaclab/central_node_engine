@@ -402,15 +402,13 @@ std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
   return os;
 }
 
-DbBeamDestination::DbBeamDestination() : DbEntry(), name(""), softwareMitigationBufferIndex(0) {
+DbBeamDestination::DbBeamDestination() : DbEntry(), name("") {
 }
 
 std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination) {
   os << "id[" << beamDestination->id << "]; "
      << "name[" << beamDestination->name << "]; "
-     << "destinationMask[" << beamDestination->destinationMask << "]; "
-     << "bufIndex[" << (int)beamDestination->softwareMitigationBufferIndex << "]; "
-     << "shift[" << (int)beamDestination->bitShift << "]";
+     << "destinationMask[" << beamDestination->destinationMask << "]";
   if (beamDestination->allowedBeamClass) {
     os << "; Allowed[" << beamDestination->allowedBeamClass->number << "]";
   }
