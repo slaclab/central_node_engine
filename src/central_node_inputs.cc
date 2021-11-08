@@ -180,27 +180,26 @@ void DbAnalogDevice::update() {
     for (uint32_t i = 0; i < deviceType->numIntegrators; ++i) {
       integratorOffset = numChannelsCard * ANALOG_DEVICE_NUM_THRESHOLDS * i + channel->number * ANALOG_DEVICE_NUM_THRESHOLDS;
       for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) {
-	wasLow = getWasLow(integratorOffset + j);
-	wasHigh = getWasHigh(integratorOffset + j);
-
-	// If both are zero the Central Node has not received messages from the device, assume fault
-	// Both zeroes also mean no messages from application card in the last 360Hz period
-	if (wasLow + wasHigh == 0) {
-	  invalidValueCount++;
-	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
-	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
-	}
-	else if (wasLow + wasHigh == 2) {
-	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // If signal was both low and high during the 2.7ms set threshold crossed
-	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
-	}
-	else if (wasHigh > 0) {
-	  newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
-	  latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
-	}
-	else {
-	  newValue &= ~(1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // No threshold crossed
-	}
+	      wasLow = getWasLow(integratorOffset + j);
+	      wasHigh = getWasHigh(integratorOffset + j);
+        // If both are zero the Central Node has not received messages from the device, assume fault
+	      // Both zeroes also mean no messages from application card in the last 360Hz period
+	      if (wasLow + wasHigh == 0) {
+	        invalidValueCount++;
+	        newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
+	        latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	      }
+	      else if (wasLow + wasHigh == 2) {
+	        newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // If signal was both low and high during the 2.7ms set threshold crossed
+	        latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	      }
+	      else if (wasHigh > 0) {
+	        newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
+	        latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	      }
+	      else {
+	        newValue &= ~(1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // No threshold crossed
+	      }
       }
     }
 

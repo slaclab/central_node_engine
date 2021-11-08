@@ -494,7 +494,12 @@ class DbBeamDestination : public DbEntry {
     uint8_t shift = 0;
     // If beam destination has a forceBeamClass, then set it
     if (forceBeamClass) {
-      allowedBeamClass = forceBeamClass;
+      if(forceBeamClass->number < tentativeBeamClass->number) {
+        allowedBeamClass = forceBeamClass;
+      }
+      else {
+        allowedBeamClass = tentativeBeamClass;
+      }
     }
     else {
       allowedBeamClass = tentativeBeamClass;
@@ -505,11 +510,6 @@ class DbBeamDestination : public DbEntry {
     }
     softwareMitigationBuffer->at(0) |= buffer0DestinationMask & allowedClassExpand;
     softwareMitigationBuffer->at(1) |= buffer1DestinationMask & allowedClassExpand;
-
-    if (previousAllowedBeamClass->number != allowedBeamClass->number) {
-      History::getInstance().logMitigation(id, previousAllowedBeamClass->id, allowedBeamClass->id);
-    }
-
   }
 
   void setForceBeamClass(DbBeamClassPtr beamClass) {
@@ -587,9 +587,11 @@ class DbFault : public DbEntry {
   bool faulted;
   bool faultLatched;
   bool ignored;
+  bool sendUpdate;
   uint32_t evaluation; // Set according to the input device types
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
+  uint32_t oldValue; // Calculated from the list of faultInputs
   DbFaultStateMapPtr faultStates; // Map of fault states for this fault
   DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active
                                                    // the default state not necessarily is a real fault
@@ -598,6 +600,7 @@ class DbFault : public DbEntry {
 
   void unlatch();
   void update(uint32_t v) {
+    oldValue = value;
     value = v;
   }
 
