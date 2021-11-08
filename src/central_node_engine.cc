@@ -566,7 +566,8 @@ void Engine::evaluateFaults()
         ++fault)
     {
         LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
-
+        uint32_t oldFaultValue = (*fault).second->value;
+        (*fault).second->sendUpdate = 0;
         // First calculate the digital Fault value from its one or more digital device inputs
         uint32_t faultValue = 0;
         for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
@@ -595,7 +596,6 @@ void Engine::evaluateFaults()
         }
 
         (*fault).second->update(faultValue);
-        bool oldFaultValue = (*fault).second->faulted;
         (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
         LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
@@ -640,11 +640,11 @@ void Engine::evaluateFaults()
                 << faultValue << " (Default) fault state="
                 << (*fault).second->defaultFaultState->deviceState->name);
         }
-
-        if (oldFaultValue != (*fault).second->faulted)
+        if (oldFaultValue != (*fault).second->value)
         {
             History::getInstance().logFault((*fault).second->id, oldFaultValue,
                 (*fault).second->faulted, deviceStateId);
+            (*fault).second->sendUpdate = 1;
         }
 
         deviceStateId = 0;
@@ -739,6 +739,11 @@ void Engine::mitigate()
         fault != _mpsDb->faults->end();
         ++fault)
     {
+        uint32_t maximumClass = 100;
+        uint32_t sendFaultId = (*fault).second->id;
+        uint32_t sendOldValue = (*fault).second->oldValue;
+        uint32_t sendValue = (*fault).second->value;
+        uint32_t sendAllowClass = 0;
         // Mitigate only those faults that are the result of slow evaluation
 #ifdef FAST_SW_EVALUATION
 #warning "Code compiled to evaluate fast rules - FOR TESTING ONLY!"
@@ -765,7 +770,7 @@ void Engine::mitigate()
                             allowed != (*state).second->allowedClasses->end();
                             ++allowed)
                         {
-                            if ((*allowed).second->beamDestination->tentativeBeamClass->number >
+                            if ((*allowed).second->beamDestination->tentativeBeamClass->number >=
                                 (*allowed).second->beamClass->number)
                             {
                                 (*allowed).second->beamDestination->tentativeBeamClass =
@@ -774,6 +779,12 @@ void Engine::mitigate()
                                 LOG_TRACE("ENGINE", (*allowed).second->beamDestination->name
                                     << " tentative class set to "
                                     << (*allowed).second->beamClass->number);
+                                if ((*fault).second->sendUpdate) {
+                                  if ((*allowed).second->beamClass->number < maximumClass) {
+                                    maximumClass = (*allowed).second->beamClass->number;
+                                    sendAllowClass = (*allowed).second->id;
+                                  }
+                                }
                             }
                         }
                     }
@@ -784,7 +795,6 @@ void Engine::mitigate()
                     }
                 }
             }
-
             // If there are no faults, then enable the default - if there is one
             if ((*fault).second->defaultFaultState)
             {
@@ -814,6 +824,48 @@ void Engine::mitigate()
                     }
                 }
             }
+        }
+        // Fast fault - just log the mitigation to history server, but don't mitigate
+        else {
+            for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+                state != (*fault).second->faultStates->end();
+                ++state)
+            {
+                if ((*state).second->faulted && !(*state).second->ignored)
+                {
+                    if ((*state).second->allowedClasses)
+                    {
+                        for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
+                            allowed != (*state).second->allowedClasses->end();
+                            ++allowed)
+                        {
+                            if ((*allowed).second->beamDestination->tentativeBeamClass->number >=
+                                (*allowed).second->beamClass->number)
+                            {
+                                if ((*fault).second->sendUpdate) {
+                                  if ((*allowed).second->beamClass->number < maximumClass) {
+                                    maximumClass = (*allowed).second->beamClass->number;
+                                    sendAllowClass = (*allowed).second->id;
+                                  }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for "
+                            << (*fault).second->name << " fault");
+                    }
+                }
+            }
+        }
+        if (maximumClass < 100) {
+          History::getInstance().logMitigation(sendFaultId,sendOldValue,sendValue,sendAllowClass);
+        }
+        else {
+          if ((*fault).second->sendUpdate) {
+            History::getInstance().logMitigation(sendFaultId,sendOldValue,sendValue,sendAllowClass);
+          }
         }
     }
 }
