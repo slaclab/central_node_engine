@@ -55,8 +55,8 @@ int History::log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32
   return add(message);
 }
 
-int History::logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t faultStateId) {
-  return log(FaultStateType, id, oldValue, newValue, faultStateId);
+int History::logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass) {
+  return log(FaultStateType, id, oldValue, newValue, allowedClass);
 }
 
 int History::logMitigation(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass) {

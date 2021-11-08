@@ -4,11 +4,12 @@ Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
 * __central_node_engine-R2-3-0__:
-  * Change logMitigation fault to send to history server:
+  * Change logFault fault to send to history server:
       Fault ID
       Old Fault Value
       New Fault Value
       Allowed Class ID - will be 0 if no allowed class (no fault)
+  * Stop sending logMitigation
   * Fixed bug with forceBeamClass in setAllowedBeamClass() where the forceBeamClass would
     overwrite whatever the actual logic was trying to set.  Now final beam class is the
     lowest of the force and the logic output.

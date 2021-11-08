@@ -642,8 +642,6 @@ void Engine::evaluateFaults()
         }
         if (oldFaultValue != (*fault).second->value)
         {
-            History::getInstance().logFault((*fault).second->id, oldFaultValue,
-                (*fault).second->faulted, deviceStateId);
             (*fault).second->sendUpdate = 1;
         }
 
@@ -860,11 +858,11 @@ void Engine::mitigate()
             }
         }
         if (maximumClass < 100) {
-          History::getInstance().logMitigation(sendFaultId,sendOldValue,sendValue,sendAllowClass);
+          History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
         }
         else {
           if ((*fault).second->sendUpdate) {
-            History::getInstance().logMitigation(sendFaultId,sendOldValue,sendValue,sendAllowClass);
+            History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
           }
         }
     }
