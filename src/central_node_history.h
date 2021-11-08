@@ -43,7 +43,7 @@ class History {
   int log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);
 
   int logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t faultStateId);
-  int logMitigation(uint32_t id, uint32_t oldValue, uint32_t newValue);
+  int logMitigation(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass);
   int logDeviceInput(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logAnalogDevice(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue, uint16_t index);
