@@ -1047,18 +1047,15 @@ void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassI
             if (beamClassIt != beamClasses->end())
             {
                 (*beamDestIt).second->setForceBeamClass((*beamClassIt).second);
-                std::cout << "Force dest["<< beamDestinationId <<"] to class [" << beamClassId << "]" << std::endl;
             }
             else
             {
                 (*beamDestIt).second->resetForceBeamClass();
-                std::cout << "Force dest["<< beamDestinationId <<"] reset" << std::endl;
             }
         }
         else
         {
             (*beamDestIt).second->resetForceBeamClass();
-            std::cout << "Force dest["<< beamDestinationId <<"] reset" << std::endl;
         }
     }
 }
