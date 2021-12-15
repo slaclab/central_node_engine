@@ -187,6 +187,7 @@ class MpsDb {
   void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void writeFirmwareConfiguration(bool enableTimeout = false, bool forceAomAllow = false);
   void unlatchAll();
+  void unlatchAllFaults();
   void clearMitigationBuffer();
 
   void clearUpdateTime();

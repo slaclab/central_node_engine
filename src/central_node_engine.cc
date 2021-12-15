@@ -586,7 +586,7 @@ void Engine::evaluateFaults()
                     (*input).second->analogDevice->bypassMask << ", value=" <<
                     (*input).second->analogDevice->value << std::dec);
 
-                inputValue = (*input).second->analogDevice->value & (*input).second->analogDevice->bypassMask;
+                inputValue = (*input).second->analogDevice->latchedValue & (*input).second->analogDevice->bypassMask;
             }
 
             faultValue |= (inputValue << (*input).second->bitPosition);
@@ -597,6 +597,7 @@ void Engine::evaluateFaults()
 
         (*fault).second->update(faultValue);
         (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
+        (*fault).second->faultedDisplay = false; // Clear the fault - in case it was faulted before
         LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
         // Now that a Fault has a new value check if it is in the FaultStates list,
@@ -617,13 +618,19 @@ void Engine::evaluateFaults()
                 deviceStateId = (*state).second->deviceState->id;
                 (*state).second->faulted = true; // Set input faulted field
                 (*fault).second->faulted = true; // Set fault faulted field
-                (*fault).second->faultLatched = true;
                 faulted = true; // Signal that at least one state is faulted
-                LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
-                    << faultValue << ", masked=" << maskedValue
-                    << " (fault state="
-                    << (*state).second->deviceState->name
-                    << ", value=" << (*state).second->deviceState->value << ")");
+                for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
+                    allowed != (*state).second->allowedClasses->end();
+                    ++allowed) {
+                  if ((*allowed).second->beamClass->number < _highestBeamClass->number) {
+                    (*fault).second->faultedDisplay = true; // Set fault faulted field
+                    LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
+                      << faultValue << ", masked=" << maskedValue
+                      << " (fault state="
+                      << (*state).second->deviceState->name
+                      << ", value=" << (*state).second->deviceState->value << ")");
+                  }
+                }            
             }
             else
             {
@@ -739,10 +746,9 @@ void Engine::mitigate()
     {
         uint32_t maximumClass = 100;
         uint32_t sendFaultId = (*fault).second->id;
-        uint32_t sendOldValue = (*fault).second->oldValue;
+        uint32_t sendOldValue = (*fault).second->worstState;
         uint32_t sendValue = (*fault).second->value;
         uint32_t sendAllowClass = 0;
-        // Mitigate only those faults that are the result of slow evaluation
 #ifdef FAST_SW_EVALUATION
 #warning "Code compiled to evaluate fast rules - FOR TESTING ONLY!"
         if (true)
@@ -773,14 +779,11 @@ void Engine::mitigate()
                             {
                                 (*allowed).second->beamDestination->tentativeBeamClass =
                                     (*allowed).second->beamClass;
-
-                                LOG_TRACE("ENGINE", (*allowed).second->beamDestination->name
-                                    << " tentative class set to "
-                                    << (*allowed).second->beamClass->number);
                                 if ((*fault).second->sendUpdate) {
                                   if ((*allowed).second->beamClass->number < maximumClass) {
                                     maximumClass = (*allowed).second->beamClass->number;
                                     sendAllowClass = (*allowed).second->id;
+                                    sendValue = (*state).second->id;
                                   }
                                 }
                             }
@@ -814,9 +817,6 @@ void Engine::mitigate()
                             {
                                 (*allowed).second->beamDestination->tentativeBeamClass =
                                     (*allowed).second->beamClass;
-
-                                LOG_TRACE("ENGINE", (*allowed).second->beamDestination->name << " tentative class set to "
-                                    << (*allowed).second->beamClass->number);
                             }
                         }
                     }
@@ -844,6 +844,7 @@ void Engine::mitigate()
                                   if ((*allowed).second->beamClass->number < maximumClass) {
                                     maximumClass = (*allowed).second->beamClass->number;
                                     sendAllowClass = (*allowed).second->id;
+                                    sendValue = (*state).second->id;
                                   }
                                 }
                             }
@@ -858,10 +859,12 @@ void Engine::mitigate()
             }
         }
         if (maximumClass < 100) {
+          (*fault).second->worstState = sendValue;
           History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
         }
         else {
           if ((*fault).second->sendUpdate) {
+            (*fault).second->worstState = sendValue;
             History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
           }
         }

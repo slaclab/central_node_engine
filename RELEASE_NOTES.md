@@ -3,6 +3,10 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R2-4-0__:
+  * Update fault reporting to PVs so that the fault value is reported
+  * tie latched faults to latched value of input value
+
 * __central_node_engine-R2-3-0__:
   * Change logFault fault to send to history server:
       Fault ID

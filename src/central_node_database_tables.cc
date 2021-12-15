@@ -245,6 +245,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
   os << "type=" << analogDevice->deviceTypeId << " : "
      << "card=" << analogDevice->cardId << " : "
      << "value=0x" << std::hex << analogDevice->value << std::dec << " : "
+     << "latchedValue=0x" << std::hex << analogDevice->latchedValue << std::dec << " : "
      << "dbId=" << analogDevice->id << " : " << std::endl;
   if (analogDevice->ignored) {
     os << "  ignored=YES";
@@ -464,11 +465,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
   return os;
 }
 
-DbFault::DbFault() : DbEntry(), name(""), description(""), faulted(true), faultLatched(true), ignored(false), evaluation(SLOW_EVALUATION) {
-}
-
-void DbFault::unlatch() {
-  faultLatched = faulted;
+DbFault::DbFault() : DbEntry(), name(""), description(""), faulted(true), ignored(false), evaluation(SLOW_EVALUATION), value(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
