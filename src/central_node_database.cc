@@ -118,13 +118,7 @@ void MpsDb::unlatchAll() {
        it != deviceInputs->end(); ++it) {
     (*it).second->unlatch();
   }
-
-  for (DbFaultMap::iterator it = faults->begin();
-       it != faults->end(); ++it) {
-    (*it).second->faultLatched = (*it).second->faulted; // Set latched value to current value
-  }
 }
-
 /**
  * This method reads input states from the central node firmware
  * and updates the status of all digital/analog inputs.

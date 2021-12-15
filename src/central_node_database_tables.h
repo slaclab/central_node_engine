@@ -585,20 +585,20 @@ class DbFault : public DbEntry {
 
   // Configured after loading the YAML file
   bool faulted;
-  bool faultLatched;
+  bool faultedDisplay;
   bool ignored;
   bool sendUpdate;
   uint32_t evaluation; // Set according to the input device types
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
   uint32_t oldValue; // Calculated from the list of faultInputs
+  uint32_t worstState; //most restrictive device state for this fault
   DbFaultStateMapPtr faultStates; // Map of fault states for this fault
   DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active
                                                    // the default state not necessarily is a real fault
 
   DbFault();
 
-  void unlatch();
   void update(uint32_t v) {
     oldValue = value;
     value = v;
