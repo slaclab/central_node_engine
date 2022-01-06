@@ -227,6 +227,8 @@ class DbDigitalDevice : public DbEntry {
   std::string description;
   uint32_t evaluation;
   uint32_t cardId; // Application Card ID
+  // Faults from this devices are bypassed when ignored==true
+  bool ignored;
 
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
@@ -644,13 +646,14 @@ class DbIgnoreCondition : public DbEntry {
 
   uint32_t conditionId;
   uint32_t faultStateId;
-  uint32_t analogDeviceId;
+  uint32_t deviceId;
 
   // The ignore condition can be used to ignore a fault state or an analog device
   // The analog device is used to disable a device when beam is blocked upstream, causing
   // faults from no beam
   DbFaultStatePtr faultState;
   DbAnalogDevicePtr analogDevice;
+  DbDigitalDevicePtr digitalDevice;
 
   DbIgnoreCondition();
   friend std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input);

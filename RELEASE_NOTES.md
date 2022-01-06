@@ -3,6 +3,16 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+
+  * Add ignore conditions for digital devices to go with those in analog devices
+    * Change analogDeviceId in DbIgnoreCondition to deviceId
+    * Add digitalDevice to DbIgnoreCondition
+    * Connect either an analog or digital device to IgnoreCondition in central_node_database.cc
+    * Evaluate digitalDevice ignore conditions in central_node_engine.cc
+    * In central_node_engine.cc::mitigate(), add bit to check if a fault should be ignored:
+      * Link a fault to a device (ignore condition bool is currently stored with a device) through
+        the fault inputs tied to the fault.
+
 * __central_node_engine-R2-4-0__:
   * Update fault reporting to PVs so that the fault value is reported
   * tie latched faults to latched value of input value

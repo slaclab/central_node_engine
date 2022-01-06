@@ -530,7 +530,7 @@ std::ostream & operator<<(std::ostream &os, DbConditionInput * const input) {
   return os;
 }
 
-DbIgnoreCondition::DbIgnoreCondition() : DbEntry(), conditionId(0), faultStateId(0), analogDeviceId(0) {
+DbIgnoreCondition::DbIgnoreCondition() : DbEntry(), conditionId(0), faultStateId(0), deviceId(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input) {

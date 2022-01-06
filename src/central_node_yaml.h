@@ -583,7 +583,7 @@ namespace YAML {
 	DbIgnoreCondition *ignoreCondition = new DbIgnoreCondition();
 
 	ignoreCondition->faultStateId = DbIgnoreCondition::INVALID_ID;
-	ignoreCondition->analogDeviceId = DbIgnoreCondition::INVALID_ID;
+	ignoreCondition->deviceId = DbIgnoreCondition::INVALID_ID;
 
 	try {
 	  field = "id";
@@ -612,8 +612,8 @@ namespace YAML {
 	}
 
 	try {
-	  field = "analog_device_id";
-	  ignoreCondition->analogDeviceId = (*it)[field].as<unsigned int>();
+	  field = "device_id";
+	  ignoreCondition->deviceId = (*it)[field].as<unsigned int>();
 	  found = true;
 	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for IgnoreCondition.";
