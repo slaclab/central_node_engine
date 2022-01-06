@@ -555,6 +555,8 @@ void Engine::evaluateFaults()
             (*device).second->update(deviceValue);
 
             LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
+            // Set device ignore condition to false.  It will be evaluated later
+            (*device).second->ignored = false;
         }
     }
 
@@ -721,7 +723,7 @@ bool Engine::evaluateIgnoreConditions()
                 {
                     if ((*ignoreCondition).second->analogDevice)
                     {
-                        LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->analogDeviceId << "]"
+                        LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->deviceId << "]"
                             << ", state=" << (*condition).second->state);
 
                         if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state)
@@ -729,6 +731,13 @@ bool Engine::evaluateIgnoreConditions()
 
                         (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
                     }
+                }
+                if ((*ignoreCondition).second->digitalDevice)
+                {
+                    LOG_TRACE("ENGINE",  "Ignoring digital device [" << (*ignoreCondition).second->deviceId << "]"
+                        << ", state=" << (*condition).second->state);
+                    if ((*ignoreCondition).second->digitalDevice->ignored != (*condition).second->state)
+                    (*ignoreCondition).second->digitalDevice->ignored = (*condition).second->state;
                 }
             }
         }
@@ -749,12 +758,37 @@ void Engine::mitigate()
         uint32_t sendOldValue = (*fault).second->worstState;
         uint32_t sendValue = (*fault).second->value;
         uint32_t sendAllowClass = 0;
+      // Determine if fault should be ignored
+      // Presently, ignore status is stored with analog / digital device
+      // Need to get it to fault.  Use link to device through fault input
+      (*fault).second->ignored = false;
+      for (DbFaultInputMap::iterator fault_input = (*fault).second->faultInputs->begin();
+          fault_input != (*fault).second->faultInputs->end();
+          ++fault_input)
+      {
+        if ((*fault_input).second->analogDevice) 
+        {
+          if ((*fault_input).second->analogDevice->ignored )
+          {
+            (*fault).second->ignored = true;
+          }
+        }
+        if ((*fault_input).second->digitalDevice) 
+        {
+          if ((*fault_input).second->digitalDevice->ignored )
+          {
+            (*fault).second->ignored = true;
+          }
+        }
+      }
+      if ((*fault).second->ignored == false ) 
+      {
 #ifdef FAST_SW_EVALUATION
 #warning "Code compiled to evaluate fast rules - FOR TESTING ONLY!"
         if (true)
         {
 #else
-        if ((*fault).second->evaluation == SLOW_EVALUATION) {
+        if ((*fault).second->evaluation == SLOW_EVALUATION ) {
 #endif
             for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
                 state != (*fault).second->faultStates->end();
@@ -868,6 +902,7 @@ void Engine::mitigate()
             History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
           }
         }
+      }
     }
 }
 

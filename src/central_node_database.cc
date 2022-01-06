@@ -798,21 +798,30 @@ void MpsDb::configureIgnoreConditions()
             }
         }
 
-        uint32_t analogDeviceId = (*ignoreCondition).second->analogDeviceId;
+        uint32_t deviceId = (*ignoreCondition).second->deviceId;
         //    std::cout << "analogDeviceId=" << analogDeviceId << " ";
 
-        if (analogDeviceId != DbIgnoreCondition::INVALID_ID)
+        if (deviceId != DbIgnoreCondition::INVALID_ID)
         {
-            DbAnalogDeviceMap::iterator deviceIt = analogDevices->find(analogDeviceId);
-            if (deviceIt != analogDevices->end())
+            DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(deviceId);
+            if (deviceIt == digitalDevices->end())
             {
-                (*ignoreCondition).second->analogDevice = (*deviceIt).second;
+              // It is an analog device.  Link it to proper analog device.
+              DbAnalogDeviceMap::iterator analogDeviceIt = analogDevices->find(deviceId);
+              if (analogDeviceIt != analogDevices->end())
+              {
+                  (*ignoreCondition).second->analogDevice = (*analogDeviceIt).second;
+              }
+              else
+              {
+                  errorStream << "ERROR: Failed to configure database, invalid ID for AnalogDevice ("
+                      << deviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
+                  throw(DbException(errorStream.str()));
+              }
             }
             else
             {
-                errorStream << "ERROR: Failed to configure database, invalid ID for AnalogDevice ("
-                    << analogDeviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
-                throw(DbException(errorStream.str()));
+              (*ignoreCondition).second->digitalDevice = (*deviceIt).second;
             }
         }
         else
