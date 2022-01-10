@@ -4,6 +4,7 @@ Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
 
+* __central_node_engine-R2-5-0__:
   * Add ignore conditions for digital devices to go with those in analog devices
     * Change analogDeviceId in DbIgnoreCondition to deviceId
     * Add digitalDevice to DbIgnoreCondition
