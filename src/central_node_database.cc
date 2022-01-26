@@ -758,7 +758,7 @@ void MpsDb::configureIgnoreConditions()
         ++ignoreCondition)
     {
         uint32_t conditionId = (*ignoreCondition).second->conditionId;
-        //    std::cout << "conditionId=" << conditionId << " ";
+            //std::cout << "conditionId=" << conditionId << " ";
 
         DbConditionMap::iterator condition = conditions->find(conditionId);
         if (condition != conditions->end())
@@ -774,6 +774,8 @@ void MpsDb::configureIgnoreConditions()
         }
         else
         {
+            std::cout << "ERROR: Failed to configure database, invalid conditionId ("
+                << conditionId << ") for ignoreCondition (" <<  (*ignoreCondition).second->id << ")" << std::endl;
             errorStream << "ERROR: Failed to configure database, invalid conditionId ("
                 << conditionId << ") for ignoreCondition (" <<  (*ignoreCondition).second->id << ")";
             throw(DbException(errorStream.str()));
@@ -781,7 +783,7 @@ void MpsDb::configureIgnoreConditions()
 
         // Find if the ignored fault state is digital or analog
         uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
-        //    std::cout << "faultStateId=" << faultStateId << " ";
+            //std::cout << "faultStateId=" << faultStateId << " ";
 
         if (faultStateId != DbIgnoreCondition::INVALID_ID)
         {
@@ -792,6 +794,8 @@ void MpsDb::configureIgnoreConditions()
             }
             else
             {
+                std::cout << "ERROR: Failed to configure database, invalid ID for FaultState ("
+                    << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")" << std::endl;
                 errorStream << "ERROR: Failed to configure database, invalid ID for FaultState ("
                     << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
                 throw(DbException(errorStream.str()));
@@ -799,7 +803,7 @@ void MpsDb::configureIgnoreConditions()
         }
 
         uint32_t deviceId = (*ignoreCondition).second->deviceId;
-        //    std::cout << "analogDeviceId=" << analogDeviceId << " ";
+            //std::cout << "DeviceId=" << deviceId << " ";
 
         if (deviceId != DbIgnoreCondition::INVALID_ID)
         {
@@ -814,7 +818,9 @@ void MpsDb::configureIgnoreConditions()
               }
               else
               {
-                  errorStream << "ERROR: Failed to configure database, invalid ID for AnalogDevice ("
+                  std::cout << "ERROR: Failed to configure database, invalid ID for Device ("
+                      << deviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")" << std::endl;
+                  errorStream << "ERROR: Failed to configure database, invalid ID for Device ("
                       << deviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
                   throw(DbException(errorStream.str()));
               }
@@ -989,6 +995,7 @@ void MpsDb::configureApplicationCards()
             adPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
         }
     }
+    std::cout << "Done!" << std::endl;
 
     for (applicationCardIt = applicationCards->begin();
         applicationCardIt != applicationCards->end();
@@ -996,6 +1003,7 @@ void MpsDb::configureApplicationCards()
     {
         (*applicationCardIt).second->configureUpdateBuffers();
     }
+    std::cout << "End of the line" << std::endl;
 }
 
 void MpsDb::configureBeamDestinations()
