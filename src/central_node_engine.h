@@ -112,6 +112,7 @@ private:
 
     void evaluateFaults();
     bool evaluateIgnoreConditions();
+    void setFaultIgnore();
 
     MpsDbPtr _mpsDb;
     BypassManagerPtr _bypassManager;
