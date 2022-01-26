@@ -3,6 +3,10 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R2-6-0__:
+  * Refactor ignore conditions and fault history sender
+  * Add debug statements to DB configuration function
+  * Add CPSW support for ConPowH / ConPowL parameters
 
 * __central_node_engine-R2-5-0__:
   * Add ignore conditions for digital devices to go with those in analog devices
