@@ -832,7 +832,6 @@ void Engine::mitigate()
         if (maximumClass < 100) {
           (*fault).second->worstState = sendValue;
           History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
-          std::cout << "If: (" << (*fault).second->name << " oldValue="
         }
         else {
           if ((*fault).second->sendUpdate) {
