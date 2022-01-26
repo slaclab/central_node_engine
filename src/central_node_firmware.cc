@@ -171,6 +171,12 @@ int Firmware::createRegisters()
         name = base + mps + core + "/EvaluationPowerLevel";
         _mitigationSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
+        name = base + mps + core + "/ConPowH";
+        _finalBCHSV = IScalVal_RO::create(_root->findByName(name.c_str()));
+
+        name = base + mps + core + "/ConPowL";
+        _finalBCLSV = IScalVal_RO::create(_root->findByName(name.c_str()));
+
         name = base + mps + core + "/SwitchConfig";
         _switchConfigCmd = ICommand::create(_root->findByName(name.c_str()));
 
@@ -547,6 +553,30 @@ void Firmware::getMitigation(uint32_t *mitigation)
     catch (IOError &e)
     {
         std::cerr << "ERROR: CPSW I/O Error on getMitigation()" << std::endl;
+    }
+}
+
+void Firmware::getFinalBcH(uint32_t *finalBcH)
+{
+    try
+    {
+        _finalBCHSV->getVal(finalBcH);
+    }
+    catch (IOError &e)
+    {
+        std::cerr << "ERROR: CPSW I/O Error on getFinalBcH()" << std::endl;
+    }
+}
+
+void Firmware::getFinalBcL(uint32_t *finalBcL)
+{
+    try
+    {
+        _finalBCLSV->getVal(finalBcL);
+    }
+    catch (IOError &e)
+    {
+        std::cerr << "ERROR: CPSW I/O Error on getFinalBcL()" << std::endl;
     }
 }
 
