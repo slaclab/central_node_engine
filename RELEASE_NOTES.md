@@ -3,6 +3,13 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R3-0-0:
+  * Remove AOM permit calculation functions
+    * Functionality done with AOM state machine in link node
+  * Change FW reload process for bypass engine:
+    * Behaves the same as ignore reload process
+  * Stopped the automatic activation of Pattern Check when loading configuration
+
 * __central_node_engine-R2-6-0__:
   * Refactor ignore conditions and fault history sender
   * Add debug statements to DB configuration function
