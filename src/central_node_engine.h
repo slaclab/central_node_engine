@@ -105,11 +105,6 @@ private:
     void setTentativeBeamClass();
     bool setAllowedBeamClass();
 
-    // Methods for enable/disable AOM when shutter is closed
-    bool checkAomState();
-    bool shouldShutterBeClosed(bool linacMitigation);
-    bool shouldShutterBeOpened(bool linacFwLatchedMitigation, bool linacMitigation);
-
     void evaluateFaults();
     bool evaluateIgnoreConditions();
     void setFaultIgnore();

@@ -89,21 +89,19 @@ BypassManagerPtr Engine::getBypassManager()
  */
 int Engine::reloadConfig()
 {
-    // If updateThread active, then stop it first
-    if (_evaluate)
-    {
-        _evaluate = false;
-        threadJoin();
-    }
+    Firmware::getInstance().setEvaluationEnable(false);
+    Firmware::getInstance().setSoftwareEnable(false);
+    Firmware::getInstance().setEnable(false);
 
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-        _mpsDb->writeFirmwareConfiguration();
+        _mpsDb->writeFirmwareConfiguration(false, _aomAllowWhileShutterClosed);
     }
 
-    _evaluate = true;
-
-    startUpdateThread();
+    Firmware::getInstance().setEnable(true);
+    Firmware::getInstance().setSoftwareEnable(true);
+    Firmware::getInstance().setEvaluationEnable(true);
+    Firmware::getInstance().clearAll();
 
     return 0;
 }
@@ -121,10 +119,9 @@ int Engine::reloadConfigFromIgnore()
     }
 
     Firmware::getInstance().setEnable(true);
-    Firmware::getInstance().clearAll();
-    //  Firmware::getInstance().softwareClear();
     Firmware::getInstance().setSoftwareEnable(true);
     Firmware::getInstance().setEvaluationEnable(true);
+    Firmware::getInstance().clearAll();
 
     ++_reloadCount;
 
@@ -219,20 +216,6 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
         // Now that the database has been loaded and configured
         // successfully, assign to _mpsDb shared_ptr
         _mpsDb = mpsDb;//shared_ptr<MpsDb>(db);
-
-        // Search for Mech. Shutter device - this is needed to keep track
-        // of the shutter status, and allow AOM when the shutter is closed
-        // If it is not found, we will let the system run, but we won't be
-        // able to keep track of the shutter status. This is needed for the
-        // dual-core operation.
-        if (!findShutterDevice())
-            std::cout << "Mech. Shutter device not found." << std::endl;
-
-
-        // We allow the system to run without finding both the Linac and the AOM.
-        // This is needed for the dual-core operation.
-        if (!findBeamDestinations())
-            std::cout << "AOM and/or Linac beam destination not found." << std::endl;
 
         // Find the lowest/highest BeamClasses - used when checking faults
         uint32_t num = 0;
@@ -359,145 +342,6 @@ bool Engine::setAllowedBeamClass()
     }
 
     return true;
-}
-
-/**
- * We need to enable the AOM if the shutter is closed - this requires
- * a reload of the FW configuration at the moment the shutter is closed
- * and it was supposed to be close.
- *
- * Enabling the AOM means to remove the AOM destination from the FW
- * configuration and also set it to the highest class in SW).
- *
- * When the SW/FW evaluation conditions allow beam (power class
- * higher than PC0) then the shutter and AOM are allowed.
- *
- * 1) Enable AOM when shutter closes:
- * - Shutter is CLOSED; and
- * - Shutter is supposed to be closed: Linac mitigation read from FW is 0 (PC0)
- *   [Observation: the PC0 is caused by SW or FW logic evaluation, OR
- *    CN getting timeouts from apps, Watchdog faults, etc]
- *
- * -> This condition causes the SW to force Linac to PC0
- * -> The FW configuration is reloaded with AOM destination out
- *    The _forceAom=true causes the FW configuration to bypass AOM
- *    In SW the AOM destination receives the _highestBeamClass to allow beam
- * -> If the FW mitigation is latched (read from FW), then make the
- *    also SW mitigation latch.
- *    * The SW latch needs to be cleared by operators (clearSoftwareLatch() method)
- * -> Set _aomAllowWhileShutterClosed to true if it is not set
- * -> Do not reload if this condition was active on the previous cycle
- *    Condition signaled by _aomAllowWhileShutterClosed variable
- *
- * 2) Condition to restore AOM mitigation by SW/FW
- * - Shutter is NOT CLOSED; and
- * - _aomAllowWhileShutterClosed is active (i.e. AOM mitigation disabled,
- *   allowing beam through AOM); and
- * - Shutter is supposed to be opened:
- *   * Linac mitigation read from FW is not 0; and
- *   * Linac FW latch mitigation read from FW is not 0
- * -> Reset _aomAllowWhileShutterClosed (set false)
- * -> This causes the FW configuration to be reloaded with AOM destination in
- *
- * Return true if FW configuration must be reloaded.
- *
- * Note: this check will run ony when:
- * - Both the Linac and the AOM destination, and
- * - The Mech. shutter device
- * are all defined in the DB. Otherwise, this check will
- * do nothing and simply return false.
- */
-bool Engine::checkAomState()
-{
-    // Check if the shutter device and both the Linac and AOM destinations
-    // are defined. Otherwise just reutrn false.
-    if (!_aomDestination or !_linacDestination or !_shutterDevice)
-        return false;
-
-    bool reload = false;
-
-    // Check whether there is an active FW latch mitigation
-    uint32_t latchedMitigation[2];
-    Firmware::getInstance().getLatchedMitigation(&latchedMitigation[0]);
-    uint32_t linacLatchedMitigation = latchedMitigation[1] & 0xF;
-
-    // Read the current mitigation (result of both SW/FW evaluations)
-    uint32_t mitigation[2];
-    Firmware::getInstance().getMitigation(&mitigation[0]);
-    uint32_t linacMitigation = mitigation[1] & 0xF;
-
-    bool shutterClosed = false;
-    if (_shutterDevice->value == _shutterClosedStatus)
-        shutterClosed = true;
-
-    // First condition - shutter is closed, it is supposed to be closed and
-    // we are not in the force AOM mode already
-    // then removes AOM from FW evaluation (by reloading)
-    if (shutterClosed &&
-        !_aomAllowWhileShutterClosed &&
-        shouldShutterBeClosed(linacMitigation==0))
-    {
-        // If the FW linac mitigation is ON then latch it in SW, because the FW
-        // reload operation will unlatch it
-        if (linacLatchedMitigation == 0)
-            _linacFwLatch = true; // This is cleared only by OPS
-
-        _aomAllowWhileShutterClosed = true; // This causes AOM to be bypassed by FW
-        ++_aomAllowEnableCounter;
-        reload = true;
-    }
-
-    // Set PC0 to shutter in SW if it was latched in FW before reload
-    if (_linacFwLatch)
-        _linacDestination->tentativeBeamClass = _lowestBeamClass;
-
-    // Set high PC to AOM if _aomAllowWhileShutterClosed is active
-    if (_aomAllowWhileShutterClosed)
-        _aomDestination->tentativeBeamClass = _highestBeamClass;
-
-
-    // Second condition - shutter is closed, but there are no faults,
-    // it could be opened, first close AOM
-    if (shutterClosed && _aomAllowWhileShutterClosed &&
-        shouldShutterBeOpened(linacLatchedMitigation==0, linacMitigation==0))
-    {
-        _aomDestination->tentativeBeamClass = _lowestBeamClass;
-        _aomAllowWhileShutterClosed = false;
-        ++_aomAllowDisableCounter;
-        reload = true;
-    }
-    // Otherwise, if shutter is not closed - then disallow AOM
-    else if (!shutterClosed && _aomAllowWhileShutterClosed)
-    {
-        ++_aomAllowDisableCounter;
-        _aomAllowWhileShutterClosed = false;
-        reload = true;
-    }
-
-    return reload;
-}
-
-/**
- * Returns whether the shutter is supposed to be closed.
- */
-bool Engine::shouldShutterBeClosed(bool linacMitigation)
-{
-    bool shouldBeClosed = linacMitigation || _linacFwLatch;
-    return shouldBeClosed; // TODO: Include other conditions, e.g. app timed out
-}
-
-/**
- * Retuns whether the shutter is supposed to be opened
- */
-bool Engine::shouldShutterBeOpened(bool linacFwLatchedMitigation, bool linacMitigation)
-{
-    bool swFaultActive = true;
-    if (_linacDestination->tentativeBeamClass != _lowestBeamClass)
-        swFaultActive = false;
-
-    bool shouldBeOpened = !swFaultActive && !linacFwLatchedMitigation && !linacMitigation;
-
-    return shouldBeOpened;
 }
 
 /**
@@ -861,8 +705,6 @@ int Engine::checkFaults()
         reload = evaluateIgnoreConditions();
         setFaultIgnore();
         mitigate();
-        if (checkAomState())
-            reload = true;
 
         setAllowedBeamClass();
     }
@@ -1116,10 +958,11 @@ void Engine::engineThread()
     {
         Firmware::getInstance().setEnable(true);
         Firmware::getInstance().setSoftwareEnable(true);
+        Firmware::getInstance().setTimingCheckEnable(true);
     }
 
     Firmware::getInstance().clearAll();
-    Firmware::getInstance().setTimingCheckEnable(true);
+
 
     time_t before = time(0);
     time_t now;
