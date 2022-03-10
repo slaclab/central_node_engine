@@ -255,6 +255,12 @@ int Firmware::createRegisters()
         name = base + mps + core + "/SoftwareOvflCnt";
         _swOvflCntSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
+        name = base + mps + core + "/TimePowH";
+        _timingBCHSV = IScalVal_RO::create(_root->findByName(name.c_str()));
+
+        name = base + mps + core + "/TimePowL";
+        _timingBCLSV = IScalVal_RO::create(_root->findByName(name.c_str()));
+
         name = "/Stream0";
         _updateStreamSV = IStream::create(_root->findByName(name.c_str()));
 
@@ -577,6 +583,30 @@ void Firmware::getFinalBcL(uint32_t *finalBcL)
     catch (IOError &e)
     {
         std::cerr << "ERROR: CPSW I/O Error on getFinalBcL()" << std::endl;
+    }
+}
+
+void Firmware::getTimingBcH(uint32_t *timingBcH)
+{
+    try
+    {
+        _timingBCHSV->getVal(timingBcH);
+    }
+    catch (IOError &e)
+    {
+        std::cerr << "ERROR: CPSW I/O Error on getTimingBcH()" << std::endl;
+    }
+}
+
+void Firmware::getTimingBcL(uint32_t *timingBcL)
+{
+    try
+    {
+        _timingBCLSV->getVal(timingBcL);
+    }
+    catch (IOError &e)
+    {
+        std::cerr << "ERROR: CPSW I/O Error on getTimingBcL()" << std::endl;
     }
 }
 
