@@ -85,6 +85,8 @@ class Firmware {
   ScalVal_RO _mitigationSV;
   ScalVal_RO _finalBCHSV;
   ScalVal_RO _finalBCLSV;
+  ScalVal_RO _timingBCHSV;
+  ScalVal_RO _timingBCLSV;
   ScalVal_RO _latchedMitigationSV;
   ScalVal_RO _monitorReadySV;
   ScalVal_RO _monitorRxErrorCntSV;
@@ -197,6 +199,8 @@ class Firmware {
   void extractMitigation(uint32_t *compressed, uint8_t *expanded);
   void getFinalBcH(uint32_t *finalBcH);
   void getFinalBcL(uint32_t *finalBcL);
+  void getTimingBcH(uint32_t *timingBcH);
+  void getTimingBcL(uint32_t *timingBcL);
 
   // size in bytes (not in uint32_t units)
   void writeConfig(uint32_t appNumber, uint8_t *config, uint32_t size);
