@@ -3,6 +3,9 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R3-1-0:
+  * Add function to report TimePowL and TimePowH to central node driver.
+
 * __central_node_engine-R3-0-0:
   * Remove AOM permit calculation functions
     * Functionality done with AOM state machine in link node
