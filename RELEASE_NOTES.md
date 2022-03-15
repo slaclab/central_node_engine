@@ -3,6 +3,11 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R3-1-1__:
+  * Fix bug in ignore logic that prevented more than 1 ignore device
+  * Rewrite FW configuration upon change in ignore condition only,
+    not every 360 Hz cycle
+
 * __central_node_engine-R3-1-0__:
   * Add function to report TimePowL and TimePowH to central node driver.
 
