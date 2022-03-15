@@ -536,6 +536,11 @@ bool Engine::evaluateIgnoreConditions()
         if ((*condition).second->mask == conditionValue)
             newConditionState = true;
 
+        bool conditionChanged = false;    
+        if ((*condition).second->state != newConditionState) {
+          conditionChanged = true;
+        }
+
         (*condition).second->state = newConditionState;
         LOG_TRACE("ENGINE",  "Condition " << (*condition).second->name << " is " << (*condition).second->state);
 
@@ -549,18 +554,21 @@ bool Engine::evaluateIgnoreConditions()
                 {
                     LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
                         << ", state=" << (*condition).second->state);
-
-                    (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
-
-                    // This check is needed in case specific faults from an AnalogDevice is
-                    // listed in the ignoreCondition.
-                    if ((*ignoreCondition).second->analogDevice)
-                    {
-                        int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
-                        if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state)
-                            reload = true; // reload configuration!
-
-                        (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
+                    // Only set ignore conditions if state is not already ignored.
+                    if (!(*ignoreCondition).second->faultState->ignored) {
+                        (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
+                        // This check is needed in case specific faults from an AnalogDevice is
+                        // listed in the ignoreCondition.
+                        if ((*ignoreCondition).second->analogDevice)
+                        {
+                            int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
+                            if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state) {
+                                if (conditionChanged) {
+                                  reload = true; // reload configuration!
+                              }
+                              (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
+                            }
+                        }
                     }
                 }
                 else
@@ -569,24 +577,30 @@ bool Engine::evaluateIgnoreConditions()
                     {
                         LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->deviceId << "]"
                             << ", state=" << (*condition).second->state);
-
-                        if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state)
-                            reload = true; // reload configuration!
-
-                        (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
+                        // only evaluate ignore condition if device is not already ignored
+                        if (!(*ignoreCondition).second->analogDevice->ignored) {
+                            if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state) {
+                              if (conditionChanged) {
+                                reload = true; // reload configuration!
+                              }
+                            }
+                            (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
+                        }
                     }
                 }
                 if ((*ignoreCondition).second->digitalDevice)
                 {
                     LOG_TRACE("ENGINE",  "Ignoring digital device [" << (*ignoreCondition).second->deviceId << "]"
                         << ", state=" << (*condition).second->state);
-                    if ((*ignoreCondition).second->digitalDevice->ignored != (*condition).second->state)
-                    (*ignoreCondition).second->digitalDevice->ignored = (*condition).second->state;
+                    // only evaluate ignore condition if not already ignored
+                    if (!(*ignoreCondition).second->digitalDevice->ignored) {
+                        if ((*ignoreCondition).second->digitalDevice->ignored != (*condition).second->state)
+                        (*ignoreCondition).second->digitalDevice->ignored = (*condition).second->state;
+                    }
                 }
             }
         }
     }
-
     return reload;
 }
 
@@ -687,6 +701,27 @@ void Engine::mitigate()
     }
 }
 
+void Engine::breakAnalogIgnore()
+{
+    /* 
+    Each DbAnalogDevice needs to have its ignore flag set false.  It will be set
+    based on machine condition in next function
+    DbDigitalDevice has its ignore flag set to false in evaluateFaults(), so it does
+    not need to be set here.
+    */
+    for (DbAnalogDeviceMap::iterator device = _mpsDb->analogDevices->begin();
+        device != _mpsDb->analogDevices->end(); ++device)
+    {
+        // If device has no card assigned, then it cannot be evaluated.
+        if ((*device).second->cardId != NO_CARD_ID &&
+            (*device).second->evaluation != NO_EVALUATION)
+        {
+          (*device).second->ignored = false;
+        }
+    }
+}
+
+
 int Engine::checkFaults()
 {
     if (!_mpsDb)
@@ -702,6 +737,7 @@ int Engine::checkFaults()
         _mpsDb->clearMitigationBuffer();
         setTentativeBeamClass();
         evaluateFaults();
+        breakAnalogIgnore();
         reload = evaluateIgnoreConditions();
         setFaultIgnore();
         mitigate();
