@@ -3,6 +3,12 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R3-1-2__:
+  * Fix bug in SW permit driver that caused either SW permit or Force BC to overwrite each other
+    based on whichever was set most recently
+      * Add another variable to destination table to handle SW permit vs force BC
+
+
 * __central_node_engine-R3-1-1__:
   * Fix bug in ignore logic that prevented more than 1 ignore device
   * Rewrite FW configuration upon change in ignore condition only,
