@@ -1071,6 +1071,30 @@ void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassI
     }
 }
 
+void MpsDb::softPermitDestination(uint32_t beamDestinationId, uint32_t beamClassId)
+{
+    DbBeamDestinationMap::iterator beamDestIt = beamDestinations->find(beamDestinationId);
+    if (beamDestIt != beamDestinations->end())
+    {
+        if (beamClassId != CLEAR_BEAM_CLASS)
+        {
+            DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
+            if (beamClassIt != beamClasses->end())
+            {
+                (*beamDestIt).second->setSoftPermit((*beamClassIt).second);
+            }
+            else
+            {
+                (*beamDestIt).second->resetSoftPermit();
+            }
+        }
+        else
+        {
+            (*beamDestIt).second->resetSoftPermit();
+        }
+    }
+}
+
 void MpsDb::writeFirmwareConfiguration(bool enableTimeout, bool forceAomAllow)
 {
     // Write configuration for each application in the system
