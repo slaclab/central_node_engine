@@ -85,6 +85,8 @@ public:
     long getMaxEvalTime();
     long getAvgEvalTime();
     void clearMaxTimers();
+    bool unlatchAllowed();
+    void startLatchTimeout();
 
     MpsDbPtr getCurrentDb();
     BypassManagerPtr getBypassManager();
@@ -123,13 +125,14 @@ private:
     uint32_t _aomAllowDisableCounter; // Decrease every time AOM is enabled while shutter is closed
     bool _linacFwLatch; // Latches in SW if the FW is latched during config reloads
     uint32_t _reloadCount; // Counts the number of FW config reloads (after ignore and AOM enable)
+    bool _unlatchAllowed;
 
     DbBeamDestinationPtr _linacDestination; // Used to directly set PC by the engine
     DbBeamDestinationPtr _aomDestination; // Used to directly set PC by the engine
 
     std::stringstream _errorStream;
     Timer<double> _checkFaultTime;
-
+    Timer<double> _unlatchTimer;
     Timer<double>  _evaluationCycleTime;
 
     // Heartbeat control class

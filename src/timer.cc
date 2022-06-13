@@ -15,8 +15,11 @@ Timer<T>::Timer( const std::string& name, size_t size )
 template <typename T>
 void Timer<T>::start()
 {
-    t = std::chrono::high_resolution_clock::now();
-    started = true;
+    if (!started) {
+      t = std::chrono::high_resolution_clock::now();
+      start_time = t;
+      started = true;
+    }
 }
 
 template <typename T>
@@ -38,6 +41,27 @@ void Timer<T>::tick()
     {
         t = now;
         started = true;
+    }
+}
+
+template <typename T>
+bool Timer<T>::countdownComplete(double minTime)
+{
+    std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+    if (started) 
+    {
+        std::chrono::duration<T> diff = now - start_time;
+        if (diff.count() > minTime) {
+            started = false;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    else
+    {
+        return true;
     }
 }
 

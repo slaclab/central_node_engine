@@ -29,12 +29,14 @@ Engine::Engine()
     _engineThread(NULL),
     _debugCounter(0),
     _aomAllowWhileShutterClosed(false),
+    _unlatchAllowed(false),
     _aomAllowEnableCounter(0),
     _aomAllowDisableCounter(0),
     _linacFwLatch(false),
     _reloadCount(0),
     _checkFaultTime( "Evaluation only time", 720 ),
     _evaluationCycleTime( "Evaluation Cycle time", 720 ),
+    _unlatchTimer( "Unlatch timer",720 ),
     hb( Firmware::getInstance().getRoot(), 3500, 720 )
 {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -1036,6 +1038,7 @@ void Engine::engineThread()
             {
                 reload = true;
             }
+            _unlatchAllowed = _unlatchTimer.countdownComplete(1.0);
 
             // Inputs were processed
             Engine::getInstance()._mpsDb->inputProcessed();
@@ -1081,6 +1084,11 @@ void Engine::engineThread()
     std::cout << "INFO: EngineThread: Exiting..." << std::endl;
 }
 
+bool Engine::unlatchAllowed()
+{
+    return _unlatchAllowed;
+}
+
 long Engine::getMaxCheckTime()
 {
     return static_cast<int>( _checkFaultTime.getAllMaxPeriod() * 1e6 );
@@ -1099,6 +1107,11 @@ long Engine::getMaxEvalTime()
 long Engine::getAvgEvalTime()
 {
     return static_cast<int>( _evaluationCycleTime.getMeanPeriod() * 1e6 );
+}
+
+void Engine::startLatchTimeout()
+{
+    _unlatchTimer.start();
 }
 
 void Engine::clearMaxTimers()

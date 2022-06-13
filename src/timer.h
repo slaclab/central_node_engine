@@ -16,6 +16,7 @@ public:
 
     void      start();
     void      tick();
+    bool      countdownComplete(double minTime);
     void      show();
     void      clear();
     const int getTickCount() const;
@@ -30,6 +31,7 @@ private:
     int                                            TickCount;
     boost::circular_buffer<T>                      cb;
     std::chrono::high_resolution_clock::time_point t;
+    std::chrono::high_resolution_clock::time_point start_time;
     bool                                           started;
     T                                              max;
 };

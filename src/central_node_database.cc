@@ -108,16 +108,16 @@ MpsDb::~MpsDb() {
 }
 
 void MpsDb::unlatchAll() {
-  LOG_TRACE("DATABASE", "Unlatching all faults");
-  for (DbAnalogDeviceMap::iterator it = analogDevices->begin();
-       it != analogDevices->end(); ++it) {
-    (*it).second->latchedValue = (*it).second->value; // Update value for all threshold bits
-  }
+    LOG_TRACE("DATABASE", "Unlatching all faults");
+    for (DbAnalogDeviceMap::iterator it = analogDevices->begin();
+         it != analogDevices->end(); ++it) {
+      (*it).second->latchedValue = (*it).second->value; // Update value for all threshold bits
+    }
 
-  for (DbDeviceInputMap::iterator it = deviceInputs->begin();
-       it != deviceInputs->end(); ++it) {
-    (*it).second->unlatch();
-  }
+    for (DbDeviceInputMap::iterator it = deviceInputs->begin();
+         it != deviceInputs->end(); ++it) {
+      (*it).second->unlatch();
+    }
 }
 /**
  * This method reads input states from the central node firmware
