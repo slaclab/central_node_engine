@@ -3,6 +3,10 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R3-2-0__:
+  * Add functionality to timer.cc to allow a countdown timer
+    * Use countdown timer to make it so one can only press unlatch all once per second.
+
 * __central_node_engine-R3-1-2__:
   * Fix bug in SW permit driver that caused either SW permit or Force BC to overwrite each other
     based on whichever was set most recently
