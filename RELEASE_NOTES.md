@@ -3,6 +3,10 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R3-3-0__:
+  * Change MonitorConcStallErrCnt to MonitorConcStallErr0 and MonitorConcStallErr1 Cnt to
+    match with multiple central nodes per FW tag 4.8.3
+
 * __central_node_engine-R3-2-0__:
   * Add functionality to timer.cc to allow a countdown timer
     * Use countdown timer to make it so one can only press unlatch all once per second.

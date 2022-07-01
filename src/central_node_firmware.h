@@ -95,7 +95,8 @@ class Firmware {
   ScalVal_RO _monitorDropCntSV;
   ScalVal_RO _monitorConcWdErrSV;
   ScalVal_RO _monitorConcStallErrSV;
-  ScalVal_RO _monitorConcExtRxErrSV;
+  ScalVal_RO _monitorConcExtRxErr0SV;
+  ScalVal_RO _monitorConcExtRxErr1SV;
   ScalVal    _timeoutEnableSV;
   ScalVal    _timeoutClearSV;
   ScalVal    _timeoutTimeSV;

@@ -207,8 +207,11 @@ int Firmware::createRegisters()
         name = base + mps + core + "/MonitorConcStallErr";
         _monitorConcStallErrSV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
-        name = base + mps + core + "/MonitorConcExtRxErr";
-        _monitorConcExtRxErrSV = IScalVal_RO::create(_root->findByName(name.c_str()));
+        name = base + mps + core + "/MonitorConcExtRxErr0";
+        _monitorConcExtRxErr0SV = IScalVal_RO::create(_root->findByName(name.c_str()));
+
+        name = base + mps + core + "/MonitorConcExtRxErr1";
+        _monitorConcExtRxErr1SV = IScalVal_RO::create(_root->findByName(name.c_str()));
 
         name = base + mps + core + "/TimeoutEnable";
         _timeoutEnableSV = IScalVal::create(_root->findByName(name.c_str()));
@@ -1057,8 +1060,11 @@ std::ostream & operator<<(std::ostream &os, Firmware * const firmware)
         os << "MonitorConcStallErrCnt="
             << firmware->getUInt32(firmware->_monitorConcStallErrSV) << std::endl;
 
-        os << "MonitorConcExtRxErrCnt="
-            << firmware->getUInt32(firmware->_monitorConcExtRxErrSV) << std::endl;
+        os << "MonitorConcExtRxErr0Cnt="
+            << firmware->getUInt32(firmware->_monitorConcExtRxErr0SV) << std::endl;
+
+        os << "MonitorConcExtRxErr1Cnt="
+            << firmware->getUInt32(firmware->_monitorConcExtRxErr1SV) << std::endl;
 
         os << "TimeoutErrStatus="
             << firmware->getUInt32(firmware->_timeoutErrStatusSV) << std::endl;
