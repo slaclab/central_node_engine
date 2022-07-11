@@ -3,6 +3,11 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-0-0__:
+  * First version for 100 MeV program
+    * Create support for special PV that forces beam class to 120 Hz Beam Class
+  * New tagging structure - want tags of central_node_engine to correspond to central_node_ioc
+
 * __central_node_engine-R3-3-0__:
   * Change MonitorConcStallErrCnt to MonitorConcStallErr0 and MonitorConcStallErr1 Cnt to
     match with multiple central nodes per FW tag 4.8.3
@@ -40,7 +45,7 @@ Release notes for the LCLS-II MPS central node engine.
 * __central_node_engine-R2-5-0__:
   * Add ignore conditions for digital devices to go with those in analog devices
     * Change analogDeviceId in DbIgnoreCondition to deviceId
-    * Add digitalDevice to DbIgnoreCondition
+    * Add digitalDevice to DbIgnoreConditionNew 
     * Connect either an analog or digital device to IgnoreCondition in central_node_database.cc
     * Evaluate digitalDevice ignore conditions in central_node_engine.cc
     * In central_node_engine.cc::mitigate(), add bit to check if a fault should be ignored:
