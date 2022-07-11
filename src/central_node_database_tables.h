@@ -483,6 +483,7 @@ class DbBeamDestination : public DbEntry {
   DbBeamClassPtr tentativeBeamClass; // used while faults are being evaluated
   DbBeamClassPtr forceBeamClass; // used when operators want to force a specific beam class
   DbBeamClassPtr softPermit;     // operator SW beam permit or revoke, independent of forceBeamClass
+  DbBeamClassPtr maxPermit;     // maximum beam class for 100 MeV operation only.  To be removed later.
 
   // Memory location where the allowed beam class for this device
   // is written and sent to firmware
@@ -499,6 +500,12 @@ class DbBeamDestination : public DbEntry {
     if (forceBeamClass) {
       if(forceBeamClass->number < tentativeBeamClass->number) {
         tentativeBeamClass = forceBeamClass;
+      }
+    }
+    // If beam destination has a maxPermit, then set it
+    if (maxPermit) {
+      if(maxPermit->number < tentativeBeamClass->number) {
+        tentativeBeamClass = maxPermit;
       }
     }
     // If beam destination has a softPermit, then set it
@@ -535,6 +542,14 @@ class DbBeamDestination : public DbEntry {
 
   void resetSoftPermit() {
     softPermit.reset();
+  }
+
+  void setMaxPermit(DbBeamClassPtr beamClass) {
+    maxPermit = beamClass;
+  }
+
+  void resetMaxPermit() {
+    maxPermit.reset();
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination);

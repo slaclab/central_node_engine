@@ -1094,6 +1094,30 @@ void MpsDb::softPermitDestination(uint32_t beamDestinationId, uint32_t beamClass
         }
     }
 }
+//This function to be used for 100 MeV operation and then removed - it will give one more hook to force BC to be 120 Hz MAX
+void MpsDb::setMaxPermit(uint32_t beamDestinationId, uint32_t beamClassId)
+{
+    DbBeamDestinationMap::iterator beamDestIt = beamDestinations->find(beamDestinationId);
+    if (beamDestIt != beamDestinations->end())
+    {
+        if (beamClassId != CLEAR_BEAM_CLASS)
+        {
+            DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
+            if (beamClassIt != beamClasses->end())
+            {
+                (*beamDestIt).second->setMaxPermit((*beamClassIt).second);
+            }
+            else
+            {
+                (*beamDestIt).second->resetMaxPermit();
+            }
+        }
+        else
+        {
+            (*beamDestIt).second->resetMaxPermit();
+        }
+    }
+}
 
 void MpsDb::writeFirmwareConfiguration(bool enableTimeout, bool forceAomAllow)
 {
@@ -1447,6 +1471,7 @@ void MpsDb::showInfo()
     std::cout << "File: " << name << std::endl;
     std::cout << "Update counter: " << _updateCounter << std::endl;
     std::cout << "Input update timeout " << _inputUpdateTimeout << " usec" << std::endl;
+    std::cout << "Total devices configured: " << getTotalDeviceCount() << std::endl;
     printPCChangeInfo();
 
     printMap<DbInfoMapPtr, DbInfoMap::iterator>
@@ -1802,5 +1827,10 @@ void MpsDb::inputProcessed()
 void MpsDb::pushMitBuffer()
 {
     softwareMitigationQueue.push(softwareMitigationBuffer);
+}
+
+int MpsDb::getTotalDeviceCount()
+{
+    return digitalDevices->size() + analogDevices->size();
 }
 

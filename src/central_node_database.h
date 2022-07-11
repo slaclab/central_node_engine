@@ -186,6 +186,7 @@ class MpsDb {
 
   void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void softPermitDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
+  void setMaxPermit(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void writeFirmwareConfiguration(bool enableTimeout = false, bool forceAomAllow = false);
   void unlatchAll();
   void unlatchAllFaults();
@@ -196,6 +197,8 @@ class MpsDb {
   long getAvgUpdateTime();
   long getMaxFwUpdatePeriod();
   long getAvgFwUpdatePeriod();
+
+  int  getTotalDeviceCount();
 
   uint64_t getFastUpdateTimeStamp() const { return _fastUpdateTimeStamp; };
   std::vector<uint8_t> getFastUpdateBuffer();
