@@ -3,6 +3,10 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-0-1__:
+  * Fix bug with analog devices being ignored - when ignore condition is no longer true the FW
+    reload was not happening.
+
 * __central_node_engine-R4-0-0__:
   * First version for 100 MeV program
     * Create support for special PV that forces beam class to 120 Hz Beam Class
