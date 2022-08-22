@@ -541,6 +541,7 @@ bool Engine::evaluateIgnoreConditions()
         bool conditionChanged = false;    
         if ((*condition).second->state != newConditionState) {
           conditionChanged = true;
+          reload = true;
         }
 
         (*condition).second->state = newConditionState;
@@ -565,9 +566,6 @@ bool Engine::evaluateIgnoreConditions()
                         {
                             int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
                             if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state) {
-                                if (conditionChanged) {
-                                  reload = true; // reload configuration!
-                              }
                               (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
                             }
                         }
@@ -581,12 +579,9 @@ bool Engine::evaluateIgnoreConditions()
                             << ", state=" << (*condition).second->state);
                         // only evaluate ignore condition if device is not already ignored
                         if (!(*ignoreCondition).second->analogDevice->ignored) {
-                            if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state) {
-                              if (conditionChanged) {
-                                reload = true; // reload configuration!
-                              }
-                            }
+                          if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state) {
                             (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
+                          }
                         }
                     }
                 }
