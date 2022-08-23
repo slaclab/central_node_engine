@@ -1095,27 +1095,32 @@ void MpsDb::softPermitDestination(uint32_t beamDestinationId, uint32_t beamClass
     }
 }
 //This function to be used for 100 MeV operation and then removed - it will give one more hook to force BC to be 120 Hz MAX
-void MpsDb::setMaxPermit(uint32_t beamDestinationId, uint32_t beamClassId)
+void MpsDb::setMaxPermit(uint32_t beamClassId)
 {
-    DbBeamDestinationMap::iterator beamDestIt = beamDestinations->find(beamDestinationId);
-    if (beamDestIt != beamDestinations->end())
+
+    for (DbBeamDestinationMap::iterator beamDestIt = beamDestinations->begin();
+         beamDestIt != beamDestinations->end();
+         ++beamDestIt)
     {
-        if (beamClassId != CLEAR_BEAM_CLASS)
-        {
-            DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
-            if (beamClassIt != beamClasses->end())
-            {
-                (*beamDestIt).second->setMaxPermit((*beamClassIt).second);
-            }
-            else
-            {
-                (*beamDestIt).second->resetMaxPermit();
-            }
-        }
-        else
-        {
-            (*beamDestIt).second->resetMaxPermit();
-        }
+      if (beamDestIt != beamDestinations->end())
+      {
+          if (beamClassId != CLEAR_BEAM_CLASS)
+          {
+              DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
+              if (beamClassIt != beamClasses->end())
+              {
+                  (*beamDestIt).second->setMaxPermit((*beamClassIt).second);
+              }
+              else
+              {
+                  (*beamDestIt).second->resetMaxPermit();
+              }
+          }
+          else
+          {
+              (*beamDestIt).second->resetMaxPermit();
+          }
+      }
     }
 }
 
