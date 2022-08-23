@@ -3,6 +3,9 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-1-0__:
+  * Force max BC to be 120 Hz to all destinations instead of just linac
+
 * __central_node_engine-R4-0-1__:
   * Fix bug with analog devices being ignored - when ignore condition is no longer true the FW
     reload was not happening.
