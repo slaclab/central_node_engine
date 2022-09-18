@@ -3,6 +3,9 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-1-1__:
+  * Remove LASER destination from MAX beam class.
+
 * __central_node_engine-R4-1-0__:
   * Force max BC to be 120 Hz to all destinations instead of just linac
 
