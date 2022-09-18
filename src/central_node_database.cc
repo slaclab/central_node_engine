@@ -313,9 +313,9 @@ void MpsDb::configureDeviceInputs()
         DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
         if (deviceIt == digitalDevices->end())
         {
-            errorStream << "ERROR: Failed to configure database, invalid ID found for DigitalDevice ("
-                << id << ") for DeviceInput (" << (*it).second->id << ")";
-            throw(DbException(errorStream.str()));
+            std::cout << "ERROR: Failed to configure database, invalid ID found for DigitalDevice ("
+                << id << ") for DeviceInput (" << (*it).second->id << ")" << std::endl;
+            //throw(DbException(errorStream.str()));
         }
 
         // Check if digitalDevice is evaluated in firmaware, set deviceInput->fastEvaluation
@@ -336,9 +336,9 @@ void MpsDb::configureDeviceInputs()
             // it has evaluation set to FAST
             if ((*deviceIt).second->evaluation == FAST_EVALUATION)
             {
-                errorStream << "ERROR: Failed to configure database, found DigitalDevice ("
-                    << id << ") set for FAST_EVALUATION with multiple inputs. Must have single input.";
-                throw(DbException(errorStream.str()));
+                std::cout << "ERROR: Failed to configure database, found DigitalDevice ("
+                    << id << ") set for FAST_EVALUATION with multiple inputs. Must have single input." << std::endl;
+                //throw(DbException(errorStream.str()));
             }
         }
         (*deviceIt).second->inputDevices->insert(std::pair<int, DbDeviceInputPtr>((*it).second->id,
@@ -350,9 +350,9 @@ void MpsDb::configureDeviceInputs()
         DbChannelMap::iterator channelIt = digitalChannels->find(channelId);
         if (channelIt == digitalChannels->end())
         {
-            errorStream << "ERROR: Failed to configure database, invalid ID found for Channel ("
-                << channelId << ") for DeviceInput (" << (*it).second->id << ")";
-            throw(DbException(errorStream.str()));
+            std::cout << "ERROR: Failed to configure database, invalid ID found for Channel ("
+                << channelId << ") for DeviceInput (" << (*it).second->id << ")" << std::endl;
+            //throw(DbException(errorStream.str()));
         }
         (*it).second->channel = (*channelIt).second;
     }
@@ -1102,24 +1102,27 @@ void MpsDb::setMaxPermit(uint32_t beamClassId)
          beamDestIt != beamDestinations->end();
          ++beamDestIt)
     {
-      if (beamDestIt != beamDestinations->end())
+      if ((*beamDestIt).second->name != "LASER")
       {
-          if (beamClassId != CLEAR_BEAM_CLASS)
-          {
-              DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
-              if (beamClassIt != beamClasses->end())
-              {
-                  (*beamDestIt).second->setMaxPermit((*beamClassIt).second);
-              }
-              else
-              {
-                  (*beamDestIt).second->resetMaxPermit();
-              }
-          }
-          else
-          {
-              (*beamDestIt).second->resetMaxPermit();
-          }
+        if (beamDestIt != beamDestinations->end())
+        {
+            if (beamClassId != CLEAR_BEAM_CLASS)
+            {
+                DbBeamClassMap::iterator beamClassIt = beamClasses->find(beamClassId);
+                if (beamClassIt != beamClasses->end())
+                {
+                    (*beamDestIt).second->setMaxPermit((*beamClassIt).second);
+                }
+                else
+                {
+                    (*beamDestIt).second->resetMaxPermit();
+                }
+            }
+            else
+            {
+                (*beamDestIt).second->resetMaxPermit();
+            }
+        }
       }
     }
 }
