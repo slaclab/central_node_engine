@@ -442,7 +442,6 @@ void Engine::evaluateFaults()
                 << ", input value " << inputValue << std::dec << " bit pos "
                 << (*input).second->bitPosition);
         }
-
         (*fault).second->update(faultValue);
         (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
         (*fault).second->faultedDisplay = false; // Clear the fault - in case it was faulted before
@@ -608,20 +607,32 @@ void Engine::setFaultIgnore()
         ++fault)
     {
       (*fault).second->ignored = false;
+      (*fault).second->faultedOffline = true;
+      (*fault).second->faultActive = true;
       for (DbFaultInputMap::iterator fault_input = (*fault).second->faultInputs->begin();
           fault_input != (*fault).second->faultInputs->end();
           ++fault_input)
       {
         if ((*fault_input).second->analogDevice) 
         {
-          if ((*fault_input).second->analogDevice->ignored )
+          (*fault).second->faultedOffline = (*fault_input).second->analogDevice->faultedOffline;
+          if (!(*fault_input).second->analogDevice->ignoredMode) {
+            (*fault).second->faultActive = false;
+          }
+          if ((*fault_input).second->analogDevice->ignored || 
+              !(*fault_input).second->analogDevice->ignoredMode)
           {
             (*fault).second->ignored = true;
           }
         }
         if ((*fault_input).second->digitalDevice) 
         {
-          if ((*fault_input).second->digitalDevice->ignored )
+          (*fault).second->faultedOffline = (*fault_input).second->digitalDevice->faultedOffline;
+          if (!(*fault_input).second->digitalDevice->ignoredMode) {
+            (*fault).second->faultActive = false;
+          }
+          if ((*fault_input).second->digitalDevice->ignored ||
+              !(*fault_input).second->digitalDevice->ignoredMode)
           {
             (*fault).second->ignored = true;
           }
@@ -642,48 +653,59 @@ void Engine::mitigate()
         uint32_t sendOldValue = (*fault).second->worstState;
         uint32_t sendValue = (*fault).second->value;
         uint32_t sendAllowClass = 0;
-        for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-            state != (*fault).second->faultStates->end();
-            ++state)
-        {
-          if ((*state).second->faulted && !(*state).second->ignored)
+        int32_t currState = 0;
+        if ((*fault).second->faulted) {
+          currState = (*fault).second->displayState;
+        }
+        if ((*fault).second->faultedOffline) {
+          for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+              state != (*fault).second->faultStates->end();
+              ++state)
           {
-            LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
-            << (*fault).second->value
-            << " (fault state="
-            << (*state).second->deviceState->name
-            << ", value=" << (*state).second->deviceState->value << ")");
-            if ((*state).second->allowedClasses)
+            if ((*state).second->faulted && !(*state).second->ignored)
             {
-              for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
-                   allowed != (*state).second->allowedClasses->end();
-                   ++allowed)
+              LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
+              << (*fault).second->value
+              << " (fault state="
+              << (*state).second->deviceState->name
+              << ", value=" << (*state).second->deviceState->value << ")");
+              if ((*state).second->allowedClasses)
               {
-                if ((*allowed).second->beamDestination->tentativeBeamClass->number >=
-                   (*allowed).second->beamClass->number)
+                for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
+                     allowed != (*state).second->allowedClasses->end();
+                     ++allowed)
                 {
-                  if ((*fault).second->evaluation == SLOW_EVALUATION ) {
-                    if ((*fault).second->ignored == false ) {
-                      (*allowed).second->beamDestination->tentativeBeamClass = (*allowed).second->beamClass;
+                  if ((*allowed).second->beamDestination->tentativeBeamClass->number >=
+                     (*allowed).second->beamClass->number)
+                  {
+                    if ((*fault).second->evaluation == SLOW_EVALUATION ) {
+                      if ((*fault).second->ignored == false ) {
+                        (*allowed).second->beamDestination->tentativeBeamClass = (*allowed).second->beamClass;
+                      }
+                    }
+                  }
+                  if ((*allowed).second->beamClass->number < maximumClass) {
+                    maximumClass = (*allowed).second->beamClass->number;
+                    currState = (*state).second->id;
+                    if ((*fault).second->sendUpdate) {
+                      sendAllowClass = (*allowed).second->id;
+                      sendValue = (*state).second->id;
                     }
                   }
                 }
-                if ((*fault).second->sendUpdate) {
-                  if ((*allowed).second->beamClass->number < maximumClass) {
-                    maximumClass = (*allowed).second->beamClass->number;
-                    sendAllowClass = (*allowed).second->id;
-                    sendValue = (*state).second->id;
-                  }
-                }
               }
-            }
-            else
-            {
-              LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for "
-                << (*fault).second->name << " fault");
+              else
+              {
+                LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for "
+                  << (*fault).second->name << " fault");
+              }
             }
           }
         }
+        else {
+          currState = -1;
+        }
+        (*fault).second->displayState = currState;
         if (maximumClass < 100) {
           (*fault).second->worstState = sendValue;
           History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
@@ -713,7 +735,7 @@ void Engine::breakAnalogIgnore()
         if ((*device).second->cardId != NO_CARD_ID &&
             (*device).second->evaluation != NO_EVALUATION)
         {
-          (*device).second->ignored = false;
+          (*device).second->ignored = !(*device).second->ignoredMode;
         }
     }
 }
@@ -729,6 +751,7 @@ int Engine::checkFaults()
 
     LOG_TRACE("ENGINE", "Checking faults");
     bool reload = false;
+    bool appReload = false;
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
         _mpsDb->clearMitigationBuffer();
@@ -738,14 +761,15 @@ int Engine::checkFaults()
         reload = evaluateIgnoreConditions();
         setFaultIgnore();
         mitigate();
-
         setAllowedBeamClass();
+        appReload = _mpsDb->getDbReload();
+        _mpsDb->resetDbReload();
     }
 
     _checkFaultTime.tick();
 
     // If FW configuration needs reloading, return non-zero value
-    if (reload)
+    if (reload || appReload)
         return 1;
 
     return 0;
@@ -1058,7 +1082,7 @@ void Engine::engineThread()
             Engine::getInstance()._evaluationCycleTime.tick();
 
             // Reloads FW configuration - cause by ignore logic that
-            // enables/disables faults based on fast analog devices
+            // enables/disables faults based on fast analog devices 
             if (reload)
             {
                 Engine::getInstance().reloadConfigFromIgnore();

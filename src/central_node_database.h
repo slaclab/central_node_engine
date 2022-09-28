@@ -129,6 +129,7 @@ class MpsDb {
   uint16_t    _pcChangeFlags;           // Last received message flags
   uint16_t    _pcChangeTimeStamp;       // Last received message timestamp
   uint64_t    _pcChangePowerClass;      // Last received message power class
+  bool        _reloadInactive;          // Reload configuration when application card is deactivated
   std::vector<std::size_t> _pcFlagsCounters;
   // Power class ttansition counters. One counter for each power class, for each destination.
   // Each word counts the number of transition to that power class/destination combination.
@@ -197,6 +198,8 @@ class MpsDb {
   long getAvgUpdateTime();
   long getMaxFwUpdatePeriod();
   long getAvgFwUpdatePeriod();
+  bool getDbReload();
+  void resetDbReload();
 
   int  getTotalDeviceCount();
 

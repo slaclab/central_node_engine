@@ -229,6 +229,8 @@ class DbDigitalDevice : public DbEntry {
   uint32_t cardId; // Application Card ID
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
+  bool faultedOffline;
+  bool ignoredMode;
 
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
@@ -292,6 +294,8 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
 
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
+  bool faultedOffline;
+  bool ignoredMode;
 
   // Faults from the integrators from this device are bypassed when ignored[integrator]==true
   bool ignoredIntegrator[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
@@ -364,6 +368,7 @@ class DbApplicationCard : public DbEntry {
   std::string name;
   std::string description;
   bool online; // True if received non-zero update last 360Hz update period
+  bool activated; // Used for mode switch - i.e. user _wants_ application offline
 
   // Application Type Card
   DbApplicationTypePtr applicationType;
@@ -398,7 +403,7 @@ class DbApplicationCard : public DbEntry {
   void printAnalogConfiguration();
 
   void configureUpdateBuffers();
-  void updateInputs();
+  bool updateInputs();
   bool isAnalog();
   bool isDigital();
 
@@ -620,11 +625,14 @@ class DbFault : public DbEntry {
   bool faultedDisplay;
   bool ignored;
   bool sendUpdate;
+  bool faultedOffline; // False when app card is offline
+  bool faultActive;
   uint32_t evaluation; // Set according to the input device types
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
   uint32_t oldValue; // Calculated from the list of faultInputs
   uint32_t worstState; //most restrictive device state for this fault
+  int32_t displayState;
   DbFaultStateMapPtr faultStates; // Map of fault states for this fault
   DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active
                                                    // the default state not necessarily is a real fault

@@ -289,8 +289,10 @@ void DbApplicationCard::configureUpdateBuffers() {
  * Once the applicationUpdateBuffer has been updated with firmware status then
  * update each digital/analog device with the new values.
  */
-void DbApplicationCard::updateInputs() {
+bool DbApplicationCard::updateInputs() {
   // Check if timeout status bit from firmware is on, if so set online to false
+  bool reload = false;
+  bool oldActive = activated;
   if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
     online = false;
     // TODO: set all inputs to faulted if app card is offline!
@@ -298,16 +300,27 @@ void DbApplicationCard::updateInputs() {
   else {
     online = true;
   }
+  if (Firmware::getInstance().getAppTimeoutEnable(globalId)) {
+    activated = true;
+  }
+  else {
+    activated = false;
+  }
+  if (activated != oldActive) {
+    reload = true;
+  }
 
   if (digitalDevices) {
     AppCardDigitalUpdateTime.start();
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
-	 digitalDevice != digitalDevices->end(); ++digitalDevice) {
+	       digitalDevice != digitalDevices->end(); ++digitalDevice) {
+      (*digitalDevice).second->faultedOffline = online; //false when it is falted offline
+      (*digitalDevice).second->ignoredMode = activated; //true when it is activated
       if ((*digitalDevice).second->inputDevices) {
-	for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
-	     deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
-	  (*deviceInput).second->update();
-	}
+	      for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
+	           deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
+	        (*deviceInput).second->update();
+	      }
       }
     }
     AppCardDigitalUpdateTime.end();
@@ -316,8 +329,10 @@ void DbApplicationCard::updateInputs() {
     AppCardAnalogUpdateTime.start();
 
     for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
-	 analogDevice != analogDevices->end(); ++analogDevice) {
+	       analogDevice != analogDevices->end(); ++analogDevice) {
       (*analogDevice).second->update();
+      (*analogDevice).second->faultedOffline = online; //false when it is falted offline
+      (*analogDevice).second->ignoredMode = activated; //true when it is activated
     }
     AppCardAnalogUpdateTime.end();
   }
@@ -326,6 +341,7 @@ void DbApplicationCard::updateInputs() {
     //    std::cerr << "WARN: No devices configured for application card " << this->name
     //	      << " (Id: " << this->id << ")" << std::endl;
   }
+  return reload;
 }
 
 /**

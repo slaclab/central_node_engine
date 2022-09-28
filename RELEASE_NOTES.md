@@ -3,6 +3,12 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-2-0__:
+  * Add offline faulted and offline desired modes for application cards:
+    * This will give fault status of -1 when card is communication fault
+    * This will set a flag _and_ ignore the logic when a card is set offline (mode switch)
+    * This information to be used by gui
+
 * __central_node_engine-R4-1-1__:
   * Remove LASER destination from MAX beam class.
 
