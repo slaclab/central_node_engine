@@ -616,11 +616,11 @@ void Engine::setFaultIgnore()
         if ((*fault_input).second->analogDevice) 
         {
           (*fault).second->faultedOffline = (*fault_input).second->analogDevice->faultedOffline;
-          if (!(*fault_input).second->analogDevice->ignoredMode) {
+          if ((*fault_input).second->analogDevice->ignoredMode) {
             (*fault).second->faultActive = false;
           }
           if ((*fault_input).second->analogDevice->ignored || 
-              !(*fault_input).second->analogDevice->ignoredMode)
+              (*fault_input).second->analogDevice->ignoredMode)
           {
             (*fault).second->ignored = true;
           }
@@ -628,11 +628,11 @@ void Engine::setFaultIgnore()
         if ((*fault_input).second->digitalDevice) 
         {
           (*fault).second->faultedOffline = (*fault_input).second->digitalDevice->faultedOffline;
-          if (!(*fault_input).second->digitalDevice->ignoredMode) {
+          if ((*fault_input).second->digitalDevice->ignoredMode) {
             (*fault).second->faultActive = false;
           }
           if ((*fault_input).second->digitalDevice->ignored ||
-              !(*fault_input).second->digitalDevice->ignoredMode)
+              (*fault_input).second->digitalDevice->ignoredMode)
           {
             (*fault).second->ignored = true;
           }
@@ -735,7 +735,7 @@ void Engine::breakAnalogIgnore()
         if ((*device).second->cardId != NO_CARD_ID &&
             (*device).second->evaluation != NO_EVALUATION)
         {
-          (*device).second->ignored = !(*device).second->ignoredMode;
+          (*device).second->ignored = (*device).second->ignoredMode;
         }
     }
 }

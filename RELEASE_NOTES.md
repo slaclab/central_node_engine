@@ -3,6 +3,9 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-3-0__:
+  * Add new app offline modes so timeout can be off but logic still on
+
 * __central_node_engine-R4-2-0__:
   * Add offline faulted and offline desired modes for application cards:
     * This will give fault status of -1 when card is communication fault

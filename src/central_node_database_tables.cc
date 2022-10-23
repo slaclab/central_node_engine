@@ -356,7 +356,10 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
      << "type=" << appCard->applicationTypeId << " : "
      << "number=" << appCard->number << " : "
      << "crateId=" << appCard->crateId << " : "
-     << "slot=" << appCard->slotNumber << std::endl;
+     << "slot=" << appCard->slotNumber << " : "
+     << "online=" << appCard->online << " : "
+     << "activated=" << appCard->activated << " : "
+     << "ignored=" << appCard->ignored << std::endl;
 
   if (appCard->digitalDevices) {
     os << "  DigitalDevices:" << std::endl;

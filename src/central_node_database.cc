@@ -935,7 +935,8 @@ void MpsDb::configureApplicationCards()
         DbApplicationTypeMap::iterator applicationTypeIt = applicationTypes->find(aPtr->applicationTypeId);
         if (applicationTypeIt != applicationTypes->end())
             aPtr->applicationType = (*applicationTypeIt).second;
-
+        
+        aPtr->ignored = false;
         LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
     }
 

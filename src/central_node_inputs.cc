@@ -293,6 +293,8 @@ bool DbApplicationCard::updateInputs() {
   // Check if timeout status bit from firmware is on, if so set online to false
   bool reload = false;
   bool oldActive = activated;
+  bool shouldBeIgnored = false;
+  bool shouldBeBroken = true;
   if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
     online = false;
     // TODO: set all inputs to faulted if app card is offline!
@@ -309,13 +311,22 @@ bool DbApplicationCard::updateInputs() {
   if (activated != oldActive) {
     reload = true;
   }
-
+  if (!activated) {
+    if (!ignored) {
+      shouldBeIgnored = true;
+    }
+  }
+  if (!online) {
+    if (activated) {
+      shouldBeBroken = false;
+    }
+  }  
   if (digitalDevices) {
     AppCardDigitalUpdateTime.start();
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	       digitalDevice != digitalDevices->end(); ++digitalDevice) {
-      (*digitalDevice).second->faultedOffline = online; //false when it is falted offline
-      (*digitalDevice).second->ignoredMode = activated; //true when it is activated
+      (*digitalDevice).second->faultedOffline = shouldBeBroken; //false when it is falted offline
+      (*digitalDevice).second->ignoredMode = shouldBeIgnored; //true when inputs should be ignored
       if ((*digitalDevice).second->inputDevices) {
 	      for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
 	           deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
@@ -331,8 +342,8 @@ bool DbApplicationCard::updateInputs() {
     for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
 	       analogDevice != analogDevices->end(); ++analogDevice) {
       (*analogDevice).second->update();
-      (*analogDevice).second->faultedOffline = online; //false when it is falted offline
-      (*analogDevice).second->ignoredMode = activated; //true when it is activated
+      (*analogDevice).second->faultedOffline = shouldBeBroken; //false when it is falted offline
+      (*analogDevice).second->ignoredMode = shouldBeIgnored; //true when inputs should be ignored
     }
     AppCardAnalogUpdateTime.end();
   }

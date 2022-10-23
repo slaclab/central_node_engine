@@ -369,6 +369,7 @@ class DbApplicationCard : public DbEntry {
   std::string description;
   bool online; // True if received non-zero update last 360Hz update period
   bool activated; // Used for mode switch - i.e. user _wants_ application offline
+  bool ignored; //Should logic be ignored, true means no, false means yes
 
   // Application Type Card
   DbApplicationTypePtr applicationType;
