@@ -16,6 +16,7 @@ public:
 
     void      start();
     void      tick();
+    void      stop();
     bool      countdownComplete(double minTime);
     void      show();
     void      clear();

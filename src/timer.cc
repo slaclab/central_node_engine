@@ -45,6 +45,13 @@ void Timer<T>::tick()
 }
 
 template <typename T>
+void Timer<T>::stop()
+{
+  started = false;
+}
+
+
+template <typename T>
 bool Timer<T>::countdownComplete(double minTime)
 {
     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
