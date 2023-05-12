@@ -134,6 +134,13 @@ private:
     Timer<double> _checkFaultTime;
     Timer<double> _unlatchTimer;
     Timer<double>  _evaluationCycleTime;
+    Timer<double>  _setTentativeBeamClassTimer;
+    Timer<double>  _evaluateFaultsTimer;
+    Timer<double>  _breakAnalogIgnoreTimer;
+    Timer<double>  _evaluateIgnoreConditionsTimer;
+    Timer<double>  _setFaultIgnoreTimer;
+    Timer<double>  _mitigateTimer;
+    Timer<double>  _setAllowedBeamClassTimer;
 
     // Heartbeat control class
     NonBlockingHeartBeat hb;

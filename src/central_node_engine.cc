@@ -34,9 +34,16 @@ Engine::Engine()
     _aomAllowDisableCounter(0),
     _linacFwLatch(false),
     _reloadCount(0),
-    _checkFaultTime( "Evaluation only time", 720 ),
-    _evaluationCycleTime( "Evaluation Cycle time", 720 ),
+    _checkFaultTime( "Evaluation only time: checkFaults()", 720 ),
+    _evaluationCycleTime( "Evaluation Cycle time: 360 Hz time", 720 ),
     _unlatchTimer( "Unlatch timer",720 ),
+    _setTentativeBeamClassTimer( "Set Tentative Beam Class", 720 ),
+    _evaluateFaultsTimer( "evaluateFaultsTimer", 720 ),
+    _breakAnalogIgnoreTimer( "breakAnalogIgnoreTimer", 720 ),
+    _evaluateIgnoreConditionsTimer( "evaluateIgnoreConditionsTimer", 720 ),
+    _setFaultIgnoreTimer( "setFaultIgnoreTimer", 720 ),
+    _mitigateTimer( "mitigateTimer", 720 ),
+    _setAllowedBeamClassTimer( "setAllowedBeamClassTimer", 720 ),
     hb( Firmware::getInstance().getRoot(), 3500, 720 )
 {
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
@@ -312,6 +319,7 @@ bool Engine::isInitialized()
  */
 void Engine::setTentativeBeamClass()
 {
+    _setTentativeBeamClassTimer.start();
     // Assigns _highestBeamClass as tentativeBeamClass for all BeamDestinations
     for (DbBeamDestinationMap::iterator device = _mpsDb->beamDestinations->begin();
         device != _mpsDb->beamDestinations->end(); ++device)
@@ -324,6 +332,8 @@ void Engine::setTentativeBeamClass()
             << "; allowed class set to: "
             << (*device).second->allowedBeamClass->number);
     }
+    _setTentativeBeamClassTimer.tick();
+    _setTentativeBeamClassTimer.stop();
 }
 
 /**
@@ -332,6 +342,7 @@ void Engine::setTentativeBeamClass()
  */
 bool Engine::setAllowedBeamClass()
 {
+    _setAllowedBeamClassTimer.start();
     // Set the allowed classes according to the SW evaluation
     for (DbBeamDestinationMap::iterator it = _mpsDb->beamDestinations->begin();
         it != _mpsDb->beamDestinations->end();
@@ -342,7 +353,8 @@ bool Engine::setAllowedBeamClass()
         LOG_TRACE("ENGINE", (*it).second->name << " allowed class set to "
             << (*it).second->allowedBeamClass->number);
     }
-
+    _setAllowedBeamClassTimer.tick();
+    _setAllowedBeamClassTimer.stop();
     return true;
 }
 
@@ -356,7 +368,7 @@ bool Engine::setAllowedBeamClass()
  */
 void Engine::evaluateFaults()
 {
-    uint32_t deviceStateId = 0;
+    _evaluateFaultsTimer.start();
 
     bool faulted = false;
 
@@ -422,7 +434,8 @@ void Engine::evaluateFaults()
             input != (*fault).second->faultInputs->end();
             ++input)
         {
-            uint32_t inputValue = 0;
+            int32_t inputValue = 0;
+            int32_t faultedOffline = 0;
             if ((*input).second->digitalDevice)
             {
                 inputValue = (*input).second->digitalDevice->value;
@@ -462,7 +475,6 @@ void Engine::evaluateFaults()
 
             if ((*state).second->deviceState->value == maskedValue)
             {
-                deviceStateId = (*state).second->deviceState->id;
                 (*state).second->faulted = true; // Set input faulted field
                 (*fault).second->faulted = true; // Set fault faulted field
                 faulted = true; // Signal that at least one state is faulted
@@ -489,24 +501,20 @@ void Engine::evaluateFaults()
         if (!faulted && (*fault).second->defaultFaultState)
         {
             (*fault).second->defaultFaultState->faulted = true;
-            deviceStateId = (*fault).second->defaultFaultState->deviceState->id;
             LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
                 << faultValue << " (Default) fault state="
                 << (*fault).second->defaultFaultState->deviceState->name);
         }
-        if (oldFaultValue != (*fault).second->value)
-        {
-            (*fault).second->sendUpdate = 1;
-        }
-
-        deviceStateId = 0;
     }
+    _evaluateFaultsTimer.tick();
+    _evaluateFaultsTimer.stop();
 }
 
 // Check if there are valid ignore conditions. If changes in ignore condition
 // requires firmware reconfiguration, then return true.
 bool Engine::evaluateIgnoreConditions()
 {
+    _evaluateIgnoreConditionsTimer.start();
     bool reload = false;
 
     // Calculate state of conditions
@@ -597,17 +605,20 @@ bool Engine::evaluateIgnoreConditions()
             }
         }
     }
+    _evaluateIgnoreConditionsTimer.tick();
+    _evaluateIgnoreConditionsTimer.stop();
     return reload;
 }
 
 void Engine::setFaultIgnore()
 {
+    _setFaultIgnoreTimer.start();
     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
         fault != _mpsDb->faults->end();
         ++fault)
     {
       (*fault).second->ignored = false;
-      (*fault).second->faultedOffline = true;
+      (*fault).second->faultedOffline = false;
       (*fault).second->faultActive = true;
       for (DbFaultInputMap::iterator fault_input = (*fault).second->faultInputs->begin();
           fault_input != (*fault).second->faultInputs->end();
@@ -619,8 +630,7 @@ void Engine::setFaultIgnore()
           if ((*fault_input).second->analogDevice->ignoredMode) {
             (*fault).second->faultActive = false;
           }
-          if ((*fault_input).second->analogDevice->ignored || 
-              (*fault_input).second->analogDevice->ignoredMode)
+          if ((*fault_input).second->analogDevice->ignored)
           {
             (*fault).second->ignored = true;
           }
@@ -631,18 +641,20 @@ void Engine::setFaultIgnore()
           if ((*fault_input).second->digitalDevice->ignoredMode) {
             (*fault).second->faultActive = false;
           }
-          if ((*fault_input).second->digitalDevice->ignored ||
-              (*fault_input).second->digitalDevice->ignoredMode)
+          if ((*fault_input).second->digitalDevice->ignored)
           {
             (*fault).second->ignored = true;
           }
         }
       }
     }
+    _setFaultIgnoreTimer.tick();
+    _setFaultIgnoreTimer.stop();
 }
 
 void Engine::mitigate()
 {
+    _mitigateTimer.start();
     // Update digital Fault values and BeamDestination allowed class
     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
         fault != _mpsDb->faults->end();
@@ -650,14 +662,16 @@ void Engine::mitigate()
     {
         uint32_t maximumClass = 100;
         uint32_t sendFaultId = (*fault).second->id;
-        uint32_t sendOldValue = (*fault).second->worstState;
-        uint32_t sendValue = (*fault).second->value;
+        int32_t sendOldValue = (*fault).second->worstState;
         uint32_t sendAllowClass = 0;
         int32_t currState = 0;
         if ((*fault).second->faulted) {
           currState = (*fault).second->displayState;
         }
         if ((*fault).second->faultedOffline) {
+          currState = -1;
+        }
+        else {
           for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
               state != (*fault).second->faultStates->end();
               ++state)
@@ -687,10 +701,7 @@ void Engine::mitigate()
                   if ((*allowed).second->beamClass->number < maximumClass) {
                     maximumClass = (*allowed).second->beamClass->number;
                     currState = (*state).second->id;
-                    if ((*fault).second->sendUpdate) {
-                      sendAllowClass = (*allowed).second->id;
-                      sendValue = (*state).second->id;
-                    }
+                    sendAllowClass = (*allowed).second->id;
                   }
                 }
               }
@@ -702,26 +713,25 @@ void Engine::mitigate()
             }
           }
         }
+        if ( currState != (*fault).second->worstState) {
+          (*fault).second->sendUpdate = true;
+        }
         else {
-          currState = -1;
+          (*fault).second->sendUpdate = false;
         }
         (*fault).second->displayState = currState;
-        if (maximumClass < 100) {
-          (*fault).second->worstState = sendValue;
-          History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
+        if ((*fault).second->sendUpdate) {
+          History::getInstance().logFault(sendFaultId,sendOldValue,currState,sendAllowClass);
         }
-        else {
-          if ((*fault).second->sendUpdate) {
-            (*fault).second->worstState = sendValue;
-            History::getInstance().logFault(sendFaultId,sendOldValue,sendValue,sendAllowClass);
-          }
-        }
-      
+        (*fault).second->worstState = currState;
     }
+    _mitigateTimer.tick();
+    _mitigateTimer.stop();
 }
 
 void Engine::breakAnalogIgnore()
 {
+    _breakAnalogIgnoreTimer.start();
     /* 
     Each DbAnalogDevice needs to have its ignore flag set false.  It will be set
     based on machine condition in next function
@@ -735,9 +745,11 @@ void Engine::breakAnalogIgnore()
         if ((*device).second->cardId != NO_CARD_ID &&
             (*device).second->evaluation != NO_EVALUATION)
         {
-          (*device).second->ignored = (*device).second->ignoredMode;
+          (*device).second->ignored = false;
         }
     }
+    _breakAnalogIgnoreTimer.tick();
+    _breakAnalogIgnoreTimer.stop();
 }
 
 
@@ -751,7 +763,6 @@ int Engine::checkFaults()
 
     LOG_TRACE("ENGINE", "Checking faults");
     bool reload = false;
-    bool appReload = false;
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
         _mpsDb->clearMitigationBuffer();
@@ -762,14 +773,12 @@ int Engine::checkFaults()
         setFaultIgnore();
         mitigate();
         setAllowedBeamClass();
-        appReload = _mpsDb->getDbReload();
-        _mpsDb->resetDbReload();
     }
 
     _checkFaultTime.tick();
 
     // If FW configuration needs reloading, return non-zero value
-    if (reload || appReload)
+    if (reload)
         return 1;
 
     return 0;
@@ -831,6 +840,14 @@ void Engine::showStats()
         std::cout << ">>> Engine Stats <<<" << std::endl;
         _checkFaultTime.show();
         _evaluationCycleTime.show();
+        _unlatchTimer.show();
+        _setTentativeBeamClassTimer.show();
+        _evaluateFaultsTimer.show();
+        _breakAnalogIgnoreTimer.show();
+        _evaluateIgnoreConditionsTimer.show();
+        _setFaultIgnoreTimer.show();
+        _mitigateTimer.show();
+        _setAllowedBeamClassTimer.show();
         hb.printReport();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
 
@@ -1139,6 +1156,15 @@ void Engine::clearMaxTimers()
     _checkFaultTime.clear();
     _evaluationCycleTime.clear();
     _mpsDb->clearUpdateTime();
+    _unlatchTimer.clear();
+    _evaluationCycleTime.clear();
+    _setTentativeBeamClassTimer.clear();
+    _evaluateFaultsTimer.clear();
+    _breakAnalogIgnoreTimer.clear();
+    _evaluateIgnoreConditionsTimer.clear();
+    _setFaultIgnoreTimer.clear();
+    _mitigateTimer.clear();
+    _setAllowedBeamClassTimer.clear();
 }
 
 long Engine::getAvgWdUpdatePeriod()
