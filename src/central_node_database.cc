@@ -58,7 +58,6 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
     _pcChangeSameTagCounter(0),
     _pcChangeFirstPacket(true),
     _pcChangeDebug(false),
-    _reloadInactive(false),
     _pcFlagsCounters(Firmware::PcChangePacketFlagsLabels.size(), 0),
     mitigationTxTime( "Mitigation Transmission time", 360 )
 {
@@ -196,9 +195,7 @@ void MpsDb::updateInputs()
             applicationCardIt != applicationCards->end();
             ++applicationCardIt)
         {
-            if((*applicationCardIt).second->updateInputs()) {
-              _reloadInactive = true;
-            }
+            (*applicationCardIt).second->updateInputs();
         }
 
         _updateCounter++;
@@ -1006,6 +1003,33 @@ void MpsDb::configureApplicationCards()
     {
         (*applicationCardIt).second->configureUpdateBuffers();
     }
+
+    // Deal with special case where one device input is not in same application card.
+    for (digitalDeviceIt = digitalDevices->begin();
+        digitalDeviceIt != digitalDevices->end();
+        ++digitalDeviceIt)
+    {
+        dPtr = (*digitalDeviceIt).second;
+        if (dPtr->inputDevices) {
+	        for (DbDeviceInputMap::iterator deviceInput = dPtr->inputDevices->begin();
+	             deviceInput != dPtr->inputDevices->end(); ++deviceInput) {
+            if (!(*deviceInput).second->configured) {
+              uint32_t diCard = (*deviceInput).second->channel->cardId;
+              DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(diCard);
+              if (applicationCardIt != applicationCards->end())
+              {
+                aPtr = (*applicationCardIt).second;
+                std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
+                size_t                lowBufOff = aPtr->getWasLowBufferOffset();
+                size_t                highBufOff = aPtr->getWasHighBufferOffset();
+                (*deviceInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
+	              (*deviceInput).second->configured = true;
+                std::cout << "INFO: Device Input for " << dPtr->name << " configured!" << std::endl;
+              }
+            }
+          }
+        }
+    }
     std::cout << "End of the line" << std::endl;
 }
 
@@ -1048,14 +1072,6 @@ void MpsDb::configure()
     configureIgnoreConditions();
     configureApplicationCards();
     configureBeamDestinations();
-}
-
-bool MpsDb::getDbReload() {
-  return _reloadInactive;
-}
-
-void MpsDb::resetDbReload() {
-  _reloadInactive = false;
 }
 
 void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId)

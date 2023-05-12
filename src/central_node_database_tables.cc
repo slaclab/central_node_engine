@@ -139,6 +139,7 @@ std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
      << "deviceId=" << deviceInput->digitalDeviceId << " : "
      << "channelId=" << deviceInput->channelId << " : "
      << "bitPos=" << deviceInput->bitPosition << " : "
+     << "card=" << deviceInput->channel->cardId << " : "
      << "faultValue=" << deviceInput->faultValue << " : "
      << "value=" << deviceInput->value << " [wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]" << " : "
      << "latchedValue=" << deviceInput->latchedValue;
@@ -186,7 +187,12 @@ std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevic
      << "card=" << digitalDevice->cardId << " : "
      << "value=" << std::hex << digitalDevice->value << std::dec << " : "
      << "dbId=" << digitalDevice->id;
-
+  if (digitalDevice->ignored) {
+    os << "  ignored=YES";
+  }
+  else {
+    os << "  ignored=no";
+  }
   os << std::endl;
 
   for (DbDeviceInputMap::iterator input = digitalDevice->inputDevices->begin();
@@ -358,7 +364,8 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
      << "crateId=" << appCard->crateId << " : "
      << "slot=" << appCard->slotNumber << " : "
      << "online=" << appCard->online << " : "
-     << "activated=" << appCard->activated << std::endl;
+     << "activated=" << appCard->activated << " : "
+     << "hasInputs=" << appCard->hasInputs << std::endl;
 
   if (appCard->digitalDevices) {
     os << "  DigitalDevices:" << std::endl;

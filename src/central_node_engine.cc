@@ -630,8 +630,7 @@ void Engine::setFaultIgnore()
           if ((*fault_input).second->analogDevice->ignoredMode) {
             (*fault).second->faultActive = false;
           }
-          if ((*fault_input).second->analogDevice->ignored || 
-              (*fault_input).second->analogDevice->ignoredMode)
+          if ((*fault_input).second->analogDevice->ignored)
           {
             (*fault).second->ignored = true;
           }
@@ -642,8 +641,7 @@ void Engine::setFaultIgnore()
           if ((*fault_input).second->digitalDevice->ignoredMode) {
             (*fault).second->faultActive = false;
           }
-          if ((*fault_input).second->digitalDevice->ignored ||
-              (*fault_input).second->digitalDevice->ignoredMode)
+          if ((*fault_input).second->digitalDevice->ignored)
           {
             (*fault).second->ignored = true;
           }
@@ -747,7 +745,7 @@ void Engine::breakAnalogIgnore()
         if ((*device).second->cardId != NO_CARD_ID &&
             (*device).second->evaluation != NO_EVALUATION)
         {
-          (*device).second->ignored = !(*device).second->ignoredMode;
+          (*device).second->ignored = false;
         }
     }
     _breakAnalogIgnoreTimer.tick();
@@ -765,7 +763,6 @@ int Engine::checkFaults()
 
     LOG_TRACE("ENGINE", "Checking faults");
     bool reload = false;
-    bool appReload = false;
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
         _mpsDb->clearMitigationBuffer();
@@ -776,14 +773,12 @@ int Engine::checkFaults()
         setFaultIgnore();
         mitigate();
         setAllowedBeamClass();
-        appReload = _mpsDb->getDbReload();
-        _mpsDb->resetDbReload();
     }
 
     _checkFaultTime.tick();
 
     // If FW configuration needs reloading, return non-zero value
-    if (reload || appReload)
+    if (reload)
         return 1;
 
     return 0;

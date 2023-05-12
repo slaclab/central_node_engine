@@ -265,7 +265,15 @@ void DbApplicationCard::configureUpdateBuffers() {
 	     deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
 	  //	std::cout << "D" << (*deviceInput).second->id << " ";
 	  //	(*deviceInput).second->setUpdateBuffer(applicationUpdateBuffer);
-	  (*deviceInput).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
+    uint32_t diCard = (*deviceInput).second->channel->cardId;
+    if (diCard == number) {
+	    (*deviceInput).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
+	    (*deviceInput).second->configured = true;
+    }
+    else {
+	    (*deviceInput).second->configured = false;
+      std::cout << "INFO: Device Input for " << (*digitalDevice).second->name << " not in this application card.  Configure later..." << std::endl;
+    }
 	}
       }
     }
@@ -285,17 +293,26 @@ void DbApplicationCard::configureUpdateBuffers() {
   }
 }
 
+std::vector<uint8_t>* DbApplicationCard::getFwUpdateBuffer() {
+  return fwUpdateBuffer;
+}
+
+size_t DbApplicationCard::getWasLowBufferOffset() {
+  return wasLowBufferOffset;
+}
+
+size_t DbApplicationCard::getWasHighBufferOffset() {
+  return wasHighBufferOffset;
+}
+
 /**
  * Once the applicationUpdateBuffer has been updated with firmware status then
  * update each digital/analog device with the new values.
  */
-bool DbApplicationCard::updateInputs() {
+void DbApplicationCard::updateInputs() {
   // Check if timeout status bit from firmware is on, if so set online to false
-  bool reload = false;
-  bool oldActive = activated;
   if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
     online = false;
-    // TODO: set all inputs to faulted if app card is offline!
   }
   else {
     online = true;
@@ -305,9 +322,6 @@ bool DbApplicationCard::updateInputs() {
   }
   else {
     activated = false;
-  }
-  if (activated != oldActive) {
-    reload = true;
   }
   if (digitalDevices) {
     AppCardDigitalUpdateTime.start();
@@ -340,7 +354,6 @@ bool DbApplicationCard::updateInputs() {
     //    std::cerr << "WARN: No devices configured for application card " << this->name
     //	      << " (Id: " << this->id << ")" << std::endl;
   }
-  return reload;
 }
 
 /**
@@ -349,14 +362,17 @@ bool DbApplicationCard::updateInputs() {
 void DbApplicationCard::writeConfiguration(bool enableTimeout, bool forceAomAllow) {
   if (digitalDevices) {
     writeDigitalConfiguration(forceAomAllow);
+    hasInputs = true;
   }
   else if (analogDevices) {
     writeAnalogConfiguration(forceAomAllow);
+    hasInputs = true;
   }
   else {
     //    throw(DbException("Can't configure application card - no devices configured"));
     //    std::cerr << "WARN: No devices configured for application card " << this->name
     //	      << " (Id: " << this->id << ")" << std::endl;
+    hasInputs = false;
     return;
   }
   // Enable application timeout
