@@ -231,7 +231,7 @@ class DbDigitalDevice : public DbEntry {
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
   bool faultedOffline; //true when app card has app timeout
-  bool ignoredMode; //true when app card is disabled (mode manager, running in NC mode or desired offline)
+  bool modeActive; //true when SC mode, false when NC mode
 
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
 
@@ -296,7 +296,8 @@ class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
   bool faultedOffline; //true when app card has app timeout
-  bool ignoredMode; //true when app card is disabled (mode manager, running in NC mode or desired offline)
+  bool modeActive; //true when SC mode, false when NC mode
+
 
   // Faults from the integrators from this device are bypassed when ignored[integrator]==true
   bool ignoredIntegrator[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
@@ -369,8 +370,9 @@ class DbApplicationCard : public DbEntry {
   std::string name;
   std::string description;
   bool online; // True if received non-zero update last 360Hz update period
-  bool activated; // Used for mode switch - i.e. user _wants_ application offline
-  bool hasInputs;
+  bool modeActive; // True when in SC mode, false when in NC mode.
+  bool hasInputs; //True if number of inputs > 0
+  bool active; //True when the application card is active, mode irrelevant
 
   // Application Type Card
   DbApplicationTypePtr applicationType;
@@ -632,7 +634,7 @@ class DbFault : public DbEntry {
   bool ignored;
   bool sendUpdate;
   bool faultedOffline; // True when app card is offline
-  bool faultActive;
+  bool faultActive; //true when SC mode, false when NC mode
   uint32_t evaluation; // Set according to the input device types
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs

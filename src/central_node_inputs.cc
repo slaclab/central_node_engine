@@ -318,17 +318,21 @@ void DbApplicationCard::updateInputs() {
     online = true;
   }
   if (Firmware::getInstance().getAppTimeoutEnable(globalId)) {
-    activated = true;
+    active = true;
   }
   else {
-    activated = false;
+    active = false;
+  }
+  bool appModeActive = true;
+  if (!active && !modeActive){
+    appModeActive = false;
   }
   if (digitalDevices) {
     AppCardDigitalUpdateTime.start();
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	       digitalDevice != digitalDevices->end(); ++digitalDevice) {
       (*digitalDevice).second->faultedOffline = !online; //true when it is falted offline
-      (*digitalDevice).second->ignoredMode = !activated; //true when it is activated
+      (*digitalDevice).second->modeActive = appModeActive; //True when SC mode, false when NC mode
       if ((*digitalDevice).second->inputDevices) {
 	      for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
 	           deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
@@ -345,7 +349,7 @@ void DbApplicationCard::updateInputs() {
 	       analogDevice != analogDevices->end(); ++analogDevice) {
       (*analogDevice).second->update();
       (*analogDevice).second->faultedOffline = !online; //true when it is falted offline
-      (*analogDevice).second->ignoredMode = !activated; //true when inputs should be ignored
+      (*analogDevice).second->modeActive = appModeActive; //True when SC mode, false when NC mode
     }
     AppCardAnalogUpdateTime.end();
   }

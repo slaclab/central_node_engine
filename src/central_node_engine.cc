@@ -624,27 +624,15 @@ void Engine::setFaultIgnore()
           fault_input != (*fault).second->faultInputs->end();
           ++fault_input)
       {
-        if ((*fault_input).second->analogDevice) 
-        {
+        if ((*fault_input).second->analogDevice) {
           (*fault).second->faultedOffline = (*fault_input).second->analogDevice->faultedOffline;
-          if ((*fault_input).second->analogDevice->ignoredMode) {
-            (*fault).second->faultActive = false;
-          }
-          if ((*fault_input).second->analogDevice->ignored)
-          {
-            (*fault).second->ignored = true;
-          }
+          (*fault).second->faultActive = (*fault_input).second->analogDevice->modeActive;
+          (*fault).second->ignored = (*fault_input).second->analogDevice->ignored;
         }
-        if ((*fault_input).second->digitalDevice) 
-        {
+        if ((*fault_input).second->digitalDevice) {
           (*fault).second->faultedOffline = (*fault_input).second->digitalDevice->faultedOffline;
-          if ((*fault_input).second->digitalDevice->ignoredMode) {
-            (*fault).second->faultActive = false;
-          }
-          if ((*fault_input).second->digitalDevice->ignored)
-          {
-            (*fault).second->ignored = true;
-          }
+          (*fault).second->faultActive = (*fault_input).second->digitalDevice->modeActive;
+          (*fault).second->ignored = (*fault_input).second->digitalDevice->ignored;
         }
       }
     }
