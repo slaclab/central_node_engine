@@ -3,6 +3,9 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+  * Add active / inactive flag for application cards, devices, and logic to drive
+    the bit on the GUI
+
 * __central_node_engine-R4-3-0__:
   * Add new app offline modes so timeout can be off but logic still on
 

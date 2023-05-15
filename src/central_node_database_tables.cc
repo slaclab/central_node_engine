@@ -186,6 +186,7 @@ std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevic
   os << "type=" << digitalDevice->deviceTypeId << " : "
      << "card=" << digitalDevice->cardId << " : "
      << "value=" << std::hex << digitalDevice->value << std::dec << " : "
+     << "modeActive=" << digitalDevice->modeActive << " : "
      << "dbId=" << digitalDevice->id;
   if (digitalDevice->ignored) {
     os << "  ignored=YES";
@@ -252,6 +253,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice)
      << "card=" << analogDevice->cardId << " : "
      << "value=0x" << std::hex << analogDevice->value << std::dec << " : "
      << "latchedValue=0x" << std::hex << analogDevice->latchedValue << std::dec << " : "
+     << "modeActive=" << analogDevice->modeActive << " : "
      << "dbId=" << analogDevice->id << " : " << std::endl;
   if (analogDevice->ignored) {
     os << "  ignored=YES";
@@ -364,7 +366,8 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
      << "crateId=" << appCard->crateId << " : "
      << "slot=" << appCard->slotNumber << " : "
      << "online=" << appCard->online << " : "
-     << "activated=" << appCard->activated << " : "
+     << "active=" << appCard->active << " : "
+     << "modeActive=" << appCard->modeActive << " : "
      << "hasInputs=" << appCard->hasInputs << std::endl;
 
   if (appCard->digitalDevices) {
