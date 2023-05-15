@@ -363,13 +363,13 @@ void DbApplicationCard::updateInputs() {
 /**
  *
  */
-void DbApplicationCard::writeConfiguration(bool enableTimeout, bool forceAomAllow) {
+void DbApplicationCard::writeConfiguration(bool enableTimeout) {
   if (digitalDevices) {
-    writeDigitalConfiguration(forceAomAllow);
+    writeDigitalConfiguration();
     hasInputs = true;
   }
   else if (analogDevices) {
-    writeAnalogConfiguration(forceAomAllow);
+    writeAnalogConfiguration();
     hasInputs = true;
   }
   else {
@@ -397,7 +397,7 @@ void DbApplicationCard::writeConfiguration(bool enableTimeout, bool forceAomAllo
 // |    M63     |    ...    |     M1     |     M0     |
 //
 // where Mxx is the mask for bit xx
-void DbApplicationCard::writeDigitalConfiguration(bool forceAomAllow) {
+void DbApplicationCard::writeDigitalConfiguration() {
   // First set all bits to zero
   applicationConfigBuffer->reset();
 
@@ -423,8 +423,6 @@ void DbApplicationCard::writeDigitalConfiguration(bool forceAomAllow) {
 	  offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
 	  for (uint32_t i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
 	    bool bit = ((*digitalDevice).second->fastDestinationMask >> i) & 0x01;
-	    if (forceAomAllow && i == 1)
-	      bit = false;
 	    applicationConfigBuffer->set(channelOffset + offset + i, bit);
 	  }
 	}
@@ -474,7 +472,7 @@ void DbApplicationCard::writeDigitalConfiguration(bool forceAomAllow) {
 // EIC Version: there is only one integrator per channel, therefore
 // only B0 though B6 are actually used
 // ***
-void DbApplicationCard::writeAnalogConfiguration(bool forceAomAllow) {
+void DbApplicationCard::writeAnalogConfiguration() {
   // First set all bits to zero
   applicationConfigBuffer->reset();
 
@@ -520,12 +518,6 @@ void DbApplicationCard::writeAnalogConfiguration(bool forceAomAllow) {
 	  if (((*analogDevice).second->fastDestinationMask[i] >> j) & 0x01) {
 	    bitValue = true;
 	  }
-
-	  if (forceAomAllow && j == 1) {
-	    bitValue = false;
-	  }
-	  // TEST
-	  //	  if (forceAomAllow && (i == 3)) bitValue=true;
 
 	  // If bypass for the integrator is valid, set destination mask to zero - i.e. no mitigation
 	  // No mitigation also if the analogDevice is currently ignored

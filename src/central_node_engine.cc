@@ -28,10 +28,7 @@ Engine::Engine()
     _initialized(false),
     _engineThread(NULL),
     _debugCounter(0),
-    _aomAllowWhileShutterClosed(false),
     _unlatchAllowed(false),
-    _aomAllowEnableCounter(0),
-    _aomAllowDisableCounter(0),
     _linacFwLatch(false),
     _reloadCount(0),
     _checkFaultTime( "Evaluation only time: checkFaults()", 720 ),
@@ -104,7 +101,7 @@ int Engine::reloadConfig()
 
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-        _mpsDb->writeFirmwareConfiguration(false, _aomAllowWhileShutterClosed);
+        _mpsDb->writeFirmwareConfiguration(false);
     }
 
     Firmware::getInstance().setEnable(true);
@@ -124,7 +121,7 @@ int Engine::reloadConfigFromIgnore()
 
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-        _mpsDb->writeFirmwareConfiguration(false, _aomAllowWhileShutterClosed);
+        _mpsDb->writeFirmwareConfiguration(false);
     }
 
     Firmware::getInstance().setEnable(true);
@@ -843,23 +840,8 @@ void Engine::showStats()
             std::cout << "Shutter Status: " << Engine::_shutterDevice->value
                 << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
 
-        if (_aomDestination)
-        {
-            std::cout << "AOM Status: ";
-            if (Engine::_aomAllowWhileShutterClosed)
-                std::cout << " ALLOWED ";
-            else
-                std::cout << " Normal ";
-
-            std::cout << "[" << Engine::_aomAllowEnableCounter << "/"
-                << Engine::_aomAllowDisableCounter << "]" << std::endl;
-        }
-
         std::cout << "Reload latch: " << Engine::_linacFwLatch << std::endl;
         std::cout << "Reload Config Count: " << Engine::_reloadCount << std::endl;
-
-        if (_aomDestination)
-            std::cout << "Allow AOM (shutter closed): " << Engine::_aomAllowWhileShutterClosed << std::endl;
 
         std::cout << "Counter: " << Engine::_updateCounter << std::endl;
         std::cout << "Input Update Fail Counter: " << Engine::_inputUpdateFailCounter

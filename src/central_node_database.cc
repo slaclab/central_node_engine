@@ -1154,7 +1154,7 @@ void MpsDb::setMaxPermit(uint32_t beamClassId)
     }
 }
 
-void MpsDb::writeFirmwareConfiguration(bool enableTimeout, bool forceAomAllow)
+void MpsDb::writeFirmwareConfiguration(bool enableTimeout)
 {
     // Write configuration for each application in the system
     LOG_TRACE("DATABASE", "Writing config to firmware, num applications: " << applicationCards->size());
@@ -1163,7 +1163,7 @@ void MpsDb::writeFirmwareConfiguration(bool enableTimeout, bool forceAomAllow)
         card != applicationCards->end();
         ++card)
     {
-        (*card).second->writeConfiguration(enableTimeout, forceAomAllow);
+        (*card).second->writeConfiguration(enableTimeout);
         Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
             (*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
             APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
