@@ -188,7 +188,7 @@ class MpsDb {
   void forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void softPermitDestination(uint32_t beamDestinationId, uint32_t beamClassId=CLEAR_BEAM_CLASS);
   void setMaxPermit(uint32_t beamClassId=6);
-  void writeFirmwareConfiguration(bool enableTimeout = false, bool forceAomAllow = false);
+  void writeFirmwareConfiguration(bool enableTimeout = false);
   void unlatchAll();
   void unlatchAllFaults();
   void clearMitigationBuffer();

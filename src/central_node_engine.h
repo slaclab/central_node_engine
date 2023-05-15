@@ -120,9 +120,6 @@ private:
 
     DbDigitalDevicePtr _shutterDevice; // Needed to monitor shutter closed status
     uint32_t _shutterClosedStatus; // Current shutter closed status
-    bool _aomAllowWhileShutterClosed; // When true enable AOM while shutter is closed
-    uint32_t _aomAllowEnableCounter; // Increase every time AOM is enabled while shutter is closed
-    uint32_t _aomAllowDisableCounter; // Decrease every time AOM is enabled while shutter is closed
     bool _linacFwLatch; // Latches in SW if the FW is latched during config reloads
     uint32_t _reloadCount; // Counts the number of FW config reloads (after ignore and AOM enable)
     bool _unlatchAllowed;
