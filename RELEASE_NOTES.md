@@ -3,6 +3,7 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-4-0__:
   * Remove aomAllow flag which was used originally to manage aom permit when shutter was in.
   * Add active / inactive flag for application cards, devices, and logic to drive
     the bit on the GUI
