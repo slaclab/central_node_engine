@@ -309,7 +309,9 @@ size_t DbApplicationCard::getWasHighBufferOffset() {
  * Once the applicationUpdateBuffer has been updated with firmware status then
  * update each digital/analog device with the new values.
  */
-void DbApplicationCard::updateInputs() {
+bool DbApplicationCard::updateInputs() {
+  bool reload = false;
+  bool oldActive = active;
   // Check if timeout status bit from firmware is on, if so set online to false
   if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
     online = false;
@@ -323,16 +325,15 @@ void DbApplicationCard::updateInputs() {
   else {
     active = false;
   }
-  bool appModeActive = true;
-  if (!active && !modeActive){
-    appModeActive = false;
+  if(active != oldActive) {
+    reload = true;
   }
   if (digitalDevices) {
     AppCardDigitalUpdateTime.start();
     for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	       digitalDevice != digitalDevices->end(); ++digitalDevice) {
       (*digitalDevice).second->faultedOffline = !online; //true when it is falted offline
-      (*digitalDevice).second->modeActive = appModeActive; //True when SC mode, false when NC mode
+      (*digitalDevice).second->modeActive = active; //True when SC mode, false when NC mode
       if ((*digitalDevice).second->inputDevices) {
 	      for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
 	           deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
@@ -349,7 +350,7 @@ void DbApplicationCard::updateInputs() {
 	       analogDevice != analogDevices->end(); ++analogDevice) {
       (*analogDevice).second->update();
       (*analogDevice).second->faultedOffline = !online; //true when it is falted offline
-      (*analogDevice).second->modeActive = appModeActive; //True when SC mode, false when NC mode
+      (*analogDevice).second->modeActive = active; //True when SC mode, false when NC mode
     }
     AppCardAnalogUpdateTime.end();
   }
@@ -358,6 +359,7 @@ void DbApplicationCard::updateInputs() {
     //    std::cerr << "WARN: No devices configured for application card " << this->name
     //	      << " (Id: " << this->id << ")" << std::endl;
   }
+  return reload;
 }
 
 /**
@@ -495,16 +497,16 @@ void DbApplicationCard::writeAnalogConfiguration() {
       uint32_t channelsPerCard = (*analogDevice).second->numChannelsCard;
 
       for (uint32_t i = 0; i < integratorsPerChannel; ++i) { // for each integrator
-	powerClassOffset = channelNumber * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE +
-	  i * channelsPerCard * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE;
-	for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) { // for each threshold
-	  for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
-	    applicationConfigBuffer->set(powerClassOffset + k,
-					 ((*analogDevice).second->fastPowerClass[j + i * ANALOG_DEVICE_NUM_THRESHOLDS] >> k) & 0x01);
+	      powerClassOffset = channelNumber * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE +
+	                         i * channelsPerCard * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE;
+	      for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) { // for each threshold
+	        for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
+	          applicationConfigBuffer->set(powerClassOffset + k,
+					      ((*analogDevice).second->fastPowerClass[j + i * ANALOG_DEVICE_NUM_THRESHOLDS] >> k) & 0x01);
 	    //std::cout << "offset=" << powerClassOffset+k << ", bit=" << (((*analogDevice).second->fastPowerClass[j] >> k) & 0x01) << std::endl;
-	  }
-	  powerClassOffset += POWER_CLASS_BIT_SIZE;
-	}
+	        }
+	      powerClassOffset += POWER_CLASS_BIT_SIZE;
+	      }
       }
 
       // Write the destination mask for each integrator

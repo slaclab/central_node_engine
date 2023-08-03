@@ -198,6 +198,8 @@ class MpsDb {
   long getAvgUpdateTime();
   long getMaxFwUpdatePeriod();
   long getAvgFwUpdatePeriod();
+  bool getDbReload();
+  void resetDbReload();
 
   int  getTotalDeviceCount();
 

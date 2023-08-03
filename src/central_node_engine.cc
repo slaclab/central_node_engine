@@ -623,13 +623,19 @@ void Engine::setFaultIgnore()
       {
         if ((*fault_input).second->analogDevice) {
           (*fault).second->faultedOffline = (*fault_input).second->analogDevice->faultedOffline;
+          // modeActive is false when in NC mode and true when in SC mode.  When in NC mode, logic should be ignored
           (*fault).second->faultActive = (*fault_input).second->analogDevice->modeActive;
-          (*fault).second->ignored = (*fault_input).second->analogDevice->ignored;
+          if ((*fault_input).second->analogDevice->ignored || !(*fault_input).second->analogDevice->modeActive) {
+            (*fault).second->ignored = true;
+          }
         }
         if ((*fault_input).second->digitalDevice) {
           (*fault).second->faultedOffline = (*fault_input).second->digitalDevice->faultedOffline;
+          // modeActive is false when in NC mode and true when in SC mode.  When in NC mode, logic should be ignored
           (*fault).second->faultActive = (*fault_input).second->digitalDevice->modeActive;
-          (*fault).second->ignored = (*fault_input).second->digitalDevice->ignored;
+          if ((*fault_input).second->digitalDevice->ignored || !(*fault_input).second->digitalDevice->modeActive) {
+            (*fault).second->ignored = true;
+          }
         }
       }
     }
@@ -748,6 +754,7 @@ int Engine::checkFaults()
 
     LOG_TRACE("ENGINE", "Checking faults");
     bool reload = false;
+    bool appReload = false;
     {
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
         _mpsDb->clearMitigationBuffer();
@@ -758,12 +765,14 @@ int Engine::checkFaults()
         setFaultIgnore();
         mitigate();
         setAllowedBeamClass();
+        appReload = _mpsDb->getDbReload();
+        _mpsDb->resetDbReload();
     }
 
     _checkFaultTime.tick();
 
     // If FW configuration needs reloading, return non-zero value
-    if (reload)
+    if (reload || appReload)
         return 1;
 
     return 0;

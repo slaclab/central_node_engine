@@ -58,6 +58,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
     _pcChangeSameTagCounter(0),
     _pcChangeFirstPacket(true),
     _pcChangeDebug(false),
+    _reloadInactive(false),
     _pcFlagsCounters(Firmware::PcChangePacketFlagsLabels.size(), 0),
     mitigationTxTime( "Mitigation Transmission time", 360 )
 {
@@ -189,13 +190,17 @@ void MpsDb::updateInputs()
         }
 
         _inputUpdateTime.start();
-
+        // If an application card has been set inactive, its logic
+        // will also be set to ignored, so the FW
+        // configuration will need to be reloaded
         DbApplicationCardMap::iterator applicationCardIt;
         for (applicationCardIt = applicationCards->begin();
             applicationCardIt != applicationCards->end();
             ++applicationCardIt)
         {
-            (*applicationCardIt).second->updateInputs();
+            if ((*applicationCardIt).second->updateInputs()){
+                _reloadInactive = true;
+            }
         }
 
         _updateCounter++;
@@ -1072,6 +1077,14 @@ void MpsDb::configure()
     configureIgnoreConditions();
     configureApplicationCards();
     configureBeamDestinations();
+}
+
+bool MpsDb::getDbReload() {
+  return _reloadInactive;
+}
+
+void MpsDb::resetDbReload() {
+  _reloadInactive = false;
 }
 
 void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId)

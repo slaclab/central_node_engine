@@ -407,7 +407,7 @@ class DbApplicationCard : public DbEntry {
   void printAnalogConfiguration();
 
   void configureUpdateBuffers();
-  void updateInputs();
+  bool updateInputs();
   bool isAnalog();
   bool isDigital();
 
