@@ -40,19 +40,17 @@ std::ostream & operator<<(std::ostream &os, DbInfo * const dbInfo) {
   return os;
 }
 
-DbApplicationType::DbApplicationType() : DbEntry(), number(999),
-					 analogChannelCount(0), analogChannelSize(0),
-					 digitalChannelCount(0), digitalChannelSize(0),
+DbApplicationType::DbApplicationType() : DbEntry(), num_integrators(999),
+					 analogChannelCount(0), digitalChannelCount(0), softwareChannelCount(0),
 					 description("empty") {
 }
 
 std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
   os << "id[" << appType->id << "]; "
-     << "number[" << appType->number << "]; "
+     << "num_integrators[" << appType->num_integrators << "]; "
      << "analogChannelCount[" << appType->analogChannelCount << "]; "
-     << "analogChannelSize[" << appType->analogChannelSize << "]; "
      << "digitalChannelCount[" << appType->digitalChannelCount << "]; "
-     << "digitalChannelSize[" << appType->digitalChannelSize << "]; "
+     << "softwareChannelCount[" << appType->softwareChannelCount << "]; "
      << "description[" << appType->description << "]";
   return os;
 }

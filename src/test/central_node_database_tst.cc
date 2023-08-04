@@ -70,7 +70,8 @@ int main(int argc, char **argv) {
       std::cout << "CALL MpsDb::load\n"; // temp
       mpsDb->load(fileName);
       std::cout << "CALL MpsDb::configure\n"; // temp
-      mpsDb->configure();
+      // TEMPORARILY COMMENTED OUT
+      //mpsDb->configure();
     } catch (DbException &e) {
       std::cerr << e.what() << std::endl;
       return -1;
@@ -79,7 +80,7 @@ int main(int argc, char **argv) {
     if (dump) {
       // std::cout << mpsDb << std::endl;
       std::ofstream myfile;
-      myfile.open("dump.txt");
+      myfile.open("dump_test.txt");
       myfile << mpsDb;
       myfile.close();
     }

@@ -78,11 +78,10 @@ typedef boost::shared_ptr<DbInfoMap> DbInfoMapPtr;
  */
 class DbApplicationType : public DbEntry {
  public:
-  uint32_t number;
+  uint32_t num_integrators;
   uint32_t analogChannelCount;
-  uint32_t analogChannelSize;
   uint32_t digitalChannelCount;
-  uint32_t digitalChannelSize;
+  uint32_t softwareChannelCount;
   std::string description;
 
   DbApplicationType();

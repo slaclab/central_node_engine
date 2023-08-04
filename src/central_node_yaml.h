@@ -111,65 +111,61 @@ namespace YAML {
     }
   };
 
-  /**
-   * ApplicationType:
-   * - analog_channel_count: '3'
-   *   analog_channel_size: '8'
-   *   digital_channel_count: '4'
-   *   digital_channel_size: '1'
-   *   id: '1'
-   *   name: Mixed Mode Link Node
-   *   number: '0'
-   */
+	/**
+ 	* ApplicationType:
+	*   analog_channel_count: 3
+	*   digital_channel_count: 4
+	*	software_channel_count: 32
+	*   id: 1
+	*   name: 'MPS Analog'
+	*   number: 3
+	*/
   template<>
     struct convert<DbApplicationTypeMapPtr> {
     static bool decode(const Node &node, DbApplicationTypeMapPtr &rhs) {
-      DbApplicationTypeMap *appTypes = new DbApplicationTypeMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbApplicationTypeMapPtr(appTypes);
+		DbApplicationTypeMap *appTypes = new DbApplicationTypeMap();
+		std::stringstream errorStream;
+		std::string field;
+		rhs = DbApplicationTypeMapPtr(appTypes);
 
-      for (YAML::Node::const_iterator it = node["ApplicationType"].begin();
-	   it != node["ApplicationType"].end(); ++it) {
-	DbApplicationType *appType = new DbApplicationType();
+		for (YAML::Node::const_iterator it = node["ApplicationType"].begin();
+		it != node["ApplicationType"].end(); ++it) {
+			DbApplicationType *appType = new DbApplicationType();
 
-	try {
-	  field = "id";
-	  appType->id = (*it)[field].as<unsigned int>();
+			try {
+				field = "id";
+				appType->id = (*it)[field].as<unsigned int>();
 
-	  field = "number";
-	  appType->number = (*it)[field].as<unsigned int>();
+				field = "num_integrators";
+				appType->num_integrators = (*it)[field].as<unsigned int>();
 
-	  field = "analog_channel_count";
-	  appType->analogChannelCount = (*it)[field].as<unsigned int>();
+				field = "analog_channel_count";
+				appType->analogChannelCount = (*it)[field].as<unsigned int>();
 
-	  field = "analog_channel_size";
-	  appType->analogChannelSize = (*it)[field].as<unsigned int>();
+				field = "digital_channel_count";
+				appType->digitalChannelCount = (*it)[field].as<unsigned int>();
 
-	  field = "digital_channel_count";
-	  appType->digitalChannelCount = (*it)[field].as<unsigned int>();
+				field = "software_channel_count";
+				appType->softwareChannelCount = (*it)[field].as<unsigned int>();
 
-	  field = "digital_channel_size";
-	  appType->digitalChannelSize = (*it)[field].as<unsigned int>();
+				field = "name";
+				appType->description = (*it)[field].as<std::string>();
+			} catch(YAML::InvalidNode &e) {
+				errorStream << "ERROR: Failed to find field " << field << " for ApplicationType.";
+				throw(DbException(errorStream.str()));
+			} catch(YAML::TypedBadConversion<unsigned int> &e) {
+				errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected unsigned int).";
+				throw(DbException(errorStream.str()));
+			} catch(YAML::TypedBadConversion<std::string> &e) {
+				errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected string).";
+				throw(DbException(errorStream.str()));
+			}
 
-	  field = "name";
-	  appType->description = (*it)[field].as<std::string>();
-	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for ApplicationType.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected string).";
-	  throw(DbException(errorStream.str()));
-	}
+			rhs->insert(std::pair<int, DbApplicationTypePtr>(appType->id,
+									DbApplicationTypePtr(appType)));
+		}
 
-	rhs->insert(std::pair<int, DbApplicationTypePtr>(appType->id,
-							 DbApplicationTypePtr(appType)));
-      }
-
-      return true;
+		return true;
     }
   };
 
