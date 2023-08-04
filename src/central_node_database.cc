@@ -35,10 +35,11 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
 :
     fwUpdateBuffer( fwUpdateBuferSize, 0 ),
     run( true ),
-    fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
-    fwPCChangeThread( std::thread( &MpsDb::fwPCChangeReader, this ) ),
-    updateInputThread( std::thread( &MpsDb::updateInputs, this ) ),
-    mitigationThread( std::thread( &MpsDb::mitigationWriter, this ) ),
+    // temporarily commented out to debug central_node_database_tst.cc
+    // fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
+    // fwPCChangeThread( std::thread( &MpsDb::fwPCChangeReader, this ) ),
+    // updateInputThread( std::thread( &MpsDb::updateInputs, this ) ),
+    // mitigationThread( std::thread( &MpsDb::mitigationWriter, this ) ),
     inputsUpdated(false),
     _fastUpdateTimeStamp(0),
     _diff(0),
@@ -64,6 +65,9 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
 #if defined(LOG_ENABLED) && !defined(LOG_STDOUT)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
+
+    std::cout << "Central node database initialized\n"; // temp
+    return; // temp
 
   if (!_initialized) {
     _initialized = true;
@@ -1249,6 +1253,8 @@ int MpsDb::load(std::string yamlFileName)
             throw(DbException(errorStream.str()));
         }
         std::string nodeName = s.substr(0, found);
+
+        std::cout << nodeName << std::endl; // TEMP
 
         LOG_TRACE("DATABASE", "Parsing \"" << nodeName << "\"");
 

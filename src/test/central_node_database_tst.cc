@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdio.h>
+#include <fstream>
 
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/node/parse.h>
@@ -20,7 +21,7 @@ class TestFailed {};
 static void usage(const char *nm) {
   std::cerr << "Usage: " << nm << " [-f <file>] [-d]" << std::endl;
   std::cerr << "       -f <file>   :  MPS database YAML file" << std::endl;
-  std::cerr << "       -d          :  dump YAML file to stdout" << std::endl;
+  std::cerr << "       -d          :  dump YAML file to dump.txt file" << std::endl;
   std::cerr << "       -t          :  trace output" << std::endl;
   std::cerr << "       -h          :  print this message" << std::endl;
 }
@@ -66,17 +67,27 @@ int main(int argc, char **argv) {
 
   if (loaded) {
     try {
+      std::cout << "CALL MpsDb::load\n"; // temp
       mpsDb->load(fileName);
+      std::cout << "CALL MpsDb::configure\n"; // temp
       mpsDb->configure();
     } catch (DbException &e) {
       std::cerr << e.what() << std::endl;
       return -1;
     }
-
+    std::cout << "Database YAML sucessfully loaded and configured, double check the dump.txt if contains all data" << std::endl;
     if (dump) {
-      std::cout << mpsDb << std::endl;
+      // std::cout << mpsDb << std::endl;
+      std::ofstream myfile;
+      myfile.open("dump.txt");
+      myfile << mpsDb;
+      myfile.close();
     }
   }
+    // Temp - print out the current values grabbed
+    // std::cout << "Displaying digital devices\n";
+    // printMap<DbDigitalDeviceMapPtr, DbDigitalDeviceMap::iterator>
+    // (std::cout, digitalDevices, "DigitalDevice");
 
   std::cout << "Done." << std::endl;
   /*

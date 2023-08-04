@@ -36,6 +36,8 @@ Tests
 
 The test subdirectory contains several *_tst.cc files that are stand alone testing programs:
 
+Update (8-4-2023): Please see these [steps](src/test/configure_tests.md) to get it working
+
 Reads the contents of YAML MPS Database, configure/check it and prints out the contents:
 
 ```     
