@@ -399,7 +399,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
   return os;
 }
 
-DbBeamClass::DbBeamClass() : DbEntry(), number(999), name(""), description("") {
+DbBeamClass::DbBeamClass() : DbEntry(), number(999), name("") {
 }
 
 std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
@@ -408,8 +408,7 @@ std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
      << "name[" << beamClass->name << "] "
      << "integrationWindow[" << beamClass->integrationWindow << "]"
      << "minPeriod[" << beamClass->minPeriod << "]"
-     << "totalCharge[" << beamClass->totalCharge << "]"
-     << "description[" << beamClass->description << "]";
+     << "totalCharge[" << beamClass->totalCharge << "]";
   return os;
 }
 

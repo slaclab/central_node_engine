@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
       mpsDb->load(fileName);
       std::cout << "CALL MpsDb::configure\n"; // temp
       // TEMPORARILY COMMENTED OUT
-      //mpsDb->configure();
+      mpsDb->configure();
     } catch (DbException &e) {
       std::cerr << e.what() << std::endl;
       return -1;

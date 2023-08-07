@@ -465,7 +465,6 @@ class DbBeamClass : public DbEntry {
  public:
   uint32_t number;
   std::string name;
-  std::string description;
   uint32_t integrationWindow;
   uint32_t minPeriod;
   uint32_t totalCharge;

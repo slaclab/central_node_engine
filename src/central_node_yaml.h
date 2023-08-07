@@ -122,52 +122,52 @@ namespace YAML {
 	*/
   template<>
     struct convert<DbApplicationTypeMapPtr> {
-    static bool decode(const Node &node, DbApplicationTypeMapPtr &rhs) {
-		DbApplicationTypeMap *appTypes = new DbApplicationTypeMap();
-		std::stringstream errorStream;
-		std::string field;
-		rhs = DbApplicationTypeMapPtr(appTypes);
+		static bool decode(const Node &node, DbApplicationTypeMapPtr &rhs) {
+			DbApplicationTypeMap *appTypes = new DbApplicationTypeMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbApplicationTypeMapPtr(appTypes);
 
-		for (YAML::Node::const_iterator it = node["ApplicationType"].begin();
-		it != node["ApplicationType"].end(); ++it) {
-			DbApplicationType *appType = new DbApplicationType();
+			for (YAML::Node::const_iterator it = node["ApplicationType"].begin();
+				it != node["ApplicationType"].end(); ++it) {
+				DbApplicationType *appType = new DbApplicationType();
 
-			try {
-				field = "id";
-				appType->id = (*it)[field].as<unsigned int>();
+				try {
+					field = "id";
+					appType->id = (*it)[field].as<unsigned int>();
 
-				field = "num_integrators";
-				appType->num_integrators = (*it)[field].as<unsigned int>();
+					field = "num_integrators";
+					appType->num_integrators = (*it)[field].as<unsigned int>();
 
-				field = "analog_channel_count";
-				appType->analogChannelCount = (*it)[field].as<unsigned int>();
+					field = "analog_channel_count";
+					appType->analogChannelCount = (*it)[field].as<unsigned int>();
 
-				field = "digital_channel_count";
-				appType->digitalChannelCount = (*it)[field].as<unsigned int>();
+					field = "digital_channel_count";
+					appType->digitalChannelCount = (*it)[field].as<unsigned int>();
 
-				field = "software_channel_count";
-				appType->softwareChannelCount = (*it)[field].as<unsigned int>();
+					field = "software_channel_count";
+					appType->softwareChannelCount = (*it)[field].as<unsigned int>();
 
-				field = "name";
-				appType->description = (*it)[field].as<std::string>();
-			} catch(YAML::InvalidNode &e) {
-				errorStream << "ERROR: Failed to find field " << field << " for ApplicationType.";
-				throw(DbException(errorStream.str()));
-			} catch(YAML::TypedBadConversion<unsigned int> &e) {
-				errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected unsigned int).";
-				throw(DbException(errorStream.str()));
-			} catch(YAML::TypedBadConversion<std::string> &e) {
-				errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected string).";
-				throw(DbException(errorStream.str()));
+					field = "name";
+					appType->description = (*it)[field].as<std::string>();
+				} catch(YAML::InvalidNode &e) {
+					errorStream << "ERROR: Failed to find field " << field << " for ApplicationType.";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<unsigned int> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected unsigned int).";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<std::string> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for ApplicationType (expected string).";
+					throw(DbException(errorStream.str()));
+				}
+
+				rhs->insert(std::pair<int, DbApplicationTypePtr>(appType->id,
+										DbApplicationTypePtr(appType)));
 			}
 
-			rhs->insert(std::pair<int, DbApplicationTypePtr>(appType->id,
-									DbApplicationTypePtr(appType)));
+			return true;
 		}
-
-		return true;
-    }
-  };
+  	};
 
   /**
    * ApplicationCard:
@@ -1009,63 +1009,64 @@ namespace YAML {
     }
   };
 
-  /**
-   * BeamClass:
-   * - id: '1'
-   *   name: Class 1
-   *   description: short description
-   *   number: '1'
-   */
+
+	/**
+	 * BeamClass:
+	 *   id: 1
+	 * 	 number: 3
+	 *   name: 'Kicker STBY'
+	 * 	 integration_window: 455000
+	 * 	 min_period: 0
+	 *   total_charge: 0
+	 */
   template<>
     struct convert<DbBeamClassMapPtr> {
-    static bool decode(const Node &node, DbBeamClassMapPtr &rhs) {
-      DbBeamClassMap *beamClasses = new DbBeamClassMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbBeamClassMapPtr(beamClasses);
+		static bool decode(const Node &node, DbBeamClassMapPtr &rhs) {
+			DbBeamClassMap *beamClasses = new DbBeamClassMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbBeamClassMapPtr(beamClasses);
 
-      for (YAML::Node::const_iterator it = node["BeamClass"].begin();
-	   it != node["BeamClass"].end(); ++it) {
-	DbBeamClass *beamClass = new DbBeamClass();
+			for (YAML::Node::const_iterator it = node["BeamClass"].begin();
+				it != node["BeamClass"].end(); ++it) {
+				DbBeamClass *beamClass = new DbBeamClass();
 
-	try {
-	  field = "id";
-	  beamClass->id = (*it)[field].as<unsigned int>();
+				try {
+					field = "id";
+					beamClass->id = (*it)[field].as<unsigned int>();
 
-	  field = "name";
-	  beamClass->name = (*it)[field].as<std::string>();
+					field = "name";
+					beamClass->name = (*it)[field].as<std::string>();
 
-	  field = "number";
-	  beamClass->number = (*it)[field].as<unsigned int>();
+					field = "number";
+					beamClass->number = (*it)[field].as<unsigned int>();
 
-	  field = "min_period";
-	  beamClass->minPeriod = (*it)[field].as<unsigned int>();
+					field = "min_period";
+					beamClass->minPeriod = (*it)[field].as<unsigned int>();
 
-	  field = "integration_window";
-	  beamClass->integrationWindow = (*it)[field].as<unsigned int>();
+					field = "integration_window";
+					beamClass->integrationWindow = (*it)[field].as<unsigned int>();
 
-	  field = "total_charge";
-	  beamClass->totalCharge = (*it)[field].as<unsigned int>();
+					field = "total_charge";
+					beamClass->totalCharge = (*it)[field].as<unsigned int>();
 
-	  field = "description";
-	  beamClass->description = (*it)[field].as<std::string>();
-  	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for BeamClass.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected string).";
-	  throw(DbException(errorStream.str()));
-	}
+				} catch(YAML::InvalidNode &e) {
+					errorStream << "ERROR: Failed to find field " << field << " for BeamClass.";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<unsigned int> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected unsigned int).";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<std::string> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamClass (expected string).";
+					throw(DbException(errorStream.str()));
+				}
 
-	rhs->insert(std::pair<int, DbBeamClassPtr>(beamClass->id, DbBeamClassPtr(beamClass)));
-      }
+				rhs->insert(std::pair<int, DbBeamClassPtr>(beamClass->id, DbBeamClassPtr(beamClass)));
+			}
 
-      return true;
-    }
-  };
+			return true;
+		}
+  	};
 
   /**
    * AllowedClass:
