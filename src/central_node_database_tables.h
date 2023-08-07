@@ -485,6 +485,7 @@ class DbBeamDestination : public DbEntry {
  public:
   std::string name;
   uint16_t destinationMask;
+  uint16_t displayOrder;
   uint32_t buffer0DestinationMask;
   uint32_t buffer1DestinationMask;
 

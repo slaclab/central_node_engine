@@ -882,132 +882,136 @@ namespace YAML {
     }
   };
 
-  /**
-   * BeamDestination:
-   * - id: '1'
-   *   name: Linac
-   *   destination_mask: 1
-   */
+	/**
+	 * BeamDestination:
+	 *   id: 1
+	 *   name: 'LASER'
+	 *   destination_mask: 1
+	 *   display_order: 7
+	 */
   template<>
     struct convert<DbBeamDestinationMapPtr> {
-    static bool decode(const Node &node, DbBeamDestinationMapPtr &rhs) {
-      DbBeamDestinationMap *beamDestinations = new DbBeamDestinationMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbBeamDestinationMapPtr(beamDestinations);
+		static bool decode(const Node &node, DbBeamDestinationMapPtr &rhs) {
+			DbBeamDestinationMap *beamDestinations = new DbBeamDestinationMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbBeamDestinationMapPtr(beamDestinations);
 
-      for (YAML::Node::const_iterator it = node["BeamDestination"].begin();
-	   it != node["BeamDestination"].end(); ++it) {
-	DbBeamDestination *beamDestination = new DbBeamDestination();
+			for (YAML::Node::const_iterator it = node["BeamDestination"].begin();
+				it != node["BeamDestination"].end(); ++it) {
+				DbBeamDestination *beamDestination = new DbBeamDestination();
 
-	try {
-	  field = "id";
-	  beamDestination->id = (*it)[field].as<unsigned int>();
+				try {
+					field = "id";
+					beamDestination->id = (*it)[field].as<unsigned int>();
 
-	  field = "name";
-	  beamDestination->name = (*it)[field].as<std::string>();
+					field = "name";
+					beamDestination->name = (*it)[field].as<std::string>();
 
-	  field = "destination_mask";
-	  beamDestination->destinationMask = (*it)[field].as<short>();
+					field = "mask";
+					beamDestination->destinationMask = (*it)[field].as<short>();
 
-	  // Find the device position in the softwareMitigationBuffer (32-bit array)
-	  // Each mitigation device defines has a 4-bit power class, the
-	  // position tells in which byte it falls based on the
-	  // destination mask
+					field = "display_order";
+					beamDestination->displayOrder = (*it)[field].as<short>();
 
-	  // Destination mask
-	  // [16 15 14 13 12 11 10 09][08 07 06 05 04 03 02 01]
-	  beamDestination->softwareMitigationBufferIndex = 1; // when FW is fixed this goes back to index 0
-	  beamDestination->bitShift = 0;
-	  uint16_t mask = beamDestination->destinationMask;
-    beamDestination->buffer0DestinationMask = 0;
-    beamDestination->buffer1DestinationMask = 0;
-    if ((beamDestination->destinationMask & 0x1) > 0) {
-      beamDestination->buffer1DestinationMask |= 0x0000000F;
-    }
-    if ((beamDestination->destinationMask & 0x2) > 0) {
-      beamDestination->buffer1DestinationMask |= 0x000000F0;
-    }
-    if ((beamDestination->destinationMask & 0x4) > 0) {
-      beamDestination->buffer1DestinationMask |= 0x00000F00;
-    }
-    if ((beamDestination->destinationMask & 0x8) > 0) {
-      beamDestination->buffer1DestinationMask |= 0x0000F000;
-    }
-    if ((beamDestination->destinationMask & 0x10) > 0) {
-      beamDestination->buffer1DestinationMask |= 0x000F0000;
-    }
-    if ((beamDestination->destinationMask & 0x20) > 0) {
-      beamDestination->buffer1DestinationMask |= 0x00F00000;
-    }
-    if ((beamDestination->destinationMask & 0x40) > 0) {
-      beamDestination->buffer1DestinationMask |= 0x0F000000;
-    }
-    if ((beamDestination->destinationMask & 0x80) > 0) {
-      beamDestination->buffer1DestinationMask |= 0xF0000000;
-    }
-    if ((beamDestination->destinationMask & 0x100) > 0) {
-      beamDestination->buffer0DestinationMask |= 0x0000000F;
-    }
-    if ((beamDestination->destinationMask & 0x200) > 0) {
-      beamDestination->buffer0DestinationMask |= 0x000000F0;
-    }
-    if ((beamDestination->destinationMask & 0x400) > 0) {
-      beamDestination->buffer0DestinationMask |= 0x00000F00;
-    }
-    if ((beamDestination->destinationMask & 0x800) > 0) {
-      beamDestination->buffer0DestinationMask |= 0x0000F000;
-    }
-    if ((beamDestination->destinationMask & 0x1000) > 0) {
-      beamDestination->buffer0DestinationMask |= 0x000F0000;
-    }
-    if ((beamDestination->destinationMask & 0x2000) > 0) {
-      beamDestination->buffer0DestinationMask |= 0x00F00000;
-    }
-    if ((beamDestination->destinationMask & 0x4000) > 0) {
-      beamDestination->buffer0DestinationMask |= 0x0F000000;
-    }
-    if ((beamDestination->destinationMask & 0x8000) > 0) {
-      beamDestination->buffer0DestinationMask |= 0xF0000000;
-    }
-	  if ((mask & 0xFF00) > 0) {
-	    // beamDestination->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
-	    beamDestination->softwareMitigationBufferIndex = 0; // when FW is fixed this goes back to index 1
-	    mask >>= 8;
-	  }
+					// Find the device position in the softwareMitigationBuffer (32-bit array)
+					// Each mitigation device defines has a 4-bit power class, the
+					// position tells in which byte it falls based on the
+					// destination mask
 
-	  for (int i = 0; i < 8; ++i) {
-	    if (mask & 1) {
-	      mask = 0;
-	    }
-	    else {
-	      if (mask > 0) {
-		      beamDestination->bitShift += 4;
-		      mask >>= 1;
-	      }
-	    }
-	  }
-  } catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for BeamDestination.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<short> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected string).";
-	  throw(DbException(errorStream.str()));
-	}
+					// Destination mask
+					// [16 15 14 13 12 11 10 09][08 07 06 05 04 03 02 01]
+					beamDestination->softwareMitigationBufferIndex = 1; // when FW is fixed this goes back to index 0
+					beamDestination->bitShift = 0;
+					uint16_t mask = beamDestination->destinationMask;
+					beamDestination->buffer0DestinationMask = 0;
+					beamDestination->buffer1DestinationMask = 0;
+					if ((beamDestination->destinationMask & 0x1) > 0) {
+						beamDestination->buffer1DestinationMask |= 0x0000000F;
+					}
+					if ((beamDestination->destinationMask & 0x2) > 0) {
+						beamDestination->buffer1DestinationMask |= 0x000000F0;
+					}
+					if ((beamDestination->destinationMask & 0x4) > 0) {
+						beamDestination->buffer1DestinationMask |= 0x00000F00;
+					}
+					if ((beamDestination->destinationMask & 0x8) > 0) {
+						beamDestination->buffer1DestinationMask |= 0x0000F000;
+					}
+					if ((beamDestination->destinationMask & 0x10) > 0) {
+						beamDestination->buffer1DestinationMask |= 0x000F0000;
+					}
+					if ((beamDestination->destinationMask & 0x20) > 0) {
+						beamDestination->buffer1DestinationMask |= 0x00F00000;
+					}
+					if ((beamDestination->destinationMask & 0x40) > 0) {
+						beamDestination->buffer1DestinationMask |= 0x0F000000;
+					}
+					if ((beamDestination->destinationMask & 0x80) > 0) {
+						beamDestination->buffer1DestinationMask |= 0xF0000000;
+					}
+					if ((beamDestination->destinationMask & 0x100) > 0) {
+						beamDestination->buffer0DestinationMask |= 0x0000000F;
+					}
+					if ((beamDestination->destinationMask & 0x200) > 0) {
+						beamDestination->buffer0DestinationMask |= 0x000000F0;
+					}
+					if ((beamDestination->destinationMask & 0x400) > 0) {
+						beamDestination->buffer0DestinationMask |= 0x00000F00;
+					}
+					if ((beamDestination->destinationMask & 0x800) > 0) {
+						beamDestination->buffer0DestinationMask |= 0x0000F000;
+					}
+					if ((beamDestination->destinationMask & 0x1000) > 0) {
+						beamDestination->buffer0DestinationMask |= 0x000F0000;
+					}
+					if ((beamDestination->destinationMask & 0x2000) > 0) {
+						beamDestination->buffer0DestinationMask |= 0x00F00000;
+					}
+					if ((beamDestination->destinationMask & 0x4000) > 0) {
+						beamDestination->buffer0DestinationMask |= 0x0F000000;
+					}
+					if ((beamDestination->destinationMask & 0x8000) > 0) {
+						beamDestination->buffer0DestinationMask |= 0xF0000000;
+					}
+					if ((mask & 0xFF00) > 0) {
+						// beamDestination->softwareMitigationBufferIndex = 1; // if destination bit set from 8 to 15, use second mitigation position
+						beamDestination->softwareMitigationBufferIndex = 0; // when FW is fixed this goes back to index 1
+						mask >>= 8;
+					}
 
-	rhs->insert(std::pair<int, DbBeamDestinationPtr>(beamDestination->id,
-							  DbBeamDestinationPtr(beamDestination)));
-      }
+					for (int i = 0; i < 8; ++i) {
+						if (mask & 1) {
+							mask = 0;
+						}
+						else {
+							if (mask > 0) {
+								beamDestination->bitShift += 4;
+								mask >>= 1;
+							}
+						}
+					}
+				} catch(YAML::InvalidNode &e) {
+					errorStream << "ERROR: Failed to find field " << field << " for BeamDestination.";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<unsigned int> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<short> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected unsigned int).";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<std::string> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for BeamDestination (expected string).";
+					throw(DbException(errorStream.str()));
+				}
 
-      return true;
-    }
-  };
+				rhs->insert(std::pair<int, DbBeamDestinationPtr>(beamDestination->id,
+											DbBeamDestinationPtr(beamDestination)));
+					}
+
+			return true;
+		}
+  	};
 
 
 	/**

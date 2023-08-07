@@ -418,7 +418,8 @@ DbBeamDestination::DbBeamDestination() : DbEntry(), name("") {
 std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination) {
   os << "id[" << beamDestination->id << "]; "
      << "name[" << beamDestination->name << "]; "
-     << "destinationMask[" << beamDestination->destinationMask << "]";
+     << "destinationMask[" << beamDestination->destinationMask << "];"
+     << "displayOrder[" << beamDestination->displayOrder << "]";
   if (beamDestination->allowedBeamClass) {
     os << "; Allowed[" << beamDestination->allowedBeamClass->number << "]";
   }
