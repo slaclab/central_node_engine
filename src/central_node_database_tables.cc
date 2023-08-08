@@ -20,13 +20,17 @@ std::ostream & operator<<(std::ostream &os, DbEntry * const entry) {
   return os;
 }
 
-DbCrate::DbCrate() : DbEntry(), crate_id(999), numSlots(999), shelfNumber(999) {};
+DbCrate::DbCrate() : DbEntry(), crate_id(999), numSlots(999), elevation(999) {};
 
 std::ostream & operator<<(std::ostream &os, DbCrate * const crate) {
   os << "id[" << crate->id << "]; "
      << "crate_id[" << crate->crate_id << "]; "
      << "slots[" << crate->numSlots << "]; "
-     << "shelf[" << crate->shelfNumber << "]";
+     << "location[" << crate->location << "]; "
+     << "rack[" << crate->rack << "]; "
+     << "elevation[" << crate->elevation << "]; "
+     << "area[" << crate->area << "]; "
+     << "node[" << crate->node << "];";
   return os;
 }
 
@@ -405,9 +409,9 @@ DbBeamClass::DbBeamClass() : DbEntry(), number(999), name("") {
 std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
   os << "id[" << beamClass->id << "]; "
      << "number[" << beamClass->number << "]; "
-     << "name[" << beamClass->name << "] "
-     << "integrationWindow[" << beamClass->integrationWindow << "]"
-     << "minPeriod[" << beamClass->minPeriod << "]"
+     << "name[" << beamClass->name << "]; "
+     << "integrationWindow[" << beamClass->integrationWindow << "]; "
+     << "minPeriod[" << beamClass->minPeriod << "]; "
      << "totalCharge[" << beamClass->totalCharge << "]";
   return os;
 }
@@ -418,7 +422,7 @@ DbBeamDestination::DbBeamDestination() : DbEntry(), name("") {
 std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestination) {
   os << "id[" << beamDestination->id << "]; "
      << "name[" << beamDestination->name << "]; "
-     << "destinationMask[" << beamDestination->destinationMask << "];"
+     << "destinationMask[" << beamDestination->destinationMask << "]; "
      << "displayOrder[" << beamDestination->displayOrder << "]";
   if (beamDestination->allowedBeamClass) {
     os << "; Allowed[" << beamDestination->allowedBeamClass->number << "]";

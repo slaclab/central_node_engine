@@ -18,49 +18,67 @@ namespace YAML {
 
   /**
    * Crate:
-   * - id: '1'
-   *   num_slots: '6'
-   *   number: '1'
-   *   shelf_number: '1'
+   * - id: 1
+   *   crate_id: 1
+   *   num_slots: 6
+   *   location: 'L2KA00-0517'
+   *   rack: '4D'
+   *   elevation: 17
+   *   area: 'B34'
+   *   node: 'SP01'
    */
   template<>
     struct convert<DbCrateMapPtr> {
-    static bool decode(const Node &node, DbCrateMapPtr &rhs) {
-      DbCrateMap *crates = new DbCrateMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbCrateMapPtr(crates);
+		static bool decode(const Node &node, DbCrateMapPtr &rhs) {
+			DbCrateMap *crates = new DbCrateMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbCrateMapPtr(crates);
 
-      for (YAML::Node::const_iterator it = node["Crate"].begin();
-	   it != node["Crate"].end(); ++it) {
-	DbCrate *crate = new DbCrate();
+			for (YAML::Node::const_iterator it = node["Crate"].begin();
+				it != node["Crate"].end(); ++it) {
+				DbCrate *crate = new DbCrate();
 
-	try {
-	  field = "id";
-	  crate->id = (*it)[field].as<unsigned int>();
+				try {
+					field = "id";
+					crate->id = (*it)[field].as<unsigned int>();
 
-	  field = "crate_id";
-	  crate->crate_id = (*it)[field].as<unsigned int>();
+					field = "crate_id";
+					crate->crate_id = (*it)[field].as<unsigned int>();
 
-	  field = "num_slots";
-	  crate->numSlots = (*it)[field].as<unsigned int>();
+					field = "num_slots";
+					crate->numSlots = (*it)[field].as<unsigned int>();
 
-	  field = "shelf_number";
-	  crate->shelfNumber = (*it)[field].as<unsigned int>();
-	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for Crate.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Crate (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	}
+					field = "location";
+	  				crate->location = (*it)[field].as<std::string>();
 
-	rhs->insert(std::pair<int, DbCratePtr>(crate->id, DbCratePtr(crate)));
-      }
+					field = "rack";
+	  				crate->rack = (*it)[field].as<std::string>();
 
-      return true;
-    }
-  };
+					field = "elevation";
+					crate->elevation = (*it)[field].as<unsigned int>();
+
+					field = "area";
+	  				crate->area = (*it)[field].as<std::string>();
+
+					field = "node";
+	  				crate->node = (*it)[field].as<std::string>();
+
+
+				} catch(YAML::InvalidNode &e) {
+					errorStream << "ERROR: Failed to find field " << field << " for Crate.";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<unsigned int> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for Crate (expected unsigned int).";
+					throw(DbException(errorStream.str()));
+				}
+
+				rhs->insert(std::pair<int, DbCratePtr>(crate->id, DbCratePtr(crate)));
+			}
+
+			return true;
+		}
+	};
 
   /**
    * Info:

@@ -45,7 +45,11 @@ class DbCrate : public DbEntry {
  public:
   uint32_t crate_id;
   uint32_t numSlots;
-  uint32_t shelfNumber;
+  std::string location;
+  std::string rack;
+  uint32_t elevation;
+  std::string area;
+  std::string node;
 
   DbCrate();
   friend std::ostream & operator<<(std::ostream &os, DbCrate * const crate);
