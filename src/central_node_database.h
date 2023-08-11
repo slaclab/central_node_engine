@@ -32,7 +32,7 @@ class MpsDb {
   void configureDeviceTypes();
   void configureFaultInputs();
   void configureFaultStates();
-  void configureAnalogDevices();
+  void configureAnalogChannels();
   void configureIgnoreConditions();
   void configureApplicationCards();
   void configureBeamDestinations();
@@ -142,16 +142,15 @@ class MpsDb {
   DbCrateMapPtr crates;
   DbApplicationTypeMapPtr applicationTypes;
   DbApplicationCardMapPtr applicationCards;
-  DbChannelMapPtr digitalChannels;
-  DbChannelMapPtr analogChannels;
+  DbDigitalChannelMapPtr digitalChannels;
+  DbAnalogChannelMapPtr analogChannels;
+  DbMitigationMapPtr mitigations;
   DbDeviceTypeMapPtr deviceTypes;
   DbDeviceStateMapPtr deviceStates;
-  DbDigitalDeviceMapPtr digitalDevices;
   DbDeviceInputMapPtr deviceInputs;
   DbFaultMapPtr faults;
   DbFaultInputMapPtr faultInputs;
   DbFaultStateMapPtr faultStates;
-  DbAnalogDeviceMapPtr analogDevices;
   DbBeamDestinationMapPtr beamDestinations;
   DbBeamClassMapPtr beamClasses;
   DbAllowedClassMapPtr allowedClasses;

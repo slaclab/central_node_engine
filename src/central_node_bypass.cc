@@ -61,64 +61,67 @@ void BypassManager::stopBypassThread() {
  * is shared by the loaded configs.
  */
 void BypassManager::createBypassMap(MpsDbPtr db) {
-  LOG_TRACE("BYPASS", "Creating bypass map");
 
-  InputBypassMap *map = new InputBypassMap();
-  bypassMap = InputBypassMapPtr(map);
+// TODO - Temporarily commented out until ready to deal with logic for new config DB
 
-  int bypassId = 0;
-  for (DbDeviceInputMap::iterator input = db->deviceInputs->begin();
-       input != db->deviceInputs->end(); ++input) {
-    InputBypass *bypass = new InputBypass();
-    bypass->id = bypassId;
-    bypass->deviceId = (*input).second->id;
-    bypass->type = BYPASS_DIGITAL;
-    bypass->until = 0; // time is seconds since 1970, this gets set later
-    // this field will get set later when bypasses start to be monitored
-    bypass->status = BYPASS_EXPIRED;
-    bypass->index = 0;
-    //    std::cout << (*input).second << std::endl;
-    if ((*input).second->fastEvaluation) {
-      bypass->configUpdate = true;
-    }
+  // LOG_TRACE("BYPASS", "Creating bypass map");
 
-    bypassId++;
+  // InputBypassMap *map = new InputBypassMap();
+  // bypassMap = InputBypassMapPtr(map);
 
-    InputBypassPtr bypassPtr = InputBypassPtr(bypass);
-    bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
-  }
+  // int bypassId = 0;
+  // for (DbDeviceInputMap::iterator input = db->deviceInputs->begin();
+  //      input != db->deviceInputs->end(); ++input) {
+  //   InputBypass *bypass = new InputBypass();
+  //   bypass->id = bypassId;
+  //   bypass->deviceId = (*input).second->id;
+  //   bypass->type = BYPASS_DIGITAL;
+  //   bypass->until = 0; // time is seconds since 1970, this gets set later
+  //   // this field will get set later when bypasses start to be monitored
+  //   bypass->status = BYPASS_EXPIRED;
+  //   bypass->index = 0;
+  //   //    std::cout << (*input).second << std::endl;
+  //   if ((*input).second->fastEvaluation) {
+  //     bypass->configUpdate = true;
+  //   }
 
-  for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
-       analogInput != db->analogDevices->end(); ++analogInput) {
-    uint32_t integratorsPerChannel = ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL;
-    /*
-    if ((*analogInput).second->deviceType) {
-      integratorsPerChannel = (*analogInput).second->deviceType->numIntegrators;
-    }
-    else {
-      std::cout << "What?!?" << std::endl; exit(0);
-    }
-    */
-    // Create one InputBypass for each integrator (max of 4 integrators)
-    for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
-      InputBypass *bypass = new InputBypass();
-      bypass->id = bypassId;
-      bypass->deviceId = (*analogInput).second->id;
-      bypass->type = BYPASS_ANALOG;
-      bypass->until = 0; // time is seconds since 1970, this gets set later
-      // this field will get set later when bypasses start to be monitored
-      bypass->status = BYPASS_EXPIRED;
-      bypass->index = i;
-      if ((*analogInput).second->evaluation != 0) {
-	bypass->configUpdate = true;
-      }
+  //   bypassId++;
 
-      bypassId++;
+  //   InputBypassPtr bypassPtr = InputBypassPtr(bypass);
+  //   bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
+  // }
 
-      InputBypassPtr bypassPtr = InputBypassPtr(bypass);
-      bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
-    }
-  }
+  // for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
+  //      analogInput != db->analogDevices->end(); ++analogInput) {
+  //   uint32_t integratorsPerChannel = ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL;
+  //   /*
+  //   if ((*analogInput).second->deviceType) {
+  //     integratorsPerChannel = (*analogInput).second->deviceType->numIntegrators;
+  //   }
+  //   else {
+  //     std::cout << "What?!?" << std::endl; exit(0);
+  //   }
+  //   */
+  //   // Create one InputBypass for each integrator (max of 4 integrators)
+  //   for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
+  //     InputBypass *bypass = new InputBypass();
+  //     bypass->id = bypassId;
+  //     bypass->deviceId = (*analogInput).second->id;
+  //     bypass->type = BYPASS_ANALOG;
+  //     bypass->until = 0; // time is seconds since 1970, this gets set later
+  //     // this field will get set later when bypasses start to be monitored
+  //     bypass->status = BYPASS_EXPIRED;
+  //     bypass->index = i;
+  //     if ((*analogInput).second->evaluation != 0) {
+	// bypass->configUpdate = true;
+  //     }
+
+  //     bypassId++;
+
+  //     InputBypassPtr bypassPtr = InputBypassPtr(bypass);
+  //     bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
+  //   }
+  // }
 }
 
 /**
@@ -130,78 +133,81 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
  * thrown.
  */
 void BypassManager::assignBypass(MpsDbPtr db) {
-  std::stringstream errorStream;
-  LOG_TRACE("BYPASS", "Assigning bypass slots to MPS database inputs (analog/digital)");
 
-  std::unique_lock<std::mutex> lock(mutex);
+// TODO - Temporarily commented out until ready to deal with logic for new config DB
 
-  for (InputBypassMap::iterator bypass = bypassMap->begin();
-       bypass != bypassMap->end(); ++bypass) {
-    int inputId = (*bypass).second->deviceId;
-    if ((*bypass).second->type == BYPASS_DIGITAL) {
-      DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(inputId);
-      if (digitalInput == db->deviceInputs->end()) {
-	errorStream << "ERROR: Failed to find FaultInput ("
-		    << inputId << ") when assigning digital bypass";
-	throw(CentralNodeException(errorStream.str()));
-      }
-      else {
-	(*digitalInput).second->bypass = (*bypass).second;
-	// Make sure that changes to the bypass for this digital input causes firmware reload
-	if ((*digitalInput).second->fastEvaluation) {
-	  (*digitalInput).second->bypass->configUpdate = true;
-	}
-      }
-    }
-    else { // BYPASS_ANALOG
-      DbAnalogDeviceMap::iterator analogInput = db->analogDevices->find(inputId);
-      if (analogInput == db->analogDevices->end()) {
-	errorStream << "ERROR: Failed to find FaultInput ("
-		    << inputId << ") when assigning analog bypass";
-	throw(CentralNodeException(errorStream.str()));
-      }
-      else {
-	(*analogInput).second->bypass[(*bypass).second->index] = (*bypass).second;
-	(*bypass).second->bypassMask = &((*analogInput).second->bypassMask);
-      }
-    }
-  }
+  // std::stringstream errorStream;
+  // LOG_TRACE("BYPASS", "Assigning bypass slots to MPS database inputs (analog/digital)");
 
-  // Now makes sure all digital/analog inputs have a bypass assigned.
-  errorStream << "ERROR: Failed to find bypass for FaultInputs [";
-  bool error = false;
-  bool first = true;
-  for (DbDeviceInputMap::iterator digitalInput = db->deviceInputs->begin();
-       digitalInput != db->deviceInputs->end(); ++digitalInput) {
-    if (!(*digitalInput).second->bypass) {
-      if (!first) {
-	errorStream << ", ";
-      }
-      errorStream << (*digitalInput).second->id;
-      error = true;
-      first = false;
-    }
-  }
-  errorStream << "]; AnalogDevices [";
-  first = true;
-  for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
-       analogInput != db->analogDevices->end(); ++analogInput) {
-    if (!(*analogInput).second->bypass) {
-      if (!first) {
-	errorStream << ", ";
-      }
-      errorStream << (*analogInput).second->id;
-      error = true;
-      first = false;
-    }
-  }
-  errorStream << "]";
+  // std::unique_lock<std::mutex> lock(mutex);
 
-  if (error) {
-    throw(CentralNodeException(errorStream.str()));
-  }
+  // for (InputBypassMap::iterator bypass = bypassMap->begin();
+  //      bypass != bypassMap->end(); ++bypass) {
+  //   int inputId = (*bypass).second->deviceId;
+  //   if ((*bypass).second->type == BYPASS_DIGITAL) {
+  //     DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(inputId);
+  //     if (digitalInput == db->deviceInputs->end()) {
+	// errorStream << "ERROR: Failed to find FaultInput ("
+	// 	    << inputId << ") when assigning digital bypass";
+	// throw(CentralNodeException(errorStream.str()));
+  //     }
+  //     else {
+	// (*digitalInput).second->bypass = (*bypass).second;
+	// // Make sure that changes to the bypass for this digital input causes firmware reload
+	// if ((*digitalInput).second->fastEvaluation) {
+	//   (*digitalInput).second->bypass->configUpdate = true;
+	// }
+  //     }
+  //   }
+  //   else { // BYPASS_ANALOG
+  //     DbAnalogDeviceMap::iterator analogInput = db->analogDevices->find(inputId);
+  //     if (analogInput == db->analogDevices->end()) {
+	// errorStream << "ERROR: Failed to find FaultInput ("
+	// 	    << inputId << ") when assigning analog bypass";
+	// throw(CentralNodeException(errorStream.str()));
+  //     }
+  //     else {
+	// (*analogInput).second->bypass[(*bypass).second->index] = (*bypass).second;
+	// (*bypass).second->bypassMask = &((*analogInput).second->bypassMask);
+  //     }
+  //   }
+  // }
 
-  initialized = true;
+  // // Now makes sure all digital/analog inputs have a bypass assigned.
+  // errorStream << "ERROR: Failed to find bypass for FaultInputs [";
+  // bool error = false;
+  // bool first = true;
+  // for (DbDeviceInputMap::iterator digitalInput = db->deviceInputs->begin();
+  //      digitalInput != db->deviceInputs->end(); ++digitalInput) {
+  //   if (!(*digitalInput).second->bypass) {
+  //     if (!first) {
+	// errorStream << ", ";
+  //     }
+  //     errorStream << (*digitalInput).second->id;
+  //     error = true;
+  //     first = false;
+  //   }
+  // }
+  // errorStream << "]; AnalogDevices [";
+  // first = true;
+  // for (DbAnalogDeviceMap::iterator analogInput = db->analogDevices->begin();
+  //      analogInput != db->analogDevices->end(); ++analogInput) {
+  //   if (!(*analogInput).second->bypass) {
+  //     if (!first) {
+	// errorStream << ", ";
+  //     }
+  //     errorStream << (*analogInput).second->id;
+  //     error = true;
+  //     first = false;
+  //   }
+  // }
+  // errorStream << "]";
+
+  // if (error) {
+  //   throw(CentralNodeException(errorStream.str()));
+  // }
+
+  // initialized = true;
 }
 
 /**
@@ -357,117 +363,120 @@ void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
 void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 				       uint32_t deviceId, uint32_t value, time_t bypassUntil,
 				       int intIndex, bool test) {
-  InputBypassPtr bypass;
-  std::stringstream errorStream;
-  uint32_t *bypassMask = NULL;
+  
+  // TODO - Temporarily commented out until ready to deal with logic for new config DB
 
-  // Find the device and its bypass - all devices must have a bypass assigned.
-  // The assignment must be after the BypassManager is created.
-  if (bypassType == BYPASS_DIGITAL) {
-    DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(deviceId);
-    if (digitalInput == db->deviceInputs->end()) {
-      errorStream << "ERROR: Failed to find DeviceInput[" << deviceId
-		  << "] while setting bypass";
-      throw(CentralNodeException(errorStream.str()));
-    }
-    bypass = (*digitalInput).second->bypass;
-  }
-  else {
-    DbAnalogDeviceMap::iterator analogInput = db->analogDevices->find(deviceId);
-    if (analogInput == db->analogDevices->end()) {
-      errorStream << "ERROR: Failed to find AnalogDevice[" << deviceId
-		  << "] while setting bypass";
-      throw(CentralNodeException(errorStream.str()));
-    }
-    bypass = (*analogInput).second->bypass[intIndex];
-    bypassMask = &(*analogInput).second->bypassMask;
-  }
+  // InputBypassPtr bypass;
+  // std::stringstream errorStream;
+  // uint32_t *bypassMask = NULL;
 
-  BypassQueueEntry newEntry;
-  newEntry.first = bypassUntil;
-  newEntry.second = bypass;
+  // // Find the device and its bypass - all devices must have a bypass assigned.
+  // // The assignment must be after the BypassManager is created.
+  // if (bypassType == BYPASS_DIGITAL) {
+  //   DbDeviceInputMap::iterator digitalInput = db->deviceInputs->find(deviceId);
+  //   if (digitalInput == db->deviceInputs->end()) {
+  //     errorStream << "ERROR: Failed to find DeviceInput[" << deviceId
+	// 	  << "] while setting bypass";
+  //     throw(CentralNodeException(errorStream.str()));
+  //   }
+  //   bypass = (*digitalInput).second->bypass;
+  // }
+  // else {
+  //   DbAnalogDeviceMap::iterator analogInput = db->analogDevices->find(deviceId);
+  //   if (analogInput == db->analogDevices->end()) {
+  //     errorStream << "ERROR: Failed to find AnalogDevice[" << deviceId
+	// 	  << "] while setting bypass";
+  //     throw(CentralNodeException(errorStream.str()));
+  //   }
+  //   bypass = (*analogInput).second->bypass[intIndex];
+  //   bypassMask = &(*analogInput).second->bypassMask;
+  // }
 
-  // This handles case #3 - cancel bypass
-  if (bypassUntil == 0) {
-    if (bypass->type == BYPASS_ANALOG) {
-      History::getInstance().logBypassState(bypass->deviceId,
-					    bypass->status,
-					    BYPASS_EXPIRED,
-					    bypass->index);
-    }
-    else {
-      History::getInstance().logBypassState(bypass->deviceId,
-					    bypass->status,
-					    BYPASS_EXPIRED,
-					    BYPASS_DIGITAL_INDEX);
-    }
+  // BypassQueueEntry newEntry;
+  // newEntry.first = bypassUntil;
+  // newEntry.second = bypass;
 
-    bypass->status = BYPASS_EXPIRED;
-    bypass->until = 0;
+  // // This handles case #3 - cancel bypass
+  // if (bypassUntil == 0) {
+  //   if (bypass->type == BYPASS_ANALOG) {
+  //     History::getInstance().logBypassState(bypass->deviceId,
+	// 				    bypass->status,
+	// 				    BYPASS_EXPIRED,
+	// 				    bypass->index);
+  //   }
+  //   else {
+  //     History::getInstance().logBypassState(bypass->deviceId,
+	// 				    bypass->status,
+	// 				    BYPASS_EXPIRED,
+	// 				    BYPASS_DIGITAL_INDEX);
+  //   }
 
-    // If analog/threshold bypass, change bypassMask - set integrator thresholds bit to 1 (not-bypassed)
-    if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
-      uint32_t m = 0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE); // clear bypassed integrator thresholds
-      *bypassMask |= m;
-    }
+  //   bypass->status = BYPASS_EXPIRED;
+  //   bypass->until = 0;
 
-    // Check if expired bypass requires firmware configuration update
-    if (bypass->configUpdate) {
-      refreshFirmwareConfiguration = true;
-    }
+  //   // If analog/threshold bypass, change bypassMask - set integrator thresholds bit to 1 (not-bypassed)
+  //   if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
+  //     uint32_t m = 0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE); // clear bypassed integrator thresholds
+  //     *bypassMask |= m;
+  //   }
 
-    LOG_TRACE("BYPASS", "Set bypass EXPIRED for device [" << deviceId << "], "
-	      << "type=" << bypassType);
-  }
-  else {
-    time_t now;
-    if (test) {
-      now = bypassUntil - 1;
-    }
-    else {
-      time(&now);
-    }
+  //   // Check if expired bypass requires firmware configuration update
+  //   if (bypass->configUpdate) {
+  //     refreshFirmwareConfiguration = true;
+  //   }
 
-    // This handles cases #1 and #2, for new and modified bypasses.
-    if (bypassUntil > now) {
-      if (bypass->type == BYPASS_ANALOG) {
-	History::getInstance().logBypassState(bypass->deviceId,
-					      bypass->status,
-					      BYPASS_VALID,
-					      bypass->index);
-      }
-      else {
-	History::getInstance().logBypassState(bypass->deviceId,
-					      bypass->status,
-					      BYPASS_VALID,
-					      BYPASS_DIGITAL_INDEX);
-      }
-      LOG_TRACE("BYPASS", "New bypass for device [" << deviceId << "], "
-		<< "type=" << bypassType << ", index=" << intIndex
-		<< ", until=" << bypassUntil << " sec"
-		<< ", now=" << now << " sec");
-      // Check if expired bypass requires firmware configuration update
-      if (bypass->configUpdate) {
-	refreshFirmwareConfiguration = true;
-      }
+  //   LOG_TRACE("BYPASS", "Set bypass EXPIRED for device [" << deviceId << "], "
+	//       << "type=" << bypassType);
+  // }
+  // else {
+  //   time_t now;
+  //   if (test) {
+  //     now = bypassUntil - 1;
+  //   }
+  //   else {
+  //     time(&now);
+  //   }
 
-      {
-	std::unique_lock<std::mutex> lock(mutex);
+  //   // This handles cases #1 and #2, for new and modified bypasses.
+  //   if (bypassUntil > now) {
+  //     if (bypass->type == BYPASS_ANALOG) {
+	// History::getInstance().logBypassState(bypass->deviceId,
+	// 				      bypass->status,
+	// 				      BYPASS_VALID,
+	// 				      bypass->index);
+  //     }
+  //     else {
+	// History::getInstance().logBypassState(bypass->deviceId,
+	// 				      bypass->status,
+	// 				      BYPASS_VALID,
+	// 				      BYPASS_DIGITAL_INDEX);
+  //     }
+  //     LOG_TRACE("BYPASS", "New bypass for device [" << deviceId << "], "
+	// 	<< "type=" << bypassType << ", index=" << intIndex
+	// 	<< ", until=" << bypassUntil << " sec"
+	// 	<< ", now=" << now << " sec");
+  //     // Check if expired bypass requires firmware configuration update
+  //     if (bypass->configUpdate) {
+	// refreshFirmwareConfiguration = true;
+  //     }
 
-	bypass->until = bypassUntil;
-	bypass->status = BYPASS_VALID;
-	bypass->value = value;
+  //     {
+	// std::unique_lock<std::mutex> lock(mutex);
 
-	// If analog/threshold bypass, change bypassMask - set threshold bit to 0 (bypassed)
-	if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
-	  uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
-	  *bypassMask &= m;
-	}
+	// bypass->until = bypassUntil;
+	// bypass->status = BYPASS_VALID;
+	// bypass->value = value;
 
-	bypassQueue.push(newEntry);
-      }
-    }
-  }
+	// // If analog/threshold bypass, change bypassMask - set threshold bit to 0 (bypassed)
+	// if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
+	//   uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
+	//   *bypassMask &= m;
+	// }
+
+	// bypassQueue.push(newEntry);
+  //     }
+  //   }
+  // }
 }
 
 void BypassManager::printBypassQueue() {

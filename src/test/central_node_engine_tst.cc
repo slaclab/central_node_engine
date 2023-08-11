@@ -145,19 +145,19 @@ class EngineTest {
 	analogInputFile >> analogValue;
 	/*
 	std::cout << deviceId << ": " << analogValue << " analogSize: "
-	  	  << Engine::getInstance()._mpsDb->analogDevices->size()
+	  	  << Engine::getInstance()._mpsDb->analogChannels->size()
 	  	  << " digitalSize: "
-         	  << Engine::getInstance()._mpsDb->digitalDevices->size()
+         	  << Engine::getInstance()._mpsDb->digitalChannels->size()
 	    	  << std::endl;
 	*/
-	int size = Engine::getInstance()._mpsDb->analogDevices->size() + 1 + Engine::getInstance()._mpsDb->digitalDevices->size();
+	int size = Engine::getInstance()._mpsDb->analogChannels->size() + 1 + Engine::getInstance()._mpsDb->digitalChannels->size();
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
 		    << "), number of inputs is " << Engine::getInstance()._mpsDb->deviceInputs->size()
 		    << std::endl;
 	  return 1;
 	}
-	Engine::getInstance()._mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	Engine::getInstance()._mpsDb->analogChannels->at(deviceId)->update(analogValue);
       }
     }
 

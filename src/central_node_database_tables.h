@@ -43,7 +43,7 @@ class DbEntry {
  */
 class DbCrate : public DbEntry {
  public:
-  uint32_t crate_id;
+  uint32_t crateId;
   uint32_t numSlots;
   std::string location;
   std::string rack;
@@ -97,23 +97,6 @@ typedef std::map<uint32_t, DbApplicationTypePtr> DbApplicationTypeMap;
 typedef boost::shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
 
 /**
- * DbChannel class for DbDigitalChannel and DbAnalogChannel
- */
-class DbChannel : public DbEntry {
- public:
-  uint32_t number;
-  uint32_t cardId;
-  std::string name;
-
-  DbChannel();
-  friend std::ostream & operator<<(std::ostream &os, DbChannel * const channel);
-};
-
-typedef boost::shared_ptr<DbChannel> DbChannelPtr;
-typedef std::map<uint32_t, DbChannelPtr> DbChannelMap;
-typedef boost::shared_ptr<DbChannelMap> DbChannelMapPtr;
-
-/**
  * DbDeviceState YAML class
  */
 class DbDeviceState : public DbEntry {
@@ -150,6 +133,98 @@ class DbApplicationCardInput {
 };
 
 /**
+ * DbAnalogChannel YAML class
+ */
+class DbAnalogChannel : public DbEntry, public DbApplicationCardInput {
+ public:
+  float offset;
+  float slope;
+  std::string egu;
+  uint32_t integrator;
+  uint32_t gain_bay;
+  uint32_t gain_channel;
+  uint32_t number;
+  std::string name;
+  float z_location;
+  uint32_t auto_reset;
+  uint32_t evaluation;
+  uint32_t cardId; // FK to DbApplicationCard
+
+  // Pointer to the application card type the channel is connected to
+  DbApplicationTypePtr appType;
+
+  // Configured after loading the YAML file
+  // Each bit represents a threshold state from the analog device
+  // Analog devices: 1 byte (only one integration window)
+  // BPM devices: 3 bytes (X, Y, TMIT thresholds)
+  // BLM devices: 4 bytes (one byte for each integration window)
+  int32_t value;
+  int32_t previousValue;
+
+  // Latched value
+  uint32_t latchedValue;
+
+  // Count 'was high'=0 & 'was low'=0
+  uint32_t invalidValueCount;
+
+  // Faults from this devices are bypassed when ignored==true
+  bool ignored;
+  bool faultedOffline; //true when app card has app timeout
+  bool modeActive; //true when SC mode, false when NC mode
+
+
+  // Faults from the integrators from this device are bypassed when ignored[integrator]==true
+  bool ignoredIntegrator[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
+
+  // Number of analog channels in the same card - this information
+  // comes from the ApplicationCard type (from the cardId attribute),
+  // and it is filled out when the database is loaded and configured
+  uint32_t numChannelsCard;
+
+  // Array of pointer to bypasses, one for each threshold (max of 32 thresholds).
+  // The bypasses are managed by the BypassManager class, when a bypass is added or
+  // expires the bypassMask for the AnalogChannel is updated.
+  InputBypassPtr bypass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
+
+  // Bypass mask composed from all active threshold bypasses. This value gets updated
+  // whenever a threshold bypass becomes valid or expires. The BypassManager changes this
+  // mask directly. The Engine always does a bitwise AND between this mask and the value read
+  // from firmware. If a threshold is bypassed the bypassMask is 0 at the threshold position,
+  // and 1 otherwise.
+  uint32_t bypassMask;
+
+  /**
+   * These fields get populated when the database is loaded, they are
+   * used to configure the central node firmware with fast fault
+   * information.
+   */
+  // 16-bit beam destination mask for fast digital devices/faults
+  // there is a destination mask per integrator.
+  uint16_t fastDestinationMask[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
+
+  // For each fastDestinationMask there are 8 sets of power classes -
+  // one per each threshold.
+  // 4-bit encoded max beam power class for each integrator threshold
+  // 4 integrators max, each with size of 8-bits - total of 32 elements
+  uint16_t fastPowerClass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
+  uint16_t fastPowerClassInit[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
+
+  DbAnalogChannel();
+
+  uint32_t unlatch(uint32_t mask);
+  void update(uint32_t v);
+  void update();
+
+  //  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
+
+  friend std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChannel);
+};
+
+typedef boost::shared_ptr<DbAnalogChannel> DbAnalogChannelPtr;
+typedef std::map<uint32_t, DbAnalogChannelPtr> DbAnalogChannelMap;
+typedef boost::shared_ptr<DbAnalogChannelMap> DbAnalogChannelMapPtr;
+
+/**
  * DbDeviceType YAML class
  */
 class DbDeviceType : public DbEntry {
@@ -166,6 +241,39 @@ class DbDeviceType : public DbEntry {
 typedef boost::shared_ptr<DbDeviceType> DbDeviceTypePtr;
 typedef std::map<uint32_t, DbDeviceTypePtr> DbDeviceTypeMap;
 typedef boost::shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
+
+/**
+ * DbChannel class for DbDigitalChannel and DbAnalogChannel
+ */
+class DbChannel : public DbEntry {
+ public:
+  uint32_t number;
+  uint32_t cardId;
+  std::string name;
+
+  DbChannel();
+  friend std::ostream & operator<<(std::ostream &os, DbChannel * const channel);
+};
+
+typedef boost::shared_ptr<DbChannel> DbChannelPtr;
+typedef std::map<uint32_t, DbChannelPtr> DbChannelMap;
+typedef boost::shared_ptr<DbChannelMap> DbChannelMapPtr;
+
+/**
+ * DbMitigation YAML class
+ */
+class DbMitigation : public DbEntry {
+ public:
+  uint32_t beam_destination_id;
+  uint32_t beam_class_id;
+
+  DbMitigation();
+  friend std::ostream & operator<<(std::ostream &os, DbMitigation * const mitigation);
+};
+
+typedef boost::shared_ptr<DbMitigation> DbMitigationPtr;
+typedef std::map<uint32_t, DbMitigationPtr> DbMitigationMap;
+typedef boost::shared_ptr<DbMitigationMap> DbMitigationMapPtr;
 
 /**
  * DbDeviceInput YAML class
@@ -194,7 +302,7 @@ class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
   InputBypassPtr bypass;
 
   // Pointer to the Channel connected to the device
-  DbChannelPtr channel;
+  DbChannelPtr channel; //TODO - Will delete this whole class eventually
 
   // Set true if this input is used by a fast evaluated device (must be the only input to device)
   bool fastEvaluation;
@@ -221,24 +329,31 @@ typedef std::map<uint32_t, DbFaultStatePtr> DbFaultStateMap;
 typedef boost::shared_ptr<DbFaultStateMap> DbFaultStateMapPtr;
 
 /**
- * DbDigitalDevice YAML class
+ * DbDigitalChannel YAML class
  */
-class DbDigitalDevice : public DbEntry {
+class DbDigitalChannel : public DbEntry {
  public:
-  uint32_t deviceTypeId;
-  uint32_t value; // calculated from the DeviceInputs for this device
+  std::string z_name;
+  std::string o_name;
+  std::string monitored_pv;
+  uint32_t debounce;
+  uint32_t alarm_state;
+  uint32_t number; // Channel number
   std::string name;
-  std::string description;
+  float z_location;
+  uint32_t auto_reset;
   uint32_t evaluation;
-  uint32_t cardId; // Application Card ID
+  uint32_t cardId;
+
+  uint32_t value; // calculated from the DeviceInputs for this device
+
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
   bool faultedOffline; //true when app card has app timeout
   bool modeActive; //true when SC mode, false when NC mode
 
+  // TODO - Possibly implement fault inputs here instead
   DbDeviceInputMapPtr inputDevices; // list built after the config is loaded
-
-  DbDeviceTypePtr deviceType;
 
   /**
    * These fields get populated when the database is loaded, they are
@@ -256,108 +371,18 @@ class DbDigitalDevice : public DbEntry {
   // the firmware will apply the fastPowerClass/fastDestinationMask
   uint8_t fastExpectedState;
 
-  DbDigitalDevice();
+  DbDigitalChannel();
 
   void update(uint32_t v) {
     value = v;
   }
 
-  friend std::ostream & operator<<(std::ostream &os, DbDigitalDevice * const digitalDevice);
+  friend std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const channel);
 };
 
-typedef boost::shared_ptr<DbDigitalDevice> DbDigitalDevicePtr;
-typedef std::map<uint32_t, DbDigitalDevicePtr> DbDigitalDeviceMap;
-typedef boost::shared_ptr<DbDigitalDeviceMap> DbDigitalDeviceMapPtr;
-
-
-/**
- * DbAnalogDevice YAML class
- */
-class DbAnalogDevice : public DbEntry, public DbApplicationCardInput {
- public:
-  uint32_t deviceTypeId;
-  uint32_t channelId;
-  std::string name;
-  std::string description;
-  uint32_t evaluation;
-  uint32_t cardId; // Application Card ID
-
-  // Configured after loading the YAML file
-  // Each bit represents a threshold state from the analog device
-  // Analog devices: 1 byte (only one integration window)
-  // BPM devices: 3 bytes (X, Y, TMIT thresholds)
-  // BLM devices: 4 bytes (one byte for each integration window)
-  int32_t value;
-  int32_t previousValue;
-
-  // Latched value
-  uint32_t latchedValue;
-
-  // Count 'was high'=0 & 'was low'=0
-  uint32_t invalidValueCount;
-
-  // Faults from this devices are bypassed when ignored==true
-  bool ignored;
-  bool faultedOffline; //true when app card has app timeout
-  bool modeActive; //true when SC mode, false when NC mode
-
-
-  // Faults from the integrators from this device are bypassed when ignored[integrator]==true
-  bool ignoredIntegrator[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
-
-  DbDeviceTypePtr deviceType;
-
-  // Number of analog channels in the same card - this information
-  // comes from the ApplicationCard type (from the cardId attribute),
-  // and it is filled out when the database is loaded and configured
-  uint32_t numChannelsCard;
-
-  // Pointer to the Channel connected to the device
-  DbChannelPtr channel;
-
-  // Array of pointer to bypasses, one for each threshold (max of 32 thresholds).
-  // The bypasses are managed by the BypassManager class, when a bypass is added or
-  // expires the bypassMask for the AnalogDevice is updated.
-  InputBypassPtr bypass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
-
-  // Bypass mask composed from all active threshold bypasses. This value gets updated
-  // whenever a threshold bypass becomes valid or expires. The BypassManager changes this
-  // mask directly. The Engine always does a bitwise AND between this mask and the value read
-  // from firmware. If a threshold is bypassed the bypassMask is 0 at the threshold position,
-  // and 1 otherwise.
-  uint32_t bypassMask;
-
-  /**
-   * These fields get populated when the database is loaded, they are
-   * used to configure the central node firmware with fast fault
-   * information.
-   */
-  // 16-bit beam destination mask for fast digital devices/faults
-  // there is a destination mask per integrator.
-  uint16_t fastDestinationMask[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
-
-  // For each fastDestinationMask there are 8 sets of power classes -
-  // one per each threshold.
-  // 4-bit encoded max beam power class for each integrator threshold
-  // 4 integrators max, each with size of 8-bits - total of 32 elements
-  uint16_t fastPowerClass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
-  uint16_t fastPowerClassInit[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL * ANALOG_CHANNEL_INTEGRATORS_SIZE];
-
-  DbAnalogDevice();
-
-  uint32_t unlatch(uint32_t mask);
-  void update(uint32_t v);
-  void update();
-
-  //  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
-
-  friend std::ostream & operator<<(std::ostream &os, DbAnalogDevice * const analogDevice);
-};
-
-typedef boost::shared_ptr<DbAnalogDevice> DbAnalogDevicePtr;
-typedef std::map<uint32_t, DbAnalogDevicePtr> DbAnalogDeviceMap;
-typedef boost::shared_ptr<DbAnalogDeviceMap> DbAnalogDeviceMapPtr;
-
+typedef boost::shared_ptr<DbDigitalChannel> DbDigitalChannelPtr;
+typedef std::map<uint32_t, DbDigitalChannelPtr> DbDigitalChannelMap;
+typedef boost::shared_ptr<DbDigitalChannelMap> DbDigitalChannelMapPtr;
 
 /**
  * DbApplicationCard YAML class
@@ -368,10 +393,10 @@ class DbApplicationCard : public DbEntry {
   uint32_t slotNumber;
   uint32_t crateId;
   uint32_t applicationTypeId;
-  // Unique application ID, identifies the card were digital/analog signas are coming from
-  uint32_t globalId;
-  std::string name;
-  std::string description;
+  uint32_t globalId; // TODO - Remove this attribute later once confirmed what to do with globalId logic
+
+  // Configured after loading the YAML file
+  
   bool online; // True if received non-zero update last 360Hz update period
   bool modeActive; // True when in SC mode, false when in NC mode.
   bool hasInputs; //True if number of inputs > 0
@@ -394,8 +419,8 @@ class DbApplicationCard : public DbEntry {
   // Only the devices that have 'fast' evaluation need
   // to be in this list - these maps are used to configure
   // the firmware logic
-  DbAnalogDeviceMapPtr analogDevices;
-  DbDigitalDeviceMapPtr digitalDevices;
+  DbAnalogChannelMapPtr analogChannels;
+  DbDigitalChannelMapPtr digitalChannels;
 
   void setUpdateBufferPtr(std::vector<uint8_t>* p);
   ApplicationUpdateBufferBitSetHalf* getWasLowBuffer();
@@ -437,15 +462,15 @@ class DbFaultInput : public DbEntry {
  public:
   // Values loaded from YAML file
   uint32_t faultId;
-  uint32_t deviceId; // DbDigitalDevice or DbAnalogDevice
+  uint32_t channelId; // DbDigitalChannel or DbAnalogChannel
   uint32_t bitPosition;
 
   // Values calculated at run time
   uint32_t value; // Fault value calculated from the DeviceInputs
 
-  // A fault input may come from a digital device or analog device threshold fault bits
-  DbAnalogDevicePtr analogDevice;
-  DbDigitalDevicePtr digitalDevice;
+  // A fault input may come from a digital channel or analog channel threshold fault bits
+  DbAnalogChannelPtr analogChannel;
+  DbDigitalChannelPtr digitalChannel;
 
   DbFaultInput();
 
@@ -685,27 +710,30 @@ typedef boost::shared_ptr<DbConditionInput> DbConditionInputPtr;
 typedef std::map<uint32_t, DbConditionInputPtr> DbConditionInputMap;
 typedef boost::shared_ptr<DbConditionInputMap> DbConditionInputMapPtr;
 
-
 /**
  * DbIgnoreCondition YAML class
  */
 class DbIgnoreCondition : public DbEntry {
  public:
-  static const uint32_t INVALID_ID = 0xFFFFFFFF;
+  std::string name;
+  std::string description;
+  uint32_t value;
+  uint32_t digitalChannelId;
 
-  uint32_t conditionId;
-  uint32_t faultStateId;
-  uint32_t deviceId;
+  bool state; // State is true when condition is met
+  DbFaultMapPtr faults; // Ignore conditions can have >=1 faults
 
+  // TODO - See if you need these extra fields
   // The ignore condition can be used to ignore a fault state or an analog device
   // The analog device is used to disable a device when beam is blocked upstream, causing
   // faults from no beam
-  DbFaultStatePtr faultState;
-  DbAnalogDevicePtr analogDevice;
-  DbDigitalDevicePtr digitalDevice;
+  // DbFaultStatePtr faultState;
+  // DbAnalogChannelPtr analogChannel;
+  // DbDigitalChannelPtr digitalChannel;
+  // static const uint32_t INVALID_ID = 0xFFFFFFFF;
 
   DbIgnoreCondition();
-  friend std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const input);
+  friend std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const ignoreCondition);
 };
 
 typedef boost::shared_ptr<DbIgnoreCondition> DbIgnoreConditionPtr;

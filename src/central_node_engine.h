@@ -118,7 +118,7 @@ private:
     DbBeamClassPtr _highestBeamClass;
     DbBeamClassPtr _lowestBeamClass;
 
-    DbDigitalDevicePtr _shutterDevice; // Needed to monitor shutter closed status
+    DbDigitalChannelPtr _shutterDevice; // Needed to monitor shutter closed status
     uint32_t _shutterClosedStatus; // Current shutter closed status
     bool _linacFwLatch; // Latches in SW if the FW is latched during config reloads
     uint32_t _reloadCount; // Counts the number of FW config reloads (after ignore and AOM enable)

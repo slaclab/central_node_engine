@@ -228,12 +228,15 @@ class BypassTest {
 	  return 1;
 	}
 	*/
-	try {
-	  Engine::getInstance()._mpsDb->analogDevices->at(deviceId)->update(analogValue);
-	} catch (std::exception &e) {
-	  std::cerr << "Bad deviceId " << deviceId << "." << std::endl;
-	  exit(-1);
-	}
+
+// TODO - Temporarily commented out entire function until ready to deal with logic
+
+	// try {
+	//   Engine::getInstance()._mpsDb->analogDevices->at(deviceId)->update(analogValue);
+	// } catch (std::exception &e) {
+	//   std::cerr << "Bad deviceId " << deviceId << "." << std::endl;
+	//   exit(-1);
+	// }
       }
     }
 
