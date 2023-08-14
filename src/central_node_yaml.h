@@ -286,7 +286,7 @@ namespace YAML {
 					digitalChannel->alarm_state = (*it)[field].as<unsigned int>();
 
 					field = "number";
-					digitalChannel->alarm_state = (*it)[field].as<unsigned int>();
+					digitalChannel->number = (*it)[field].as<unsigned int>();
 
 					field = "name";
 					digitalChannel->name = (*it)[field].as<std::string>();
@@ -399,6 +399,8 @@ namespace YAML {
 
 					field = "card_id";
 					analogChannel->cardId = (*it)[field].as<unsigned int>();
+					// Initial Values
+					analogChannel->ignored = false;
 					analogChannel->value = 0;
 					analogChannel->bypassMask = 0xFFFFFFFF;
 
@@ -830,51 +832,66 @@ namespace YAML {
     }
   };
 
-  /**
+/**
    * Fault:
-   * - description: None
-   *   id: '1'
-   *   name: OTR Fault
+   * id: 2
+   * ignore_conditions:
+   * - 1
+   * - 2
+   * name: SOL2B (SOLN:GUNB:823) Temperature Interlock
+   * pv: TEMP_PERMIT
    */
   template<>
     struct convert<DbFaultMapPtr> {
-    static bool decode(const Node &node, DbFaultMapPtr &rhs) {
-      DbFaultMap *faults = new DbFaultMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbFaultMapPtr(faults);
+		static bool decode(const Node &node, DbFaultMapPtr &rhs) {
+			DbFaultMap *faults = new DbFaultMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbFaultMapPtr(faults);
 
-      for (YAML::Node::const_iterator it = node["Fault"].begin();
-	   it != node["Fault"].end(); ++it) {
-	DbFault *fault = new DbFault();
+			for (YAML::Node::const_iterator it = node["Fault"].begin();
+				it != node["Fault"].end(); ++it) {
+				DbFault *fault = new DbFault();
 
-	try {
-	  field = "id";
-	  fault->id = (*it)[field].as<unsigned int>();
+			try {
+				field = "id";
+				fault->id = (*it)[field].as<unsigned int>();
 
-	  field = "name";
-	  fault->name = (*it)[field].as<std::string>();
+				field = "name";
+				fault->name = (*it)[field].as<std::string>();
 
-	  field = "description";
-	  fault->description = (*it)[field].as<std::string>();
-	  fault->value = 0;
-  	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for Fault.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected string).";
-	  throw(DbException(errorStream.str()));
-	}
+				field = "pv";
+				fault->pv = (*it)[field].as<std::string>();
+				fault->value = 0;
 
-	rhs->insert(std::pair<int, DbFaultPtr>(fault->id, DbFaultPtr(fault)));
-      }
+				// Parse ignore_conditions as a vector since a fault can have >=1 ignore conditions
+				YAML::Node ignoreConditionNode = (*it)["ignore_conditions"];
+				if (ignoreConditionNode) {
+					std::vector<unsigned int> ignoreConditionIds;
+					for (YAML::Node::const_iterator ignoreConditionIt = ignoreConditionNode.begin();
+						ignoreConditionIt != ignoreConditionNode.end(); ++ignoreConditionIt) {
+						ignoreConditionIds.push_back((*ignoreConditionIt).as<unsigned int>());
+					}
+					fault->ignoreConditionIds = ignoreConditionIds;
+				}
 
-      return true;
-    }
-  };
+			} catch(YAML::InvalidNode &e) {
+				errorStream << "ERROR: Failed to find field " << field << " for Fault.";
+				throw(DbException(errorStream.str()));
+			} catch(YAML::TypedBadConversion<unsigned int> &e) {
+				errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected unsigned int).";
+				throw(DbException(errorStream.str()));
+			} catch(YAML::TypedBadConversion<std::string> &e) {
+				errorStream << "ERROR: Failed to convert contents of field " << field << " for Fault (expected string).";
+				throw(DbException(errorStream.str()));
+			}
+
+			rhs->insert(std::pair<int, DbFaultPtr>(fault->id, DbFaultPtr(fault)));
+			}
+
+			return true;
+		}
+  	};
 
   /**
    * FaultInput:
@@ -927,53 +944,80 @@ namespace YAML {
 
   /**
    * FaultState:
-   * - fault_id: '1'
-   *   id: '1'
-   *   name: Out
-   *   value: '1'
+   * default: false
+   * id: 1
+   * mask: 4294967295
+   * mitigations:
+   * - 2
+   * - 3
+   * - 4
+   * name: Is Faulted
+   * value: 0
+   * fault_id: 1
    */
   template<>
     struct convert<DbFaultStateMapPtr> {
-    static bool decode(const Node &node, DbFaultStateMapPtr &rhs) {
-      DbFaultStateMap *faultStates = new DbFaultStateMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbFaultStateMapPtr(faultStates);
+		static bool decode(const Node &node, DbFaultStateMapPtr &rhs) {
+			DbFaultStateMap *faultStates = new DbFaultStateMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbFaultStateMapPtr(faultStates);
 
-      for (YAML::Node::const_iterator it = node["FaultState"].begin();
-	   it != node["FaultState"].end(); ++it) {
-	DbFaultState *faultState = new DbFaultState();
+			for (YAML::Node::const_iterator it = node["FaultState"].begin();
+				it != node["FaultState"].end(); ++it) {
+				DbFaultState *faultState = new DbFaultState();
 
-	try {
-	  field = "id";
-	  faultState->id = (*it)[field].as<unsigned int>();
+				try {
+					field = "id";
+					faultState->id = (*it)[field].as<unsigned int>();
 
-	  field = "fault_id";
-	  faultState->faultId = (*it)[field].as<unsigned int>();
+					field = "mask";
+					faultState->mask = (*it)[field].as<unsigned int>();
 
-	  field = "device_state_id";
-	  faultState->deviceStateId = (*it)[field].as<unsigned int>();
+					field = "name";
+					faultState->name = (*it)[field].as<std::string>();
 
-	  field = "default";
-	  faultState->defaultState = (*it)[field].as<bool>();
-  	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for FaultState.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<bool> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected bool).";
-	  throw(DbException(errorStream.str()));
-	}
+					field = "value";
+					faultState->value = (*it)[field].as<unsigned int>();
 
-	rhs->insert(std::pair<int, DbFaultStatePtr>(faultState->id,
-						    DbFaultStatePtr(faultState)));
-      }
+					field = "fault_id";
+					faultState->faultId = (*it)[field].as<unsigned int>();
 
-      return true;
-    }
-  };
+					field = "default";
+					faultState->defaultState = (*it)[field].as<bool>();
+
+					// Parse mitigations as a vector since a faultState can have >=1 mitigations
+					YAML::Node mitigationNode = (*it)["mitigations"];
+					if (mitigationNode) {
+						std::vector<unsigned int> mitigationIds;
+						for (YAML::Node::const_iterator mitigationIt = mitigationNode.begin();
+							mitigationIt != mitigationNode.end(); ++mitigationIt) {
+							mitigationIds.push_back((*mitigationIt).as<unsigned int>());
+						}
+						faultState->mitigationIds = mitigationIds;
+					}
+
+				} catch(YAML::InvalidNode &e) {
+					errorStream << "ERROR: Failed to find field " << field << " for FaultState.";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<unsigned int> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected unsigned int).";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<std::string> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected string).";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<bool> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for FaultState (expected bool).";
+					throw(DbException(errorStream.str()));
+				}
+
+				rhs->insert(std::pair<int, DbFaultStatePtr>(faultState->id,
+										DbFaultStatePtr(faultState)));
+			}
+
+			return true;
+		}
+  	};
 
 	/**
 	 * BeamDestination:

@@ -630,7 +630,7 @@ void MpsDb::configureFaultInputs()
         {
             errorStream << "ERROR: Missing faultInputs map for Fault \""
                 << (*faultIt).second->name << "\": "
-                << (*faultIt).second->description;
+                << (*faultIt).second->pv;
             throw(DbException(errorStream.str()));
         }
 
@@ -660,66 +660,68 @@ void MpsDb::configureFaultInputs()
 
 void MpsDb::configureFaultStates()
 {
-    LOG_TRACE("DATABASE", "Configure: FaultStates");
-    std::stringstream errorStream;
-    // Assign all FaultStates to a Fault, and also
-    // find the DeviceState and save a reference in the FaultState
-    for (DbFaultStateMap::iterator it = faultStates->begin();
-        it != faultStates->end();
-        ++it)
-    {
-        int id = (*it).second->faultId;
+// TODO - Temporarily commented out until ready to deal with logic
 
-        DbFaultMap::iterator faultIt = faults->find(id);
-        if (faultIt == faults->end())
-        {
-            errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
-                << id << ") for FaultState (" << (*it).second->id << ")";
-            throw(DbException(errorStream.str()));
-        }
+    // LOG_TRACE("DATABASE", "Configure: FaultStates");
+    // std::stringstream errorStream;
+    // // Assign all FaultStates to a Fault, and also
+    // // find the DeviceState and save a reference in the FaultState
+    // for (DbFaultStateMap::iterator it = faultStates->begin();
+    //     it != faultStates->end();
+    //     ++it)
+    // {
+    //     int id = (*it).second->faultId;
 
-        // Create a map to hold faultInputs for the fault
-        if (!(*faultIt).second->faultStates)
-        {
-            DbFaultStateMap *digFaultStates = new DbFaultStateMap();
-            (*faultIt).second->faultStates = DbFaultStateMapPtr(digFaultStates);
-        }
-        (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
-            (*it).second));
-        LOG_TRACE("DATABASE", "Adding FaultState (" << (*it).second->id << ") to "
-            " Fault (" << (*faultIt).second->id << ", " << (*faultIt).second->name
-            << ", " << (*faultIt).second->description << ")");
+    //     DbFaultMap::iterator faultIt = faults->find(id);
+    //     if (faultIt == faults->end())
+    //     {
+    //         errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
+    //             << id << ") for FaultState (" << (*it).second->id << ")";
+    //         throw(DbException(errorStream.str()));
+    //     }
 
-        // If this DigitalFault is the default, then assign it to the fault:
-        if ((*it).second->defaultState && !((*faultIt).second->defaultFaultState))
-            (*faultIt).second->defaultFaultState = (*it).second;
+    //     // Create a map to hold faultInputs for the fault
+    //     if (!(*faultIt).second->faultStates)
+    //     {
+    //         DbFaultStateMap *digFaultStates = new DbFaultStateMap();
+    //         (*faultIt).second->faultStates = DbFaultStateMapPtr(digFaultStates);
+    //     }
+    //     (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
+    //         (*it).second));
+    //     LOG_TRACE("DATABASE", "Adding FaultState (" << (*it).second->id << ") to "
+    //         " Fault (" << (*faultIt).second->id << ", " << (*faultIt).second->name
+    //         << ", " << (*faultIt).second->description << ")");
 
-        // DeviceState
-        id = (*it).second->deviceStateId;
-        DbDeviceStateMap::iterator deviceStateIt = deviceStates->find(id);
-        if (deviceStateIt == deviceStates->end())
-        {
-            errorStream << "ERROR: Failed to configure database, invalid ID found for DeviceState ("
-                << id << ") for FaultState (" << (*it).second->id << ")";
-            throw(DbException(errorStream.str()));
-        }
-        (*it).second->deviceState = (*deviceStateIt).second;
-    }
+    //     // If this DigitalFault is the default, then assign it to the fault:
+    //     if ((*it).second->defaultState && !((*faultIt).second->defaultFaultState))
+    //         (*faultIt).second->defaultFaultState = (*it).second;
 
-    // After assigning all FaultStates to Faults, check if all Faults
-    // do have FaultStates
-    for (DbFaultMap::iterator fault = faults->begin();
-        fault != faults->end();
-        ++fault)
-    {
-        if (!(*fault).second->faultStates)
-        {
-            errorStream << "ERROR: Fault " << (*fault).second->name << " ("
-                << (*fault).second->description << ", id="
-                << (*fault).second->id << ") has no FaultStates";
-            throw(DbException(errorStream.str()));
-        }
-    }
+    //     // DeviceState
+    //     id = (*it).second->deviceStateId;
+    //     DbDeviceStateMap::iterator deviceStateIt = deviceStates->find(id);
+    //     if (deviceStateIt == deviceStates->end())
+    //     {
+    //         errorStream << "ERROR: Failed to configure database, invalid ID found for DeviceState ("
+    //             << id << ") for FaultState (" << (*it).second->id << ")";
+    //         throw(DbException(errorStream.str()));
+    //     }
+    //     (*it).second->deviceState = (*deviceStateIt).second;
+    // }
+
+    // // After assigning all FaultStates to Faults, check if all Faults
+    // // do have FaultStates
+    // for (DbFaultMap::iterator fault = faults->begin();
+    //     fault != faults->end();
+    //     ++fault)
+    // {
+    //     if (!(*fault).second->faultStates)
+    //     {
+    //         errorStream << "ERROR: Fault " << (*fault).second->name << " ("
+    //             << (*fault).second->pv << ", id="
+    //             << (*fault).second->id << ") has no FaultStates";
+    //         throw(DbException(errorStream.str()));
+    //     }
+    // }
 }
 
 /* Assign the corresponding application card type to the analog channel */
@@ -1071,15 +1073,15 @@ void MpsDb::clearMitigationBuffer()
  */
 void MpsDb::configure()
 {
-    configureAllowedClasses();
+    // configureAllowedClasses();
     // configureDeviceTypes(); Temporarily commented out, TODO - See if this is still needed for new schema
     // configureDeviceInputs(); Temporarily commented out, TODO - See if this is still needed for new schema
-    configureFaultStates();
-    configureAnalogChannels();
-    configureFaultInputs();
+    // configureFaultStates();
+    // configureAnalogChannels();
+    // configureFaultInputs();
     // configureIgnoreConditions(); Temporarily commented out, TODO - update to new schema
-    configureApplicationCards();
-    configureBeamDestinations();
+    // configureApplicationCards();
+    // configureBeamDestinations();
 }
 
 void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId)
@@ -1620,20 +1622,11 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb)
     mpsDb->printMap<DbApplicationCardMapPtr, DbApplicationCardMap::iterator>
         (os, mpsDb->applicationCards, "ApplicationCard");
 
-    mpsDb->printMap<DbDigitalChannelMapPtr, DbDigitalChannelMap::iterator>
-        (os, mpsDb->digitalChannels, "DigitalChannel");
+    mpsDb->printMap<DbBeamDestinationMapPtr, DbBeamDestinationMap::iterator>
+        (os, mpsDb->beamDestinations, "BeamDestination");
 
-    mpsDb->printMap<DbAnalogChannelMapPtr, DbAnalogChannelMap::iterator>
-        (os, mpsDb->analogChannels, "AnalogChannel");
-
-    mpsDb->printMap<DbDeviceTypeMapPtr, DbDeviceTypeMap::iterator>
-        (os, mpsDb->deviceTypes, "DeviceType");
-
-    mpsDb->printMap<DbDeviceStateMapPtr, DbDeviceStateMap::iterator>
-        (os, mpsDb->deviceStates, "DeviceState");
-
-    mpsDb->printMap<DbDeviceInputMapPtr, DbDeviceInputMap::iterator>
-        (os, mpsDb->deviceInputs, "DeviceInput");
+    mpsDb->printMap<DbBeamClassMapPtr, DbBeamClassMap::iterator>
+        (os, mpsDb->beamClasses, "BeamClass");
 
     mpsDb->printMap<DbFaultMapPtr, DbFaultMap::iterator>
         (os, mpsDb->faults, "Fault");
@@ -1644,23 +1637,40 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb)
     mpsDb->printMap<DbFaultStateMapPtr, DbFaultStateMap::iterator>
         (os, mpsDb->faultStates, "FaultState");
 
-    mpsDb->printMap<DbBeamDestinationMapPtr, DbBeamDestinationMap::iterator>
-        (os, mpsDb->beamDestinations, "BeamDestination");
-
-    mpsDb->printMap<DbBeamClassMapPtr, DbBeamClassMap::iterator>
-        (os, mpsDb->beamClasses, "BeamClass");
-
-    mpsDb->printMap<DbAllowedClassMapPtr, DbAllowedClassMap::iterator>
-        (os, mpsDb->allowedClasses, "AllowedClass");
-
-    mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>
-        (os, mpsDb->conditions, "Conditions");
-
-    mpsDb->printMap<DbConditionInputMapPtr, DbConditionInputMap::iterator>
-        (os, mpsDb->conditionInputs, "ConditionInputs");
-
     mpsDb->printMap<DbIgnoreConditionMapPtr, DbIgnoreConditionMap::iterator>
         (os, mpsDb->ignoreConditions, "IgnoreConditions");
+
+    mpsDb->printMap<DbMitigationMapPtr, DbMitigationMap::iterator>
+        (os, mpsDb->mitigations, "Mitigations");
+
+    mpsDb->printMap<DbDigitalChannelMapPtr, DbDigitalChannelMap::iterator>
+        (os, mpsDb->digitalChannels, "DigitalChannel");
+
+    mpsDb->printMap<DbAnalogChannelMapPtr, DbAnalogChannelMap::iterator>
+        (os, mpsDb->analogChannels, "AnalogChannel");
+
+
+    // TODO - Temporarily commented out, will delete once confirmed not needed
+    // mpsDb->printMap<DbDeviceTypeMapPtr, DbDeviceTypeMap::iterator>
+    //     (os, mpsDb->deviceTypes, "DeviceType");
+
+    // mpsDb->printMap<DbDeviceStateMapPtr, DbDeviceStateMap::iterator>
+    //     (os, mpsDb->deviceStates, "DeviceState");
+
+    // mpsDb->printMap<DbDeviceInputMapPtr, DbDeviceInputMap::iterator>
+    //     (os, mpsDb->deviceInputs, "DeviceInput");
+
+    // TODO - Temporarily commented out, will delete once confirmed not needed
+    // mpsDb->printMap<DbAllowedClassMapPtr, DbAllowedClassMap::iterator>
+    //     (os, mpsDb->allowedClasses, "AllowedClass");
+
+    // mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>
+    //     (os, mpsDb->conditions, "Conditions");
+
+    // mpsDb->printMap<DbConditionInputMapPtr, DbConditionInputMap::iterator>
+    //     (os, mpsDb->conditionInputs, "ConditionInputs");
+
+
 
     return os;
 }

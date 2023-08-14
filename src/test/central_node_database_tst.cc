@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
       std::cerr << e.what() << std::endl;
       return -1;
     }
-    std::cout << "Database YAML sucessfully loaded and configured, double check the dump.txt if contains all data" << std::endl;
+    std::cout << "Database YAML loaded and configured (may have errors), double check the dump.txt if contains all data" << std::endl;
     if (dump) {
       // std::cout << mpsDb << std::endl;
       std::ofstream myfile;
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     // printMap<DbDigitalDeviceMapPtr, DbDigitalDeviceMap::iterator>
     // (std::cout, digitalDevices, "DigitalDevice");
 
-  std::cout << "Done." << std::endl;
+  std::cout << "Fully Done with no errors (unless you commented them out). Ignore std::system_error. " << std::endl;
   /*
   Configurations c;
   //  c.set(Level::All,  ConfigurationType::Enabled, "false");

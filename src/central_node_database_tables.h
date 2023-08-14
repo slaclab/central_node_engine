@@ -260,22 +260,6 @@ typedef std::map<uint32_t, DbChannelPtr> DbChannelMap;
 typedef boost::shared_ptr<DbChannelMap> DbChannelMapPtr;
 
 /**
- * DbMitigation YAML class
- */
-class DbMitigation : public DbEntry {
- public:
-  uint32_t beam_destination_id;
-  uint32_t beam_class_id;
-
-  DbMitigation();
-  friend std::ostream & operator<<(std::ostream &os, DbMitigation * const mitigation);
-};
-
-typedef boost::shared_ptr<DbMitigation> DbMitigationPtr;
-typedef std::map<uint32_t, DbMitigationPtr> DbMitigationMap;
-typedef boost::shared_ptr<DbMitigationMap> DbMitigationMapPtr;
-
-/**
  * DbDeviceInput YAML class
  */
 class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
@@ -626,16 +610,38 @@ typedef boost::shared_ptr<DbAllowedClass> DbAllowedClassPtr;
 typedef std::map<uint32_t, DbAllowedClassPtr> DbAllowedClassMap;
 typedef boost::shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
 
+/**
+ * DbMitigation YAML class
+ */
+class DbMitigation : public DbEntry {
+ public:
+  uint32_t beam_destination_id;
+  uint32_t beam_class_id;
+
+  // Configured after loading the YAML file
+  DbBeamClassPtr beamClass;
+  DbBeamDestinationPtr beamDestination;
+
+  DbMitigation();
+  friend std::ostream & operator<<(std::ostream &os, DbMitigation * const mitigation);
+};
+
+typedef boost::shared_ptr<DbMitigation> DbMitigationPtr;
+typedef std::map<uint32_t, DbMitigationPtr> DbMitigationMap;
+typedef boost::shared_ptr<DbMitigationMap> DbMitigationMapPtr;
+
 
 /**
  * DbFaultState YAML class
  */
 class DbFaultState : public DbEntry {
  public:
-  uint32_t faultId;
-  uint32_t deviceStateId;
   bool defaultState;
-  //  uint32_t value;
+  uint32_t mask;
+  std::vector<unsigned int> mitigationIds;
+  std::string name;
+  uint32_t value;
+  uint32_t faultId;
 
   // Configured/Used after loading the YAML file
   bool faulted; // Evaluated based on the status of the deviceState
@@ -647,14 +653,14 @@ class DbFaultState : public DbEntry {
   friend std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault);
 };
 
-
 /**
  * DbFault YAML class (these are digital faults types)
  */
 class DbFault : public DbEntry {
  public:
   std::string name;
-  std::string description;
+  std::string pv;
+  std::vector<unsigned int> ignoreConditionIds;
 
   // Configured after loading the YAML file
   bool faulted;
