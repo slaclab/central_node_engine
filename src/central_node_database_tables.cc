@@ -246,28 +246,26 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
   }
   os << "] : bypassMask=0x" << std::hex << analogChannel->bypassMask << std::dec << " : ";
 
+  if (analogChannel->evaluation == FAST_EVALUATION) {
+    os << "destinationMasks=";
+    uint32_t integratorsPerChannel = analogChannel->appType->num_integrators;
 
-// TODO - Temporarily commented out until FK config is ready
-  // if (analogChannel->evaluation == FAST_EVALUATION) {
-  //   os << "destinationMasks=";
-  //   uint32_t integratorsPerChannel = analogChannel->appType->num_integrators;
-
-  //   for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
-  //     os << std::hex << analogChannel->fastDestinationMask[i];
-  //     if (i < integratorsPerChannel - 1) {
-	//       os << ", ";
-  //     }
-  //     os << std::dec;
-  //   }
-  //   os << std::endl;
-  //   os << "  powerClasses=";
-  //   for (uint32_t i = 0; i < integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
-  //     os << analogChannel->fastPowerClass[i];
-  //     if (i < (integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE) - 1) {
-	//       os << ", ";
-  //     }
-  //   }
-  // }
+    for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
+      os << std::hex << analogChannel->fastDestinationMask[i];
+      if (i < integratorsPerChannel - 1) {
+	      os << ", ";
+      }
+      os << std::dec;
+    }
+    os << std::endl;
+    os << "  powerClasses=";
+    for (uint32_t i = 0; i < integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
+      os << analogChannel->fastPowerClass[i];
+      if (i < (integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE) - 1) {
+	      os << ", ";
+      }
+    }
+  }
 
   return os;
 }
@@ -399,11 +397,9 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
      << "mask[" << digitalFault->mask << "]; "
      << "name[" << digitalFault->name << "]; "
      << "faulted[" << digitalFault->faulted << "]; "
-     << "default[" << digitalFault->defaultState << "]";
-  if (digitalFault->deviceState) {
-    os << ": DeviceState[name=" << digitalFault->deviceState->name
-       << ", value=" << digitalFault->deviceState->value << "]";
-  }
+     << "default[" << digitalFault->defaultState << "]; "
+     << "value[" << digitalFault->value << "]";
+
   if (digitalFault->allowedClasses) {
     os << " : AllowedClasses[";
     unsigned int i = 1;
@@ -468,18 +464,18 @@ std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
     os << " : FaultStates[";
     unsigned int i = 1;
     for (DbFaultStateMap::iterator it = fault->faultStates->begin();
-	 it != fault->faultStates->end(); ++it, ++i) {
-      os << (*it).second->deviceState->name;
-      if (i < fault->faultStates->size()) {
-	os << ", ";
-      }
+	      it != fault->faultStates->end(); ++it, ++i) {
+        os << (*it).second->name;
+        if (i < fault->faultStates->size()) {
+            os << ", ";
+        }
     }
     os << "]";
   }
 
   if (fault->defaultFaultState) {
-    os << " : Defaul["
-       << fault->defaultFaultState->deviceState->name << "]";
+    os << " : Default["
+       << fault->defaultFaultState->name << "]";
   }
 
 // May omit this once these Ids are used to configure the important information

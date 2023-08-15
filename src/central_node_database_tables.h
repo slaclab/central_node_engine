@@ -608,7 +608,6 @@ class DbFaultState : public DbEntry {
   bool faulted; // Evaluated based on the status of the deviceState
   bool ignored; // Fault state is ignored if there are valid ignore conditions
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each beam destination) for this fault states
-  DbDeviceStatePtr deviceState;
 
   DbFaultState();
   friend std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault);

@@ -428,7 +428,7 @@ void MpsDb::configureFaultInputs()
                             // The DbDeviceState value defines which integrator the fault belongs to.
                             // Bits 0 through 7 are for the first integrator, 8 through 15 for the second,
                             // and so on.
-                            uint32_t value = (*faultState).second->deviceState->value;
+                            uint32_t value = (*faultState).second->value;
                             int integratorIndex = 4;
 
                             if (value & 0x000000FF) integratorIndex = 0;
@@ -438,10 +438,9 @@ void MpsDb::configureFaultInputs()
 
                             if (integratorIndex >= 4)
                             {
-                                errorStream << "ERROR: Invalid deviceState value Fault (" << (*faultIt).second->id
-                                    << "), FaultInput (" << (*it).second->id << "), DeviceState ("
-                                    << (*faultState).second->deviceState->id << "), value=0x"
-                                    << std::hex << (*faultState).second->deviceState->value << std::dec;
+                                errorStream << "ERROR: Invalid value Fault (" << (*faultIt).second->id
+                                    << "), FaultInput (" << (*it).second->id << "), value=0x"
+                                    << std::hex << (*faultState).second->value << std::dec;
                                 throw(DbException(errorStream.str()));
                             }
 
@@ -462,8 +461,7 @@ void MpsDb::configureFaultInputs()
                                 if (thresholdIndex >= sizeof(uint32_t) * 8)
                                 {
                                     errorStream << "ERROR: Invalid threshold bit for Fault (" << (*faultIt).second->id
-                                        << "), FaultInput (" << (*it).second->id << "), DeviceState ("
-                                        << (*faultState).second->deviceState->id << ")";
+                                        << "), FaultInput (" << (*it).second->id << ")";
                                     throw(DbException(errorStream.str()));
                                 }
                             }
@@ -548,7 +546,7 @@ void MpsDb::configureFaultInputs()
                     // Set the expected state as the oposite of the expected faulted value
                     // For example a faulted fast valve sets the digital input to high (0V, digital 0),
                     // the expected normal state is 1.
-                    if (!(*faultState).second->deviceState->value)
+                    if (!(*faultState).second->value)
                       (*channelIt).second->fastExpectedState = 1;
 
                     //    DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
@@ -635,68 +633,57 @@ void MpsDb::configureFaultInputs()
 
 void MpsDb::configureFaultStates()
 {
-// TODO - Temporarily commented out until ready to deal with logic
 
-    // LOG_TRACE("DATABASE", "Configure: FaultStates");
-    // std::stringstream errorStream;
-    // // Assign all FaultStates to a Fault, and also
-    // // find the DeviceState and save a reference in the FaultState
-    // for (DbFaultStateMap::iterator it = faultStates->begin();
-    //     it != faultStates->end();
-    //     ++it)
-    // {
-    //     int id = (*it).second->faultId;
+    LOG_TRACE("DATABASE", "Configure: FaultStates");
+    std::stringstream errorStream;
 
-    //     DbFaultMap::iterator faultIt = faults->find(id);
-    //     if (faultIt == faults->end())
-    //     {
-    //         errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
-    //             << id << ") for FaultState (" << (*it).second->id << ")";
-    //         throw(DbException(errorStream.str()));
-    //     }
+    // Assign all FaultStates to a Fault, and also
+    // find the DeviceState and save a reference in the FaultState
+    for (DbFaultStateMap::iterator it = faultStates->begin();
+        it != faultStates->end();
+        ++it)
+    {
+        int id = (*it).second->faultId;
 
-    //     // Create a map to hold faultInputs for the fault
-    //     if (!(*faultIt).second->faultStates)
-    //     {
-    //         DbFaultStateMap *digFaultStates = new DbFaultStateMap();
-    //         (*faultIt).second->faultStates = DbFaultStateMapPtr(digFaultStates);
-    //     }
-    //     (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
-    //         (*it).second));
-    //     LOG_TRACE("DATABASE", "Adding FaultState (" << (*it).second->id << ") to "
-    //         " Fault (" << (*faultIt).second->id << ", " << (*faultIt).second->name
-    //         << ", " << (*faultIt).second->description << ")");
+        DbFaultMap::iterator faultIt = faults->find(id);
+        if (faultIt == faults->end())
+        {
+            errorStream << "ERROR: Failed to configure database, invalid ID found for Fault ("
+                << id << ") for FaultState (" << (*it).second->id << ")";
+            throw(DbException(errorStream.str()));
+        }
 
-    //     // If this DigitalFault is the default, then assign it to the fault:
-    //     if ((*it).second->defaultState && !((*faultIt).second->defaultFaultState))
-    //         (*faultIt).second->defaultFaultState = (*it).second;
+        // Create a map to hold faultInputs for the fault
+        if (!(*faultIt).second->faultStates)
+        {
+            DbFaultStateMap *digFaultStates = new DbFaultStateMap();
+            (*faultIt).second->faultStates = DbFaultStateMapPtr(digFaultStates);
+        }
+        (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
+            (*it).second));
+        LOG_TRACE("DATABASE", "Adding FaultState (" << (*it).second->id << ") to "
+            " Fault (" << (*faultIt).second->id << ", " << (*faultIt).second->name
+            << ", " << (*faultIt).second->description << ")");
 
-    //     // DeviceState
-    //     id = (*it).second->deviceStateId;
-    //     DbDeviceStateMap::iterator deviceStateIt = deviceStates->find(id);
-    //     if (deviceStateIt == deviceStates->end())
-    //     {
-    //         errorStream << "ERROR: Failed to configure database, invalid ID found for DeviceState ("
-    //             << id << ") for FaultState (" << (*it).second->id << ")";
-    //         throw(DbException(errorStream.str()));
-    //     }
-    //     (*it).second->deviceState = (*deviceStateIt).second;
-    // }
+        // If this DigitalFault is the default, then assign it to the fault:
+        if ((*it).second->defaultState && !((*faultIt).second->defaultFaultState))
+            (*faultIt).second->defaultFaultState = (*it).second;
+    }
 
-    // // After assigning all FaultStates to Faults, check if all Faults
-    // // do have FaultStates
-    // for (DbFaultMap::iterator fault = faults->begin();
-    //     fault != faults->end();
-    //     ++fault)
-    // {
-    //     if (!(*fault).second->faultStates)
-    //     {
-    //         errorStream << "ERROR: Fault " << (*fault).second->name << " ("
-    //             << (*fault).second->pv << ", id="
-    //             << (*fault).second->id << ") has no FaultStates";
-    //         throw(DbException(errorStream.str()));
-    //     }
-    // }
+    // After assigning all FaultStates to Faults, check if all Faults
+    // do have FaultStates
+    for (DbFaultMap::iterator fault = faults->begin();
+        fault != faults->end();
+        ++fault)
+    {
+        if (!(*fault).second->faultStates)
+        {
+            errorStream << "ERROR: Fault " << (*fault).second->name << " ("
+                << (*fault).second->pv << ", id="
+                << (*fault).second->id << ") has no FaultStates";
+            throw(DbException(errorStream.str()));
+        }
+    }
 }
 
 /* Assign the corresponding application card type to the analog channel */
@@ -1010,9 +997,9 @@ void MpsDb::configure()
 {
     configureAllowedClasses();
     // configureDeviceInputs(); Temporarily commented out, TODO - See if this is still needed for new schema
-    // configureFaultStates();
-    // configureAnalogChannels();
-    // configureFaultInputs();
+    configureFaultStates();
+    configureAnalogChannels();
+    configureFaultInputs();
     // configureIgnoreConditions(); Temporarily commented out, TODO - update to new schema
     // configureApplicationCards();
     // configureBeamDestinations();
