@@ -63,17 +63,17 @@ DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChannel) {
-  os << "dbId=" << digitalChannel->id << " : "
-     << "name=" << digitalChannel->name << " : "
-     << "card=" << digitalChannel->cardId << " : "
-     << "channel=" << digitalChannel->number << " : "
-     << "z_name=" << digitalChannel->z_name << " : "
-     << "o_name=" << digitalChannel->o_name << " : "
-     << "monitored_pv=" << digitalChannel->monitored_pv << " : "
-     << "debounce=" << digitalChannel->debounce << " : "
-     << "alarm_state=" << digitalChannel->alarm_state << " : "
-     << "z_location=" << digitalChannel->z_location << " : "
-     << "auto_reset=" << digitalChannel->auto_reset << " : ";
+  os << "id[" << digitalChannel->id << "]; "
+     << "name[" << digitalChannel->name << "]; "
+     << "cardId[" << digitalChannel->cardId << "]; "
+     << "number[" << digitalChannel->number << "]; "
+     << "z_name[" << digitalChannel->z_name << "]; "
+     << "o_name[" << digitalChannel->o_name << "]; "
+     << "monitored_pv[" << digitalChannel->monitored_pv << "]; "
+     << "debounce[" << digitalChannel->debounce << "]; "
+     << "alarm_state[" << digitalChannel->alarm_state << "]; "
+     << "z_location[" << digitalChannel->z_location << "]; "
+     << "auto_reset[" << digitalChannel->auto_reset << "]; ";
 
   if (digitalChannel->evaluation == FAST_EVALUATION) {
     os << "eval=fast : ";
@@ -142,35 +142,6 @@ std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState) {
   return os;
 }
 
-DbDeviceType::DbDeviceType() : DbEntry(), name("") {
-}
-
-std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType) {
-  os << "id[" << devType->id << "]; "
-     << "name[" << devType->name << "]; "
-     << "numIntegrators[" << devType->numIntegrators << "]";
-
-  if (devType->deviceStates) {
-    os << " deviceStates [";
-    for (DbDeviceStateMap::iterator deviceState = devType->deviceStates->begin();
-	 deviceState != devType->deviceStates->end(); ++deviceState) {
-      os << (*deviceState).second->id << " ";
-    }
-    os << "]";
-  }
-  return os;
-}
-
-DbMitigation::DbMitigation() : DbEntry(), beam_destination_id(999), beam_class_id(999) {
-}
-
-std::ostream & operator<<(std::ostream &os, DbMitigation * const mitigation) {
-  os << "id=" << mitigation->id << " : "
-     << "beam_dest_id=" << mitigation->beam_destination_id << " : "
-     << "beam_class_id=" << mitigation->beam_class_id;
-  return os;
-}
-
 DbDeviceInput::DbDeviceInput() : DbEntry(),
 				 bitPosition(999), channelId(999), faultValue(0),
 				 digitalDeviceId(999), value(0), previousValue(0),
@@ -234,20 +205,19 @@ uint32_t DbAnalogChannel::unlatch(uint32_t mask) {
 // No DbAnalogChannel() declaration here because it exists in central_node_inputs.cc
 
 std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChannel) {
-
-  os << "dbId=" << analogChannel->id << " : "
-     << "name=" << analogChannel->name << " : "
-     << "card=" << analogChannel->cardId << " : "
-     << "number=" << analogChannel->number << " : "
-     << "offset=" << analogChannel->offset << " : "
-     << "slope=" << analogChannel->slope << " : "
-     << "egu=" << analogChannel->egu << " : "
-     << "integrator=" << analogChannel->integrator << " : "
-     << "gain_bay=" << analogChannel->gain_bay << " : "
-     << "gain_channel=" << analogChannel->gain_channel << " : "
-     << "z_location=" << analogChannel->z_location << " : "
-     << "auto_reset=" << analogChannel->auto_reset << " : "
-     << "evaluation=" << analogChannel->evaluation << " : ";
+  os << "id[" << analogChannel->id << "]; "
+     << "name[" << analogChannel->name << "]; "
+     << "cardId[" << analogChannel->cardId << "]; "
+     << "number[" << analogChannel->number << "]; "
+     << "offset[" << analogChannel->offset << "]; "
+     << "slope[" << analogChannel->slope << "]; "
+     << "egu[" << analogChannel->egu << "]; "
+     << "integrator[" << analogChannel->integrator << "]; "
+     << "gain_bay[" << analogChannel->gain_bay << "]; "
+     << "gain_channel[" << analogChannel->gain_channel << "]; "
+     << "z_location[" << analogChannel->z_location << "]; "
+     << "auto_reset[" << analogChannel->auto_reset << "]; "
+     << "evaluation[" << analogChannel->evaluation << "];";
 
   if (analogChannel->evaluation == FAST_EVALUATION) {
     os << "eval=fast : ";
@@ -335,16 +305,14 @@ ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasHighBuffer()
 }
 
 std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
-  os 
-     << "dbId=" << appCard->id << " : "
-     << "type=" << appCard->applicationTypeId << " : "
-     << "number=" << appCard->number << " : "
-     << "crateId=" << appCard->crateId << " : "
-     << "slot=" << appCard->slotNumber << " : "
-     << "online=" << appCard->online << " : "
-     << "active=" << appCard->active << " : "
-     << "modeActive=" << appCard->modeActive << " : "
-     << "hasInputs=" << appCard->hasInputs << std::endl;
+  os << "id[" << appCard->id << "]; "
+     << "applicationTypeId[" << appCard->applicationTypeId << "]; "
+     << "crateId[" << appCard->crateId << "]; "
+     << "slotNumber[" << appCard->slotNumber << "]; "
+     << "online[" << appCard->online << "]; "
+     << "active[" << appCard->active << "]; "
+     << "modeActive[" << appCard->modeActive << "]; "
+     << "hasInputs[" << appCard->hasInputs << "]";
 
   if (appCard->digitalChannels) {
     os << "  DigitalChannels:" << std::endl;
@@ -411,13 +379,12 @@ std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestin
   return os;
 }
 
-DbAllowedClass::DbAllowedClass() : DbEntry(), beamClassId(999), faultStateId(999), beamDestinationId(999) {
+DbAllowedClass::DbAllowedClass() : DbEntry(), beamClassId(999), beamDestinationId(999) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbAllowedClass * const allowedClass) {
   os << "id[" << allowedClass->id << "]; "
      << "beamClassId[" << allowedClass->beamClassId << "]; "
-     << "faultStateId[" << allowedClass->faultStateId << "]; "
      << "beamDestinationId[" << allowedClass->beamDestinationId << "]";
   return os;
 }
@@ -474,7 +441,7 @@ std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
      << "faulted[" << fault->faulted << "]; "
      << "ignored[" << fault->ignored << "]; "
      << "evaluation[" << fault->evaluation << "]; "
-     << "pv[" << fault->pv << "]";
+     << "pv[" << fault->pv << "]; ";
 
   if (fault->faultInputs) {
     os << " : FaultInputs[";
@@ -528,17 +495,6 @@ std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
   return os;
 }
 
-DbConditionInput::DbConditionInput() : DbEntry(), bitPosition(0), faultStateId(0), conditionId(0) {
-}
-
-std::ostream & operator<<(std::ostream &os, DbConditionInput * const input) {
-  os << "id[" << input->id << "]; "
-     << "bitPosition[" << input->bitPosition << "]; "
-     << "faultStateId[" << input->faultStateId << "]; "
-     << "conditionId[" << input->conditionId << "]";
-  return os;
-}
-
 DbIgnoreCondition::DbIgnoreCondition() : DbEntry(), name(""), description(""), value(0), digitalChannelId(0) {
 }
 
@@ -548,17 +504,5 @@ std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const ignoreCond
      << "description[" << ignoreCondition->description << "]; "
      << "value[" << ignoreCondition->value << "]; "
      << "digitalChannelId[" << ignoreCondition->digitalChannelId << "]";
-  return os;
-}
-
-DbCondition::DbCondition() : DbEntry(), name(""), description(""), mask(0), state(false) {
-}
-
-std::ostream & operator<<(std::ostream &os, DbCondition * const fault) {
-  os << "id[" << fault->id << "]; "
-     << "name[" << fault->name << "]; "
-     << "mask[0x" << fault->mask << std::dec << "]; "
-     << "description[" << fault->description << "]";
-
   return os;
 }

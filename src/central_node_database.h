@@ -29,7 +29,6 @@ class MpsDb {
   void setName(std::string yamlFileName);
   void configureAllowedClasses();
   void configureDeviceInputs();
-  void configureDeviceTypes();
   void configureFaultInputs();
   void configureFaultStates();
   void configureAnalogChannels();
@@ -144,8 +143,6 @@ class MpsDb {
   DbApplicationCardMapPtr applicationCards;
   DbDigitalChannelMapPtr digitalChannels;
   DbAnalogChannelMapPtr analogChannels;
-  DbMitigationMapPtr mitigations;
-  DbDeviceTypeMapPtr deviceTypes;
   DbDeviceStateMapPtr deviceStates;
   DbDeviceInputMapPtr deviceInputs;
   DbFaultMapPtr faults;
@@ -154,9 +151,7 @@ class MpsDb {
   DbBeamDestinationMapPtr beamDestinations;
   DbBeamClassMapPtr beamClasses;
   DbAllowedClassMapPtr allowedClasses;
-  DbConditionMapPtr conditions;
   DbIgnoreConditionMapPtr ignoreConditions;
-  DbConditionInputMapPtr conditionInputs;
   DbInfoMapPtr databaseInfo;
 
   friend class FirmwareTest;

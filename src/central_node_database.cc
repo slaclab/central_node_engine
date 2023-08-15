@@ -255,50 +255,25 @@ void MpsDb::configureAllowedClasses()
         (*it).second->beamDestination = (*beamDestIt).second;
     }
 
-    // Assign AllowedClasses to FaultState or ThresholdFaultState
-    // There are multiple AllowedClasses for each Fault, one per BeamDestination
-    for (DbAllowedClassMap::iterator it = allowedClasses->begin();
-        it != allowedClasses->end();
-        ++it)
-    {
-        int id = (*it).second->faultStateId;
-
-        DbFaultStateMap::iterator digFaultIt = faultStates->find(id);
-        if (digFaultIt != faultStates->end())
+    // Iterate through the faultStates and assign the allowed classes through its vector<uint> mitigationIds
+    std::vector<unsigned int> mitigationIds;
+    for (DbFaultStateMap::iterator faultStateIt = faultStates->begin();
+        faultStateIt != faultStates->end(); faultStateIt++) {
+        // create allowedClasses map
+        if (!(*faultStateIt).second->allowedClasses)
         {
-            // Create a map to hold deviceInput for the digitalChannel
-            if (!(*digFaultIt).second->allowedClasses)
-            {
-                DbAllowedClassMap *faultAllowedClasses = new DbAllowedClassMap();
-                (*digFaultIt).second->allowedClasses = DbAllowedClassMapPtr(faultAllowedClasses);
-            }
-            (*digFaultIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*it).second->id,
-                (*it).second));
+            DbAllowedClassMap *faultAllowedClasses = new DbAllowedClassMap();
+            (*faultStateIt).second->allowedClasses = DbAllowedClassMapPtr(faultAllowedClasses);
         }
-    }
-}
 
-void MpsDb::configureDeviceTypes()
-{
-    // Compile a list of DeviceStates and assign to the proper DeviceType
-    for (DbDeviceStateMap::iterator it = deviceStates->begin();
-        it != deviceStates->end();
-        ++it)
-    {
-        int id = (*it).second->deviceTypeId;
-
-        DbDeviceTypeMap::iterator deviceType = deviceTypes->find(id);
-        if (deviceType != deviceTypes->end())
-        {
-            // Create a map to hold deviceStates for the deviceType
-            if (!(*deviceType).second->deviceStates)
-            {
-                DbDeviceStateMap *deviceStates = new DbDeviceStateMap();
-                (*deviceType).second->deviceStates = DbDeviceStateMapPtr(deviceStates);
-            }
-            (*deviceType).second->deviceStates->insert(std::pair<int, DbDeviceStatePtr>((*it).second->id,
-                (*it).second));
+        // iterate through the faultStateIt->mitigationIds
+        mitigationIds = (*faultStateIt).second->mitigationIds;
+        for (unsigned int mitigationId : mitigationIds) {
+            DbAllowedClassMap::iterator allowedClassIt = allowedClasses->find(mitigationId);
+            (*faultStateIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*allowedClassIt).second->id,
+            (*allowedClassIt).second));
         }
+
     }
 }
 
@@ -851,46 +826,6 @@ void MpsDb::configureIgnoreConditions()
     //     }
     // }
 
-    // // Loop through the ConditionInputs, and assign to the Condition
-    // for (DbConditionInputMap::iterator conditionInput = conditionInputs->begin();
-    //     conditionInput != conditionInputs->end();
-    //     ++conditionInput)
-    // {
-    //     uint32_t conditionId = (*conditionInput).second->conditionId;
-
-    //     DbConditionMap::iterator condition = conditions->find(conditionId);
-    //     if (condition != conditions->end())
-    //     {
-    //         // Create a map to hold ConditionInputs
-    //         if (!(*condition).second->conditionInputs)
-    //         {
-    //             DbConditionInputMap *conditionInputMap = new DbConditionInputMap();
-    //             (*condition).second->conditionInputs = DbConditionInputMapPtr(conditionInputMap);
-    //         }
-    //         (*condition).second->conditionInputs->
-    //         insert(std::pair<int, DbConditionInputPtr>((*conditionInput).second->id, (*conditionInput).second));
-    //     }
-    //     else
-    //     {
-    //         errorStream << "ERROR: Failed to configure database, invalid conditionId ("
-    //             << conditionId << ") for conditionInput (" <<  (*conditionInput).second->id << ")";
-    //         throw(DbException(errorStream.str()));
-    //     }
-
-    //     uint32_t faultStateId = (*conditionInput).second->faultStateId;
-
-    //     DbFaultStateMap::iterator faultIt = faultStates->find(faultStateId);
-    //     if (faultIt != faultStates->end())
-    //     {
-    //         (*conditionInput).second->faultState = (*faultIt).second;
-    //     }
-    //     else
-    //     {
-    //         errorStream << "ERROR: Failed to configure database, invalid ID found of FaultState ("
-    //             << faultStateId << ") for ConditionInput (" <<  (*conditionInput).second->id << ")";
-    //         throw(DbException(errorStream.str()));
-    //     }
-    // }
 }
 
 /**
@@ -1073,8 +1008,7 @@ void MpsDb::clearMitigationBuffer()
  */
 void MpsDb::configure()
 {
-    // configureAllowedClasses();
-    // configureDeviceTypes(); Temporarily commented out, TODO - See if this is still needed for new schema
+    configureAllowedClasses();
     // configureDeviceInputs(); Temporarily commented out, TODO - See if this is still needed for new schema
     // configureFaultStates();
     // configureAnalogChannels();
@@ -1315,7 +1249,7 @@ int MpsDb::load(std::string yamlFileName)
         }
         else if (nodeName == "Mitigation")
         {
-            mitigations = (*node).as<DbMitigationMapPtr>();
+            allowedClasses = (*node).as<DbAllowedClassMapPtr>();
         }
         else if (nodeName == "BeamClass")
         {
@@ -1325,17 +1259,9 @@ int MpsDb::load(std::string yamlFileName)
         {
             allowedClasses = (*node).as<DbAllowedClassMapPtr>();
         }
-        else if (nodeName == "Condition")
-        {
-            conditions = (*node).as<DbConditionMapPtr>();
-        }
         else if (nodeName == "IgnoreCondition")
         {
             ignoreConditions = (*node).as<DbIgnoreConditionMapPtr>();
-        }
-        else if (nodeName == "ConditionInput")
-        {
-            conditionInputs = (*node).as<DbConditionInputMapPtr>();
         }
         else if (nodeName == "DatabaseInfo")
         {
@@ -1638,10 +1564,10 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb)
         (os, mpsDb->faultStates, "FaultState");
 
     mpsDb->printMap<DbIgnoreConditionMapPtr, DbIgnoreConditionMap::iterator>
-        (os, mpsDb->ignoreConditions, "IgnoreConditions");
+        (os, mpsDb->ignoreConditions, "IgnoreCondition");
 
-    mpsDb->printMap<DbMitigationMapPtr, DbMitigationMap::iterator>
-        (os, mpsDb->mitigations, "Mitigations");
+    mpsDb->printMap<DbAllowedClassMapPtr, DbAllowedClassMap::iterator>
+        (os, mpsDb->allowedClasses, "AllowedClass (Mitigation)");
 
     mpsDb->printMap<DbDigitalChannelMapPtr, DbDigitalChannelMap::iterator>
         (os, mpsDb->digitalChannels, "DigitalChannel");
@@ -1664,11 +1590,6 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb)
     // mpsDb->printMap<DbAllowedClassMapPtr, DbAllowedClassMap::iterator>
     //     (os, mpsDb->allowedClasses, "AllowedClass");
 
-    // mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>
-    //     (os, mpsDb->conditions, "Conditions");
-
-    // mpsDb->printMap<DbConditionInputMapPtr, DbConditionInputMap::iterator>
-    //     (os, mpsDb->conditionInputs, "ConditionInputs");
 
 
 

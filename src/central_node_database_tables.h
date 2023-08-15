@@ -225,24 +225,6 @@ typedef std::map<uint32_t, DbAnalogChannelPtr> DbAnalogChannelMap;
 typedef boost::shared_ptr<DbAnalogChannelMap> DbAnalogChannelMapPtr;
 
 /**
- * DbDeviceType YAML class
- */
-class DbDeviceType : public DbEntry {
- public:
-  std::string name;
-  uint32_t numIntegrators; // number of 8-bit threshold comparators coming from device
-
-  DbDeviceStateMapPtr deviceStates;
-
-  DbDeviceType();
-  friend std::ostream & operator<<(std::ostream &os, DbDeviceType * const devType);
-};
-
-typedef boost::shared_ptr<DbDeviceType> DbDeviceTypePtr;
-typedef std::map<uint32_t, DbDeviceTypePtr> DbDeviceTypeMap;
-typedef boost::shared_ptr<DbDeviceTypeMap> DbDeviceTypeMapPtr;
-
-/**
  * DbChannel class for DbDigitalChannel and DbAnalogChannel
  */
 class DbChannel : public DbEntry {
@@ -589,12 +571,11 @@ typedef boost::shared_ptr<DbBeamDestinationMap> DbBeamDestinationMapPtr;
 
 
 /**
- * DbAllowedClass YAML class
+ * DbAllowedClass YAML class (AKA Mitigation in the sqlite configuration)
  */
 class DbAllowedClass : public DbEntry {
  public:
   uint32_t beamClassId;
-  uint32_t faultStateId;
   uint32_t beamDestinationId;
 
   // Configured after loading the YAML file
@@ -609,26 +590,6 @@ class DbAllowedClass : public DbEntry {
 typedef boost::shared_ptr<DbAllowedClass> DbAllowedClassPtr;
 typedef std::map<uint32_t, DbAllowedClassPtr> DbAllowedClassMap;
 typedef boost::shared_ptr<DbAllowedClassMap> DbAllowedClassMapPtr;
-
-/**
- * DbMitigation YAML class
- */
-class DbMitigation : public DbEntry {
- public:
-  uint32_t beam_destination_id;
-  uint32_t beam_class_id;
-
-  // Configured after loading the YAML file
-  DbBeamClassPtr beamClass;
-  DbBeamDestinationPtr beamDestination;
-
-  DbMitigation();
-  friend std::ostream & operator<<(std::ostream &os, DbMitigation * const mitigation);
-};
-
-typedef boost::shared_ptr<DbMitigation> DbMitigationPtr;
-typedef std::map<uint32_t, DbMitigationPtr> DbMitigationMap;
-typedef boost::shared_ptr<DbMitigationMap> DbMitigationMapPtr;
 
 
 /**
@@ -694,29 +655,6 @@ typedef std::map<uint32_t, DbFaultPtr> DbFaultMap;
 typedef boost::shared_ptr<DbFaultMap> DbFaultMapPtr;
 
 /**
- * DbConditionInput YAML class
- */
-class DbConditionInput : public DbEntry {
- public:
-  // Values loaded from YAML file
-  uint32_t bitPosition;
-  uint32_t faultStateId;
-  uint32_t conditionId;
-
-  // The DbIgnoreCondition may point to a digital or analog fault state
-  // TODO: this does not look good, these should be a single pointer, can't they?
-  // This also happens with the DbIgnoreCondition class
-  DbFaultStatePtr faultState;
-
-  DbConditionInput();
-  friend std::ostream & operator<<(std::ostream &os, DbConditionInput * const input);
-};
-
-typedef boost::shared_ptr<DbConditionInput> DbConditionInputPtr;
-typedef std::map<uint32_t, DbConditionInputPtr> DbConditionInputMap;
-typedef boost::shared_ptr<DbConditionInputMap> DbConditionInputMapPtr;
-
-/**
  * DbIgnoreCondition YAML class
  */
 class DbIgnoreCondition : public DbEntry {
@@ -746,26 +684,5 @@ typedef boost::shared_ptr<DbIgnoreCondition> DbIgnoreConditionPtr;
 typedef std::map<uint32_t, DbIgnoreConditionPtr> DbIgnoreConditionMap;
 typedef boost::shared_ptr<DbIgnoreConditionMap> DbIgnoreConditionMapPtr;
 
-/**
- * DbCondition YAML class
- */
-class DbCondition : public DbEntry {
- public:
-  std::string name;
-  std::string description;
-  uint32_t mask;
-
-  // Configured after loading the YAML file
-  DbConditionInputMapPtr conditionInputs; // A condition is composed of one or more condition inputs
-  bool state; // State is true when condition is met
-  DbIgnoreConditionMapPtr ignoreConditions;
-
-  DbCondition();
-  friend std::ostream & operator<<(std::ostream &os, DbCondition * const fault);
-};
-
-typedef boost::shared_ptr<DbCondition> DbConditionPtr;
-typedef std::map<uint32_t, DbConditionPtr> DbConditionMap;
-typedef boost::shared_ptr<DbConditionMap> DbConditionMapPtr;
 
 #endif

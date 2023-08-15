@@ -428,51 +428,6 @@ namespace YAML {
   	};
 
   /**
-   * DeviceType:
-   * - id: '1'
-   *   name: Insertion Device
-   */
-  template<>
-    struct convert<DbDeviceTypeMapPtr> {
-    static bool decode(const Node &node, DbDeviceTypeMapPtr &rhs) {
-      DbDeviceTypeMap *deviceTypes = new DbDeviceTypeMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbDeviceTypeMapPtr(deviceTypes);
-
-      for (YAML::Node::const_iterator it = node["DeviceType"].begin();
-	   it != node["DeviceType"].end(); ++it) {
-	DbDeviceType *deviceType = new DbDeviceType();
-
-	try {
-	  field = "id";
-	  deviceType->id = (*it)[field].as<unsigned int>();
-
-	  field = "name";
-	  deviceType->name = (*it)[field].as<std::string>();
-
-	  field = "num_integrators";
-	  deviceType->numIntegrators = (*it)[field].as<unsigned int>();
-	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for DeviceType.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceType (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceType (expected string).";
-	  throw(DbException(errorStream.str()));
-	}
-
-	rhs->insert(std::pair<int, DbDeviceTypePtr>(deviceType->id,
-						    DbDeviceTypePtr(deviceType)));
-      }
-
-      return true;
-    }
-  };
-
-  /**
    * DeviceState:
    * - device_type_id: '1'
    *   id: '1'
@@ -523,49 +478,6 @@ namespace YAML {
 
       return true;
     }
-  };
-
-  
-  /**
-   * Mitigation:
-   * id: 1
-   * beam_destination_id: 1
-   * beam_class_id: 1
-   */
-  template<>
-    struct convert<DbMitigationMapPtr> {
-		static bool decode(const Node &node, DbMitigationMapPtr &rhs) {
-			DbMitigationMap *mitigations = new DbMitigationMap();
-			std::stringstream errorStream;
-			std::string field;
-			rhs = DbMitigationMapPtr(mitigations);
-
-			for (YAML::Node::const_iterator it = node["Mitigation"].begin();
-				it != node["Mitigation"].end(); ++it) {
-				DbMitigation *mitigation = new DbMitigation();
-				try {
-				field = "id";
-				mitigation->id = (*it)[field].as<unsigned int>();
-
-				field = "beam_destination_id";
-				mitigation->beam_destination_id = (*it)[field].as<unsigned int>();
-
-				field = "beam_class_id";
-				mitigation->beam_class_id = (*it)[field].as<unsigned int>();
-
-				} catch(YAML::InvalidNode &e) {
-					errorStream << "ERROR: Failed to find field " << field << " for Mitigation.";
-					throw(DbException(errorStream.str()));
-				} catch(YAML::TypedBadConversion<unsigned int> &e) {
-					errorStream << "ERROR: Failed to convert contents of field " << field << " for Mitigation (expected unsigned int).";
-					throw(DbException(errorStream.str()));
-				} 
-
-				rhs->insert(std::pair<int, DbMitigationPtr>(mitigation->id, DbMitigationPtr(mitigation)));
-			}
-
-			return true;
-		}
   };
 
   /**
@@ -619,55 +531,6 @@ namespace YAML {
 
 	rhs->insert(std::pair<int, DbDeviceInputPtr>(deviceInput->id,
 						     DbDeviceInputPtr(deviceInput)));
-      }
-
-      return true;
-    }
-  };
-
-  /**
-   * Condition:
-   * - id: 1
-   *   name: "YAG01_IN"
-   *   description: "YAG01 screen IN"
-   *   value: 1
-   */
-  template<>
-    struct convert<DbConditionMapPtr> {
-    static bool decode(const Node &node, DbConditionMapPtr &rhs) {
-      DbConditionMap *conditions = new DbConditionMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbConditionMapPtr(conditions);
-
-      for (YAML::Node::const_iterator it = node["Condition"].begin();
-	   it != node["Condition"].end(); ++it) {
-	DbCondition *condition = new DbCondition();
-
-	try {
-	  field = "id";
-	  condition->id = (*it)[field].as<unsigned int>();
-
-	  field = "name";
-	  condition->name = (*it)[field].as<std::string>();
-
-	  field = "description";
-	  condition->description = (*it)[field].as<std::string>();
-
-	  field = "value";
-	  condition->mask = (*it)[field].as<unsigned int>();
-  	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for Condition.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Condition (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for Condition (expected string).";
-	  throw(DbException(errorStream.str()));
-	}
-
-	rhs->insert(std::pair<int, DbConditionPtr>(condition->id, DbConditionPtr(condition)));
       }
 
       return true;
@@ -787,52 +650,6 @@ namespace YAML {
   };
 
   /**
-   * ConditionInput:
-   * - id: 1
-   *   bit_position: 0
-   *   fault_state_id: 1
-   *   condition_id: 1
-   */
-  template<>
-    struct convert<DbConditionInputMapPtr> {
-    static bool decode(const Node &node, DbConditionInputMapPtr &rhs) {
-      DbConditionInputMap *conditionInputs = new DbConditionInputMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbConditionInputMapPtr(conditionInputs);
-
-      for (YAML::Node::const_iterator it = node["ConditionInput"].begin();
-	   it != node["ConditionInput"].end(); ++it) {
-	DbConditionInput *conditionInput = new DbConditionInput();
-
-	try {
-	  field = "id";
-	  conditionInput->id = (*it)[field].as<unsigned int>();
-
-	  field = "bit_position";
-	  conditionInput->bitPosition = (*it)[field].as<unsigned int>();
-
-	  field = "fault_state_id";
-	  conditionInput->faultStateId = (*it)[field].as<unsigned int>();
-
-	  field = "condition_id";
-	  conditionInput->conditionId = (*it)[field].as<unsigned int>();
- 	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for ConditionInput.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for ConditionInput (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	}
-
-	rhs->insert(std::pair<int, DbConditionInputPtr>(conditionInput->id, DbConditionInputPtr(conditionInput)));
-      }
-
-      return true;
-    }
-  };
-
-/**
    * Fault:
    * id: 2
    * ignore_conditions:
@@ -1210,51 +1027,47 @@ namespace YAML {
   	};
 
   /**
-   * AllowedClass:
-   * - beam_class_id: '1'
-   *   fault_state_id: '1'
-   *   id: '1'
-   *   beam_destination_id: '1'
+   * AllowedClass: (AKA Mitigation in the sqlite configuration)
+   * id: 1
+   * beam_destination_id: 1
+   * beam_class_id: 1
    */
   template<>
     struct convert<DbAllowedClassMapPtr> {
-    static bool decode(const Node &node, DbAllowedClassMapPtr &rhs) {
-      DbAllowedClassMap *allowedClasses = new DbAllowedClassMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbAllowedClassMapPtr(allowedClasses);
+		static bool decode(const Node &node, DbAllowedClassMapPtr &rhs) {
+			DbAllowedClassMap *allowedClasses = new DbAllowedClassMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbAllowedClassMapPtr(allowedClasses);
 
-      for (YAML::Node::const_iterator it = node["AllowedClass"].begin();
-	   it != node["AllowedClass"].end(); ++it) {
-	DbAllowedClass *allowedClass = new DbAllowedClass();
+			for (YAML::Node::const_iterator it = node["Mitigation"].begin();
+				it != node["Mitigation"].end(); ++it) {
+				DbAllowedClass *allowedClass = new DbAllowedClass();
 
-	try {
-	  field = "id";
-	  allowedClass->id = (*it)[field].as<unsigned int>();
+				try {
+				field = "id";
+				allowedClass->id = (*it)[field].as<unsigned int>();
 
-	  field = "beam_class_id";
-	  allowedClass->beamClassId = (*it)[field].as<unsigned int>();
+				field = "beam_class_id";
+				allowedClass->beamClassId = (*it)[field].as<unsigned int>();
 
-	  field = "fault_state_id";
-	  allowedClass->faultStateId = (*it)[field].as<unsigned int>();
+				field = "beam_destination_id";
+				allowedClass->beamDestinationId = (*it)[field].as<unsigned int>();
+				} catch(YAML::InvalidNode &e) {
+				errorStream << "ERROR: Failed to find field " << field << " for AllowedClass.";
+				throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<unsigned int> &e) {
+				errorStream << "ERROR: Failed to convert contents of field " << field << " for AllowedClass (expected unsigned int).";
+				throw(DbException(errorStream.str()));
+				}
 
-	  field = "beam_destination_id";
-	  allowedClass->beamDestinationId = (*it)[field].as<unsigned int>();
-  	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for AllowedClass.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for AllowedClass (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	}
+				rhs->insert(std::pair<int, DbAllowedClassPtr>(allowedClass->id,
+										DbAllowedClassPtr(allowedClass)));
+			}
 
-	rhs->insert(std::pair<int, DbAllowedClassPtr>(allowedClass->id,
-						      DbAllowedClassPtr(allowedClass)));
-      }
-
-      return true;
-    }
-  };
+			return true;
+		}
+  	};
 
 }
 
