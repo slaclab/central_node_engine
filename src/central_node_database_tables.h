@@ -86,7 +86,7 @@ class DbApplicationType : public DbEntry {
   uint32_t analogChannelCount;
   uint32_t digitalChannelCount;
   uint32_t softwareChannelCount;
-  std::string description;
+  std::string name;
 
   DbApplicationType();
   friend std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType);
@@ -670,10 +670,10 @@ class DbIgnoreCondition : public DbEntry {
   // The ignore condition can be used to ignore a fault state or an analog device
   // The analog device is used to disable a device when beam is blocked upstream, causing
   // faults from no beam
-  // DbFaultStatePtr faultState;
+  DbFaultStatePtr faultState;
   // DbAnalogChannelPtr analogChannel;
-  // DbDigitalChannelPtr digitalChannel;
-  // static const uint32_t INVALID_ID = 0xFFFFFFFF;
+  DbDigitalChannelPtr digitalChannel;
+  static const uint32_t INVALID_ID = 0xFFFFFFFF;
 
   DbIgnoreCondition();
   friend std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const ignoreCondition);

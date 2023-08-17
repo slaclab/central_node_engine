@@ -46,7 +46,7 @@ std::ostream & operator<<(std::ostream &os, DbInfo * const dbInfo) {
 
 DbApplicationType::DbApplicationType() : DbEntry(), num_integrators(999),
 					 analogChannelCount(0), digitalChannelCount(0), softwareChannelCount(0),
-					 description("empty") {
+					 name("empty") {
 }
 
 std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
@@ -55,7 +55,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
      << "analogChannelCount[" << appType->analogChannelCount << "]; "
      << "digitalChannelCount[" << appType->digitalChannelCount << "]; "
      << "softwareChannelCount[" << appType->softwareChannelCount << "]; "
-     << "description[" << appType->description << "]";
+     << "name[" << appType->name << "]";
   return os;
 }
 
@@ -303,14 +303,15 @@ ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasHighBuffer()
 }
 
 std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
-  os << "id[" << appCard->id << "]; "
+  os << "App: " << appCard->applicationType->name << std::endl
+     << "  id[" << appCard->id << "]; "
      << "applicationTypeId[" << appCard->applicationTypeId << "]; "
      << "crateId[" << appCard->crateId << "]; "
      << "slotNumber[" << appCard->slotNumber << "]; "
      << "online[" << appCard->online << "]; "
      << "active[" << appCard->active << "]; "
      << "modeActive[" << appCard->modeActive << "]; "
-     << "hasInputs[" << appCard->hasInputs << "]";
+     << "hasInputs[" << appCard->hasInputs << "]" << std::endl;
 
   if (appCard->digitalChannels) {
     os << "  DigitalChannels:" << std::endl;
@@ -327,7 +328,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
     }
   }
   else {
-    os << " - no devices (?)";
+    os << " - no devices (?)" << std::endl;
   }
   return os;
 }
@@ -500,5 +501,18 @@ std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const ignoreCond
      << "description[" << ignoreCondition->description << "]; "
      << "value[" << ignoreCondition->value << "]; "
      << "digitalChannelId[" << ignoreCondition->digitalChannelId << "]";
+
+
+  // May omit this once these Ids are used to configure the important information
+  if (ignoreCondition->faults) { 
+    os << " faults[";
+    DbFaultMap::iterator fault;
+    for (fault = ignoreCondition->faults->begin();
+        fault != std::prev(ignoreCondition->faults->end()); ++fault) {
+        os << (*fault).second->id << ", ";
+    }
+    os << (*fault).second->id <<  "]";
+  }
+
   return os;
 }

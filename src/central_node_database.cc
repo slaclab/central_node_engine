@@ -715,103 +715,44 @@ void MpsDb::configureAnalogChannels()
     }
 }
 
+/* Assign the corresponding faults and digital channel to the ignore condition */
 void MpsDb::configureIgnoreConditions()
 {
+    LOG_TRACE("DATABASE", "Configure: IgnoreConditions");
+    std::stringstream errorStream;
 
-    // TODO - Temporarily commented out - Update configuration to connect to its faults
+    // Loop through the Faults->ignoreConditions, and assign to corresponding IgnoreCondition
+    std::vector<unsigned int> ignoreConditionIds;
+    for (DbFaultMap::iterator faultIt = faults->begin();
+        faultIt != faults->end();
+        faultIt++)
+    {
+        // iterate through the faultIt->ignoreConditionIds
+        ignoreConditionIds = (*faultIt).second->ignoreConditionIds;
+        for (unsigned int ignoreConditionId : ignoreConditionIds) {
+            DbIgnoreConditionMap::iterator ignoreConditionIt = ignoreConditions->find(ignoreConditionId);
+            // Initialize DbFaultMapPtr of ignoreCondition if haven't already
+            if (!(*ignoreConditionIt).second->faults)
+            {
+                DbFaultMap *faults = new DbFaultMap();
+                (*ignoreConditionIt).second->faults = DbFaultMapPtr(faults);
+            }
+            (*ignoreConditionIt).second->faults->insert(std::pair<int, DbFaultPtr>((*faultIt).second->id,
+            (*faultIt).second));
+        }
 
-    // LOG_TRACE("DATABASE", "Configure: IgnoreConditions");
-    // std::stringstream errorStream;
+    }
 
-    // // Loop through the IgnoreConditions, and assign to the Condition
-    // for (DbIgnoreConditionMap::iterator ignoreCondition = ignoreConditions->begin();
-    //     ignoreCondition != ignoreConditions->end();
-    //     ++ignoreCondition)
-    // {
-    //     uint32_t conditionId = (*ignoreCondition).second->conditionId;
-    //         //std::cout << "conditionId=" << conditionId << " ";
+    // Loop through IgnoreConditions, and assign the corresponding digital channel
+    for (DbIgnoreConditionMap::iterator ignoreConditionIt = ignoreConditions->begin();
+        ignoreConditionIt != ignoreConditions->end();
+        ignoreConditionIt++)
+    {
+        DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find((*ignoreConditionIt).second->digitalChannelId);
+        (*ignoreConditionIt).second->digitalChannel = (*digitalChannelIt).second;
+    }
 
-    //     DbConditionMap::iterator condition = conditions->find(conditionId);
-    //     if (condition != conditions->end())
-    //     {
-    //         // Create a map to hold IgnoreConditions
-    //         if (!(*condition).second->ignoreConditions)
-    //         {
-    //             DbIgnoreConditionMap *ignoreConditionMap = new DbIgnoreConditionMap();
-    //             (*condition).second->ignoreConditions = DbIgnoreConditionMapPtr(ignoreConditionMap);
-    //         }
-    //         (*condition).second->ignoreConditions->
-    //         insert(std::pair<int, DbIgnoreConditionPtr>((*ignoreCondition).second->id, (*ignoreCondition).second));
-    //     }
-    //     else
-    //     {
-    //         std::cout << "ERROR: Failed to configure database, invalid conditionId ("
-    //             << conditionId << ") for ignoreCondition (" <<  (*ignoreCondition).second->id << ")" << std::endl;
-    //         errorStream << "ERROR: Failed to configure database, invalid conditionId ("
-    //             << conditionId << ") for ignoreCondition (" <<  (*ignoreCondition).second->id << ")";
-    //         throw(DbException(errorStream.str()));
-    //     }
-
-    //     // Find if the ignored fault state is digital or analog
-    //     uint32_t faultStateId = (*ignoreCondition).second->faultStateId;
-    //         //std::cout << "faultStateId=" << faultStateId << " ";
-
-    //     if (faultStateId != DbIgnoreCondition::INVALID_ID)
-    //     {
-    //         DbFaultStateMap::iterator faultIt = faultStates->find(faultStateId);
-    //         if (faultIt != faultStates->end())
-    //         {
-    //             (*ignoreCondition).second->faultState = (*faultIt).second;
-    //         }
-    //         else
-    //         {
-    //             std::cout << "ERROR: Failed to configure database, invalid ID for FaultState ("
-    //                 << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")" << std::endl;
-    //             errorStream << "ERROR: Failed to configure database, invalid ID for FaultState ("
-    //                 << faultStateId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
-    //             throw(DbException(errorStream.str()));
-    //         }
-    //     }
-
-    //     uint32_t deviceId = (*ignoreCondition).second->deviceId;
-    //         //std::cout << "DeviceId=" << deviceId << " ";
-
-    //     if (deviceId != DbIgnoreCondition::INVALID_ID)
-    //     {
-    //         DbDigitalChannelMap::iterator deviceIt = digitalChannels->find(deviceId);
-    //         // Assign ignoreCondition 
-    //         if (deviceIt == digitalChannels->end())
-    //         {
-    //           // It is an analog device.  Link it to proper analog device.
-    //           DbAnalogChannelMap::iterator analogChannelIt = analogChannels->find(deviceId);
-    //           if (analogChannelIt != analogChannels->end())
-    //           {
-    //               (*ignoreCondition).second->analogChannel = (*analogChannelIt).second;
-    //           }
-    //           else
-    //           {
-    //               std::cout << "ERROR: Failed to configure database, invalid ID for Device ("
-    //                   << deviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")" << std::endl;
-    //               errorStream << "ERROR: Failed to configure database, invalid ID for Device ("
-    //                   << deviceId << ") for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
-    //               throw(DbException(errorStream.str()));
-    //           }
-    //         }
-    //         else
-    //         {
-    //           (*ignoreCondition).second->digitalChannel = (*deviceIt).second;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         if (faultStateId == DbIgnoreCondition::INVALID_ID)
-    //         {
-    //             errorStream << "ERROR: Failed to configure database, invalid ID for FaultState and"
-    //                 << " FaultState for IgnoreCondition (" <<  (*ignoreCondition).second->id << ")";
-    //             throw(DbException(errorStream.str()));
-    //         }
-    //     }
-    // }
+    // TODO - Check if we need to create FK reference to faultState - it seems in the engine logic it does but how can we do it without faultStateId?
 
 }
 
@@ -830,14 +771,11 @@ void MpsDb::configureApplicationCards()
     // the address of the firmware input update location for each application card
     uint8_t *configBuffer = 0;
     // uint8_t *updateBuffer = 0;
-    DbApplicationCardPtr aPtr;
-    DbApplicationCardMap::iterator applicationCardIt;
-
-    for (applicationCardIt = applicationCards->begin();
+    for (DbApplicationCardMap::iterator applicationCardIt = applicationCards->begin();
         applicationCardIt != applicationCards->end();
         ++applicationCardIt)
     {
-        aPtr = (*applicationCardIt).second;
+        DbApplicationCardPtr aPtr = (*applicationCardIt).second;
 
         // Find its crate
         DbCrateMap::iterator crateIt;
@@ -870,17 +808,15 @@ void MpsDb::configureApplicationCards()
 
     // Get all devices for each application card, starting with the digital devices
     // Create a map of digital devices for each DbApplicationCard
-    DbDigitalChannelMap::iterator digitalChannelIt;
-    DbDigitalChannelPtr dPtr;
-    for (digitalChannelIt = digitalChannels->begin();
+    for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
         digitalChannelIt != digitalChannels->end();
         ++digitalChannelIt)
     {
-        dPtr = (*digitalChannelIt).second;
-        applicationCardIt = applicationCards->find(dPtr->cardId);
+        DbDigitalChannelPtr digitalChannelPtr = (*digitalChannelIt).second;
+        DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(digitalChannelPtr->cardId);
         if (applicationCardIt != applicationCards->end())
         {
-            aPtr = (*applicationCardIt).second;
+            DbApplicationCardPtr aPtr = (*applicationCardIt).second;
             // Alloc a new map for digital devices if one is not there yet
             if (!aPtr->digitalChannels)
             {
@@ -888,24 +824,21 @@ void MpsDb::configureApplicationCards()
                 aPtr->digitalChannels = DbDigitalChannelMapPtr(digitalChannels);
             }
             // Once the map is there, add the digital device
-            aPtr->digitalChannels->insert(std::pair<int, DbDigitalChannelPtr>(dPtr->id, dPtr));
-            LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], DigitalChannel: " << dPtr->name);
+            aPtr->digitalChannels->insert(std::pair<int, DbDigitalChannelPtr>(digitalChannelPtr->id, digitalChannelPtr));
+            LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], DigitalChannel: " << digitalChannelPtr->name);
         }
     }
 
     // Do the same for analog channels
-    DbAnalogChannelMap::iterator analogChannelIt;
-    DbAnalogChannelPtr adPtr;
-
     for (DbAnalogChannelMap::iterator analogChannelIt = analogChannels->begin();
         analogChannelIt != analogChannels->end();
         ++analogChannelIt)
     {
-        adPtr = (*analogChannelIt).second;
-        DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(adPtr->cardId);
+        DbAnalogChannelPtr analogChannelPtr = (*analogChannelIt).second;
+        DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(analogChannelPtr->cardId);
         if (applicationCardIt != applicationCards->end())
         {
-            aPtr = (*applicationCardIt).second;
+            DbApplicationCardPtr aPtr = (*applicationCardIt).second;
             // Alloc a new map for analog devices if one is not there yet
             if (aPtr->digitalChannels)
             {
@@ -922,14 +855,14 @@ void MpsDb::configureApplicationCards()
             }
 
             // Once the map is there, add the analog device
-            aPtr->analogChannels->insert(std::pair<int, DbAnalogChannelPtr>(adPtr->id, adPtr));
-            LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], AnalogChannel: " << adPtr->name);
-            adPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
+            aPtr->analogChannels->insert(std::pair<int, DbAnalogChannelPtr>(analogChannelPtr->id, analogChannelPtr));
+            LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], AnalogChannel: " << analogChannelPtr->name);
+            analogChannelPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
         }
     }
     std::cout << "Done!" << std::endl;
 
-    for (applicationCardIt = applicationCards->begin();
+    for (DbApplicationCardMap::iterator applicationCardIt = applicationCards->begin();
         applicationCardIt != applicationCards->end();
         ++applicationCardIt)
     {
@@ -937,29 +870,29 @@ void MpsDb::configureApplicationCards()
     }
 
     // Deal with special case where one device input is not in same application card.
-    for (digitalChannelIt = digitalChannels->begin();
+    for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
         digitalChannelIt != digitalChannels->end();
         ++digitalChannelIt)
     {
-        dPtr = (*digitalChannelIt).second;
-        if (dPtr->inputDevices) {
-	        for (DbDeviceInputMap::iterator deviceInput = dPtr->inputDevices->begin();
-	             deviceInput != dPtr->inputDevices->end(); ++deviceInput) {
-            if (!(*deviceInput).second->configured) {
-              uint32_t diCard = (*deviceInput).second->channel->cardId;
-              DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(diCard);
-              if (applicationCardIt != applicationCards->end())
-              {
-                aPtr = (*applicationCardIt).second;
-                std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
-                size_t                lowBufOff = aPtr->getWasLowBufferOffset();
-                size_t                highBufOff = aPtr->getWasHighBufferOffset();
-                (*deviceInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
-	              (*deviceInput).second->configured = true;
-                std::cout << "INFO: Device Input for " << dPtr->name << " configured!" << std::endl;
-              }
+        DbDigitalChannelPtr digitalChannelPtr = (*digitalChannelIt).second;
+        if (digitalChannelPtr->inputDevices) {
+            for (DbDeviceInputMap::iterator deviceInput = digitalChannelPtr->inputDevices->begin();
+                    deviceInput != digitalChannelPtr->inputDevices->end(); ++deviceInput) {
+                if (!(*deviceInput).second->configured) {
+                    uint32_t diCard = (*deviceInput).second->channel->cardId;
+                    DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(diCard);
+                    if (applicationCardIt != applicationCards->end())
+                    {
+                        DbApplicationCardPtr aPtr = (*applicationCardIt).second;
+                        std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
+                        size_t                lowBufOff = aPtr->getWasLowBufferOffset();
+                        size_t                highBufOff = aPtr->getWasHighBufferOffset();
+                        (*deviceInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
+                        (*deviceInput).second->configured = true;
+                        std::cout << "INFO: Device Input for " << digitalChannelPtr->name << " configured!" << std::endl;
+                    }
+                }
             }
-          }
         }
     }
     std::cout << "End of the line" << std::endl;
@@ -1000,8 +933,8 @@ void MpsDb::configure()
     configureFaultStates();
     configureAnalogChannels();
     configureFaultInputs();
-    // configureIgnoreConditions(); Temporarily commented out, TODO - update to new schema
-    // configureApplicationCards();
+    configureIgnoreConditions();
+    configureApplicationCards();
     // configureBeamDestinations();
 }
 

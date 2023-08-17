@@ -167,7 +167,7 @@ namespace YAML {
 					appType->softwareChannelCount = (*it)[field].as<unsigned int>();
 
 					field = "name";
-					appType->description = (*it)[field].as<std::string>();
+					appType->name = (*it)[field].as<std::string>();
 				} catch(YAML::InvalidNode &e) {
 					errorStream << "ERROR: Failed to find field " << field << " for ApplicationType.";
 					throw(DbException(errorStream.str()));
