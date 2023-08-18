@@ -411,7 +411,7 @@ void Engine::evaluateFaults()
 
             LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
             // Set device ignore condition to false.  It will be evaluated later
-            (*device).second->ignored = false;
+            (*device).second->ignored = (*device).second->modeActive;
         }
     }
 
@@ -736,7 +736,7 @@ void Engine::breakAnalogIgnore()
         if ((*device).second->cardId != NO_CARD_ID &&
             (*device).second->evaluation != NO_EVALUATION)
         {
-          (*device).second->ignored = false;
+          (*device).second->ignored = !(*device).second->modeActive;
         }
     }
     _breakAnalogIgnoreTimer.tick();

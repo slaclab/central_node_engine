@@ -370,7 +370,6 @@ class DbApplicationCard : public DbEntry {
   std::string name;
   std::string description;
   bool online; // True if received non-zero update last 360Hz update period
-  bool modeActive; // True when in SC mode, false when in NC mode.
   bool hasInputs; //True if number of inputs > 0
   bool active; //True when the application card is active, mode irrelevant
 
