@@ -60,6 +60,29 @@ typedef std::map<uint32_t, DbCratePtr> DbCrateMap;
 typedef boost::shared_ptr<DbCrateMap> DbCrateMapPtr;
 
 /**
+ * DbLinkNode YAML class
+ */
+class DbLinkNode : public DbEntry {
+ public:
+  std::string location;
+  std::string groupLink;
+  uint32_t rxPgp;
+  uint32_t lnType;
+  uint32_t lnId;
+  uint32_t crateId;
+  uint32_t groupId;
+
+  DbLinkNode();
+  
+  friend std::ostream & operator<<(std::ostream &os, DbLinkNode * const linkNode);
+};
+
+typedef boost::shared_ptr<DbLinkNode> DbLinkNodePtr;
+typedef std::map<uint32_t, DbLinkNodePtr> DbLinkNodeMap;
+typedef boost::shared_ptr<DbLinkNodeMap> DbLinkNodeMapPtr;
+
+
+/**
  * DbInfo YAML class
  */
 class DbInfo {
@@ -401,7 +424,7 @@ class DbApplicationCard : public DbEntry {
   void printAnalogConfiguration();
 
   void configureUpdateBuffers();
-  void updateInputs();
+  bool updateInputs();
   bool isAnalog();
   bool isDigital();
 

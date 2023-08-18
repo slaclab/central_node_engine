@@ -30,7 +30,20 @@ std::ostream & operator<<(std::ostream &os, DbCrate * const crate) {
      << "rack[" << crate->rack << "]; "
      << "elevation[" << crate->elevation << "]; "
      << "area[" << crate->area << "]; "
-     << "node[" << crate->node << "];";
+     << "node[" << crate->node << "]";
+  return os;
+}
+
+DbLinkNode::DbLinkNode() : DbEntry(), rxPgp(999), lnType(999), lnId(999), crateId(999), groupId(999) {};
+
+std::ostream & operator<<(std::ostream &os, DbLinkNode * const linkNode) {
+  os << "id[" << linkNode->id << "]; "
+     << "location[" << linkNode->location << "]; "
+     << "group_link[" << linkNode->groupLink << "]; "
+     << "rx_pgp[" << linkNode->rxPgp << "]; "
+     << "ln_type[" << linkNode->lnType << "]; "
+     << "crateId[" << linkNode->crateId << "]; "
+     << "groupId[" << linkNode->groupId << "]";
   return os;
 }
 

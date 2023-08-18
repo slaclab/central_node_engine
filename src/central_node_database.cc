@@ -595,7 +595,6 @@ void MpsDb::configureFaultInputs()
     // Assign an evaluation to a Fault based on the inputs to its FaultInputs
     // Faults whose inputs are all evaluated in firmware should be only handled
     // by the firmware.
-    // TODO: set DbFault.evaluation
     for (DbFaultMap::iterator faultIt = faults->begin(); faultIt != faults->end(); ++faultIt)
     {
         bool slowEvaluation = false;
@@ -930,12 +929,21 @@ void MpsDb::configure()
 {
     configureAllowedClasses();
     // configureDeviceInputs(); Temporarily commented out, TODO - See if this is still needed for new schema
+    // addd configureDigitalChannels() - to replace deviceInputs
     configureFaultStates();
     configureAnalogChannels();
     configureFaultInputs();
-    configureIgnoreConditions();
+    configureIgnoreConditions(); // TODO - This configure may need to add faultState
     configureApplicationCards();
-    // configureBeamDestinations();
+    configureBeamDestinations();
+}
+
+bool MpsDb::getDbReload() {
+  return _reloadInactive;
+}
+
+void MpsDb::resetDbReload() {
+  _reloadInactive = false;
 }
 
 void MpsDb::forceBeamDestination(uint32_t beamDestinationId, uint32_t beamClassId)
@@ -1122,6 +1130,10 @@ int MpsDb::load(std::string yamlFileName)
         {
             crates = (*node).as<DbCrateMapPtr>();
         }
+        else if (nodeName == "LinkNode")
+        {
+            linkNodes = (*node).as<DbLinkNodeMapPtr>();
+        }
         else if (nodeName == "ApplicationType")
         {
             applicationTypes = (*node).as<DbApplicationTypeMapPtr>();
@@ -1191,12 +1203,10 @@ int MpsDb::load(std::string yamlFileName)
         {
             // Do not raise exception if the YAML node is known, but
             // does not need to be loaded by central node engine
-            if (nodeName != "LinkNode")
-            {
-                errorStream << "ERROR: Unknown YAML node name ("
-                    << nodeName << ")";
-                throw(DbException(errorStream.str()));
-            }
+            errorStream << "ERROR: Unknown YAML node name ("
+                << nodeName << ")";
+            throw(DbException(errorStream.str()));
+            
         }
     }
 
@@ -1461,6 +1471,9 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb)
 
     mpsDb->printMap<DbCrateMapPtr, DbCrateMap::iterator>
         (os, mpsDb->crates, "Crate");
+
+    mpsDb->printMap<DbLinkNodeMapPtr, DbLinkNodeMap::iterator>
+        (os, mpsDb->linkNodes, "LinkNode");
 
     mpsDb->printMap<DbApplicationTypeMapPtr, DbApplicationTypeMap::iterator>
         (os, mpsDb->applicationTypes, "ApplicationType");

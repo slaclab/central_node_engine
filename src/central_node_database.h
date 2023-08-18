@@ -139,6 +139,7 @@ class MpsDb {
  public:
   DbBeamClassPtr lowestBeamClass;
   DbCrateMapPtr crates;
+  DbLinkNodeMapPtr linkNodes;
   DbApplicationTypeMapPtr applicationTypes;
   DbApplicationCardMapPtr applicationCards;
   DbDigitalChannelMapPtr digitalChannels;
@@ -192,6 +193,8 @@ class MpsDb {
   long getAvgUpdateTime();
   long getMaxFwUpdatePeriod();
   long getAvgFwUpdatePeriod();
+  bool getDbReload();
+  void resetDbReload();
 
   int  getTotalDeviceCount();
 

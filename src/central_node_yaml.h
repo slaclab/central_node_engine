@@ -71,9 +71,79 @@ namespace YAML {
 				} catch(YAML::TypedBadConversion<unsigned int> &e) {
 					errorStream << "ERROR: Failed to convert contents of field " << field << " for Crate (expected unsigned int).";
 					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<std::string> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for Crate (expected string).";
+					throw(DbException(errorStream.str()));
 				}
 
 				rhs->insert(std::pair<int, DbCratePtr>(crate->id, DbCratePtr(crate)));
+			}
+
+			return true;
+		}
+	};
+
+  /**
+   * LinkNode:
+   * id: 57
+   * location: "MP01"
+   * group_link: "B136-0528"
+   * rx_pgp: 0
+   * ln_type: 1
+   * lnid: 195
+   * crate_id: 59
+   * group_id: 16
+   */
+  template<>
+    struct convert<DbLinkNodeMapPtr> {
+		static bool decode(const Node &node, DbLinkNodeMapPtr &rhs) {
+			DbLinkNodeMap *linkNodes = new DbLinkNodeMap();
+			std::stringstream errorStream;
+			std::string field;
+			rhs = DbLinkNodeMapPtr(linkNodes);
+
+			for (YAML::Node::const_iterator it = node["LinkNode"].begin();
+				it != node["LinkNode"].end(); ++it) {
+				DbLinkNode *linkNode = new DbLinkNode();
+
+				try {
+					field = "id";
+					linkNode->id = (*it)[field].as<unsigned int>();
+
+					field = "location";
+					linkNode->location = (*it)[field].as<std::string>();
+
+					field = "group_link";
+					linkNode->groupLink = (*it)[field].as<std::string>();
+
+					field = "rx_pgp";
+					linkNode->rxPgp = (*it)[field].as<unsigned int>();
+
+					field = "ln_type";
+					linkNode->lnType = (*it)[field].as<unsigned int>();
+
+					field = "lnid";
+					linkNode->lnId = (*it)[field].as<unsigned int>();
+
+					field = "crate_id";
+					linkNode->crateId = (*it)[field].as<unsigned int>();
+
+					field = "group_id";
+					linkNode->groupId = (*it)[field].as<unsigned int>();
+
+
+				} catch(YAML::InvalidNode &e) {
+					errorStream << "ERROR: Failed to find field " << field << " for LinkNode.";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<unsigned int> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for LinkNode (expected unsigned int).";
+					throw(DbException(errorStream.str()));
+				} catch(YAML::TypedBadConversion<std::string> &e) {
+					errorStream << "ERROR: Failed to convert contents of field " << field << " for LinkNode (expected string).";
+					throw(DbException(errorStream.str()));
+				}
+
+				rhs->insert(std::pair<int, DbLinkNodePtr>(linkNode->id, DbLinkNodePtr(linkNode)));
 			}
 
 			return true;

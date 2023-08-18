@@ -18,7 +18,7 @@ static Logger *databaseLogger ;
 #endif
 
 TimeAverage DeviceInputUpdateTime(5, "Device Input update time");
-TimeAverage AnalogChannelUpdateTime(5, "Analog Device update time");
+TimeAverage AnalogChannelUpdateTime(5, "Analog Device update time"); // TEMP - Changed to channel, delete this comment once confirmed good
 TimeAverage AppCardDigitalUpdateTime(5, "Application Card (digital) update time");
 TimeAverage AppCardAnalogUpdateTime(5, "Application Card (analog) update time");
 
@@ -121,7 +121,7 @@ void DbDeviceInput::update() {
   DeviceInputUpdateTime.end();
 }
 
-DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1),
+DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1), // TEMP - Changed to channel, delete this comment once confirmed good
 				   value(0), previousValue(0),
 				   invalidValueCount(0), ignored(false),
 				   bypassMask(0xFFFFFFFF) {
@@ -141,7 +141,7 @@ DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1),
 //   applicationUpdateBuffer = buffer;
 // }
 
-void DbAnalogChannel::update(uint32_t v) {
+void DbAnalogChannel::update(uint32_t v) { // TEMP - Changed to channel, delete this comment once confirmed good
   //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
   previousValue = value;
   value = v;
@@ -165,94 +165,94 @@ void DbAnalogChannel::update(uint32_t v) {
  * 'was Low' : threshold comparison is within limits, no faults
  * 'was High': threshold comparison outside limits, generate fault
  */
-void DbAnalogChannel::update() {
+void DbAnalogChannel::update() { // TEMP - Changed to channel, delete this comment once confirmed good
 
-  // TODO - Temporarily commented out entire function until ready to deal with logic
+  // TODO - Temporarily commented out function until ready to deal with logic
 
-//   uint32_t wasLow;
-//   uint32_t wasHigh;
-//   uint32_t newValue = 0;
+  // uint32_t wasLow;
+  // uint32_t wasHigh;
+  // uint32_t newValue = 0;
 
-//   AnalogChannelUpdateTime.start();
+  // AnalogDeviceUpdateTime.start();
 
-//   if (getWasLowBuffer()) {
-//     previousValue = value;
-//     value = 0;
+  // if (getWasLowBuffer()) {
+  //   previousValue = value;
+  //   value = 0;
 
-//     uint32_t integratorOffset = 0;
-//     for (uint32_t i = 0; i < deviceType->numIntegrators; ++i) {
-//       integratorOffset = numChannelsCard * ANALOG_DEVICE_NUM_THRESHOLDS * i + channel->number * ANALOG_DEVICE_NUM_THRESHOLDS;
-//       for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) {
-// 	      wasLow = getWasLow(integratorOffset + j);
-// 	      wasHigh = getWasHigh(integratorOffset + j);
-//         // If both are zero the Central Node has not received messages from the device, assume fault
-// 	      // Both zeroes also mean no messages from application card in the last 360Hz period
-// 	      if (wasLow + wasHigh == 0) {
-// 	        invalidValueCount++;
-// 	        newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
-// 	        latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
-// 	      }
-// 	      else if (wasLow + wasHigh == 2) {
-// 	        newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // If signal was both low and high during the 2.7ms set threshold crossed
-// 	        latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
-// 	      }
-// 	      else if (wasHigh > 0) {
-// 	        newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
-// 	        latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
-// 	      }
-// 	      else {
-// 	        newValue &= ~(1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // No threshold crossed
-// 	      }
-//       }
-//     }
+  //   uint32_t integratorOffset = 0;
+  //   for (uint32_t i = 0; i < deviceType->numIntegrators; ++i) {
+  //     integratorOffset = numChannelsCard * ANALOG_DEVICE_NUM_THRESHOLDS * i + channel->number * ANALOG_DEVICE_NUM_THRESHOLDS;
+  //     for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) {
+	//       wasLow = getWasLow(integratorOffset + j);
+	//       wasHigh = getWasHigh(integratorOffset + j);
+  //       // If both are zero the Central Node has not received messages from the device, assume fault
+	//       // Both zeroes also mean no messages from application card in the last 360Hz period
+	//       if (wasLow + wasHigh == 0) {
+	//         invalidValueCount++;
+	//         newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
+	//         latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	//       }
+	//       else if (wasLow + wasHigh == 2) {
+	//         newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // If signal was both low and high during the 2.7ms set threshold crossed
+	//         latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	//       }
+	//       else if (wasHigh > 0) {
+	//         newValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // Threshold exceeded
+	//         latchedValue |= (1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS));
+	//       }
+	//       else {
+	//         newValue &= ~(1 << (j + i * ANALOG_DEVICE_NUM_THRESHOLDS)); // No threshold crossed
+	//       }
+  //     }
+  //   }
 
-//     /*
-//     // TODO: Change the bit mapping - the integrators are not contiguous in memory!
-//     for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS * deviceType->numIntegrators; ++i) {
-//       wasLow = getWasLow(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
-//       wasHigh = getWasHigh(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
+  //   /*
+  //   // TODO: Change the bit mapping - the integrators are not contiguous in memory!
+  //   for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS * deviceType->numIntegrators; ++i) {
+  //     wasLow = getWasLow(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
+  //     wasHigh = getWasHigh(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
 
-//       // If both are zero the Central Node has not received messages from the device, assume fault
-//       // Both zeroes also mean no messages from application card in the last 360Hz period
-//       if (wasLow + wasHigh == 0) {
-// 	invalidValueCount++;
-// 	newValue |= (1 << i); // Threshold exceeded
-// 	latchedValue |= (1 << i);
-//       }
-//       else if (wasLow + wasHigh == 2) {
-// 	newValue |= (1 << i); // If signal was both low and high during the 2.7ms set threshold crossed
-// 	latchedValue |= (1 << i);
-//       }
-//       else if (wasHigh > 0) {
-// 	newValue |= (1 << i); // Threshold exceeded
-// 	latchedValue |= (1 << i);
-//       }
-//       else {
-// 	newValue &= ~(1 << i); // No threshold crossed
-//       }
-//     }
-//     */
-//     value = newValue;
-//     //    std::cout << name << ": " <<  value << std::endl;
+  //     // If both are zero the Central Node has not received messages from the device, assume fault
+  //     // Both zeroes also mean no messages from application card in the last 360Hz period
+  //     if (wasLow + wasHigh == 0) {
+	// invalidValueCount++;
+	// newValue |= (1 << i); // Threshold exceeded
+	// latchedValue |= (1 << i);
+  //     }
+  //     else if (wasLow + wasHigh == 2) {
+	// newValue |= (1 << i); // If signal was both low and high during the 2.7ms set threshold crossed
+	// latchedValue |= (1 << i);
+  //     }
+  //     else if (wasHigh > 0) {
+	// newValue |= (1 << i); // Threshold exceeded
+	// latchedValue |= (1 << i);
+  //     }
+  //     else {
+	// newValue &= ~(1 << i); // No threshold crossed
+  //     }
+  //   }
+  //   */
+  //   value = newValue;
+  //   //    std::cout << name << ": " <<  value << std::endl;
 
-//     if (previousValue != value) {
-//       History::getInstance().logAnalogChannel(id, previousValue, value);
-//     }
-//   }
-//   else {
-//     throw(DbException("ERROR: DbAnalogChannel::update() - no applicationUpdateBuffer set"));
-//   }
+  //   if (previousValue != value) {
+  //     History::getInstance().logAnalogDevice(id, previousValue, value);
+  //   }
+  // }
+  // else {
+  //   throw(DbException("ERROR: DbAnalogDevice::update() - no applicationUpdateBuffer set"));
+  // }
 
-//   AnalogChannelUpdateTime.end();
+  // AnalogDeviceUpdateTime.end();
 }
 
-// /**
-//  * Assign the applicationUpdateBuffer to all digital/analog channels, which is
-//  * used to retrieve the latest updates form the firmware
-//  */
+/**
+ * Assign the applicationUpdateBuffer to all digital/analog channels, which is
+ * used to retrieve the latest updates form the firmware
+ */
 void DbApplicationCard::configureUpdateBuffers() {
 
-// TODO - Temporarily commented out entire function until ready to deal with logic
+  // TODO - Temporarily commented out entire function until ready to deal with logic
 
 //  std::stringstream errorStream;
 //   //  std::cout << this << std::endl;
@@ -285,7 +285,7 @@ void DbApplicationCard::configureUpdateBuffers() {
 //     }
 //   }
 //   else if (analogDevices) {
-//     for (DbAnalogChannelMap::iterator analogDevice = analogDevices->begin();
+//     for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
 // 	 analogDevice != analogDevices->end(); ++analogDevice) {
 //       //      std::cout << "A" << (*analogDevice).second->id << " ";
 //       //(*analogDevice).second->setUpdateBuffer(applicationUpdateBuffer);
@@ -315,11 +315,14 @@ size_t DbApplicationCard::getWasHighBufferOffset() {
  * Once the applicationUpdateBuffer has been updated with firmware status then
  * update each digital/analog device with the new values.
  */
-void DbApplicationCard::updateInputs() {
+bool DbApplicationCard::updateInputs() {
 
-// TODO - Temporarily commented out until ready to deal with logic for new config DB
+  // TODO - Temporarily commented out entire function until ready to deal with logic
+  return false; // TEMP
 
-  // Check if timeout status bit from firmware is on, if so set online to false
+  // bool reload = false;
+  // bool oldActive = active;
+  // // Check if timeout status bit from firmware is on, if so set online to false
   // if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
   //   online = false;
   // }
@@ -332,16 +335,15 @@ void DbApplicationCard::updateInputs() {
   // else {
   //   active = false;
   // }
-  // bool appModeActive = true;
-  // if (!active && !modeActive){
-  //   appModeActive = false;
+  // if(active != oldActive) {
+  //   reload = true;
   // }
   // if (digitalDevices) {
   //   AppCardDigitalUpdateTime.start();
   //   for (DbDigitalDeviceMap::iterator digitalDevice = digitalDevices->begin();
 	//        digitalDevice != digitalDevices->end(); ++digitalDevice) {
   //     (*digitalDevice).second->faultedOffline = !online; //true when it is falted offline
-  //     (*digitalDevice).second->modeActive = appModeActive; //True when SC mode, false when NC mode
+  //     (*digitalDevice).second->modeActive = active; //True when SC mode, false when NC mode
   //     if ((*digitalDevice).second->inputDevices) {
 	//       for (DbDeviceInputMap::iterator deviceInput = (*digitalDevice).second->inputDevices->begin();
 	//            deviceInput != (*digitalDevice).second->inputDevices->end(); ++deviceInput) {
@@ -354,11 +356,11 @@ void DbApplicationCard::updateInputs() {
   // else if (analogDevices) {
   //   AppCardAnalogUpdateTime.start();
 
-  //   for (DbAnalogChannelMap::iterator analogDevice = analogDevices->begin();
+  //   for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
 	//        analogDevice != analogDevices->end(); ++analogDevice) {
   //     (*analogDevice).second->update();
   //     (*analogDevice).second->faultedOffline = !online; //true when it is falted offline
-  //     (*analogDevice).second->modeActive = appModeActive; //True when SC mode, false when NC mode
+  //     (*analogDevice).second->modeActive = active; //True when SC mode, false when NC mode
   //   }
   //   AppCardAnalogUpdateTime.end();
   // }
@@ -367,6 +369,7 @@ void DbApplicationCard::updateInputs() {
   //   //    std::cerr << "WARN: No devices configured for application card " << this->name
   //   //	      << " (Id: " << this->id << ")" << std::endl;
   // }
+  // return reload;
 }
 
 /**
@@ -374,7 +377,7 @@ void DbApplicationCard::updateInputs() {
  */
 void DbApplicationCard::writeConfiguration(bool enableTimeout) {
 
-// TODO - Temporarily commented out until ready to deal with logic for new config DB
+  // TODO - Temporarily commented out entire function until ready to deal with logic
 
   // if (digitalDevices) {
   //   writeDigitalConfiguration();
@@ -411,7 +414,7 @@ void DbApplicationCard::writeConfiguration(bool enableTimeout) {
 // where Mxx is the mask for bit xx
 void DbApplicationCard::writeDigitalConfiguration() {
 
-// TODO - Temporarily commented out until ready to deal with logic for new config DB
+  // TODO - Temporarily commented out entire function until ready to deal with logic
 
   // // First set all bits to zero
   // applicationConfigBuffer->reset();
@@ -489,42 +492,40 @@ void DbApplicationCard::writeDigitalConfiguration() {
 // ***
 void DbApplicationCard::writeAnalogConfiguration() {
 
-// TODO - Temporarily commented out until ready to deal with logic for new config DB
+// TODO - Temporarily commented out entire function until ready to deal with logic
 
   // // First set all bits to zero
   // applicationConfigBuffer->reset();
 
   // std::stringstream errorStream;
 
-  // // Loop through all Analog Channels within this Application
-  // for (DbAnalogChannelMap::iterator analogChannel = analogChannels->begin();
-  //      analogChannel != analogChannels->end(); ++analogChannel) {
+  // // Loop through all Analog Devices within this Application
+  // for (DbAnalogDeviceMap::iterator analogDevice = analogDevices->begin();
+  //      analogDevice != analogDevices->end(); ++analogDevice) {
   //   // Only configure firmware for devices/faults that require fast evaluation
-  //   if ((*analogChannel).second->evaluation == FAST_EVALUATION) {
-  //     LOG_TRACE("DATABASE", "AnalogConfig: " << (*analogChannel).second->name);
-  //     //      std::cout << "AnalogConfig: " << (*analogChannel).second->name << std::endl;
+  //   if ((*analogDevice).second->evaluation == FAST_EVALUATION) {
+  //     LOG_TRACE("DATABASE", "AnalogConfig: " << (*analogDevice).second->name);
+  //     //      std::cout << "AnalogConfig: " << (*analogDevice).second->name << std::endl;
 
-  //     int channelNumber = (*analogChannel).second->number;
+  //     int channelNumber = (*analogDevice).second->channel->number;
 
   //     // Write power classes for each threshold bit - the integratorsPerChannel for all
   //     // devices must be the same
-  //     uint32_t integratorsPerChannel = (*analogChannel).second->appType->num_integrators;
+  //     uint32_t integratorsPerChannel = (*analogDevice).second->deviceType->numIntegrators;
   //     uint32_t powerClassOffset = 0;
-
-  //     // TODO - Change the logic here since we got rid of 'Devices' in new schema
-  //     uint32_t channelsPerCard = (*analogChannel).second->numChannelsCard;
+  //     uint32_t channelsPerCard = (*analogDevice).second->numChannelsCard;
 
   //     for (uint32_t i = 0; i < integratorsPerChannel; ++i) { // for each integrator
-	// powerClassOffset = channelNumber * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE +
-	//   i * channelsPerCard * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE;
-	// for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) { // for each threshold
-	//   for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
-	//     applicationConfigBuffer->set(powerClassOffset + k,
-	// 				 ((*analogDevice).second->fastPowerClass[j + i * ANALOG_DEVICE_NUM_THRESHOLDS] >> k) & 0x01);
+	//       powerClassOffset = channelNumber * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE +
+	//                          i * channelsPerCard * ANALOG_DEVICE_NUM_THRESHOLDS * POWER_CLASS_BIT_SIZE;
+	//       for (uint32_t j = 0; j < ANALOG_DEVICE_NUM_THRESHOLDS; ++j) { // for each threshold
+	//         for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
+	//           applicationConfigBuffer->set(powerClassOffset + k,
+	// 				      ((*analogDevice).second->fastPowerClass[j + i * ANALOG_DEVICE_NUM_THRESHOLDS] >> k) & 0x01);
 	//     //std::cout << "offset=" << powerClassOffset+k << ", bit=" << (((*analogDevice).second->fastPowerClass[j] >> k) & 0x01) << std::endl;
-	//   }
-	//   powerClassOffset += POWER_CLASS_BIT_SIZE;
-	// }
+	//         }
+	//       powerClassOffset += POWER_CLASS_BIT_SIZE;
+	//       }
   //     }
 
   //     // Write the destination mask for each integrator
@@ -580,16 +581,14 @@ void DbApplicationCard::printAnalogConfiguration() {
 }
 
 bool DbApplicationCard::isAnalog() {
-
-  // TODO - Temporarily commented out until ready to deal with logic for new config DB
+  // TODO - Temporarily commented out entire function until ready to deal with logic
   return false; // TEMP
 
   // return analogDevices != 0;
 }
 
 bool DbApplicationCard::isDigital() {
-
-  // TODO - Temporarily commented out until ready to deal with logic for new config DB
+  // TODO - Temporarily commented out entire function until ready to deal with logic
   return false; // TEMP
 
   // return digitalDevices != 0;
