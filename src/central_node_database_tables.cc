@@ -110,20 +110,19 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   }
   os << std::endl;
 
-// TODO - Implement the new fault_inputs and fault_States here
-
-  for (DbFaultInputMap::iterator faultInput = digitalChannel->inputFaults->begin();
-       faultInput != digitalChannel->inputFaults->end(); ++faultInput) {
+ os << " + Fault Inputs:" << std::endl;
+  for (DbFaultInputMap::iterator faultInput = digitalChannel->faultInputs->begin();
+       faultInput != digitalChannel->faultInputs->end(); ++faultInput) {
     os << " * " << (*faultInput).second;
     os << std::endl;
   }
 
-  // os << " + States:" << std::endl;
+  os << " + States:" << std::endl;
 
-  // for (DbDeviceStateMap::iterator state = digitalChannel->deviceType->deviceStates->begin();
-  //      state != digitalChannel->deviceType->deviceStates->end(); ++state) {
-  //   os << "   - " << (*state).second << std::endl;
-  // }
+  for (DbFaultStateMap::iterator state = digitalChannel->faultStates->begin();
+       state != digitalChannel->faultStates->end(); ++state) {
+    os << "   - " << (*state).second << std::endl;
+  }
 
 
   return os;
@@ -284,6 +283,22 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
     }
   }
 
+  os << std::endl;
+
+ os << " + Fault Inputs:" << std::endl;
+  for (DbFaultInputMap::iterator faultInput = analogChannel->faultInputs->begin();
+       faultInput != analogChannel->faultInputs->end(); ++faultInput) {
+    os << " * " << (*faultInput).second;
+    os << std::endl;
+  }
+
+  os << " + States:" << std::endl;
+
+  for (DbFaultStateMap::iterator state = analogChannel->faultStates->begin();
+       state != analogChannel->faultStates->end(); ++state) {
+    os << "   - " << (*state).second << std::endl;
+  }
+
   return os;
 }
 
@@ -352,11 +367,11 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
 DbFaultInput::DbFaultInput() : DbEntry(), faultId(999), channelId(999), bitPosition(999) {
 }
 
-std::ostream & operator<<(std::ostream &os, DbFaultInput * const crate) {
-  os << "id[" << crate->id << "]; "
-     << "faultId[" << crate->faultId << "]; "
-     << "channelId[" << crate->channelId << "]; "
-     << "bitPosition[" << crate->bitPosition << "]";
+std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
+  os << "id[" << faultInput->id << "]; "
+     << "faultId[" << faultInput->faultId << "]; "
+     << "channelId[" << faultInput->channelId << "]; "
+     << "bitPosition[" << faultInput->bitPosition << "]";
   return os;
 }
 
@@ -432,14 +447,14 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
   }
 
   // May omit this once these Ids are used to configure the important information
-  if (!digitalFault->mitigationIds.empty()) { 
-    os << " : MitigationIds[";
-    unsigned int i = 0;
-    for (; i < digitalFault->mitigationIds.size() - 1; i++) {
-      os << digitalFault->mitigationIds.at(i) << ", ";
-    }
-    os << digitalFault->mitigationIds.at(i) << "]";
-  }
+  // if (!digitalFault->mitigationIds.empty()) { 
+  //   os << " : MitigationIds[";
+  //   unsigned int i = 0;
+  //   for (; i < digitalFault->mitigationIds.size() - 1; i++) {
+  //     os << digitalFault->mitigationIds.at(i) << ", ";
+  //   }
+  //   os << digitalFault->mitigationIds.at(i) << "]";
+  // }
 
   return os;
 }

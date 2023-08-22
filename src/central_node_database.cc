@@ -277,104 +277,86 @@ void MpsDb::configureAllowedClasses()
     }
 }
 
-/* Configure fastEvaluation, and faultInput(s) for each digitalChannel*/
+/* Configure fastEvaluation, and configure faultInputs for each digitalChannel*/
 void MpsDb::configureDigitalChannels()
 {
     LOG_TRACE("DATABASE", "Configure: DigitalChannels");
     std::stringstream errorStream;
 
     // Iterate through the faultInputs and assign to corresponding digitalChannel
-    for (DbFaultInputMap::iterator faultInputIt = faultInputs->begin();
-        faultInputIt != faultInputs->end();
-        faultInputIt++)
+    for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
+        digitalChannelIt != digitalChannels->end();
+        digitalChannelIt++)
     {
+        // Check if digitalChannel is evaluated in firmware, set fastEvaluation
+        if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION) 
+            (*digitalChannelIt).second->fastEvaluation = true;
+        else
+            (*digitalChannelIt).second->fastEvaluation = false;
 
-        if ((*faultInputIt).second->digitalChannel)
+        // Create a map to hold faultInput for the digitalChannel
+        if (!(*digitalChannelIt).second->faultInputs)
         {
-            int channelId = (*faultInputIt).second->channelId;
-
-            DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find(channelId);
-
-            if (digitalChannelIt == digitalChannels->end())
-            {
-                std::cout << "ERROR: Failed to configure database, invalid ID found for DigitalChannel ("
-                    << channelId << ") for faultInput (" << (*faultInputIt).second->channelId << ")" << std::endl;
-                //throw(DbException(errorStream.str()));
-            }
-
-            // Check if digitalChannel is evaluated in firmware, set deviceInput->fastEvaluation
-            if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION) 
-                (*digitalChannelIt).second->fastEvaluation = true;
-            else
-                (*digitalChannelIt).second->fastEvaluation = false;
-
-            // Create a map to hold faultInput for the digitalChannel
-            if (!(*digitalChannelIt).second->inputFaults)
-            {
-                DbFaultInputMap *faultInputs = new DbFaultInputMap();
-                (*digitalChannelIt).second->inputFaults = DbFaultInputMapPtr(faultInputs);
-            }
-            else
-            {
-                // Extra check to make sure the digitalChannel has only one input, if
-                // it has evaluation set to FAST
-                if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION)
-                {
-                    std::cout << "ERROR: Failed to configure database, found DigitalChannel ("
-                        << channelId << ") set for FAST_EVALUATION with multiple inputs. Must have single input." << std::endl;
-                    //throw(DbException(errorStream.str()));
-                }
-            }
-
-            (*digitalChannelIt).second->inputFaults->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
-                (*faultInputIt).second));
+            DbFaultInputMap *faultInputs = new DbFaultInputMap();
+            (*digitalChannelIt).second->faultInputs = DbFaultInputMapPtr(faultInputs);
         }
 
     }
 
-    // TODO - If bitPosition not moved to 'channel'. Add in a bitPosition to digitalChannel, and configure it here, since it will be used in the logic later
-
+    // Assign the faultInputs to each digital channel
+    for (DbFaultInputMap::iterator faultInputIt = faultInputs->begin();
+        faultInputIt != faultInputs->end();
+        ++faultInputIt)
+    {
+        unsigned int faultInputId = (*faultInputIt).second->id;
+        DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find(faultInputId);
+        if (digitalChannelIt != digitalChannels->end()) {
+            // Add the faultInput to digitalChannel
+            (*digitalChannelIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
+            (*faultInputIt).second));
+        }
+    }
 
 }
 
-/* Assign the corresponding DigitalChannels, AnalogChannels, */
+/* Assign faultInputs to the corresponding DigitalChannels, AnalogChannels. */
 void MpsDb::configureFaultInputs()
 {
     LOG_TRACE("DATABASE", "Configure: FaultInputs");
     std::stringstream errorStream;
 
     // Assign DigitalChannel to FaultInputs
-    for (DbFaultInputMap::iterator it = faultInputs->begin();
-        it != faultInputs->end();
-        ++it)
+    for (DbFaultInputMap::iterator faultInputIt = faultInputs->begin();
+        faultInputIt != faultInputs->end();
+        ++faultInputIt)
     {
-        int id = (*it).second->channelId;
+        int id = (*faultInputIt).second->channelId;
 
         // Find the DbDigitalChannel or DbAnalogChannel referenced by the FaultInput
-        DbDigitalChannelMap::iterator channelIt = digitalChannels->find(id);
-        if (channelIt == digitalChannels->end())
+        DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find(id);
+        if (digitalChannelIt == digitalChannels->end())
         {
-            DbAnalogChannelMap::iterator aChannelIt = analogChannels->find(id);
-            if (aChannelIt == analogChannels->end())
+            DbAnalogChannelMap::iterator analogChannelIt = analogChannels->find(id);
+            if (analogChannelIt == analogChannels->end())
             {
                 errorStream << "ERROR: Failed to find DigitalChannel/AnalogChannel (" << id
-                    << ") for FaultInput (" << (*it).second->id << ")";
+                    << ") for FaultInput (" << (*faultInputIt).second->id << ")";
                 throw(DbException(errorStream.str()));
             }
             // Found the DbAnalogChannel, configure it
             else
             {
-                (*it).second->analogChannel = (*aChannelIt).second;
+                (*faultInputIt).second->analogChannel = (*analogChannelIt).second;
 
-                if ((*aChannelIt).second->evaluation == FAST_EVALUATION)
+                if ((*analogChannelIt).second->evaluation == FAST_EVALUATION)
                 {
-                    LOG_TRACE("DATABASE", "AnalogChannel " << (*aChannelIt).second->name
+                    LOG_TRACE("DATABASE", "AnalogChannel " << (*analogChannelIt).second->name
                         << ": Fast Evaluation");
-                    DbFaultMap::iterator faultIt = faults->find((*it).second->faultId);
+                    DbFaultMap::iterator faultIt = faults->find((*faultInputIt).second->faultId);
                     if (faultIt == faults->end())
                     {
                         errorStream << "ERROR: Failed to find Fault (" << id
-                            << ") for FaultInput (" << (*it).second->id << ")";
+                            << ") for FaultInput (" << (*faultInputIt).second->id << ")";
                         throw(DbException(errorStream.str()));
                     }
                     else
@@ -382,7 +364,7 @@ void MpsDb::configureFaultInputs()
                         if (!(*faultIt).second->faultStates)
                         {
                             errorStream << "ERROR: No FaultStates found for Fault (" << (*faultIt).second->id
-                                << ") for FaultInput (" << (*it).second->id << ")";
+                                << ") for FaultInput (" << (*faultInputIt).second->id << ")";
                             throw(DbException(errorStream.str()));
                         }
 
@@ -414,7 +396,7 @@ void MpsDb::configureFaultInputs()
                             if (integratorIndex >= 4)
                             {
                                 errorStream << "ERROR: Invalid value Fault (" << (*faultIt).second->id
-                                    << "), FaultInput (" << (*it).second->id << "), value=0x"
+                                    << "), FaultInput (" << (*faultInputIt).second->id << "), value=0x"
                                     << std::hex << (*faultState).second->value << std::dec;
                                 throw(DbException(errorStream.str()));
                             }
@@ -436,7 +418,7 @@ void MpsDb::configureFaultInputs()
                                 if (thresholdIndex >= sizeof(uint32_t) * 8)
                                 {
                                     errorStream << "ERROR: Invalid threshold bit for Fault (" << (*faultIt).second->id
-                                        << "), FaultInput (" << (*it).second->id << ")";
+                                        << "), FaultInput (" << (*faultInputIt).second->id << ")";
                                     throw(DbException(errorStream.str()));
                                 }
                             }
@@ -453,27 +435,27 @@ void MpsDb::configureFaultInputs()
                                 allowedClass != (*faultState).second->allowedClasses->end();
                                 ++allowedClass)
                             {
-                                (*aChannelIt).second->fastDestinationMask[integratorIndex] |=
+                                (*analogChannelIt).second->fastDestinationMask[integratorIndex] |=
                                     (*allowedClass).second->beamDestination->destinationMask;
                                 LOG_TRACE("DATABASE", "PowerClass: integrator=" << integratorIndex
                                     << " threshold index=" << thresholdIndex
-                                    << " current power=" << (*aChannelIt).second->fastPowerClass[thresholdIndex]
+                                    << " current power=" << (*analogChannelIt).second->fastPowerClass[thresholdIndex]
                                     << " power=" << (*allowedClass).second->beamClass->number
                                     << " allowedClassId=" << (*allowedClass).second->id
                                     << " destinationMask=0x" << std::hex << (*allowedClass).second->beamDestination->destinationMask << std::dec );
 
-                                if ((*aChannelIt).second->fastPowerClassInit[thresholdIndex] == 1)
+                                if ((*analogChannelIt).second->fastPowerClassInit[thresholdIndex] == 1)
                                 {
-                                    (*aChannelIt).second->fastPowerClass[thresholdIndex] =
+                                    (*analogChannelIt).second->fastPowerClass[thresholdIndex] =
                                     (*allowedClass).second->beamClass->number;
-                                    (*aChannelIt).second->fastPowerClassInit[thresholdIndex] = 0;
+                                    (*analogChannelIt).second->fastPowerClassInit[thresholdIndex] = 0;
                                 }
                                 else
                                 {
                                     if ((*allowedClass).second->beamClass->number <
-                                        (*aChannelIt).second->fastPowerClass[thresholdIndex])
+                                        (*analogChannelIt).second->fastPowerClass[thresholdIndex])
                                     {
-                                        (*aChannelIt).second->fastPowerClass[thresholdIndex] =
+                                        (*analogChannelIt).second->fastPowerClass[thresholdIndex] =
                                         (*allowedClass).second->beamClass->number;
                                     }
                                 }
@@ -485,16 +467,16 @@ void MpsDb::configureFaultInputs()
         }
         else
         {
-            (*it).second->digitalChannel = (*channelIt).second;
+            (*faultInputIt).second->digitalChannel = (*digitalChannelIt).second;
             // If the DbDigitalChannel is set for fast evaluation, save a pointer to the
             // DbFaultInput
-            if ((*channelIt).second->evaluation == FAST_EVALUATION)
+            if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION)
             {
-                DbFaultMap::iterator faultIt = faults->find((*it).second->faultId);
+                DbFaultMap::iterator faultIt = faults->find((*faultInputIt).second->faultId);
                 if (faultIt == faults->end())
                 {
                     errorStream << "ERROR: Failed to find Fault (" << id
-                        << ") for FaultInput (" << (*it).second->id << ")";
+                        << ") for FaultInput (" << (*faultInputIt).second->id << ")";
                     throw(DbException(errorStream.str()));
                 }
                 else
@@ -502,18 +484,18 @@ void MpsDb::configureFaultInputs()
                     if (!(*faultIt).second->faultStates)
                     {
                         errorStream << "ERROR: No FaultStates found for Fault (" << (*faultIt).second->id
-                            << ") for FaultInput (" << (*it).second->id << ")";
+                            << ") for FaultInput (" << (*faultInputIt).second->id << ")";
                         throw(DbException(errorStream.str()));
                     }
-                    (*channelIt).second->fastDestinationMask = 0;
-                    (*channelIt).second->fastPowerClass = 100;
-                    (*channelIt).second->fastExpectedState = 0;
+                    (*digitalChannelIt).second->fastDestinationMask = 0;
+                    (*digitalChannelIt).second->fastPowerClass = 100;
+                    (*digitalChannelIt).second->fastExpectedState = 0;
 
                     if ((*faultIt).second->faultStates->size() != 1)
                     {
                         errorStream << "ERROR: DigitalChannel configured with FAST evaluation must have one fault state only."
                             << " Found " << (*faultIt).second->faultStates->size() << " fault states for "
-                            << "channel " << (*channelIt).second->name;
+                            << "channel " << (*digitalChannelIt).second->name;
                         throw(DbException(errorStream.str()));
                     }
                     DbFaultStateMap::iterator faultState = (*faultIt).second->faultStates->begin();
@@ -522,16 +504,16 @@ void MpsDb::configureFaultInputs()
                     // For example a faulted fast valve sets the digital input to high (0V, digital 0),
                     // the expected normal state is 1.
                     if (!(*faultState).second->value)
-                      (*channelIt).second->fastExpectedState = 1;
+                      (*digitalChannelIt).second->fastExpectedState = 1;
 
                     //    DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
                     for (DbAllowedClassMap::iterator allowedClass = (*faultState).second->allowedClasses->begin();
                         allowedClass != (*faultState).second->allowedClasses->end();
                         ++allowedClass)
                     {
-                        (*channelIt).second->fastDestinationMask |= (*allowedClass).second->beamDestination->destinationMask;
-                        if ((*allowedClass).second->beamClass->number < (*channelIt).second->fastPowerClass)
-                            (*channelIt).second->fastPowerClass = (*allowedClass).second->beamClass->number;
+                        (*digitalChannelIt).second->fastDestinationMask |= (*allowedClass).second->beamDestination->destinationMask;
+                        if ((*allowedClass).second->beamClass->number < (*digitalChannelIt).second->fastPowerClass)
+                            (*digitalChannelIt).second->fastPowerClass = (*allowedClass).second->beamClass->number;
 
                     }
                 }
@@ -541,17 +523,17 @@ void MpsDb::configureFaultInputs()
     //  std::cout << "assigning fault inputs to faults" << std::endl;
 
     // Assing fault inputs to faults
-    for (DbFaultInputMap::iterator it = faultInputs->begin();
-        it != faultInputs->end();
-        ++it)
+    for (DbFaultInputMap::iterator faultInputIt = faultInputs->begin();
+        faultInputIt != faultInputs->end();
+        ++faultInputIt)
     {
-        int id = (*it).second->faultId;
+        int id = (*faultInputIt).second->faultId;
 
         DbFaultMap::iterator faultIt = faults->find(id);
         if (faultIt == faults->end())
         {
             errorStream <<  "ERROR: Failed to configure database, invalid ID found for Fault ("
-                << id << ") for FaultInput (" << (*it).second->id << ")";
+                << id << ") for FaultInput (" << (*faultInputIt).second->id << ")";
             throw(DbException(errorStream.str()));
         }
 
@@ -561,8 +543,8 @@ void MpsDb::configureFaultInputs()
             DbFaultInputMap *faultInputs = new DbFaultInputMap();
             (*faultIt).second->faultInputs = DbFaultInputMapPtr(faultInputs);
         }
-        (*faultIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*it).second->id,
-            (*it).second));
+        (*faultIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
+            (*faultInputIt).second));
     }
 
     //  std::cout << "assign evaluation" << std::endl;
@@ -605,15 +587,14 @@ void MpsDb::configureFaultInputs()
     //  std::cout << "done with faultInputs" << std::endl;
 }
 
-/* Assign the corresponding faultStates to the fault */
+/* Assign the corresponding faultStates to the fault, digital, and analog channels. */
 void MpsDb::configureFaultStates()
 {
 
     LOG_TRACE("DATABASE", "Configure: FaultStates");
     std::stringstream errorStream;
 
-    // Assign all FaultStates to a Fault, and also
-    // find the DeviceState and save a reference in the FaultState
+    // Assign all FaultStates to a Fault
     for (DbFaultStateMap::iterator it = faultStates->begin();
         it != faultStates->end();
         ++it)
@@ -628,7 +609,7 @@ void MpsDb::configureFaultStates()
             throw(DbException(errorStream.str()));
         }
 
-        // Create a map to hold faultInputs for the fault
+        // Create a map to hold faultStates for the fault
         if (!(*faultIt).second->faultStates)
         {
             DbFaultStateMap *digFaultStates = new DbFaultStateMap();
@@ -659,19 +640,87 @@ void MpsDb::configureFaultStates()
             throw(DbException(errorStream.str()));
         }
     }
+
+    // Assign the faultStates to each digitalChannel
+    for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
+        digitalChannelIt != digitalChannels->end();
+        ++digitalChannelIt)
+    {
+        // Create a map to hold faultStates for the digitalChannel
+        if (!(*digitalChannelIt).second->faultStates)
+        {
+            DbFaultStateMap *faultStates = new DbFaultStateMap();
+            (*digitalChannelIt).second->faultStates = DbFaultStateMapPtr(faultStates);
+        }
+        // Get faultId from faultInputs to access faultStates
+        DbFaultInputMapPtr currentFaultInputs = (*digitalChannelIt).second->faultInputs;
+        if (currentFaultInputs) {
+            
+            for (DbFaultInputMap::iterator faultInputIt = currentFaultInputs->begin();
+                faultInputIt != currentFaultInputs->end();
+                faultInputIt++)
+            {
+                unsigned int faultId = (*faultInputIt).second->faultId;
+                DbFaultStateMap::iterator faultStateIt = faultStates->find(faultId);
+                if (faultStateIt != faultStates->end()) {
+                    (*digitalChannelIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*faultStateIt).second->id,
+                    (*faultStateIt).second));
+                }
+                else {
+                    errorStream << "ERROR: Failed to configure database, invalid faultId ("
+                    << faultId << ") for FaultState (" << (*faultStateIt).second->id << ")";
+                    throw(DbException(errorStream.str()));
+                }
+            }
+        }
+    }
+
+    // Assign the faultStates to each analogChannel
+    for (DbAnalogChannelMap::iterator analogChannelIt = analogChannels->begin();
+        analogChannelIt != analogChannels->end();
+        ++analogChannelIt)
+    {
+        // Create a map to hold faultStates for the analogChannel
+        if (!(*analogChannelIt).second->faultStates)
+        {
+            DbFaultStateMap *faultStates = new DbFaultStateMap();
+            (*analogChannelIt).second->faultStates = DbFaultStateMapPtr(faultStates);
+        }
+        // Get faultId from faultInputs to access faultStates
+        DbFaultInputMapPtr currentFaultInputs = (*analogChannelIt).second->faultInputs;
+        if (currentFaultInputs) {
+            
+            for (DbFaultInputMap::iterator faultInputIt = currentFaultInputs->begin();
+                faultInputIt != currentFaultInputs->end();
+                faultInputIt++)
+            {
+                unsigned int faultId = (*faultInputIt).second->faultId;
+                DbFaultStateMap::iterator faultStateIt = faultStates->find(faultId);
+                if (faultStateIt != faultStates->end()) {
+                    (*analogChannelIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*faultStateIt).second->id,
+                    (*faultStateIt).second));
+                }
+                else {
+                    errorStream << "ERROR: Failed to configure database, invalid faultId ("
+                    << faultId << ") for FaultState (" << (*faultStateIt).second->id << ")";
+                    throw(DbException(errorStream.str()));
+                }
+            }
+        }
+    }
 }
 
-/* Assign the corresponding application card type to the analog channel */
+/* Assign the corresponding application card type, and configure faultInputs for each analog channel */
 void MpsDb::configureAnalogChannels()
 {
     LOG_TRACE("DATABASE", "Configure: AnalogChannels");
     std::stringstream errorStream;
 
-    for (DbAnalogChannelMap::iterator it = analogChannels->begin();
-        it != analogChannels->end();
-        ++it)
+    for (DbAnalogChannelMap::iterator analogChannelIt = analogChannels->begin();
+        analogChannelIt != analogChannels->end();
+        ++analogChannelIt)
     {
-        int cardId = (*it).second->cardId;
+        int cardId = (*analogChannelIt).second->cardId;
         
         DbApplicationCardMap::iterator appCardIt = applicationCards->find(cardId);
         int cardTypeId = (*appCardIt).second->applicationTypeId;
@@ -679,13 +728,34 @@ void MpsDb::configureAnalogChannels()
         DbApplicationTypeMap::iterator cardTypeIt = applicationTypes->find(cardTypeId);
         if (cardTypeIt != applicationTypes->end())
         {
-            (*it).second->appType = (*cardTypeIt).second;
+            (*analogChannelIt).second->appType = (*cardTypeIt).second;
         }
         else
         {
             errorStream << "ERROR: Failed to configure database, invalid cardTypeId ("
-                << cardTypeId << ") for ApplicationCard (" <<  (*it).second->id << ")";
+                << cardTypeId << ") for ApplicationCard (" <<  (*analogChannelIt).second->id << ")";
             throw(DbException(errorStream.str()));
+        }
+
+        // Create a map to hold faultInput for the analogChannelIt
+        if (!(*analogChannelIt).second->faultInputs)
+        {
+            DbFaultInputMap *faultInputs = new DbFaultInputMap();
+            (*analogChannelIt).second->faultInputs = DbFaultInputMapPtr(faultInputs);
+        }
+    }
+
+    // Assign the faultInputs to each analog channel
+    for (DbFaultInputMap::iterator faultInputIt = faultInputs->begin();
+        faultInputIt != faultInputs->end();
+        ++faultInputIt)
+    {
+        unsigned int faultInputId = (*faultInputIt).second->id;
+        DbAnalogChannelMap::iterator analogChannelIt = analogChannels->find(faultInputId);
+        if (analogChannelIt != analogChannels->end()) {
+            // Add the faultInput to analogChannel
+            (*analogChannelIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
+            (*faultInputIt).second));
         }
     }
 }
@@ -907,10 +977,10 @@ void MpsDb::configure()
 {
     configureAllowedClasses();
     configureDigitalChannels(); // to replace deviceInputs
-    configureFaultStates();
     configureAnalogChannels();
+    configureFaultStates();
     configureFaultInputs();
-    configureIgnoreConditions(); // TODO - This configure may need to add faultState
+    configureIgnoreConditions(); // TODO - Shouldnt - This configure may need to add faultState
     configureApplicationCards();
     configureBeamDestinations();
 }
@@ -1298,8 +1368,8 @@ void MpsDb::showFault(DbFaultPtr fault)
             else
             {
                 for (DbFaultInputMap::iterator faultInput =
-                    (*digitalChannel).second->inputFaults->begin();
-                faultInput != (*digitalChannel).second->inputFaults->end(); ++faultInput)
+                    (*digitalChannel).second->faultInputs->begin();
+                faultInput != (*digitalChannel).second->faultInputs->end(); ++faultInput)
                 {
                     std::cout << "| - Input[" << (*faultInput).second->id
                         << "], Position[" << (*faultInput).second->bitPosition
