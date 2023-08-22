@@ -28,7 +28,7 @@ class MpsDb {
  private:
   void setName(std::string yamlFileName);
   void configureAllowedClasses();
-  void configureDeviceInputs();
+  void configureDigitalChannels();
   void configureFaultInputs();
   void configureFaultStates();
   void configureAnalogChannels();

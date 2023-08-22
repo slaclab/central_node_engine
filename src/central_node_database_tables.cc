@@ -75,6 +75,10 @@ std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
 DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999) {
 }
 
+void DbDigitalChannel::unlatch() {
+  latchedValue = value;
+}
+
 std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChannel) {
   os << "id[" << digitalChannel->id << "]; "
      << "name[" << digitalChannel->name << "]; "
@@ -108,11 +112,11 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
 
 // TODO - Implement the new fault_inputs and fault_States here
 
-  // for (DbDeviceInputMap::iterator input = digitalChannel->inputDevices->begin();
-  //      input != digitalChannel->inputDevices->end(); ++input) {
-  //   os << " * " << (*input).second;
-  //   os << std::endl;
-  // }
+  for (DbFaultInputMap::iterator faultInput = digitalChannel->inputFaults->begin();
+       faultInput != digitalChannel->inputFaults->end(); ++faultInput) {
+    os << " * " << (*faultInput).second;
+    os << std::endl;
+  }
 
   // os << " + States:" << std::endl;
 
@@ -122,6 +126,51 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   // }
 
 
+  return os;
+}
+
+// TODO - Delete deviceInput once replaced with digitalChannel
+DbDeviceInput::DbDeviceInput() : DbEntry(),
+				 bitPosition(999), channelId(999), faultValue(0),
+				 digitalDeviceId(999), value(0), previousValue(0),
+				 latchedValue(0), invalidValueCount(0),
+				 fastEvaluation(false), autoReset(0) {
+}
+
+void DbDeviceInput::unlatch() {
+  latchedValue = value;
+}
+
+std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
+  os << "DeviceInput: "
+     << "deviceId=" << deviceInput->digitalDeviceId << " : "
+     << "channelId=" << deviceInput->channelId << " : "
+     << "bitPos=" << deviceInput->bitPosition << " : "
+     << "faultValue=" << deviceInput->faultValue << " : "
+     << "value=" << deviceInput->value << " [wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]" << " : "
+     << "latchedValue=" << deviceInput->latchedValue;
+  if (deviceInput->fastEvaluation) {
+    os << " [in fast device]";
+  }
+  if (deviceInput->bypass) {
+    if (deviceInput->bypass->status == BYPASS_VALID) {
+      os << " [Bypassed to " << deviceInput->bypass->value << "]";
+    }
+  }
+  /*
+  os << "id[" << deviceInput->id << "]; "
+     << "bitPosition[" << deviceInput->bitPosition << "]; "
+     << "faultValue[" << deviceInput->faultValue << "]; "
+     << "channelId[" << deviceInput->channelId << "]; "
+     << "digitalDeviceId[" << deviceInput->digitalDeviceId << "]; "
+     << "value[" << deviceInput->value << ", wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]";
+  if (deviceInput->fastEvaluation) {
+    os << " [in fast device]";
+  }
+  if (deviceInput->bypass->status == BYPASS_VALID) {
+    os << " [Bypassed to " << deviceInput->bypass->value << "]";
+  }
+  */
   return os;
 }
 
@@ -152,51 +201,6 @@ std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState) {
      << "value[0x" << std::hex << devState->value << "]; "
      << "mask[0x" << devState->mask << std::dec << "]; "
      << "name[" << devState->name << "]";
-  return os;
-}
-
-DbDeviceInput::DbDeviceInput() : DbEntry(),
-				 bitPosition(999), channelId(999), faultValue(0),
-				 digitalDeviceId(999), value(0), previousValue(0),
-				 latchedValue(0), invalidValueCount(0),
-				 fastEvaluation(false), autoReset(0) {
-}
-
-void DbDeviceInput::unlatch() {
-  latchedValue = value;
-}
-
-std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
-  os << "DeviceInput: "
-     << "deviceId=" << deviceInput->digitalDeviceId << " : "
-     << "channelId=" << deviceInput->channelId << " : "
-     << "bitPos=" << deviceInput->bitPosition << " : "
-     << "card=" << deviceInput->channel->cardId << " : "
-     << "faultValue=" << deviceInput->faultValue << " : "
-     << "value=" << deviceInput->value << " [wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]" << " : "
-     << "latchedValue=" << deviceInput->latchedValue;
-  if (deviceInput->fastEvaluation) {
-    os << " [in fast device]";
-  }
-  if (deviceInput->bypass) {
-    if (deviceInput->bypass->status == BYPASS_VALID) {
-      os << " [Bypassed to " << deviceInput->bypass->value << "]";
-    }
-  }
-  /*
-  os << "id[" << deviceInput->id << "]; "
-     << "bitPosition[" << deviceInput->bitPosition << "]; "
-     << "faultValue[" << deviceInput->faultValue << "]; "
-     << "channelId[" << deviceInput->channelId << "]; "
-     << "digitalDeviceId[" << deviceInput->digitalDeviceId << "]; "
-     << "value[" << deviceInput->value << ", wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]";
-  if (deviceInput->fastEvaluation) {
-    os << " [in fast device]";
-  }
-  if (deviceInput->bypass->status == BYPASS_VALID) {
-    os << " [Bypassed to " << deviceInput->bypass->value << "]";
-  }
-  */
   return os;
 }
 
@@ -289,14 +293,13 @@ void DbApplicationCard::setUpdateBufferPtr(std::vector<uint8_t>* p)
 {
     fwUpdateBuffer = p;
 
-    // TODO - Temporarily comment out til figure out globalId logic
-    // wasLowBufferOffset =
-    //   APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +            // Skip header (timestamp + zeroes)
-    //   globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;  // Jump to correct area according to the globalId
+    wasLowBufferOffset =
+      APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES +            // Skip header (timestamp + zeroes)
+      number * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES;  // Jump to correct area according to the applicationCard->number
 
-    // wasHighBufferOffset =
-    //     wasLowBufferOffset +
-    //     (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2);        // Skip 192 bits from wasLow
+    wasHighBufferOffset =
+        wasLowBufferOffset +
+        (APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES/2);        // Skip 192 bits from wasLow
 }
 
 ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasLowBuffer()

@@ -277,92 +277,67 @@ void MpsDb::configureAllowedClasses()
     }
 }
 
-void MpsDb::configureDeviceInputs()
+/* Configure fastEvaluation, and faultInput(s) for each digitalChannel*/
+void MpsDb::configureDigitalChannels()
 {
+    LOG_TRACE("DATABASE", "Configure: DigitalChannels");
+    std::stringstream errorStream;
 
-    // TODO - Temporarily comment out, may omit this entire function if deviceInputs not needed and replace with configureChannelinputs
+    // Iterate through the faultInputs and assign to corresponding digitalChannel
+    for (DbFaultInputMap::iterator faultInputIt = faultInputs->begin();
+        faultInputIt != faultInputs->end();
+        faultInputIt++)
+    {
 
-    // LOG_TRACE("DATABASE", "Configure: DeviceInputs");
-    // std::stringstream errorStream;
-    // // Assign DeviceInputs to it's DigitalDevices, and find the Channel
-    // // the device is connected to
-    // for (DbDeviceInputMap::iterator it = deviceInputs->begin();
-    //     it != deviceInputs->end();
-    //     ++it)
-    // {
-    //     int id = (*it).second->digitalDeviceId;
+        if ((*faultInputIt).second->digitalChannel)
+        {
+            int channelId = (*faultInputIt).second->channelId;
 
-    //     DbDigitalDeviceMap::iterator deviceIt = digitalDevices->find(id);
-    //     if (deviceIt == digitalDevices->end())
-    //     {
-    //         std::cout << "ERROR: Failed to configure database, invalid ID found for DigitalDevice ("
-    //             << id << ") for DeviceInput (" << (*it).second->id << ")" << std::endl;
-    //         //throw(DbException(errorStream.str()));
-    //     }
+            DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find(channelId);
 
-    //     // Check if digitalDevice is evaluated in firmaware, set deviceInput->fastEvaluation
-    //     if ((*deviceIt).second->evaluation == FAST_EVALUATION)
-    //         (*it).second->fastEvaluation = true;
-    //     else
-    //         (*it).second->fastEvaluation = false;
+            if (digitalChannelIt == digitalChannels->end())
+            {
+                std::cout << "ERROR: Failed to configure database, invalid ID found for DigitalChannel ("
+                    << channelId << ") for faultInput (" << (*faultInputIt).second->channelId << ")" << std::endl;
+                //throw(DbException(errorStream.str()));
+            }
 
-    //     // Create a map to hold deviceInput for the digitalDevice
-    //     if (!(*deviceIt).second->inputDevices)
-    //     {
-    //         DbDeviceInputMap *deviceInputs = new DbDeviceInputMap();
-    //         (*deviceIt).second->inputDevices = DbDeviceInputMapPtr(deviceInputs);
-    //     }
-    //     else
-    //     {
-    //         // Extra check to make sure the digitalDevice has only one input, if
-    //         // it has evaluation set to FAST
-    //         if ((*deviceIt).second->evaluation == FAST_EVALUATION)
-    //         {
-    //             std::cout << "ERROR: Failed to configure database, found DigitalDevice ("
-    //                 << id << ") set for FAST_EVALUATION with multiple inputs. Must have single input." << std::endl;
-    //             //throw(DbException(errorStream.str()));
-    //         }
-    //     }
-    //     (*deviceIt).second->inputDevices->insert(std::pair<int, DbDeviceInputPtr>((*it).second->id,
-    //         (*it).second));
-    //     LOG_TRACE("DATABASE", "Adding DeviceInput (" << (*it).second->id << ") to "
-    //         " DigitalDevice (" << (*deviceIt).second->id << ")");
+            // Check if digitalChannel is evaluated in firmware, set deviceInput->fastEvaluation
+            if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION) 
+                (*digitalChannelIt).second->fastEvaluation = true;
+            else
+                (*digitalChannelIt).second->fastEvaluation = false;
 
-    //     int channelId = (*it).second->channelId;
-    //     DbAnalogChannelMap::iterator channelIt = digitalChannels->find(channelId);
-    //     if (channelIt == digitalChannels->end())
-    //     {
-    //         std::cout << "ERROR: Failed to configure database, invalid ID found for Channel ("
-    //             << channelId << ") for DeviceInput (" << (*it).second->id << ")" << std::endl;
-    //         //throw(DbException(errorStream.str()));
-    //     }
-    //     (*it).second->channel = (*channelIt).second;
-    // }
+            // Create a map to hold faultInput for the digitalChannel
+            if (!(*digitalChannelIt).second->inputFaults)
+            {
+                DbFaultInputMap *faultInputs = new DbFaultInputMap();
+                (*digitalChannelIt).second->inputFaults = DbFaultInputMapPtr(faultInputs);
+            }
+            else
+            {
+                // Extra check to make sure the digitalChannel has only one input, if
+                // it has evaluation set to FAST
+                if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION)
+                {
+                    std::cout << "ERROR: Failed to configure database, found DigitalChannel ("
+                        << channelId << ") set for FAST_EVALUATION with multiple inputs. Must have single input." << std::endl;
+                    //throw(DbException(errorStream.str()));
+                }
+            }
+
+            (*digitalChannelIt).second->inputFaults->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
+                (*faultInputIt).second));
+        }
+
+    }
+
+    // TODO - If bitPosition not moved to 'channel'. Add in a bitPosition to digitalChannel, and configure it here, since it will be used in the logic later
 
 
-    /* TODO - commented out since new schema doesn't have deviceTypeId. Remove this section once confirmed */
-
-    // // Set the DbDeviceType for all DbDigitaDevices
-    // for (DbDigitalDeviceMap::iterator it = digitalDevices->begin();
-    //     it != digitalDevices->end();
-    //     ++it)
-    // {
-    //     int typeId = (*it).second->deviceTypeId;
-
-    //     DbDeviceTypeMap::iterator deviceType = deviceTypes->find(typeId);
-    //     if (deviceType != deviceTypes->end())
-    //     {
-    //         (*it).second->deviceType = (*deviceType).second;
-    //     }
-    //     else
-    //     {
-    //         errorStream << "ERROR: Failed to configure database, invalid deviceTypeId ("
-    //             << typeId << ") for DigitalDevice (" <<  (*it).second->id << ")";
-    //         throw(DbException(errorStream.str()));
-    //     }
-    // }
 }
 
+/* Assign the corresponding DigitalChannels, AnalogChannels, */
 void MpsDb::configureFaultInputs()
 {
     LOG_TRACE("DATABASE", "Configure: FaultInputs");
@@ -630,6 +605,7 @@ void MpsDb::configureFaultInputs()
     //  std::cout << "done with faultInputs" << std::endl;
 }
 
+/* Assign the corresponding faultStates to the fault */
 void MpsDb::configureFaultStates()
 {
 
@@ -751,7 +727,6 @@ void MpsDb::configureIgnoreConditions()
         (*ignoreConditionIt).second->digitalChannel = (*digitalChannelIt).second;
     }
 
-    // TODO - Check if we need to create FK reference to faultState - it seems in the engine logic it does but how can we do it without faultStateId?
 
 }
 
@@ -783,13 +758,13 @@ void MpsDb::configureApplicationCards()
             aPtr->crate = (*crateIt).second;
 
         // Configuration buffer
-        configBuffer = fastConfigurationBuffer + aPtr->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES;
+        configBuffer = fastConfigurationBuffer + aPtr->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES;
         aPtr->applicationConfigBuffer = reinterpret_cast<ApplicationConfigBufferBitSet *>(configBuffer);
 
         // Update buffer
         // updateBuffer = fwUpdateBuffer.getReadPtr()->at(
         //   APPLICATION_UPDATE_BUFFER_HEADER_SIZE_BYTES + // Skip header (timestamp + zeroes)
-        //   aPtr->globalId * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES); // Jump to correct area according to the globalId
+        //   aPtr->number * APPLICATION_UPDATE_BUFFER_INPUTS_SIZE_BYTES); // Jump to correct area according to the number
 
         // For debugging purposes only
         aPtr->applicationUpdateBufferFull = reinterpret_cast<ApplicationUpdateBufferFullBitSet *>(&fwUpdateBuffer);
@@ -802,7 +777,7 @@ void MpsDb::configureApplicationCards()
         if (applicationTypeIt != applicationTypes->end())
             aPtr->applicationType = (*applicationTypeIt).second;
         
-        LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "] config/update buffer alloc");
+        LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "] config/update buffer alloc");
     }
 
     // Get all devices for each application card, starting with the digital devices
@@ -824,7 +799,7 @@ void MpsDb::configureApplicationCards()
             }
             // Once the map is there, add the digital device
             aPtr->digitalChannels->insert(std::pair<int, DbDigitalChannelPtr>(digitalChannelPtr->id, digitalChannelPtr));
-            LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], DigitalChannel: " << digitalChannelPtr->name);
+            LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], DigitalChannel: " << digitalChannelPtr->name);
         }
     }
 
@@ -855,7 +830,7 @@ void MpsDb::configureApplicationCards()
 
             // Once the map is there, add the analog device
             aPtr->analogChannels->insert(std::pair<int, DbAnalogChannelPtr>(analogChannelPtr->id, analogChannelPtr));
-            LOG_TRACE("DATABASE", "AppCard [" << aPtr->globalId << ", " << aPtr->name << "], AnalogChannel: " << analogChannelPtr->name);
+            LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], AnalogChannel: " << analogChannelPtr->name);
             analogChannelPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
         }
     }
@@ -868,32 +843,34 @@ void MpsDb::configureApplicationCards()
         (*applicationCardIt).second->configureUpdateBuffers();
     }
 
+    // TODO - temporarily commented out until figure out logic for replace deviceInput with digitalChannel
+
     // Deal with special case where one device input is not in same application card.
-    for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
-        digitalChannelIt != digitalChannels->end();
-        ++digitalChannelIt)
-    {
-        DbDigitalChannelPtr digitalChannelPtr = (*digitalChannelIt).second;
-        if (digitalChannelPtr->inputDevices) {
-            for (DbDeviceInputMap::iterator deviceInput = digitalChannelPtr->inputDevices->begin();
-                    deviceInput != digitalChannelPtr->inputDevices->end(); ++deviceInput) {
-                if (!(*deviceInput).second->configured) {
-                    uint32_t diCard = (*deviceInput).second->channel->cardId;
-                    DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(diCard);
-                    if (applicationCardIt != applicationCards->end())
-                    {
-                        DbApplicationCardPtr aPtr = (*applicationCardIt).second;
-                        std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
-                        size_t                lowBufOff = aPtr->getWasLowBufferOffset();
-                        size_t                highBufOff = aPtr->getWasHighBufferOffset();
-                        (*deviceInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
-                        (*deviceInput).second->configured = true;
-                        std::cout << "INFO: Device Input for " << digitalChannelPtr->name << " configured!" << std::endl;
-                    }
-                }
-            }
-        }
-    }
+    // for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
+    //     digitalChannelIt != digitalChannels->end();
+    //     ++digitalChannelIt)
+    // {
+    //     DbDigitalChannelPtr digitalChannelPtr = (*digitalChannelIt).second;
+    //     if (digitalChannelPtr->inputDevices) {
+    //         for (DbDeviceInputMap::iterator deviceInput = digitalChannelPtr->inputDevices->begin();
+    //                 deviceInput != digitalChannelPtr->inputDevices->end(); ++deviceInput) {
+    //             if (!(*deviceInput).second->configured) {
+    //                 uint32_t diCard = (*deviceInput).second->channel->cardId;
+    //                 DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(diCard);
+    //                 if (applicationCardIt != applicationCards->end())
+    //                 {
+    //                     DbApplicationCardPtr aPtr = (*applicationCardIt).second;
+    //                     std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
+    //                     size_t                lowBufOff = aPtr->getWasLowBufferOffset();
+    //                     size_t                highBufOff = aPtr->getWasHighBufferOffset();
+    //                     (*deviceInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
+    //                     (*deviceInput).second->configured = true;
+    //                     std::cout << "INFO: Device Input for " << digitalChannelPtr->name << " configured!" << std::endl;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
     std::cout << "End of the line" << std::endl;
 }
 
@@ -923,13 +900,13 @@ void MpsDb::clearMitigationBuffer()
  * another table using a 'foreign key'. The configure*() methods look for the
  * actual item referenced by the foreign key and saves a pointer to the
  * referenced element for direct access. This allows the engine to evaluate
- * faults without having to search for entries.
+ * faults without having to search for entries. This method also configures
+ * some inital values for certain fields of the tables. 
  */
 void MpsDb::configure()
 {
     configureAllowedClasses();
-    // configureDeviceInputs(); Temporarily commented out, TODO - See if this is still needed for new schema
-    // addd configureDigitalChannels() - to replace deviceInputs
+    configureDigitalChannels(); // to replace deviceInputs
     configureFaultStates();
     configureAnalogChannels();
     configureFaultInputs();
@@ -1036,8 +1013,8 @@ void MpsDb::writeFirmwareConfiguration(bool enableTimeout)
         ++card)
     {
         (*card).second->writeConfiguration(enableTimeout);
-        Firmware::getInstance().writeConfig((*card).second->globalId, fastConfigurationBuffer +
-            (*card).second->globalId * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
+        Firmware::getInstance().writeConfig((*card).second->number, fastConfigurationBuffer +
+            (*card).second->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
             APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
         i++;
     }
@@ -1290,7 +1267,7 @@ void MpsDb::showFault(DbFaultPtr fault)
                 DbAnalogChannelMap::iterator analogChannel = analogChannels->find(channelId);
                 if (analogChannel == analogChannels->end())
                 {
-                    std::cout << "| - WARNING: No digital/analog devices for this fault!";
+                    std::cout << "| - WARNING: No digital/analog channels for this fault!";
                 }
                 else
                 {
@@ -1320,21 +1297,21 @@ void MpsDb::showFault(DbFaultPtr fault)
             }
             else
             {
-                for (DbDeviceInputMap::iterator devInput =
-                    (*digitalChannel).second->inputDevices->begin();
-                devInput != (*digitalChannel).second->inputDevices->end(); ++devInput)
+                for (DbFaultInputMap::iterator faultInput =
+                    (*digitalChannel).second->inputFaults->begin();
+                faultInput != (*digitalChannel).second->inputFaults->end(); ++faultInput)
                 {
-                    std::cout << "| - Input[" << (*devInput).second->id
-                        << "], Position[" << (*devInput).second->bitPosition
+                    std::cout << "| - Input[" << (*faultInput).second->id
+                        << "], Position[" << (*faultInput).second->bitPosition
                         << "], Bypass[";
 
-                    if (!(*devInput).second->bypass)
+                    if (!(*digitalChannel).second->bypass)
                     {
                         std::cout << "WARNING: NO BYPASS INFO]";
                     }
                     else
                     {
-                        if ((*devInput).second->bypass->status == BYPASS_VALID)
+                        if ((*digitalChannel).second->bypass->status == BYPASS_VALID)
                             std::cout << "VALID]";
                         else
                             std::cout << "EXPIRED]";

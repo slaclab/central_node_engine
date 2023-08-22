@@ -292,7 +292,6 @@ namespace YAML {
 
 				field = "type_id";
 				appCard->applicationTypeId = (*it)[field].as<unsigned int>();
-				appCard->globalId = 121; // TODO - Remove this statement later once confirmed what to do with globalId
 
 				} catch(YAML::InvalidNode &e) {
 				errorStream << "ERROR: Failed to find field " << field << " for ApplicationCard.";
@@ -601,64 +600,6 @@ namespace YAML {
 
 	rhs->insert(std::pair<int, DbDeviceInputPtr>(deviceInput->id,
 						     DbDeviceInputPtr(deviceInput)));
-      }
-
-      return true;
-    }
-  };
-
-    /**
-   * DigitalChannel:
-   * - card_id: '1'
-   *   id: '1'
-   *   number: '0'
-   *
-   * AnalogChannel:
-   * - card_id: '1'
-   *   id: '1'
-   *   number: '0'
-   */
-  template<>
-    struct convert<DbChannelMapPtr> {
-    static bool decode(const Node &node, DbChannelMapPtr &rhs) {
-      std::string key = "DigitalChannel";
-
-      try {
-	node[key].size();
-      } catch (InvalidNode &e) {
-	key = "AnalogChannel";
-      }
-
-      DbChannelMap *channels = new DbChannelMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbChannelMapPtr(channels);
-
-      for (YAML::Node::const_iterator it = node[key].begin();
-	   it != node[key].end(); ++it) {
-	DbChannel *channel = new DbChannel();
-
-	try {
-	  field = "id";
-	  channel->id = (*it)[field].as<unsigned int>();
-
-	  field = "name";
-	  channel->name = (*it)[field].as<std::string>();
-
-	  field = "number";
-	  channel->number = (*it)[field].as<unsigned int>();
-
-	  field = "card_id";
-	  channel->cardId = (*it)[field].as<unsigned int>();
-	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for " << key << ".";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for " << key << " (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	}
-
-	rhs->insert(std::pair<int, DbChannelPtr>(channel->id, DbChannelPtr(channel)));
       }
 
       return true;

@@ -70,55 +70,58 @@ void DbDeviceInput::update(uint32_t v) {
 
 // Update its value from the applicationUpdateBuffer
 void DbDeviceInput::update() {
-  uint32_t wasLow;
-  uint32_t wasHigh;
-  uint32_t newValue = 0;
 
-  DeviceInputUpdateTime.start();
+  // TODO - temporarily commented out until ready to replace with digitalChannel
 
-  if (getWasLowBuffer()) {
-    previousValue = value;
+  // uint32_t wasLow;
+  // uint32_t wasHigh;
+  // uint32_t newValue = 0;
 
-    wasLow = getWasLow(channel->number);
-    wasHigh = getWasHigh(channel->number);
+  // DeviceInputUpdateTime.start();
 
-    wasLowBit = wasLow;
-    wasHighBit = wasHigh;
+  // if (getWasLowBuffer()) {
+  //   previousValue = value;
 
-    // If both are zero the Central Node has not received messages from the device, assume fault
-    if (wasLow + wasHigh == 0) {
-      invalidValueCount++;
-      newValue = faultValue;
-    }
-    else if (wasLow + wasHigh == 2) {
-      newValue = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
-    }
-    else if (wasLow > 0) {
-      newValue = 0;
-    }
-    else {
-      newValue = 1;
-    }
+  //   wasLow = getWasLow(channel->number);
+  //   wasHigh = getWasHigh(channel->number);
 
-    value = newValue;
+  //   wasLowBit = wasLow;
+  //   wasHighBit = wasHigh;
 
-    // Latch new value if this is a fault
-    if (newValue == faultValue) {
-      latchedValue = faultValue;
-    }
-    if (autoReset == AUTO_RESET) {
-      latchedValue = value;
-    }
+  //   // If both are zero the Central Node has not received messages from the device, assume fault
+  //   if (wasLow + wasHigh == 0) {
+  //     invalidValueCount++;
+  //     newValue = faultValue;
+  //   }
+  //   else if (wasLow + wasHigh == 2) {
+  //     newValue = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
+  //   }
+  //   else if (wasLow > 0) {
+  //     newValue = 0;
+  //   }
+  //   else {
+  //     newValue = 1;
+  //   }
 
-    if (previousValue != value) {
-      History::getInstance().logDeviceInput(id, previousValue, value);
-    }
-  }
-  else {
-    throw(DbException("ERROR: DbDeviceInput::update() - no applicationUpdateBuffer set"));
-  }
+  //   value = newValue;
 
-  DeviceInputUpdateTime.end();
+  //   // Latch new value if this is a fault
+  //   if (newValue == faultValue) {
+  //     latchedValue = faultValue;
+  //   }
+  //   if (autoReset == AUTO_RESET) {
+  //     latchedValue = value;
+  //   }
+
+  //   if (previousValue != value) {
+  //     History::getInstance().logDeviceInput(id, previousValue, value);
+  //   }
+  // }
+  // else {
+  //   throw(DbException("ERROR: DbDeviceInput::update() - no applicationUpdateBuffer set"));
+  // }
+
+  // DeviceInputUpdateTime.end();
 }
 
 DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1), // TEMP - Changed to channel, delete this comment once confirmed good
@@ -323,13 +326,13 @@ bool DbApplicationCard::updateInputs() {
   // bool reload = false;
   // bool oldActive = active;
   // // Check if timeout status bit from firmware is on, if so set online to false
-  // if (Firmware::getInstance().getAppTimeoutStatus(globalId)) {
+  // if (Firmware::getInstance().getAppTimeoutStatus(number)) {
   //   online = false;
   // }
   // else {
   //   online = true;
   // }
-  // if (Firmware::getInstance().getAppTimeoutEnable(globalId)) {
+  // if (Firmware::getInstance().getAppTimeoutEnable(number)) {
   //   active = true;
   // }
   // else {
@@ -396,7 +399,7 @@ void DbApplicationCard::writeConfiguration(bool enableTimeout) {
   // }
   // // Enable application timeout
   // if (enableTimeout) {
-  //   Firmware::getInstance().setAppTimeoutEnable(globalId, true, false);
+  //   Firmware::getInstance().setAppTimeoutEnable(number, true, false);
   // }
 }
 
