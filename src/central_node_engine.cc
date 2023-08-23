@@ -915,7 +915,7 @@ void Engine::showBeamDestinations()
 
 }
 
-void Engine::showDeviceInputs()
+void Engine::showFaultInputs()
 {
     if (!isInitialized())
     {
@@ -923,10 +923,10 @@ void Engine::showDeviceInputs()
         return;
     }
 
-    std::cout << "Device Inputs: " << std::endl;
+    std::cout << "Fault Inputs: " << std::endl;
     std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
 
-    for (DbDeviceInputMap::iterator input = _mpsDb->deviceInputs->begin(); input != _mpsDb->deviceInputs->end(); ++input)
+    for (DbFaultInputMap::iterator input = _mpsDb->faultInputs->begin(); input != _mpsDb->faultInputs->end(); ++input)
     {
         std::cout << (*input).second << std::endl;
     }

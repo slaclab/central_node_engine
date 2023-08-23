@@ -72,7 +72,7 @@ public:
     void showFaults();
     void showStats();
     void showBeamDestinations();
-    void showDeviceInputs();
+    void showFaultInputs();
     void showFirmware();
     void showDatabaseInfo();
 

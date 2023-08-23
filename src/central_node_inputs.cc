@@ -58,20 +58,21 @@ void DbApplicationCardInput::setUpdateBuffers(std::vector<uint8_t>* bufPtr, cons
 // }
 
 // This should update the value from the data read from the central node firmware
-void DbDeviceInput::update(uint32_t v) {
-  previousValue = value;
-  value = v;
+void DbFaultInput::update(uint32_t v) {
+  // TODO - Temporarily commented out until ready to deal with logic
+  // previousValue = value;
+  // value = v;
 
-  // Latch new value if this is a fault
-  if (v == faultValue) {
-    latchedValue = faultValue;
-  }
+  // // Latch new value if this is a fault
+  // if (v == faultValue) {
+  //   latchedValue = faultValue;
+  // }
 }
 
 // Update its value from the applicationUpdateBuffer
-void DbDeviceInput::update() {
+void DbFaultInput::update() {
 
-  // TODO - temporarily commented out until ready to replace with digitalChannel
+  // TODO - temporarily commented out until ready to replace with faultInput
 
   // uint32_t wasLow;
   // uint32_t wasHigh;

@@ -1,3 +1,10 @@
+/**
+ * central_node_database_tables.cc
+ *
+ * Class body and function definitions of the classes for 
+ * the MPS configuration database tables.
+ */
+
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/node/parse.h>
 #include <yaml-cpp/node/emit.h>
@@ -72,11 +79,9 @@ std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
   return os;
 }
 
-DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999) {
-}
-
-void DbDigitalChannel::unlatch() {
-  latchedValue = value;
+DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999),
+            z_name(""), o_name(""), monitored_pv(""), debounce(0),
+            alarm_state(0), z_location(0), auto_reset(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChannel) {
@@ -128,58 +133,10 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   return os;
 }
 
-// TODO - Delete deviceInput once replaced with digitalChannel
-DbDeviceInput::DbDeviceInput() : DbEntry(),
-				 bitPosition(999), channelId(999), faultValue(0),
-				 digitalDeviceId(999), value(0), previousValue(0),
-				 latchedValue(0), invalidValueCount(0),
-				 fastEvaluation(false), autoReset(0) {
-}
-
-void DbDeviceInput::unlatch() {
-  latchedValue = value;
-}
-
-std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput) {
-  os << "DeviceInput: "
-     << "deviceId=" << deviceInput->digitalDeviceId << " : "
-     << "channelId=" << deviceInput->channelId << " : "
-     << "bitPos=" << deviceInput->bitPosition << " : "
-     << "faultValue=" << deviceInput->faultValue << " : "
-     << "value=" << deviceInput->value << " [wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]" << " : "
-     << "latchedValue=" << deviceInput->latchedValue;
-  if (deviceInput->fastEvaluation) {
-    os << " [in fast device]";
-  }
-  if (deviceInput->bypass) {
-    if (deviceInput->bypass->status == BYPASS_VALID) {
-      os << " [Bypassed to " << deviceInput->bypass->value << "]";
-    }
-  }
-  /*
-  os << "id[" << deviceInput->id << "]; "
-     << "bitPosition[" << deviceInput->bitPosition << "]; "
-     << "faultValue[" << deviceInput->faultValue << "]; "
-     << "channelId[" << deviceInput->channelId << "]; "
-     << "digitalDeviceId[" << deviceInput->digitalDeviceId << "]; "
-     << "value[" << deviceInput->value << ", wasLow=" << deviceInput->wasLowBit << ", wasHigh=" << deviceInput->wasHighBit << "]";
-  if (deviceInput->fastEvaluation) {
-    os << " [in fast device]";
-  }
-  if (deviceInput->bypass->status == BYPASS_VALID) {
-    os << " [Bypassed to " << deviceInput->bypass->value << "]";
-  }
-  */
-  return os;
-}
-
-DbDeviceState::DbDeviceState() : DbEntry(), deviceTypeId(0), value(0), mask(0), name("") {
-}
-
-// Returns the integrator # based on the DeviceState value
+// Returns the integrator # based on the FaultState value
 // The integrator # is valid only for AnalogChannels, where the value
 // is a single bit set within the 32 bits of the device value.
-int DbDeviceState::getIntegrator() {
+int DbFaultState::getIntegrator() {
   if (value < 0x100) {
     return 0;
   }
@@ -192,15 +149,6 @@ int DbDeviceState::getIntegrator() {
   else {
     return 3;
   }
-}
-
-std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState) {
-  os << "id[" << devState->id << "]; "
-     << "deviceTypeId[" << devState->deviceTypeId << "]; "
-     << "value[0x" << std::hex << devState->value << "]; "
-     << "mask[0x" << devState->mask << std::dec << "]; "
-     << "name[" << devState->name << "]";
-  return os;
 }
 
 /**
@@ -364,14 +312,37 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
   return os;
 }
 
-DbFaultInput::DbFaultInput() : DbEntry(), faultId(999), channelId(999), bitPosition(999) {
+DbFaultInput::DbFaultInput() : DbEntry(), faultId(999), channelId(999),
+         bitPosition(999), value(0), previousValue(0),
+				 latchedValue(0), invalidValueCount(0),
+				 fastEvaluation(false) {
+}
+
+void DbFaultInput::unlatch() {
+  latchedValue = value;
 }
 
 std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
   os << "id[" << faultInput->id << "]; "
      << "faultId[" << faultInput->faultId << "]; "
      << "channelId[" << faultInput->channelId << "]; "
-     << "bitPosition[" << faultInput->bitPosition << "]";
+     << "bitPosition[" << faultInput->bitPosition << "]; ";
+
+  if (faultInput->analogChannel) os << "card[" << faultInput->analogChannel->cardId << "]; ";
+  else os << "card[" << faultInput->digitalChannel->cardId << "]; ";
+
+  os << "value[" << faultInput->value << "]; wasLow[" << faultInput->wasLowBit << "]; wasHigh[" << faultInput->wasHighBit << "]; "
+     << "latchedValue[" << faultInput->latchedValue << "]";
+
+  if (faultInput->fastEvaluation) {
+    os << " [in fast device]";
+  }
+  if (faultInput->bypass) {
+    if (faultInput->bypass->status == BYPASS_VALID) {
+      os << " [Bypassed to " << faultInput->bypass->value << "]";
+    }
+  }
+
   return os;
 }
 

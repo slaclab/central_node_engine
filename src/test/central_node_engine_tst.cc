@@ -109,15 +109,15 @@ class EngineTest {
 
 	//      std::cout << deviceId << ": " << deviceValue << std::endl;
 
-	int size = Engine::getInstance()._mpsDb->deviceInputs->size() + 1;
+	int size = Engine::getInstance()._mpsDb->faultInputs->size() + 1;
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << Engine::getInstance()._mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance()._mpsDb->faultInputs->size()
 		    << std::endl;
 	  return 1;
 	}
 	try {
-	  Engine::getInstance()._mpsDb->deviceInputs->at(deviceId)->update(deviceValue);
+	  Engine::getInstance()._mpsDb->faultInputs->at(deviceId)->update(deviceValue);
 	} catch (std::exception &e) {
 	  std::cerr << "ERROR: invalid device input index of " << deviceId << std::endl;
 	  return -1;
@@ -153,7 +153,7 @@ class EngineTest {
 	int size = Engine::getInstance()._mpsDb->analogChannels->size() + 1 + Engine::getInstance()._mpsDb->digitalChannels->size();
 	if (deviceId > size) {
 	  std::cerr << "ERROR: Can't update device (Id=" << deviceId
-		    << "), number of inputs is " << Engine::getInstance()._mpsDb->deviceInputs->size()
+		    << "), number of inputs is " << Engine::getInstance()._mpsDb->faultInputs->size()
 		    << std::endl;
 	  return 1;
 	}

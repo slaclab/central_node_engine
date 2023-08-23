@@ -144,8 +144,6 @@ class MpsDb {
   DbApplicationCardMapPtr applicationCards;
   DbDigitalChannelMapPtr digitalChannels;
   DbAnalogChannelMapPtr analogChannels;
-  DbDeviceStateMapPtr deviceStates;
-  DbDeviceInputMapPtr deviceInputs;
   DbFaultMapPtr faults;
   DbFaultInputMapPtr faultInputs;
   DbFaultStateMapPtr faultStates;

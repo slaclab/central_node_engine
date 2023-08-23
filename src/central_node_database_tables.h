@@ -1,3 +1,9 @@
+/**
+ * central_node_database_tables.h
+ *
+ * C++ class definitions of the MPS configuration database tables.
+ */
+
 #ifndef CENTRAL_NODE_DATABASE_TABLES_H
 #define CENTRAL_NODE_DATABASE_TABLES_H
 
@@ -119,25 +125,6 @@ typedef boost::shared_ptr<DbApplicationType> DbApplicationTypePtr;
 typedef std::map<uint32_t, DbApplicationTypePtr> DbApplicationTypeMap;
 typedef boost::shared_ptr<DbApplicationTypeMap> DbApplicationTypeMapPtr;
 
-/**
- * DbDeviceState YAML class
- */
-class DbDeviceState : public DbEntry {
- public:
-  uint32_t deviceTypeId;
-  uint32_t value;
-  uint32_t mask;
-  std::string name;
-
-  DbDeviceState();
-  int getIntegrator();
-  friend std::ostream & operator<<(std::ostream &os, DbDeviceState * const devState);
-};
-
-typedef boost::shared_ptr<DbDeviceState> DbDeviceStatePtr;
-typedef std::map<uint32_t, DbDeviceStatePtr> DbDeviceStateMap;
-typedef boost::shared_ptr<DbDeviceStateMap> DbDeviceStateMapPtr;
-
 class DbApplicationCardInput {
  public:
   DbApplicationCardInput() : fwUpdateBuffer(NULL),  wasLowBufferOffset(999), wasHighBufferOffset(888) {};
@@ -154,51 +141,6 @@ class DbApplicationCardInput {
   size_t                wasLowBufferOffset;
   size_t                wasHighBufferOffset;
 };
-
-/**
- * DbDeviceInput YAML class
- */
-class DbDeviceInput : public DbEntry, public DbApplicationCardInput {
- public:
-  uint32_t bitPosition;
-  uint32_t channelId;
-  uint32_t faultValue;
-  uint32_t digitalDeviceId;
-  uint32_t autoReset;
-
-  // Device input value must be read from the Central Node Firmware
-  uint32_t wasLowBit;
-  uint32_t wasHighBit;
-  uint32_t value;
-  uint32_t previousValue;
-
-  // Latched value
-  uint32_t latchedValue;
-
-  // Count 'was high'=0 & 'was low'=0
-  uint32_t invalidValueCount;
-
-  // Pouint32_ter to the bypass for this input
-  InputBypassPtr bypass;
-
-  // Set true if this input is used by a fast evaluated device (must be the only input to device)
-  bool fastEvaluation;
-  bool configured;
-
-  DbDeviceInput();
-
-  //  void setUpdateBuffer(ApplicationUpdateBufferBitSet *buffer);
-
-  void unlatch();
-  void update(uint32_t v);
-  void update();
-
-  friend std::ostream & operator<<(std::ostream &os, DbDeviceInput * const deviceInput);
-};
-
-typedef boost::shared_ptr<DbDeviceInput> DbDeviceInputPtr;
-typedef std::map<uint32_t, DbDeviceInputPtr> DbDeviceInputMap;
-typedef boost::shared_ptr<DbDeviceInputMap> DbDeviceInputMapPtr;
 
 class DbFaultInput;
 typedef boost::shared_ptr<DbFaultInput> DbFaultInputPtr;
@@ -309,9 +251,8 @@ typedef boost::shared_ptr<DbAnalogChannelMap> DbAnalogChannelMapPtr;
 /**
  * DbDigitalChannel YAML class
  */
-class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
+class DbDigitalChannel : public DbEntry {
  public:
-  uint32_t bitPosition; //
   std::string z_name;
   std::string o_name;
   std::string monitored_pv;
@@ -323,6 +264,7 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   uint32_t auto_reset;
   uint32_t evaluation;
   uint32_t cardId; // FK to DbApplicationCard
+  uint32_t value; // calculated from the DeviceInputs for this device
 
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
@@ -332,32 +274,6 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   // Fault inputs and fault states built after the config is loaded
   DbFaultInputMapPtr faultInputs; 
   DbFaultStateMapPtr faultStates;
-
-  // TODO - Temp comment - delete the 'these fields ...' once confirmed working
-  /* <<<< These fields are grabbed from original DeviceInput <<<< */
-  // Device input value must be read from the Central Node Firmware
-  uint32_t wasLowBit;
-  uint32_t wasHighBit;
-  uint32_t value;
-  uint32_t previousValue;
-
-  // Latched value
-  uint32_t latchedValue;
-
-  // Count 'was high'=0 & 'was low'=0
-  uint32_t invalidValueCount;
-
-  // Pouint32_ter to the bypass for this input
-  InputBypassPtr bypass;
-
-  // Set true if this input is used by a fast evaluated device (must be the only input to device)
-  bool fastEvaluation;
-  bool configured;
-
-  void unlatch();
-  void update();
-
-  /* >>>> These fields are grabbed from original DeviceInput >>>> */
 
   /**
    * These fields get populated when the database is loaded, they are
@@ -461,7 +377,7 @@ typedef boost::shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 /**
  * DbFaultInput YAML class
  */
-class DbFaultInput : public DbEntry {
+class DbFaultInput : public DbEntry, public DbApplicationCardInput {
  public:
   // Values loaded from YAML file
   uint32_t faultId;
@@ -475,12 +391,29 @@ class DbFaultInput : public DbEntry {
   DbAnalogChannelPtr analogChannel;
   DbDigitalChannelPtr digitalChannel;
 
-  DbFaultInput();
+  // Device input value must be read from the Central Node Firmware
+  uint32_t wasLowBit;
+  uint32_t wasHighBit;
+  uint32_t previousValue;
 
-  // Update the value from the DeviceInputs
-  void update() {
-    value = 1;
-  }
+  // Latched value
+  uint32_t latchedValue;
+
+  // Count 'was high'=0 & 'was low'=0
+  uint32_t invalidValueCount;
+
+  // Pouint32_ter to the bypass for this input
+  InputBypassPtr bypass;
+
+  // Set true if this input is used by a fast evaluated device (must be the only input to device)
+  bool fastEvaluation;
+  bool configured;
+
+  void unlatch();
+  void update(uint32_t v);
+  void update();
+
+  DbFaultInput();
 
   friend std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput);
 };
@@ -647,6 +580,7 @@ class DbFaultState : public DbEntry {
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each beam destination) for this fault states
 
   DbFaultState();
+  int getIntegrator();
   friend std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault);
 };
 
@@ -703,11 +637,7 @@ class DbIgnoreCondition : public DbEntry {
   bool state; // State is true when condition is met
   DbFaultMapPtr faults; // Ignore conditions can have >=1 faults
 
-  // TODO - See if you need these extra fields
-  // The ignore condition can be used to ignore a fault state or an analog device
-  // The analog device is used to disable a device when beam is blocked upstream, causing
-  // faults from no beam
-  // DbAnalogChannelPtr analogChannel;
+  // The ignore condition can be used to ignore a fault state
   DbDigitalChannelPtr digitalChannel;
   static const uint32_t INVALID_ID = 0xFFFFFFFF;
 

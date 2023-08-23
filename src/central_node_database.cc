@@ -1,3 +1,13 @@
+/**
+ * central_node_database.cc
+ *
+ * Function body definitions for all MPS configuration database.
+ * Including but not limited to: loading the YAML, configuring the Foreign
+ * Key relationships (rebuilding fault tables), print/show relevant values. 
+ * Contains thread definitions and timers for: Power class change reading, 
+ * Input updating, mitigation writing, firmware updating.
+ */
+
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/node/parse.h>
 #include <yaml-cpp/node/emit.h>
@@ -118,8 +128,8 @@ void MpsDb::unlatchAll() {
       (*it).second->latchedValue = (*it).second->value; // Update value for all threshold bits
     }
 
-    for (DbDeviceInputMap::iterator it = deviceInputs->begin();
-         it != deviceInputs->end(); ++it) {
+    for (DbFaultInputMap::iterator it = faultInputs->begin();
+         it != faultInputs->end(); ++it) {
       (*it).second->unlatch();
     }
 }
@@ -277,23 +287,17 @@ void MpsDb::configureAllowedClasses()
     }
 }
 
-/* Configure fastEvaluation, and configure faultInputs for each digitalChannel*/
+/* Configure faultInputs for each digitalChannel*/
 void MpsDb::configureDigitalChannels()
 {
     LOG_TRACE("DATABASE", "Configure: DigitalChannels");
     std::stringstream errorStream;
 
-    // Iterate through the faultInputs and assign to corresponding digitalChannel
+    // Iterate through the digitalChannels and initialize faultInput
     for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
         digitalChannelIt != digitalChannels->end();
         digitalChannelIt++)
     {
-        // Check if digitalChannel is evaluated in firmware, set fastEvaluation
-        if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION) 
-            (*digitalChannelIt).second->fastEvaluation = true;
-        else
-            (*digitalChannelIt).second->fastEvaluation = false;
-
         // Create a map to hold faultInput for the digitalChannel
         if (!(*digitalChannelIt).second->faultInputs)
         {
@@ -346,7 +350,14 @@ void MpsDb::configureFaultInputs()
             // Found the DbAnalogChannel, configure it
             else
             {
+    
                 (*faultInputIt).second->analogChannel = (*analogChannelIt).second;
+
+                // Check if faultInput is evaluated in firmware, set fastEvaluation
+                if ((*faultInputIt).second->analogChannel->evaluation == FAST_EVALUATION) 
+                    (*faultInputIt).second->fastEvaluation = true;
+                else
+                    (*faultInputIt).second->fastEvaluation = false;
 
                 if ((*analogChannelIt).second->evaluation == FAST_EVALUATION)
                 {
@@ -382,7 +393,7 @@ void MpsDb::configureFaultInputs()
                             faultState != (*faultIt).second->faultStates->end();
                             ++faultState)
                         {
-                            // The DbDeviceState value defines which integrator the fault belongs to.
+                            // The DbFaultState value defines which integrator the fault belongs to.
                             // Bits 0 through 7 are for the first integrator, 8 through 15 for the second,
                             // and so on.
                             uint32_t value = (*faultState).second->value;
@@ -468,6 +479,13 @@ void MpsDb::configureFaultInputs()
         else
         {
             (*faultInputIt).second->digitalChannel = (*digitalChannelIt).second;
+
+            // Check if faultInput is evaluated in firmware, set fastEvaluation
+            if ((*faultInputIt).second->digitalChannel->evaluation == FAST_EVALUATION) 
+                (*faultInputIt).second->fastEvaluation = true;
+            else
+                (*faultInputIt).second->fastEvaluation = false;
+
             // If the DbDigitalChannel is set for fast evaluation, save a pointer to the
             // DbFaultInput
             if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION)
@@ -850,8 +868,8 @@ void MpsDb::configureApplicationCards()
         LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "] config/update buffer alloc");
     }
 
-    // Get all devices for each application card, starting with the digital devices
-    // Create a map of digital devices for each DbApplicationCard
+    // Get all channels for each application card, starting with the digital channels
+    // Create a map of digital channels for each DbApplicationCard
     for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
         digitalChannelIt != digitalChannels->end();
         ++digitalChannelIt)
@@ -861,13 +879,13 @@ void MpsDb::configureApplicationCards()
         if (applicationCardIt != applicationCards->end())
         {
             DbApplicationCardPtr aPtr = (*applicationCardIt).second;
-            // Alloc a new map for digital devices if one is not there yet
+            // Alloc a new map for digital channels if one is not there yet
             if (!aPtr->digitalChannels)
             {
                 DbDigitalChannelMap *digitalChannels = new DbDigitalChannelMap();
                 aPtr->digitalChannels = DbDigitalChannelMapPtr(digitalChannels);
             }
-            // Once the map is there, add the digital device
+            // Once the map is there, add the digital channel
             aPtr->digitalChannels->insert(std::pair<int, DbDigitalChannelPtr>(digitalChannelPtr->id, digitalChannelPtr));
             LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], DigitalChannel: " << digitalChannelPtr->name);
         }
@@ -883,10 +901,10 @@ void MpsDb::configureApplicationCards()
         if (applicationCardIt != applicationCards->end())
         {
             DbApplicationCardPtr aPtr = (*applicationCardIt).second;
-            // Alloc a new map for analog devices if one is not there yet
+            // Alloc a new map for analog channels if one is not there yet
             if (aPtr->digitalChannels)
             {
-                errorStream << "ERROR: Found ApplicationCard with digital AND analog devices,"
+                errorStream << "ERROR: Found ApplicationCard with digital AND analog channels,"
                     << " can't handle that (cardId="
                     << (*analogChannelIt).second->cardId << ")";
                 throw(DbException(errorStream.str()));
@@ -898,7 +916,7 @@ void MpsDb::configureApplicationCards()
                 aPtr->analogChannels = DbAnalogChannelMapPtr(analogChannels);
             }
 
-            // Once the map is there, add the analog device
+            // Once the map is there, add the analog channel
             aPtr->analogChannels->insert(std::pair<int, DbAnalogChannelPtr>(analogChannelPtr->id, analogChannelPtr));
             LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], AnalogChannel: " << analogChannelPtr->name);
             analogChannelPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
@@ -913,35 +931,32 @@ void MpsDb::configureApplicationCards()
         (*applicationCardIt).second->configureUpdateBuffers();
     }
 
-    // TODO - temporarily commented out until figure out logic for replace deviceInput with digitalChannel
-
-    // Deal with special case where one device input is not in same application card.
-    // for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
-    //     digitalChannelIt != digitalChannels->end();
-    //     ++digitalChannelIt)
-    // {
-    //     DbDigitalChannelPtr digitalChannelPtr = (*digitalChannelIt).second;
-    //     if (digitalChannelPtr->inputDevices) {
-    //         for (DbDeviceInputMap::iterator deviceInput = digitalChannelPtr->inputDevices->begin();
-    //                 deviceInput != digitalChannelPtr->inputDevices->end(); ++deviceInput) {
-    //             if (!(*deviceInput).second->configured) {
-    //                 uint32_t diCard = (*deviceInput).second->channel->cardId;
-    //                 DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(diCard);
-    //                 if (applicationCardIt != applicationCards->end())
-    //                 {
-    //                     DbApplicationCardPtr aPtr = (*applicationCardIt).second;
-    //                     std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
-    //                     size_t                lowBufOff = aPtr->getWasLowBufferOffset();
-    //                     size_t                highBufOff = aPtr->getWasHighBufferOffset();
-    //                     (*deviceInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
-    //                     (*deviceInput).second->configured = true;
-    //                     std::cout << "INFO: Device Input for " << digitalChannelPtr->name << " configured!" << std::endl;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-    std::cout << "End of the line" << std::endl;
+    // Deal with special case where one channel input is not in same application card.
+    for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
+        digitalChannelIt != digitalChannels->end();
+        ++digitalChannelIt)
+    {
+        DbDigitalChannelPtr digitalChannelPtr = (*digitalChannelIt).second;
+        if (digitalChannelPtr->faultInputs) {
+            for (DbFaultInputMap::iterator faultInput = digitalChannelPtr->faultInputs->begin();
+                    faultInput != digitalChannelPtr->faultInputs->end(); ++faultInput) {
+                if (!(*faultInput).second->configured) {
+                    uint32_t appCardId = (*faultInput).second->digitalChannel->cardId;
+                    DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(appCardId);
+                    if (applicationCardIt != applicationCards->end())
+                    {
+                        DbApplicationCardPtr aPtr = (*applicationCardIt).second;
+                        std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
+                        size_t                lowBufOff = aPtr->getWasLowBufferOffset();
+                        size_t                highBufOff = aPtr->getWasHighBufferOffset();
+                        (*faultInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
+                        (*faultInput).second->configured = true;
+                        std::cout << "INFO: Fault Input for " << digitalChannelPtr->name << " configured!" << std::endl;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void MpsDb::configureBeamDestinations()
@@ -976,11 +991,11 @@ void MpsDb::clearMitigationBuffer()
 void MpsDb::configure()
 {
     configureAllowedClasses();
-    configureDigitalChannels(); // to replace deviceInputs
+    configureDigitalChannels();
     configureAnalogChannels();
     configureFaultStates();
     configureFaultInputs();
-    configureIgnoreConditions(); // TODO - Shouldnt - This configure may need to add faultState
+    configureIgnoreConditions();
     configureApplicationCards();
     configureBeamDestinations();
 }
@@ -1197,19 +1212,6 @@ int MpsDb::load(std::string yamlFileName)
         {
             analogChannels = (*node).as<DbAnalogChannelMapPtr>();
         }
-        // TODO - Temporarily commented out until confirmed to delete
-        // else if (nodeName == "DeviceType")
-        // {
-        //     deviceTypes = (*node).as<DbDeviceTypeMapPtr>();
-        // }
-        // else if (nodeName == "DeviceState")
-        // {
-        //     deviceStates = (*node).as<DbDeviceStateMapPtr>();
-        // }
-        // else if (nodeName == "DeviceInput")
-        // {
-        //     deviceInputs = (*node).as<DbDeviceInputMapPtr>();
-        // }
         else if (nodeName == "Fault")
         {
             faults = (*node).as<DbFaultMapPtr>();
@@ -1375,13 +1377,13 @@ void MpsDb::showFault(DbFaultPtr fault)
                         << "], Position[" << (*faultInput).second->bitPosition
                         << "], Bypass[";
 
-                    if (!(*digitalChannel).second->bypass)
+                    if (!(*faultInput).second->bypass)
                     {
                         std::cout << "WARNING: NO BYPASS INFO]";
                     }
                     else
                     {
-                        if ((*digitalChannel).second->bypass->status == BYPASS_VALID)
+                        if ((*faultInput).second->bypass->status == BYPASS_VALID)
                             std::cout << "VALID]";
                         else
                             std::cout << "EXPIRED]";
@@ -1554,24 +1556,6 @@ std::ostream & operator<<(std::ostream &os, MpsDb * const mpsDb)
 
     mpsDb->printMap<DbAnalogChannelMapPtr, DbAnalogChannelMap::iterator>
         (os, mpsDb->analogChannels, "AnalogChannel");
-
-
-    // TODO - Temporarily commented out, will delete once confirmed not needed
-    // mpsDb->printMap<DbDeviceTypeMapPtr, DbDeviceTypeMap::iterator>
-    //     (os, mpsDb->deviceTypes, "DeviceType");
-
-    // mpsDb->printMap<DbDeviceStateMapPtr, DbDeviceStateMap::iterator>
-    //     (os, mpsDb->deviceStates, "DeviceState");
-
-    // mpsDb->printMap<DbDeviceInputMapPtr, DbDeviceInputMap::iterator>
-    //     (os, mpsDb->deviceInputs, "DeviceInput");
-
-    // TODO - Temporarily commented out, will delete once confirmed not needed
-    // mpsDb->printMap<DbAllowedClassMapPtr, DbAllowedClassMap::iterator>
-    //     (os, mpsDb->allowedClasses, "AllowedClass");
-
-
-
 
     return os;
 }

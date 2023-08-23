@@ -2,7 +2,8 @@
  * central_node_yaml.h
  *
  * Template specializations to convert MPS YAML database into
- * C++ objects. The C++ classes are described in the file
+ * C++ objects. These templates allow the parsing of the
+ * different fields for each table. The C++ classes are described in the file
  * central_node_database.h.
  */
 
@@ -495,116 +496,6 @@ namespace YAML {
 			return true;
 		}
   	};
-
-  /**
-   * DeviceState:
-   * - device_type_id: '1'
-   *   id: '1'
-   *   name: Out
-   *   value: '1'
-   */
-  template<>
-    struct convert<DbDeviceStateMapPtr> {
-    static bool decode(const Node &node, DbDeviceStateMapPtr &rhs) {
-      DbDeviceStateMap *deviceStates = new DbDeviceStateMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbDeviceStateMapPtr(deviceStates);
-
-      for (YAML::Node::const_iterator it = node["DeviceState"].begin();
-	   it != node["DeviceState"].end(); ++it) {
-	DbDeviceState *	deviceState = new DbDeviceState();
-
-	try {
-	  field = "id";
-	  deviceState->id = (*it)[field].as<unsigned int>();
-
-	  field = "value";
-	  deviceState->value = (*it)[field].as<unsigned int>();
-
-	  field = "mask";
-	  deviceState->mask = (*it)[field].as<uint32_t>();
-
-	  field = "device_type_id";
-	  deviceState->deviceTypeId = (*it)[field].as<unsigned int>();
-
-	  field = "name";
-	  deviceState->name = (*it)[field].as<std::string>();
- 	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for DeviceState.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceState (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<std::string> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceState (expected string).";
-	  throw(DbException(errorStream.str()));
-	}
-
-	rhs->insert(std::pair<int, DbDeviceStatePtr>(deviceState->id,
-						     DbDeviceStatePtr(deviceState)));
-      }
-
-      return true;
-    }
-  };
-
-  /**
-   * DeviceInput:
-   * - bit_position: '0'
-   *   fault_value: '0'
-   *   channel_id: '1'
-   *   digital_device_id: '1'
-   *   auto_reset: True
-   *   id: '1'
-   */
-  template<>
-    struct convert<DbDeviceInputMapPtr> {
-    static bool decode(const Node &node, DbDeviceInputMapPtr &rhs) {
-      DbDeviceInputMap *deviceInputs = new DbDeviceInputMap();
-      std::stringstream errorStream;
-      std::string field;
-      rhs = DbDeviceInputMapPtr(deviceInputs);
-
-      for (YAML::Node::const_iterator it = node["DeviceInput"].begin();
-	   it != node["DeviceInput"].end(); ++it) {
-	DbDeviceInput *deviceInput = new DbDeviceInput();
-
-	try {
-	  field = "id";
-	  deviceInput->id = (*it)[field].as<unsigned int>();
-
-	  field = "bit_position";
-	  deviceInput->bitPosition = (*it)[field].as<unsigned int>();
-
-	  field = "fault_value";
-	  deviceInput->faultValue = (*it)[field].as<unsigned int>();
-
-	  field = "digital_device_id";
-	  deviceInput->digitalDeviceId = (*it)[field].as<unsigned int>();
-
-	  field = "channel_id";
-	  deviceInput->channelId = (*it)[field].as<unsigned int>();
-
-	  field = "auto_reset";
-	  deviceInput->autoReset = (*it)[field].as<unsigned int>();
-
-	  deviceInput->value = 0;
- 	} catch(YAML::InvalidNode &e) {
-	  errorStream << "ERROR: Failed to find field " << field << " for DeviceInput.";
-	  throw(DbException(errorStream.str()));
-	} catch(YAML::TypedBadConversion<unsigned int> &e) {
-	  errorStream << "ERROR: Failed to convert contents of field " << field << " for DeviceInput (expected unsigned int).";
-	  throw(DbException(errorStream.str()));
-	}
-
-	rhs->insert(std::pair<int, DbDeviceInputPtr>(deviceInput->id,
-						     DbDeviceInputPtr(deviceInput)));
-      }
-
-      return true;
-    }
-  };
 
   /**
    * IgnoreCondition:
