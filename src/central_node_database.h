@@ -31,6 +31,7 @@ class MpsDb {
   void configureDigitalChannels();
   void configureFaultInputs();
   void configureFaultStates();
+  void checkFaultInputs();
   void configureAnalogChannels();
   void configureIgnoreConditions();
   void configureApplicationCards();

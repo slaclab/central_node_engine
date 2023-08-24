@@ -24,6 +24,7 @@
 #include <sstream>
 #include <iomanip>
 #include <sys/mman.h>
+#include <math.h>
 
 #include <stdio.h>
 #include <log_wrapper.h>
@@ -961,6 +962,9 @@ void MpsDb::configureApplicationCards()
 
 void MpsDb::configureBeamDestinations()
 {
+    LOG_TRACE("DATABASE", "Configure: BeamDestinations");
+    std::stringstream errorStream;
+    
     std::cout << "BeamDestinations: ";
     for (DbBeamDestinationMap::iterator it = beamDestinations->begin();
         it != beamDestinations->end();
@@ -972,6 +976,76 @@ void MpsDb::configureBeamDestinations()
         (*it).second->allowedBeamClass = lowestBeamClass;
     }
     std::cout << std::endl;
+}
+
+/* Validity check for faultInputs and the associated bitPosition(s) within a fault */
+void MpsDb::checkFaultInputs()
+{
+    LOG_TRACE("DATABASE", "Configure: Validity check - FaultInputs");
+    std::stringstream errorStream;
+
+    // Iterate through the faults
+    for (DbFaultMap::iterator faultIt = faults->begin();
+        faultIt != faults->end();
+        faultIt++)
+    {
+        /*  Check 1 - Within a faultId, Check the maximum bit value from bit position.
+            Ex: bitPosition=6. Maximum value = 127 (all bits on) */
+        DbFaultInputMapPtr currentFaultInputs = (*faultIt).second->faultInputs;
+        unsigned int maxBitPos = 0;
+        // Get max bitPosition 
+        for (DbFaultInputMap::iterator faultInputIt = currentFaultInputs->begin();
+            faultInputIt != currentFaultInputs->end();
+            faultInputIt++)
+        {
+            if ((*faultInputIt).second->bitPosition > maxBitPos) {
+                maxBitPos = (*faultInputIt).second->bitPosition;
+            }
+        }
+        unsigned int maxBitVal = pow(2,maxBitPos + 1) - 1; // Summation of 2^n
+        // Get maximum value 
+        DbFaultStateMapPtr currentFaultStates = (*faultIt).second->faultStates;
+        unsigned int actualMaxBitVal = 0;
+        for (DbFaultStateMap::iterator faultStateIt = currentFaultStates->begin();
+            faultStateIt != currentFaultStates->end();
+            faultStateIt++)
+        {
+            if ((*faultStateIt).second->value > actualMaxBitVal) {
+                actualMaxBitVal = (*faultStateIt).second->value;
+            }
+        }
+        if (maxBitVal != actualMaxBitVal)
+        {
+            errorStream << "ERROR: Found fault (" << (*faultIt).second->id << 
+            ") with invalid maximum bit value," << " with max bit value of (" << actualMaxBitVal << ")";
+            throw(DbException(errorStream.str()));
+        }
+
+        /*  Check 2 - Within a faultId, Check if preceding bit positions exists if bit position > 0.
+            Ex: bitPosition=6. Must have bitPositions [5,4,3,2,1,0] to be valid. */
+        if (maxBitPos > 0) {
+            std::vector<unsigned int> bitPositions(maxBitPos + 1);
+            for (DbFaultInputMap::iterator faultInputIt = currentFaultInputs->begin();
+                faultInputIt != currentFaultInputs->end();
+                faultInputIt++)
+            {
+                bitPositions.at((*faultInputIt).second->bitPosition) = (*faultInputIt).second->bitPosition;
+            }
+            for (unsigned int i = 0; i <= maxBitPos; i++) {
+                try
+                {
+                    bitPositions.at(i);
+                }
+                catch(const std::exception& e)
+                {
+                    errorStream << "ERROR: Found fault (" << (*faultIt).second->id << 
+                    ") with invalid/missing bit position at ("<< i << ")";
+                    throw(DbException(errorStream.str()));
+                }
+            }
+        }
+
+    }
 }
 
 void MpsDb::clearMitigationBuffer()
@@ -990,11 +1064,13 @@ void MpsDb::clearMitigationBuffer()
  */
 void MpsDb::configure()
 {
+
     configureAllowedClasses();
     configureDigitalChannels();
     configureAnalogChannels();
     configureFaultStates();
     configureFaultInputs();
+    checkFaultInputs();
     configureIgnoreConditions();
     configureApplicationCards();
     configureBeamDestinations();
