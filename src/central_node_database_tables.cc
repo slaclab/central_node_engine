@@ -64,14 +64,14 @@ std::ostream & operator<<(std::ostream &os, DbInfo * const dbInfo) {
   return os;
 }
 
-DbApplicationType::DbApplicationType() : DbEntry(), num_integrators(999),
+DbApplicationType::DbApplicationType() : DbEntry(), numIntegrators(999),
 					 analogChannelCount(0), digitalChannelCount(0), softwareChannelCount(0),
 					 name("empty") {
 }
 
 std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
   os << "id[" << appType->id << "]; "
-     << "num_integrators[" << appType->num_integrators << "]; "
+     << "numIntegrators[" << appType->numIntegrators << "]; "
      << "analogChannelCount[" << appType->analogChannelCount << "]; "
      << "digitalChannelCount[" << appType->digitalChannelCount << "]; "
      << "softwareChannelCount[" << appType->softwareChannelCount << "]; "
@@ -212,7 +212,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
 
   if (analogChannel->evaluation == FAST_EVALUATION) {
     os << "destinationMasks=";
-    uint32_t integratorsPerChannel = analogChannel->appType->num_integrators;
+    uint32_t integratorsPerChannel = analogChannel->appType->numIntegrators;
 
     for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
       os << std::hex << analogChannel->fastDestinationMask[i];

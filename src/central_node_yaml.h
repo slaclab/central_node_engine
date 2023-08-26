@@ -226,7 +226,7 @@ namespace YAML {
 					appType->id = (*it)[field].as<unsigned int>();
 
 					field = "num_integrators";
-					appType->num_integrators = (*it)[field].as<unsigned int>();
+					appType->numIntegrators = (*it)[field].as<unsigned int>();
 
 					field = "analog_channel_count";
 					appType->analogChannelCount = (*it)[field].as<unsigned int>();

@@ -2,6 +2,8 @@
  * central_node_database_tables.h
  *
  * C++ class definitions of the MPS configuration database tables.
+ * Note - For the classes, most fields are loaded from the YAML,
+ * but some are loaded during the configuration. 
  */
 
 #ifndef CENTRAL_NODE_DATABASE_TABLES_H
@@ -111,7 +113,7 @@ typedef boost::shared_ptr<DbInfoMap> DbInfoMapPtr;
  */
 class DbApplicationType : public DbEntry {
  public:
-  uint32_t num_integrators;
+  uint32_t numIntegrators;
   uint32_t analogChannelCount;
   uint32_t digitalChannelCount;
   uint32_t softwareChannelCount;
