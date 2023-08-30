@@ -1,8 +1,14 @@
-#include <yaml-cpp/yaml.h>
-#include <yaml-cpp/node/parse.h>
-#include <yaml-cpp/node/emit.h>
+/**
+ * central_node_inputs.cc
+ *
+ * Functions responsible for updating buffers through reading FW 
+ * for the following:
+ * faultInputs, analog values (set of threshold bits), 
+ * digital and analog configurations (beam class and destinations)
+ */
 
-#include <central_node_yaml.h>
+#include <central_node_database_defs.h>
+#include <central_node_database_tables.h>
 #include <central_node_database.h>
 #include <central_node_firmware.h>
 #include <central_node_history.h>
@@ -125,7 +131,7 @@ void DbFaultInput::update() {
   // DeviceInputUpdateTime.end();
 }
 
-DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1), // TEMP - Changed to channel, delete this comment once confirmed good
+DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1),
 				   value(0), previousValue(0),
 				   invalidValueCount(0), ignored(false),
 				   bypassMask(0xFFFFFFFF) {
@@ -145,7 +151,7 @@ DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1), // TEMP - Changed to
 //   applicationUpdateBuffer = buffer;
 // }
 
-void DbAnalogChannel::update(uint32_t v) { // TEMP - Changed to channel, delete this comment once confirmed good
+void DbAnalogChannel::update(uint32_t v) {
   //    std::cout << "Updating analog device [" << id << "] value=" << v << std::endl;
   previousValue = value;
   value = v;

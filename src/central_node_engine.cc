@@ -373,6 +373,12 @@ void Engine::evaluateFaults()
 
     // bool faulted = false;
 
+    // TODO - It seems this for loop through digitalDevices is useless as 
+    // every evaluation is either 0 or 1, not 3 (NO_EVALUATION)
+    // And every channel is associated with an appcard. Also the .db doesn't allow 
+    // for NULL values for appcardId or evaluation
+    // GREAT - Cut evaluateFault time by O(n^2)
+
     // // Update digital device values based on individual inputs
     // // The individual inputs come from independent digital inputs,
     // // this does not apply to analog devices, where the input
@@ -436,7 +442,7 @@ void Engine::evaluateFaults()
     //         ++input)
     //     {
     //         int32_t inputValue = 0;
-    //         int32_t faultedOffline = 0;
+    //         int32_t faultedOffline = 0; // TODO - Remove unused variable
     //         if ((*input).second->digitalDevice)
     //         {
     //             inputValue = (*input).second->digitalDevice->value;

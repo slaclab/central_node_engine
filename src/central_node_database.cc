@@ -1172,11 +1172,14 @@ void MpsDb::writeFirmwareConfiguration(bool enableTimeout)
         card != applicationCards->end();
         ++card)
     {
+        std::cout << " AppCardId " << (*card).second->id; // TEMP - breaks at second card since doesnt have any channels
         (*card).second->writeConfiguration(enableTimeout);
-        Firmware::getInstance().writeConfig((*card).second->number, fastConfigurationBuffer +
-            (*card).second->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
-            APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
-        i++;
+        
+        // TODO - Temporarily commented out to test writeConfiguration for all app cards
+        // Firmware::getInstance().writeConfig((*card).second->number, fastConfigurationBuffer +
+        //     (*card).second->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
+        //     APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
+        // i++;
     }
 
     // If the app timeout were set to enable, write the configuration to FW
