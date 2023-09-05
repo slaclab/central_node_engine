@@ -367,154 +367,113 @@ bool Engine::setAllowedBeamClass()
  */
 void Engine::evaluateFaults()
 {
+    _evaluateFaultsTimer.start();
 
-    // TODO - Temporarily commented out until ready to deal with logic
-    // _evaluateFaultsTimer.start();
+    bool faulted = false;
 
-    // bool faulted = false;
+    // Update digital & analog Fault values and BeamDestination allowed class
+    for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+        fault != _mpsDb->faults->end();
+        ++fault)
+    {
+        LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
+        uint32_t oldFaultValue = (*fault).second->value; // TODO - Remove unused variable
+        (*fault).second->sendUpdate = 0;
+        // First calculate the digital Fault value from its one or more digital fault inputs
+        uint32_t faultValue = 0;
+        for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
+            input != (*fault).second->faultInputs->end();
+            ++input)
+        {
+            
+            int32_t inputValue = 0;
+            int32_t faultedOffline = 0; // TODO - Remove unused variable
+            if ((*input).second->digitalChannel)
+            {
+                // TODO - Maybe do this check if the input has a valid bypass value, before declaring analog or Digital channel for a faultInput
+                if ((*input).second->bypass->status == BYPASS_VALID)
+                {
+                    inputValue = (*input).second->bypass->value;
+                    LOG_TRACE("ENGINE", (*channel).second->name << " bypassing input value to "
+                        << (*input).second->bypass->value << " (actual value is "
+                        << (*input).second->latchedValue << ")");
+                }
+                else
+                {
+                    inputValue = (*input).second->latchedValue;
+                }
+            }
+            else
+            {
+                // TODO - There is no actual checking if analog device has a bypass
+                // Check if there is an active bypass for analog device
+                LOG_TRACE("ENGINE", (*input).second->analogChannel->name << " bypassMask=" << std::hex <<
+                    (*input).second->analogChannel->bypassMask << ", value=" <<
+                    (*input).second->analogChannel->value << std::dec);
 
-    // TODO - It seems this for loop through digitalDevices is useless as 
-    // every evaluation is either 0 or 1, not 3 (NO_EVALUATION)
-    // And every channel is associated with an appcard. Also the .db doesn't allow 
-    // for NULL values for appcardId or evaluation
-    // GREAT - Cut evaluateFault time by O(n^2)
+                inputValue = (*input).second->analogChannel->latchedValue & (*input).second->analogChannel->bypassMask;
+            }
 
-    // // Update digital device values based on individual inputs
-    // // The individual inputs come from independent digital inputs,
-    // // this does not apply to analog devices, where the input
-    // // come from a single channel (with multiple bits in it)
-    // for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
-    //     device != _mpsDb->digitalDevices->end(); ++device)
-    // {
-    //     // If device has no card assigned, then it cannot be evaluated.
-    //     if ((*device).second->cardId != NO_CARD_ID &&
-    //         (*device).second->evaluation != NO_EVALUATION)
-    //     {
-    //         uint32_t deviceValue = 0;
-    //         LOG_TRACE("ENGINE", "Getting inputs for " << (*device).second->name << " device"
-    //             << ", there are " << (*device).second->inputDevices->size()
-    //             << " inputs");
+            faultValue |= (inputValue << (*input).second->bitPosition);
+            LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue
+                << ", input value " << inputValue << std::dec << " bit pos "
+                << (*input).second->bitPosition);
+        }
+        (*fault).second->update(faultValue);
+        (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
+        (*fault).second->faultedDisplay = false; // Clear the fault - in case it was faulted before
+        LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
-    //         for (DbDeviceInputMap::iterator input = (*device).second->inputDevices->begin();
-    //             input != (*device).second->inputDevices->end();
-    //             ++input)
-    //         {
-    //             uint32_t inputValue = 0;
-    //             // Check if the input has a valid bypass value
-    //             if ((*input).second->bypass->status == BYPASS_VALID)
-    //             {
-    //                 inputValue = (*input).second->bypass->value;
-    //                 LOG_TRACE("ENGINE", (*device).second->name << " bypassing input value to "
-    //                     << (*input).second->bypass->value << " (actual value is "
-    //                     << (*input).second->latchedValue << ")");
-    //             }
-    //             else
-    //             {
-    //                 inputValue = (*input).second->latchedValue;
-    //             }
+        // Now that a Fault has a new value check if it is in the FaultStates list,
+        // and update the allowedBeamClass for the BeamDestinations
+        for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+            state != (*fault).second->faultStates->end();
+            ++state)
+        {
+            (*state).second->ignored = false; // Mark not ignored - the ignore logic is evaluated later
+            uint32_t maskedValue = faultValue & (*state).second->mask;
+            LOG_TRACE("ENGINE", (*fault).second->name << ", checking fault state ["
+                << (*state).second->id << "]: "
+                << "masked value is " << std::hex << maskedValue << " (mask="
+                << (*state).second->mask << ")" << std::dec);
 
-    //             inputValue <<= (*input).second->bitPosition;
-    //             deviceValue |= inputValue;
-    //         }
+            if ((*state).second->value == maskedValue)
+            {
+                (*state).second->faulted = true; // Set input faulted field
+                (*fault).second->faulted = true; // Set fault faulted field
+                faulted = true; // Signal that at least one state is faulted
+                for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
+                    allowed != (*state).second->allowedClasses->end();
+                    ++allowed) {
+                  if ((*allowed).second->beamClass->number < _highestBeamClass->number) {
+                    (*fault).second->faultedDisplay = true; // Set fault faulted field
+                    LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
+                      << faultValue << ", masked=" << maskedValue
+                      << " (fault state="
+                      << (*state).second->name
+                      << ", value=" << (*state).second->value << ")");
+                      // TODO - Add in a 'break' once this if statement is satisfied since resetting the same 
+                      // fault is unnecessary, and it may spam the log trace with duplicates
+                  }
+                }            
+            }
+            else
+            {
+                (*state).second->faulted = false;
+            }
+        }
 
-    //         (*device).second->update(deviceValue);
-
-    //         LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
-    //         // Set device ignore condition to false.  It will be evaluated later
-    //         (*device).second->ignored = false;
-    //     }
-    // }
-
-    // // At this point all digital devices have an updated value
-
-    // // Update digital & analog Fault values and BeamDestination allowed class
-    // for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
-    //     fault != _mpsDb->faults->end();
-    //     ++fault)
-    // {
-    //     LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
-    //     uint32_t oldFaultValue = (*fault).second->value;
-    //     (*fault).second->sendUpdate = 0;
-    //     // First calculate the digital Fault value from its one or more digital device inputs
-    //     uint32_t faultValue = 0;
-    //     for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
-    //         input != (*fault).second->faultInputs->end();
-    //         ++input)
-    //     {
-    //         int32_t inputValue = 0;
-    //         int32_t faultedOffline = 0; // TODO - Remove unused variable
-    //         if ((*input).second->digitalDevice)
-    //         {
-    //             inputValue = (*input).second->digitalDevice->value;
-    //         }
-    //         else
-    //         {
-    //             // Check if there is an active bypass for analog device
-    //             LOG_TRACE("ENGINE", (*input).second->analogDevice->name << " bypassMask=" << std::hex <<
-    //                 (*input).second->analogDevice->bypassMask << ", value=" <<
-    //                 (*input).second->analogDevice->value << std::dec);
-
-    //             inputValue = (*input).second->analogDevice->latchedValue & (*input).second->analogDevice->bypassMask;
-    //         }
-
-    //         faultValue |= (inputValue << (*input).second->bitPosition);
-    //         LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue
-    //             << ", input value " << inputValue << std::dec << " bit pos "
-    //             << (*input).second->bitPosition);
-    //     }
-    //     (*fault).second->update(faultValue);
-    //     (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
-    //     (*fault).second->faultedDisplay = false; // Clear the fault - in case it was faulted before
-    //     LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
-
-    //     // Now that a Fault has a new value check if it is in the FaultStates list,
-    //     // and update the allowedBeamClass for the BeamDestinations
-    //     for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-    //         state != (*fault).second->faultStates->end();
-    //         ++state)
-    //     {
-    //         (*state).second->ignored = false; // Mark not ignored - the ignore logic is evaluated later
-    //         uint32_t maskedValue = faultValue & (*state).second->deviceState->mask;
-    //         LOG_TRACE("ENGINE", (*fault).second->name << ", checking fault state ["
-    //             << (*state).second->id << "]: "
-    //             << "masked value is " << std::hex << maskedValue << " (mask="
-    //             << (*state).second->deviceState->mask << ")" << std::dec);
-
-    //         if ((*state).second->deviceState->value == maskedValue)
-    //         {
-    //             (*state).second->faulted = true; // Set input faulted field
-    //             (*fault).second->faulted = true; // Set fault faulted field
-    //             faulted = true; // Signal that at least one state is faulted
-    //             for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
-    //                 allowed != (*state).second->allowedClasses->end();
-    //                 ++allowed) {
-    //               if ((*allowed).second->beamClass->number < _highestBeamClass->number) {
-    //                 (*fault).second->faultedDisplay = true; // Set fault faulted field
-    //                 LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
-    //                   << faultValue << ", masked=" << maskedValue
-    //                   << " (fault state="
-    //                   << (*state).second->deviceState->name
-    //                   << ", value=" << (*state).second->deviceState->value << ")");
-    //               }
-    //             }            
-    //         }
-    //         else
-    //         {
-    //             (*state).second->faulted = false;
-    //         }
-    //     }
-
-    //     // If there are no faults, then enable the default - if there is one
-    //     if (!faulted && (*fault).second->defaultFaultState)
-    //     {
-    //         (*fault).second->defaultFaultState->faulted = true;
-    //         LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
-    //             << faultValue << " (Default) fault state="
-    //             << (*fault).second->defaultFaultState->deviceState->name);
-    //     }
-    // }
-    // _evaluateFaultsTimer.tick();
-    // _evaluateFaultsTimer.stop();
+        // If there are no faults, then enable the default - if there is one
+        if (!faulted && (*fault).second->defaultFaultState)
+        {
+            (*fault).second->defaultFaultState->faulted = true;
+            LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
+                << faultValue << " (Default) fault state="
+                << (*fault).second->defaultFaultState->name);
+        }
+    }
+    _evaluateFaultsTimer.tick();
+    _evaluateFaultsTimer.stop();
 }
 
 // Check if there are valid ignore conditions. If changes in ignore condition
@@ -867,9 +826,9 @@ void Engine::showStats()
         hb.printReport();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
 
-        if (_shutterDevice)
-            std::cout << "Shutter Status: " << Engine::_shutterDevice->value
-                << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
+        // if (_shutterDevice)
+        //     std::cout << "Shutter Status: " << Engine::_shutterDevice->value
+        //         << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
 
         std::cout << "Reload latch: " << Engine::_linacFwLatch << std::endl;
         std::cout << "Reload Config Count: " << Engine::_reloadCount << std::endl;

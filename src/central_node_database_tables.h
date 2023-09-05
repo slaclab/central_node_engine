@@ -266,7 +266,7 @@ class DbDigitalChannel : public DbEntry {
   uint32_t auto_reset;
   uint32_t evaluation;
   uint32_t cardId; // FK to DbApplicationCard
-  uint32_t value; // calculated from the DeviceInputs for this device
+  //uint32_t value; // calculated from the DeviceInputs for this device
 
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
@@ -296,7 +296,7 @@ class DbDigitalChannel : public DbEntry {
   DbDigitalChannel();
 
   void update(uint32_t v) {
-    value = v;
+    //value = v;
   }
 
   friend std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const channel);

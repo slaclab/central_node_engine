@@ -372,7 +372,7 @@ namespace YAML {
 
 					field = "card_id";
 					digitalChannel->cardId = (*it)[field].as<unsigned int>();
-					digitalChannel->value = 0;
+					//digitalChannel->value = 0;
 
 				} catch(YAML::InvalidNode &e) {
 					errorStream << "ERROR: Failed to find field " << field << " for DigitalChannel.";
