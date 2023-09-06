@@ -266,7 +266,7 @@ class DbDigitalChannel : public DbEntry {
   uint32_t auto_reset;
   uint32_t evaluation;
   uint32_t cardId; // FK to DbApplicationCard
-  //uint32_t value; // calculated from the DeviceInputs for this device
+  //uint32_t value; // calculated from the faultInputs
 
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
@@ -387,11 +387,12 @@ class DbFaultInput : public DbEntry, public DbApplicationCardInput {
   uint32_t bitPosition;
 
   // Values calculated at run time
-  uint32_t value; // Fault value calculated from the DeviceInputs
+  uint32_t value;
 
   // A fault input may come from a digital channel or analog channel threshold fault bits
   DbAnalogChannelPtr analogChannel;
   DbDigitalChannelPtr digitalChannel;
+  DbFaultStatePtr faultState;
 
   // Device input value must be read from the Central Node Firmware
   uint32_t wasLowBit;
@@ -638,6 +639,7 @@ class DbIgnoreCondition : public DbEntry {
 
   bool state; // State is true when condition is met
   DbFaultMapPtr faults; // Ignore conditions can have >=1 faults
+  DbFaultInputMapPtr faultInputs; // Ignore conditions can have >=1 faultInputs
 
   // The ignore condition can be used to ignore a fault state
   DbDigitalChannelPtr digitalChannel;

@@ -605,7 +605,7 @@ void MpsDb::configureFaultInputs()
     //  std::cout << "done with faultInputs" << std::endl;
 }
 
-/* Assign the corresponding faultStates to the fault, digital, and analog channels. */
+/* Assign the corresponding faultStates to the fault, faultInput, digital, and analog channels. */
 void MpsDb::configureFaultStates()
 {
 
@@ -633,11 +633,12 @@ void MpsDb::configureFaultStates()
             DbFaultStateMap *digFaultStates = new DbFaultStateMap();
             (*faultIt).second->faultStates = DbFaultStateMapPtr(digFaultStates);
         }
-        (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
-            (*it).second));
         LOG_TRACE("DATABASE", "Adding FaultState (" << (*it).second->id << ") to "
             " Fault (" << (*faultIt).second->id << ", " << (*faultIt).second->name
             << ", " << (*faultIt).second->description << ")");
+        (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
+            (*it).second));
+
 
         // If this DigitalFault is the default, then assign it to the fault:
         if ((*it).second->defaultState && !((*faultIt).second->defaultFaultState))
@@ -657,6 +658,27 @@ void MpsDb::configureFaultStates()
                 << (*fault).second->id << ") has no FaultStates";
             throw(DbException(errorStream.str()));
         }
+    }
+
+    // Assign the faultState to each faultInput
+    for (DbFaultInputMap::iterator it = faultInputs->begin();
+        it != faultInputs->end();
+        ++it)
+    {
+        int id = (*it).second->faultId;
+
+        DbFaultStateMap::iterator faultStateIt = faultStates->find(id);
+        if (faultStateIt == faultStates->end())
+        {
+            errorStream << "ERROR: Failed to configure database, invalid ID found for FaultState ("
+                << id << ") for FaultInput (" << (*it).second->id << ")";
+            throw(DbException(errorStream.str()));
+        }
+
+        LOG_TRACE("DATABASE", "Adding FaultInput (" << (*it).second->id << ") to "
+            " Fault (" << (*faultStateIt).second->id << ", " << (*faultStateIt).second->name
+            << ", " << (*faultStateIt).second->description << ")");
+        (*it).second->faultState = (*faultStateIt).second;
     }
 
     // Assign the faultStates to each digitalChannel
@@ -802,8 +824,21 @@ void MpsDb::configureIgnoreConditions()
             }
             (*ignoreConditionIt).second->faults->insert(std::pair<int, DbFaultPtr>((*faultIt).second->id,
             (*faultIt).second));
+            
+            // Initialize DbFaultInputMapPtr of ignoreCondition if haven't already
+            if (!(*ignoreConditionIt).second->faultInputs)
+            {
+                DbFaultInputMap *faultInputs = new DbFaultInputMap();
+                (*ignoreConditionIt).second->faultInputs = DbFaultInputMapPtr(faultInputs);
+            }
+            for (DbFaultInputMap::iterator faultInputIt = (*faultIt).second->faultInputs->begin();
+                faultInputIt != (*faultIt).second->faultInputs->end();
+                faultInputIt++)
+            {
+                (*ignoreConditionIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
+                (*faultInputIt).second));
+            }
         }
-
     }
 
     // Loop through IgnoreConditions, and assign the corresponding digital channel

@@ -342,7 +342,9 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
       os << " [Bypassed to " << faultInput->bypass->value << "]";
     }
   }
-
+  if (faultInput->faultState) {
+    os << " faultState[" << faultInput->faultState->id << "]";
+  }
   return os;
 }
 
@@ -514,6 +516,16 @@ std::ostream & operator<<(std::ostream &os, DbIgnoreCondition * const ignoreCond
         os << (*fault).second->id << ", ";
     }
     os << (*fault).second->id <<  "]";
+  }
+
+  if (ignoreCondition->faultInputs) { 
+    os << " faultInputs[";
+    DbFaultInputMap::iterator faultInput;
+    for (faultInput = ignoreCondition->faultInputs->begin();
+        faultInput != std::prev(ignoreCondition->faultInputs->end()); ++faultInput) {
+        os << (*faultInput).second->id << ", ";
+    }
+    os << (*faultInput).second->id <<  "]";
   }
 
   return os;

@@ -101,7 +101,6 @@ public:
 private:
     void mitigate();
 
-    bool findShutterDevice();
     bool findBeamDestinations();
 
     void setTentativeBeamClass();

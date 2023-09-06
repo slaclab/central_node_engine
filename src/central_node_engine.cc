@@ -277,33 +277,6 @@ bool Engine::findBeamDestinations()
     return true;
 }
 
-bool Engine::findShutterDevice()
-{
-    // TODO - Temporarily commented out until ready to deal with logic
-    
-    // for (DbDigitalDeviceMap::iterator device = _mpsDb->digitalDevices->begin();
-    //     device != _mpsDb->digitalDevices->end();
-    //     ++device)
-    // {
-    //     if ((*device).second->name == "Mech. Shutter")
-    //     {
-    //         _shutterDevice = (*device).second;
-    //         for (DbDeviceStateMap::iterator state = _shutterDevice->deviceType->deviceStates->begin();
-    //             state != _shutterDevice->deviceType->deviceStates->end();
-    //             ++state)
-    //         {
-    //             if ((*state).second->name == "CLOSED")
-    //             {
-    //                 _shutterClosedStatus = (*state).second->value;
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    // }
-
-    return false;
-}
-
 bool Engine::isInitialized()
 {
     return _initialized;
@@ -371,13 +344,23 @@ void Engine::evaluateFaults()
 
     bool faulted = false;
 
+    for (DbDigitalChannelMap::iterator channel = _mpsDb->digitalChannels->begin();
+        channel != _mpsDb->digitalChannels->end(); ++channel)
+    {
+        // If channel has no card assigned, then it cannot be evaluated.
+        if ((*channel).second->cardId != NO_CARD_ID &&
+            (*channel).second->evaluation != NO_EVALUATION)
+        {
+            (*channel).second->ignored = false;
+        }
+    }
+
     // Update digital & analog Fault values and BeamDestination allowed class
     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
         fault != _mpsDb->faults->end();
         ++fault)
     {
         LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
-        uint32_t oldFaultValue = (*fault).second->value; // TODO - Remove unused variable
         (*fault).second->sendUpdate = 0;
         // First calculate the digital Fault value from its one or more digital fault inputs
         uint32_t faultValue = 0;
@@ -387,10 +370,8 @@ void Engine::evaluateFaults()
         {
             
             int32_t inputValue = 0;
-            int32_t faultedOffline = 0; // TODO - Remove unused variable
             if ((*input).second->digitalChannel)
             {
-                // TODO - Maybe do this check if the input has a valid bypass value, before declaring analog or Digital channel for a faultInput
                 if ((*input).second->bypass->status == BYPASS_VALID)
                 {
                     inputValue = (*input).second->bypass->value;
@@ -405,8 +386,6 @@ void Engine::evaluateFaults()
             }
             else
             {
-                // TODO - There is no actual checking if analog device has a bypass
-                // Check if there is an active bypass for analog device
                 LOG_TRACE("ENGINE", (*input).second->analogChannel->name << " bypassMask=" << std::hex <<
                     (*input).second->analogChannel->bypassMask << ", value=" <<
                     (*input).second->analogChannel->value << std::dec);
@@ -452,8 +431,7 @@ void Engine::evaluateFaults()
                       << " (fault state="
                       << (*state).second->name
                       << ", value=" << (*state).second->value << ")");
-                      // TODO - Add in a 'break' once this if statement is satisfied since resetting the same 
-                      // fault is unnecessary, and it may spam the log trace with duplicates
+                    break;
                   }
                 }            
             }
@@ -484,139 +462,146 @@ bool Engine::evaluateIgnoreConditions()
     // TODO - Temporarily commented out until ready to deal with logic
     return false; // TEMP
 
-    // _evaluateIgnoreConditionsTimer.start();
-    // bool reload = false;
+    _evaluateIgnoreConditionsTimer.start();
+    bool reload = false;
 
-    // // Calculate state of conditions
-    // for (DbConditionMap::iterator condition = _mpsDb->conditions->begin();
-    //     condition != _mpsDb->conditions->end();
-    //     ++condition)
-    // {
-    //     uint32_t conditionValue = 0;
-    //     for (DbConditionInputMap::iterator input = (*condition).second->conditionInputs->begin();
-    //         input != (*condition).second->conditionInputs->end(); ++input)
-    //     {
-    //         uint32_t inputValue = 0;
-    //         if ((*input).second->faultState)
-    //         {
-    //             if ((*input).second->faultState->faulted)
-    //                 inputValue = 1;
-    //         }
+    // Calculate state of conditions
+    for (DbIgnoreConditionMap::iterator ignoreCondition = _mpsDb->ignoreConditions->begin();
+        ignoreCondition != _mpsDb->ignoreConditions->end();
+        ++ignoreCondition)
+    {
+        uint32_t conditionValue = 0;
 
-    //         conditionValue |= (inputValue << (*input).second->bitPosition);
-    //         LOG_TRACE("ENGINE", "Condition " << (*condition).second->name << " current value " << std::hex << conditionValue
-    //             << ", input value " << inputValue << std::dec << " bit pos "
-    //             << (*input).second->bitPosition);
-    //     }
+        // TODO: change (*condition).second->mask to (*ignoreCondition).second->value
+        // TODO: Add faultInputs to DbIgnoreCondition - Done, may revert this 
+        // right now - this function is optimized and will work once the TODO's are finished within this function.
+        // TODO: WIll omit this bitwise logic and just check the digital channel value associated with the ignoreCondition
+        for (DbFaultInputMap::iterator input = (*ignoreCondition).second->faultInputs->begin();
+            input != (*ignoreCondition).second->faultInputs->end(); ++input) // TODO: *input should be faultInput now since bitPosition is there. 
+            // What about faultState? - TODO: need to add faultState to faultInputs, actually might need faultState(s), or may revert this
+            // TODO: need to see if we need to loop through faultInputs or add the bitPosition and faultState to ignoreCondition (size=13) more efficient
+        {
+            uint32_t inputValue = 0;
+            if ((*input).second->faultState)
+            {
+                if ((*input).second->faultState->faulted)
+                    inputValue = 1;
+            }
+
+            conditionValue |= (inputValue << (*input).second->bitPosition);
+            LOG_TRACE("ENGINE", "Ignore Condition " << (*ignoreCondition).second->name << " current value " << std::hex << conditionValue
+                << ", input value " << inputValue << std::dec << " bit pos "
+                << (*input).second->bitPosition);
+        }
 
 
-    //     // 'mask' is the condition value that needs to be matched in order to ignore faults
-    //     bool newConditionState = false;
-    //     if ((*condition).second->mask == conditionValue)
-    //         newConditionState = true;
+        // 'value' is the ignore condition value that needs to be matched in order to ignore faults
+        bool newConditionState = false;
+        if ((*ignoreCondition).second->value == conditionValue)
+            newConditionState = true;
 
-    //     bool conditionChanged = false;    
-    //     if ((*condition).second->state != newConditionState) {
-    //       conditionChanged = true;
-    //       reload = true;
-    //     }
+        bool conditionChanged = false;    
+        if ((*ignoreCondition).second->state != newConditionState) {
+          conditionChanged = true;
+          reload = true;
+        }
 
-    //     (*condition).second->state = newConditionState;
-    //     LOG_TRACE("ENGINE",  "Condition " << (*condition).second->name << " is " << (*condition).second->state);
+        (*ignoreCondition).second->state = newConditionState;
+        LOG_TRACE("ENGINE",  "Ignore Condition " << (*ignoreCondition).second->name << " is " << (*ignoreCondition).second->state);
 
-    //     if ((*condition).second->ignoreConditions)
-    //     {
-    //         for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
-    //             ignoreCondition != (*condition).second->ignoreConditions->end();
-    //             ++ignoreCondition)
-    //         {
-    //             if ((*ignoreCondition).second->faultState)
-    //             {
-    //                 LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
-    //                     << ", state=" << (*condition).second->state);
-    //                 // Only set ignore conditions if state is not already ignored.
-    //                 if (!(*ignoreCondition).second->faultState->ignored) {
-    //                     (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
-    //                     // This check is needed in case specific faults from an AnalogDevice is
-    //                     // listed in the ignoreCondition.
-    //                     if ((*ignoreCondition).second->analogDevice)
-    //                     {
-    //                         int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
-    //                         if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state) {
-    //                           (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 if ((*ignoreCondition).second->analogDevice)
-    //                 {
-    //                     LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->deviceId << "]"
-    //                         << ", state=" << (*condition).second->state);
-    //                     // only evaluate ignore condition if device is not already ignored
-    //                     if (!(*ignoreCondition).second->analogDevice->ignored) {
-    //                       if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state) {
-    //                         (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
-    //                       }
-    //                     }
-    //                 }
-    //             }
-    //             if ((*ignoreCondition).second->digitalDevice)
-    //             {
-    //                 LOG_TRACE("ENGINE",  "Ignoring digital device [" << (*ignoreCondition).second->deviceId << "]"
-    //                     << ", state=" << (*condition).second->state);
-    //                 // only evaluate ignore condition if not already ignored
-    //                 if (!(*ignoreCondition).second->digitalDevice->ignored) {
-    //                     if ((*ignoreCondition).second->digitalDevice->ignored != (*condition).second->state)
-    //                     (*ignoreCondition).second->digitalDevice->ignored = (*condition).second->state;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-    // _evaluateIgnoreConditionsTimer.tick();
-    // _evaluateIgnoreConditionsTimer.stop();
-    // return reload;
+        // Stop here for now - TODO: Will rework this section later to just evaluate the faults not the channels.
+
+        // if ((*condition).second->ignoreConditions)
+        // {
+        //     for (DbIgnoreConditionMap::iterator ignoreCondition = (*condition).second->ignoreConditions->begin();
+        //         ignoreCondition != (*condition).second->ignoreConditions->end();
+        //         ++ignoreCondition)
+        //     {
+        //         if ((*ignoreCondition).second->faultState) // TODO: Confirm that this entire if statement will be omitted since this was never used. 
+        //         {
+        //             LOG_TRACE("ENGINE",  "Ignoring fault state [" << (*ignoreCondition).second->faultStateId << "]"
+        //                 << ", state=" << (*condition).second->state);
+        //             // Only set ignore conditions if state is not already ignored.
+        //             if (!(*ignoreCondition).second->faultState->ignored) {
+        //                 (*ignoreCondition).second->faultState->ignored = (*condition).second->state;
+        //                 // This check is needed in case specific faults from an AnalogDevice is
+        //                 // listed in the ignoreCondition.
+        //                 if ((*ignoreCondition).second->analogDevice)
+        //                 {
+        //                     int integrator = (*ignoreCondition).second->faultState->deviceState->getIntegrator();
+        //                     if ((*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] != (*condition).second->state) {
+        //                       (*ignoreCondition).second->analogDevice->ignoredIntegrator[integrator] = (*condition).second->state;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         else
+        //         {
+        //             if ((*ignoreCondition).second->analogDevice) // TODO: Confirm
+        //             {
+        //                 LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->deviceId << "]"
+        //                     << ", state=" << (*condition).second->state);
+        //                 // only evaluate ignore condition if device is not already ignored
+        //                 if (!(*ignoreCondition).second->analogDevice->ignored) {
+        //                   if ((*ignoreCondition).second->analogDevice->ignored != (*condition).second->state) {
+        //                     (*ignoreCondition).second->analogDevice->ignored = (*condition).second->state;
+        //                   }
+        //                 }
+        //             }
+        //         }
+        //         if ((*ignoreCondition).second->digitalDevice)
+        //         {
+        //             LOG_TRACE("ENGINE",  "Ignoring digital device [" << (*ignoreCondition).second->deviceId << "]"
+        //                 << ", state=" << (*condition).second->state);
+        //             // only evaluate ignore condition if not already ignored
+        //             if (!(*ignoreCondition).second->digitalDevice->ignored) {
+        //                 if ((*ignoreCondition).second->digitalDevice->ignored != (*condition).second->state)
+        //                 (*ignoreCondition).second->digitalDevice->ignored = (*condition).second->state;
+        //             }
+        //         }
+        //     }
+        // }
+    }
+    _evaluateIgnoreConditionsTimer.tick();
+    _evaluateIgnoreConditionsTimer.stop();
+    return reload;
 }
 
 void Engine::setFaultIgnore()
 {
 
-    // TODO - Temporarily commented out until ready to deal with logic
-
-    // _setFaultIgnoreTimer.start();
-    // for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
-    //     fault != _mpsDb->faults->end();
-    //     ++fault)
-    // {
-    //   (*fault).second->ignored = false;
-    //   (*fault).second->faultedOffline = false;
-    //   (*fault).second->faultActive = true;
-    //   for (DbFaultInputMap::iterator fault_input = (*fault).second->faultInputs->begin();
-    //       fault_input != (*fault).second->faultInputs->end();
-    //       ++fault_input)
-    //   {
-    //     if ((*fault_input).second->analogDevice) {
-    //       (*fault).second->faultedOffline = (*fault_input).second->analogDevice->faultedOffline;
-    //       // modeActive is false when in NC mode and true when in SC mode.  When in NC mode, logic should be ignored
-    //       (*fault).second->faultActive = (*fault_input).second->analogDevice->modeActive;
-    //       if ((*fault_input).second->analogDevice->ignored || !(*fault_input).second->analogDevice->modeActive) {
-    //         (*fault).second->ignored = true;
-    //       }
-    //     }
-    //     if ((*fault_input).second->digitalDevice) {
-    //       (*fault).second->faultedOffline = (*fault_input).second->digitalDevice->faultedOffline;
-    //       // modeActive is false when in NC mode and true when in SC mode.  When in NC mode, logic should be ignored
-    //       (*fault).second->faultActive = (*fault_input).second->digitalDevice->modeActive;
-    //       if ((*fault_input).second->digitalDevice->ignored || !(*fault_input).second->digitalDevice->modeActive) {
-    //         (*fault).second->ignored = true;
-    //       }
-    //     }
-    //   }
-    // }
-    // _setFaultIgnoreTimer.tick();
-    // _setFaultIgnoreTimer.stop();
+    _setFaultIgnoreTimer.start();
+    for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+        fault != _mpsDb->faults->end();
+        ++fault)
+    {
+      (*fault).second->ignored = false;
+      (*fault).second->faultedOffline = false;
+      (*fault).second->faultActive = true;
+      for (DbFaultInputMap::iterator fault_input = (*fault).second->faultInputs->begin();
+          fault_input != (*fault).second->faultInputs->end();
+          ++fault_input)
+      {
+        if ((*fault_input).second->analogChannel) {
+          (*fault).second->faultedOffline = (*fault_input).second->analogChannel->faultedOffline;
+          // modeActive is false when in NC mode and true when in SC mode.  When in NC mode, logic should be ignored
+          (*fault).second->faultActive = (*fault_input).second->analogChannel->modeActive;
+          if ((*fault_input).second->analogChannel->ignored || !(*fault_input).second->analogChannel->modeActive) {
+            (*fault).second->ignored = true;
+          }
+        }
+        if ((*fault_input).second->digitalChannel) {
+          (*fault).second->faultedOffline = (*fault_input).second->digitalChannel->faultedOffline;
+          // modeActive is false when in NC mode and true when in SC mode.  When in NC mode, logic should be ignored
+          (*fault).second->faultActive = (*fault_input).second->digitalChannel->modeActive;
+          if ((*fault_input).second->digitalChannel->ignored || !(*fault_input).second->digitalChannel->modeActive) {
+            (*fault).second->ignored = true;
+          }
+        }
+      }
+    }
+    _setFaultIgnoreTimer.tick();
+    _setFaultIgnoreTimer.stop();
 }
 
 void Engine::mitigate()
@@ -699,27 +684,25 @@ void Engine::mitigate()
 void Engine::breakAnalogIgnore()
 {
 
-    // TODO - Temporarily commented out until ready to deal with logic
-
-    // _breakAnalogIgnoreTimer.start();
-    // /* 
-    // Each DbAnalogDevice needs to have its ignore flag set false.  It will be set
-    // based on machine condition in next function
-    // DbDigitalDevice has its ignore flag set to false in evaluateFaults(), so it does
-    // not need to be set here.
-    // */
-    // for (DbAnalogDeviceMap::iterator device = _mpsDb->analogDevices->begin();
-    //     device != _mpsDb->analogDevices->end(); ++device)
-    // {
-    //     // If device has no card assigned, then it cannot be evaluated.
-    //     if ((*device).second->cardId != NO_CARD_ID &&
-    //         (*device).second->evaluation != NO_EVALUATION)
-    //     {
-    //       (*device).second->ignored = false;
-    //     }
-    // }
-    // _breakAnalogIgnoreTimer.tick();
-    // _breakAnalogIgnoreTimer.stop();
+    _breakAnalogIgnoreTimer.start();
+    /* 
+    Each DbAnalogChannel needs to have its ignore flag set false.  It will be set
+    based on machine condition in next function
+    DbDigitalChannel has its ignore flag set to false in evaluateFaults(), so it does
+    not need to be set here.
+    */
+    for (DbAnalogChannelMap::iterator channel = _mpsDb->analogChannels->begin();
+        channel != _mpsDb->analogChannels->end(); ++channel)
+    {
+        // If channel has no card assigned, then it cannot be evaluated.
+        if ((*channel).second->cardId != NO_CARD_ID &&
+            (*channel).second->evaluation != NO_EVALUATION)
+        {
+          (*channel).second->ignored = false;
+        }
+    }
+    _breakAnalogIgnoreTimer.tick();
+    _breakAnalogIgnoreTimer.stop();
 }
 
 
@@ -775,37 +758,35 @@ void Engine::showFaults()
     // Print current faults
     bool faults = false;
 
-    // TODO - Temporarily commented out until ready to deal with logic
+    // Digital Faults
+    {
+        std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
+        for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+            fault != _mpsDb->faults->end();
+            ++fault)
+        {
+            for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+                state != (*fault).second->faultStates->end();
+                ++state)
+            {
+                if ((*state).second->faulted)
+                {
+                    if (!faults)
+                    {
+                        std::cout << "# Current faults:" << std::endl;
+                        faults = true;
+                    }
 
-    // // Digital Faults
-    // {
-    //     std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
-    //     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
-    //         fault != _mpsDb->faults->end();
-    //         ++fault)
-    //     {
-    //         for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-    //             state != (*fault).second->faultStates->end();
-    //             ++state)
-    //         {
-    //             if ((*state).second->faulted)
-    //             {
-    //                 if (!faults)
-    //                 {
-    //                     std::cout << "# Current faults:" << std::endl;
-    //                     faults = true;
-    //                 }
+                    std::cout << "  " << (*fault).second->name << ": " << (*state).second->name
+                        << " (value=" << (*state).second->value << ", ignored="
+                        << (*state).second->ignored << ")" << std::endl;
+                }
+            }
+        }
+    }
 
-    //                 std::cout << "  " << (*fault).second->name << ": " << (*state).second->deviceState->name
-    //                     << " (value=" << (*state).second->deviceState->value << ", ignored="
-    //                     << (*state).second->ignored << ")" << std::endl;
-    //             }
-    //         }
-    //     }
-    // }
-
-    // if (!faults)
-    //     std::cout << "# No faults" << std::endl;
+    if (!faults)
+        std::cout << "# No faults" << std::endl;
 }
 
 void Engine::showStats()
