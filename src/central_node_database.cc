@@ -364,6 +364,14 @@ void MpsDb::configureFaultInputs()
                 {
                     LOG_TRACE("DATABASE", "AnalogChannel " << (*analogChannelIt).second->name
                         << ": Fast Evaluation");
+
+                    if ((*analogChannelIt).second->auto_reset == AUTO_RESET) // If fastEval is true, then autoReset must be false
+                    {
+                        errorStream << "ERROR: Fast Evaluation Analog Channel (" << id
+                            << ") has auto reset set to TRUE (Must be false)";
+                        throw(DbException(errorStream.str()));
+                    }
+                    
                     DbFaultMap::iterator faultIt = faults->find((*faultInputIt).second->faultId);
                     if (faultIt == faults->end())
                     {
@@ -491,6 +499,13 @@ void MpsDb::configureFaultInputs()
             // DbFaultInput
             if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION)
             {
+                if ((*digitalChannelIt).second->auto_reset == AUTO_RESET) // If fastEval is true, then autoReset must be false
+                {
+                    errorStream << "ERROR: Fast Evaluation Digital Channel (" << id
+                        << ") has auto reset set to TRUE (Must be false)";
+                    throw(DbException(errorStream.str()));
+                }
+
                 DbFaultMap::iterator faultIt = faults->find((*faultInputIt).second->faultId);
                 if (faultIt == faults->end())
                 {
@@ -1023,8 +1038,8 @@ void MpsDb::checkFaultInputs()
         faultIt != faults->end();
         faultIt++)
     {
-        /*  Check 1 - Within a faultId, Check the maximum bit value from bit position.
-            Ex: bitPosition=6. Maximum value = 127 (all bits on) */
+        /*  Within a faultId, Check if preceding bit positions exists if bit position > 0.
+            Ex: bitPosition=6. Must have bitPositions [5,4,3,2,1,0] to be valid. */
         DbFaultInputMapPtr currentFaultInputs = (*faultIt).second->faultInputs;
         unsigned int maxBitPos = 0;
         // Get max bitPosition 
@@ -1036,27 +1051,6 @@ void MpsDb::checkFaultInputs()
                 maxBitPos = (*faultInputIt).second->bitPosition;
             }
         }
-        unsigned int maxBitVal = pow(2,maxBitPos + 1) - 1; // Summation of 2^n
-        // Get maximum value 
-        DbFaultStateMapPtr currentFaultStates = (*faultIt).second->faultStates;
-        unsigned int actualMaxBitVal = 0;
-        for (DbFaultStateMap::iterator faultStateIt = currentFaultStates->begin();
-            faultStateIt != currentFaultStates->end();
-            faultStateIt++)
-        {
-            if ((*faultStateIt).second->value > actualMaxBitVal) {
-                actualMaxBitVal = (*faultStateIt).second->value;
-            }
-        }
-        if (maxBitVal != actualMaxBitVal)
-        {
-            errorStream << "ERROR: Found fault (" << (*faultIt).second->id << 
-            ") with invalid maximum bit value," << " with max bit value of (" << actualMaxBitVal << ")";
-            throw(DbException(errorStream.str()));
-        }
-
-        /*  Check 2 - Within a faultId, Check if preceding bit positions exists if bit position > 0.
-            Ex: bitPosition=6. Must have bitPositions [5,4,3,2,1,0] to be valid. */
         if (maxBitPos > 0) {
             std::vector<unsigned int> bitPositions(maxBitPos + 1);
             for (DbFaultInputMap::iterator faultInputIt = currentFaultInputs->begin();
@@ -1104,7 +1098,7 @@ void MpsDb::configure()
     configureAnalogChannels();
     configureFaultStates();
     configureFaultInputs();
-    // checkFaultInputs(); // TODO - Temporarily commented out because current test file has invalid faultInputs
+    checkFaultInputs();
     configureIgnoreConditions();
     configureApplicationCards();
     configureBeamDestinations();

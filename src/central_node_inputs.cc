@@ -23,8 +23,8 @@ using namespace easyloggingpp;
 static Logger *databaseLogger ;
 #endif
 
-TimeAverage DeviceInputUpdateTime(5, "Device Input update time");
-TimeAverage AnalogChannelUpdateTime(5, "Analog Device update time"); // TEMP - Changed to channel, delete this comment once confirmed good
+TimeAverage DigitalChannelUpdateTime(5, "Digital Channel update time");
+TimeAverage AnalogChannelUpdateTime(5, "Analog Channel update time");
 TimeAverage AppCardDigitalUpdateTime(5, "Application Card (digital) update time");
 TimeAverage AppCardAnalogUpdateTime(5, "Application Card (analog) update time");
 
@@ -64,71 +64,70 @@ void DbApplicationCardInput::setUpdateBuffers(std::vector<uint8_t>* bufPtr, cons
 // }
 
 // This should update the value from the data read from the central node firmware
-void DbFaultInput::update(uint32_t v) {
-  // TODO - Temporarily commented out until ready to deal with logic
-  // previousValue = value;
-  // value = v;
+void DbDigitalChannel::update(uint32_t v) {
+  previousValue = value;
+  value = v;
 
-  // // Latch new value if this is a fault
-  // if (v == faultValue) {
-  //   latchedValue = faultValue;
-  // }
+  // Latch new value if this is a fault
+  if (v == faultValue) {
+    latchedValue = faultValue;
+  }
 }
 
 // Update its value from the applicationUpdateBuffer
-void DbFaultInput::update() {
+void DbDigitalChannel::update() {
 
   // TODO - temporarily commented out until ready to replace with faultInput
 
-  // uint32_t wasLow;
-  // uint32_t wasHigh;
-  // uint32_t newValue = 0;
+  uint32_t wasLow;
+  uint32_t wasHigh;
+  uint32_t newValue = 0;
 
-  // DeviceInputUpdateTime.start();
+  DigitalChannelUpdateTime.start();
 
-  // if (getWasLowBuffer()) {
-  //   previousValue = value;
+  if (getWasLowBuffer()) {
+    previousValue = value;
 
-  //   wasLow = getWasLow(channel->number);
-  //   wasHigh = getWasHigh(channel->number);
+    wasLow = getWasLow(number);
+    wasHigh = getWasHigh(number);
 
-  //   wasLowBit = wasLow;
-  //   wasHighBit = wasHigh;
+    wasLowBit = wasLow;
+    wasHighBit = wasHigh;
 
-  //   // If both are zero the Central Node has not received messages from the device, assume fault
-  //   if (wasLow + wasHigh == 0) {
-  //     invalidValueCount++;
-  //     newValue = faultValue;
-  //   }
-  //   else if (wasLow + wasHigh == 2) {
-  //     newValue = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
-  //   }
-  //   else if (wasLow > 0) {
-  //     newValue = 0;
-  //   }
-  //   else {
-  //     newValue = 1;
-  //   }
+    // If both are zero the Central Node has not received messages from the device, assume fault
+    if (wasLow + wasHigh == 0) {
+      invalidValueCount++;
+      newValue = faultValue;
+    }
+    else if (wasLow + wasHigh == 2) {
+      newValue = faultValue; // If signal was both low and high during the 2.7ms assume fault state.
+    }
+    else if (wasLow > 0) {
+      newValue = 0;
+    }
+    else {
+      newValue = 1;
+    }
 
-  //   value = newValue;
+    value = newValue;
 
-  //   // Latch new value if this is a fault
-  //   if (newValue == faultValue) {
-  //     latchedValue = faultValue;
-  //   }
-  //   if (autoReset == AUTO_RESET) {
-  //     latchedValue = value;
-  //   }
+    // Latch new value if this is a fault
+    if (newValue == faultValue) {
+      latchedValue = faultValue;
+    }
+    if (auto_reset == AUTO_RESET) {
+      latchedValue = value;
+    }
 
-  //   if (previousValue != value) {
-  //     History::getInstance().logDeviceInput(id, previousValue, value);
-  //   }
-  // }
-  // else {
-  //   throw(DbException("ERROR: DbDeviceInput::update() - no applicationUpdateBuffer set"));
-  // }
+    if (previousValue != value) {
+      History::getInstance().logDeviceInput(id, previousValue, value);
+    }
+  }
+  else {
+    throw(DbException("ERROR: DbDigitalChannel::update() - no applicationUpdateBuffer set"));
+  }
 
-  // DeviceInputUpdateTime.end();
+  DigitalChannelUpdateTime.end();
 }
 
 DbAnalogChannel::DbAnalogChannel() : DbEntry(), number(-1),
@@ -215,7 +214,7 @@ void DbAnalogChannel::update() {
     }
 
     /*
-    // TODO: Change the bit mapping - the integrators are not contiguous in memory!
+    // TODO: Change the bit mapping - the integrators are not contiguous in memory! This change is dependent on FW people
     for (uint32_t i = 0; i < ANALOG_DEVICE_NUM_THRESHOLDS * deviceType->numIntegrators; ++i) {
       wasLow = getWasLow(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
       wasHigh = getWasHigh(channel->number*ANALOG_DEVICE_NUM_THRESHOLDS*deviceType->numIntegrators+i);
@@ -345,14 +344,9 @@ bool DbApplicationCard::updateInputs() {
     AppCardDigitalUpdateTime.start();
     for (DbDigitalChannelMap::iterator digitalChannel = digitalChannels->begin();
 	       digitalChannel != digitalChannels->end(); ++digitalChannel) {
-      (*digitalChannel).second->faultedOffline = !online; //true when it is falted offline
+      (*digitalChannel).second->faultedOffline = !online; //true when it is faulted offline
       (*digitalChannel).second->modeActive = active; //True when SC mode, false when NC mode
-      if ((*digitalChannel).second->faultInputs) {
-	      for (DbFaultInputMap::iterator faultInput = (*digitalChannel).second->faultInputs->begin();
-	           faultInput != (*digitalChannel).second->faultInputs->end(); ++faultInput) {
-	        (*faultInput).second->update();
-	      }
-      }
+      (*digitalChannel).second->update();
     }
     AppCardDigitalUpdateTime.end();
   }
@@ -362,7 +356,7 @@ bool DbApplicationCard::updateInputs() {
     for (DbAnalogChannelMap::iterator analogChannel = analogChannels->begin();
 	       analogChannel != analogChannels->end(); ++analogChannel) {
       (*analogChannel).second->update();
-      (*analogChannel).second->faultedOffline = !online; //true when it is falted offline
+      (*analogChannel).second->faultedOffline = !online; //true when it is faulted offline
       (*analogChannel).second->modeActive = active; //True when SC mode, false when NC mode
     }
     AppCardAnalogUpdateTime.end();

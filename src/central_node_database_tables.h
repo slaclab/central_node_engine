@@ -253,7 +253,7 @@ typedef boost::shared_ptr<DbAnalogChannelMap> DbAnalogChannelMapPtr;
 /**
  * DbDigitalChannel YAML class
  */
-class DbDigitalChannel : public DbEntry {
+class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
  public:
   std::string z_name;
   std::string o_name;
@@ -266,9 +266,17 @@ class DbDigitalChannel : public DbEntry {
   uint32_t auto_reset;
   uint32_t evaluation;
   uint32_t cardId; // FK to DbApplicationCard
-  //uint32_t value; // calculated from the faultInputs
+  
+  // Channel input value must be read from the Central Node Firmware
+  uint32_t wasLowBit;
+  uint32_t wasHighBit;
+  uint32_t value; // calculated from the faultInput - one or zero.
+  uint32_t previousValue;
 
-  // Faults from this devices are bypassed when ignored==true
+  // Latched value
+  uint32_t latchedValue;
+
+  // Faults from these channels are bypassed when ignored==true
   bool ignored;
   bool faultedOffline; //true when app card has app timeout
   bool modeActive; //true when SC mode, false when NC mode
@@ -293,11 +301,10 @@ class DbDigitalChannel : public DbEntry {
   // the firmware will apply the fastPowerClass/fastDestinationMask
   uint8_t fastExpectedState;
 
-  DbDigitalChannel();
+  void update(uint32_t v);
+  void update();
 
-  void update(uint32_t v) {
-    //value = v;
-  }
+  DbDigitalChannel();
 
   friend std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const channel);
 };

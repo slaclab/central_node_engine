@@ -331,7 +331,7 @@ bool Engine::setAllowedBeamClass()
 }
 
 /**
- * First goes through the list of DigitalDevices and updates the current state.
+ * First goes through the list of DigitalChannels and updates the current state.
  * Second updates the FaultStates for each Fault.
  * At the end of this method all Digital Faults will have updated values,
  * i.e. the field 'faulted' gets updated based on the current machine state.
@@ -459,9 +459,6 @@ void Engine::evaluateFaults()
 bool Engine::evaluateIgnoreConditions()
 {
 
-    // TODO - Temporarily commented out until ready to deal with logic
-    return false; // TEMP
-
     _evaluateIgnoreConditionsTimer.start();
     bool reload = false;
 
@@ -470,39 +467,20 @@ bool Engine::evaluateIgnoreConditions()
         ignoreCondition != _mpsDb->ignoreConditions->end();
         ++ignoreCondition)
     {
+        DbDigitalChannelPtr channel = (*ignoreCondition).second->digitalChannel;
+        DbFaultInputMap::iterator input = channel->faultInputs->begin();
+        // The digitalChannel of the ignoreCondition should only have 1 faultInput
         uint32_t conditionValue = 0;
-
-        // TODO: change (*condition).second->mask to (*ignoreCondition).second->value
-        // TODO: Add faultInputs to DbIgnoreCondition - Done, may revert this 
-        // right now - this function is optimized and will work once the TODO's are finished within this function.
-        // TODO: WIll omit this bitwise logic and just check the digital channel value associated with the ignoreCondition
-        for (DbFaultInputMap::iterator input = (*ignoreCondition).second->faultInputs->begin();
-            input != (*ignoreCondition).second->faultInputs->end(); ++input) // TODO: *input should be faultInput now since bitPosition is there. 
-            // What about faultState? - TODO: need to add faultState to faultInputs, actually might need faultState(s), or may revert this
-            // TODO: need to see if we need to loop through faultInputs or add the bitPosition and faultState to ignoreCondition (size=13) more efficient
-        {
-            uint32_t inputValue = 0;
-            if ((*input).second->faultState)
-            {
-                if ((*input).second->faultState->faulted)
-                    inputValue = 1;
-            }
-
-            conditionValue |= (inputValue << (*input).second->bitPosition);
-            LOG_TRACE("ENGINE", "Ignore Condition " << (*ignoreCondition).second->name << " current value " << std::hex << conditionValue
-                << ", input value " << inputValue << std::dec << " bit pos "
-                << (*input).second->bitPosition);
-        }
-
-
+        if ((*input).second->bypass->status == BYPASS_VALID)
+            conditionValue = (*input).second->bypass->value;
+        else
+            conditionValue = (*input).second->latchedValue;
         // 'value' is the ignore condition value that needs to be matched in order to ignore faults
         bool newConditionState = false;
         if ((*ignoreCondition).second->value == conditionValue)
             newConditionState = true;
 
-        bool conditionChanged = false;    
         if ((*ignoreCondition).second->state != newConditionState) {
-          conditionChanged = true;
           reload = true;
         }
 
@@ -633,8 +611,8 @@ void Engine::mitigate()
               LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
               << (*fault).second->value
               << " (fault state="
-              << (*state).second->deviceState->name
-              << ", value=" << (*state).second->deviceState->value << ")");
+              << (*state).second->name
+              << ", value=" << (*state).second->value << ")");
               if ((*state).second->allowedClasses)
               {
                 for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
@@ -806,10 +784,6 @@ void Engine::showStats()
         _setAllowedBeamClassTimer.show();
         hb.printReport();
         std::cout << "Rate: " << Engine::_rate << " Hz" << std::endl;
-
-        // if (_shutterDevice)
-        //     std::cout << "Shutter Status: " << Engine::_shutterDevice->value
-        //         << " (CLOSED=" << Engine::_shutterClosedStatus << ")" << std::endl;
 
         std::cout << "Reload latch: " << Engine::_linacFwLatch << std::endl;
         std::cout << "Reload Config Count: " << Engine::_reloadCount << std::endl;
