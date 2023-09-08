@@ -34,7 +34,7 @@
   static Logger *databaseLogger;
 #endif
 
-extern TimeAverage DeviceInputUpdateTime;
+extern TimeAverage DigitalChannelUpdateTime;
 extern TimeAverage AnalogChannelUpdateTime;
 extern TimeAverage AppCardDigitalUpdateTime;
 extern TimeAverage AppCardAnalogUpdateTime;
@@ -191,7 +191,7 @@ void MpsDb::updateInputs()
 
         if (_clearUpdateTime)
         {
-            DeviceInputUpdateTime.clear();
+            DigitalChannelUpdateTime.clear();
             AnalogChannelUpdateTime.clear();
             AppCardDigitalUpdateTime.clear();
             AppCardAnalogUpdateTime.clear();
@@ -281,8 +281,15 @@ void MpsDb::configureAllowedClasses()
         mitigationIds = (*faultStateIt).second->mitigationIds;
         for (unsigned int mitigationId : mitigationIds) {
             DbAllowedClassMap::iterator allowedClassIt = allowedClasses->find(mitigationId);
-            (*faultStateIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*allowedClassIt).second->id,
-            (*allowedClassIt).second));
+            if (allowedClassIt != allowedClasses->end())
+                (*faultStateIt).second->allowedClasses->insert(std::pair<int, DbAllowedClassPtr>((*allowedClassIt).second->id,
+                (*allowedClassIt).second));
+            else 
+            {
+                errorStream <<  "ERROR: Failed to configure database, invalid ID found for Mitigation ("
+                    << mitigationId << ") for FaultState (" << (*faultStateIt).second->id << ")";
+                throw(DbException(errorStream.str()));
+            }
         }
 
     }
@@ -776,20 +783,23 @@ void MpsDb::configureAnalogChannels()
         ++analogChannelIt)
     {
         int cardId = (*analogChannelIt).second->cardId;
-        
+        int cardTypeId;
         DbApplicationCardMap::iterator appCardIt = applicationCards->find(cardId);
-        int cardTypeId = (*appCardIt).second->applicationTypeId;
+        if (appCardIt != applicationCards->end()) {
+            cardTypeId = (*appCardIt).second->applicationTypeId;
+        }
+        else 
+        {
+            errorStream << "ERROR: Failed to configure database, invalid cardId ("
+                << cardId << ") for AnalogChannel (" << (*analogChannelIt).second->id << ")";
+            throw(DbException(errorStream.str()));
+        }
+        
 
         DbApplicationTypeMap::iterator cardTypeIt = applicationTypes->find(cardTypeId);
         if (cardTypeIt != applicationTypes->end())
         {
             (*analogChannelIt).second->appType = (*cardTypeIt).second;
-        }
-        else
-        {
-            errorStream << "ERROR: Failed to configure database, invalid cardTypeId ("
-                << cardTypeId << ") for ApplicationCard (" <<  (*analogChannelIt).second->id << ")";
-            throw(DbException(errorStream.str()));
         }
 
         // Create a map to hold faultInput for the analogChannelIt
@@ -831,14 +841,24 @@ void MpsDb::configureIgnoreConditions()
         ignoreConditionIds = (*faultIt).second->ignoreConditionIds;
         for (unsigned int ignoreConditionId : ignoreConditionIds) {
             DbIgnoreConditionMap::iterator ignoreConditionIt = ignoreConditions->find(ignoreConditionId);
-            // Initialize DbFaultMapPtr of ignoreCondition if haven't already
-            if (!(*ignoreConditionIt).second->faults)
+            if (ignoreConditionIt != ignoreConditions->end()) 
             {
-                DbFaultMap *faults = new DbFaultMap();
-                (*ignoreConditionIt).second->faults = DbFaultMapPtr(faults);
+                // Initialize DbFaultMapPtr of ignoreCondition if haven't already
+                if (!(*ignoreConditionIt).second->faults)
+                {
+                    DbFaultMap *faults = new DbFaultMap();
+                    (*ignoreConditionIt).second->faults = DbFaultMapPtr(faults);
+                }
+                (*ignoreConditionIt).second->faults->insert(std::pair<int, DbFaultPtr>((*faultIt).second->id,
+                (*faultIt).second));
             }
-            (*ignoreConditionIt).second->faults->insert(std::pair<int, DbFaultPtr>((*faultIt).second->id,
-            (*faultIt).second));
+            else 
+            {
+                errorStream << "ERROR: Failed to configure database, invalid ignoreConditionId ("
+                    << ignoreConditionId << ") for Fault (" <<  (*faultIt).second->id << ")";
+                throw(DbException(errorStream.str()));
+            }
+
             
             // Initialize DbFaultInputMapPtr of ignoreCondition if haven't already
             if (!(*ignoreConditionIt).second->faultInputs)
@@ -862,9 +882,15 @@ void MpsDb::configureIgnoreConditions()
         ignoreConditionIt++)
     {
         DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find((*ignoreConditionIt).second->digitalChannelId);
-        (*ignoreConditionIt).second->digitalChannel = (*digitalChannelIt).second;
+        if (digitalChannelIt != digitalChannels->end()) 
+            (*ignoreConditionIt).second->digitalChannel = (*digitalChannelIt).second;
+        else 
+        {
+            errorStream << "ERROR: Failed to configure database, invalid digitalChannelId ("
+                << (*ignoreConditionIt).second->digitalChannelId << ") for IgnoreCondition (" <<  (*ignoreConditionIt).second->id << ")";
+            throw(DbException(errorStream.str()));
+        }
     }
-
 
 }
 
@@ -894,6 +920,13 @@ void MpsDb::configureApplicationCards()
         crateIt = crates->find(aPtr->crateId);
         if (crateIt != crates->end())
             aPtr->crate = (*crateIt).second;
+        else 
+        {
+            errorStream << "ERROR: Failed to configure database, invalid crateId ("
+                << aPtr->crateId << ") for ApplicationCard (" <<  (*applicationCardIt).second->id << ")";
+            throw(DbException(errorStream.str()));
+        }
+
 
         // Configuration buffer
         configBuffer = fastConfigurationBuffer + aPtr->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES;
@@ -914,8 +947,15 @@ void MpsDb::configureApplicationCards()
         DbApplicationTypeMap::iterator applicationTypeIt = applicationTypes->find(aPtr->applicationTypeId);
         if (applicationTypeIt != applicationTypes->end())
             aPtr->applicationType = (*applicationTypeIt).second;
+        else 
+        {
+            errorStream << "ERROR: Failed to configure database, invalid typeId ("
+                << aPtr->applicationTypeId << ") for ApplicationCard (" <<  (*applicationCardIt).second->id << ")";
+            throw(DbException(errorStream.str()));
+        }
         
         LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "] config/update buffer alloc");
+
     }
 
     // Get all channels for each application card, starting with the digital channels
@@ -939,6 +979,13 @@ void MpsDb::configureApplicationCards()
             aPtr->digitalChannels->insert(std::pair<int, DbDigitalChannelPtr>(digitalChannelPtr->id, digitalChannelPtr));
             LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], DigitalChannel: " << digitalChannelPtr->name);
         }
+        else 
+        {
+            errorStream << "ERROR: Failed to configure database, invalid cardId ("
+                << digitalChannelPtr->cardId << ") for DigitalChannel (" <<  digitalChannelPtr->id << ")";
+            throw(DbException(errorStream.str()));
+        }
+
     }
 
     // Do the same for analog channels
@@ -970,6 +1017,12 @@ void MpsDb::configureApplicationCards()
             aPtr->analogChannels->insert(std::pair<int, DbAnalogChannelPtr>(analogChannelPtr->id, analogChannelPtr));
             LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], AnalogChannel: " << analogChannelPtr->name);
             analogChannelPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
+        }
+        else 
+        {
+            errorStream << "ERROR: Failed to configure database, invalid cardId ("
+                << analogChannelPtr->cardId << ") for AnalogChannel (" <<  analogChannelPtr->id << ")";
+            throw(DbException(errorStream.str()));
         }
     }
     std::cout << "Done!" << std::endl;
@@ -1533,7 +1586,7 @@ void MpsDb::showInfo()
     fwUpdateTimer.show();
     mitigationTxTime.show();
     AnalogChannelUpdateTime.show();
-    DeviceInputUpdateTime.show();
+    DigitalChannelUpdateTime.show();
     AppCardDigitalUpdateTime.show();
     AppCardAnalogUpdateTime.show();
 

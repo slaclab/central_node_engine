@@ -160,9 +160,6 @@ class MpsDb {
   // Name of the loaded YAML file
   std::string name;
 
-  // This is initialized by the configure() method, after loading the YAML file
-  //  DbFaultStateMapPtr faultStates;
-
   MpsDb(uint32_t inputUpdateTimeout=3500);
   ~MpsDb();
   int load(std::string yamlFile);
@@ -199,8 +196,6 @@ class MpsDb {
 
   uint64_t getFastUpdateTimeStamp() const { return _fastUpdateTimeStamp; };
   std::vector<uint8_t> getFastUpdateBuffer();
-
-  //  mpsDb->printMap<DbConditionMapPtr, DbConditionMap::iterator>(os, mpsDb->conditions, "Conditions");
 
   bool                     isInputReady()          const { return inputsUpdated;         };
   std::mutex*              getInputUpdateMutex()         { return &inputsUpdatedMutex;   };

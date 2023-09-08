@@ -104,7 +104,7 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
     os << "eval=slow : ";
   }
 
-  //os << "value=" << std::hex << digitalChannel->value << std::dec << " : "
+  os << "value=" << std::hex << digitalChannel->value << std::dec << " : ";
   os   << "modeActive=" << digitalChannel->modeActive;
 
   if (digitalChannel->ignored) {
