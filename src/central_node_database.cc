@@ -46,11 +46,10 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
 :
     fwUpdateBuffer( fwUpdateBuferSize, 0 ),
     run( true ),
-    // temporarily commented out to debug central_node_database_tst.cc
-    // fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
-    // fwPCChangeThread( std::thread( &MpsDb::fwPCChangeReader, this ) ),
-    // updateInputThread( std::thread( &MpsDb::updateInputs, this ) ),
-    // mitigationThread( std::thread( &MpsDb::mitigationWriter, this ) ),
+    fwUpdateThread( std::thread( &MpsDb::fwUpdateReader, this ) ),
+    fwPCChangeThread( std::thread( &MpsDb::fwPCChangeReader, this ) ),
+    updateInputThread( std::thread( &MpsDb::updateInputs, this ) ),
+    mitigationThread( std::thread( &MpsDb::mitigationWriter, this ) ),
     inputsUpdated(false),
     _fastUpdateTimeStamp(0),
     _diff(0),
@@ -77,13 +76,10 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
 
-    std::cout << "Central node database initialized\n"; // temp
-    return; // temp
-
   if (!_initialized) {
     _initialized = true;
 
-    // Initialize the Power class ttansition counters
+    // Initialize the Power class transition counters
     for (std::size_t i {0}; i < NUM_DESTINATIONS; ++i)
       for (std::size_t j {0}; j < (1<<POWER_CLASS_BIT_SIZE); ++j)
         _pcCounters[i][j] = 0;
@@ -295,7 +291,7 @@ void MpsDb::configureAllowedClasses()
     }
 }
 
-/* Configure faultInputs for each digitalChannel*/
+/* Configure faultInputs, faultValue for each digitalChannel*/
 void MpsDb::configureDigitalChannels()
 {
     LOG_TRACE("DATABASE", "Configure: DigitalChannels");
@@ -312,6 +308,12 @@ void MpsDb::configureDigitalChannels()
             DbFaultInputMap *faultInputs = new DbFaultInputMap();
             (*digitalChannelIt).second->faultInputs = DbFaultInputMapPtr(faultInputs);
         }
+
+        // faultValue assignment logic
+        if ((*digitalChannelIt).second->evaluation == FAST_EVALUATION)
+            (*digitalChannelIt).second->faultValue = 1;
+        else 
+            (*digitalChannelIt).second->faultValue = 0;
 
     }
 
@@ -1041,21 +1043,18 @@ void MpsDb::configureApplicationCards()
     {
         DbDigitalChannelPtr digitalChannelPtr = (*digitalChannelIt).second;
         if (digitalChannelPtr->faultInputs) {
-            for (DbFaultInputMap::iterator faultInput = digitalChannelPtr->faultInputs->begin();
-                    faultInput != digitalChannelPtr->faultInputs->end(); ++faultInput) {
-                if (!(*faultInput).second->configured) {
-                    uint32_t appCardId = (*faultInput).second->digitalChannel->cardId;
-                    DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(appCardId);
-                    if (applicationCardIt != applicationCards->end())
-                    {
-                        DbApplicationCardPtr aPtr = (*applicationCardIt).second;
-                        std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
-                        size_t                lowBufOff = aPtr->getWasLowBufferOffset();
-                        size_t                highBufOff = aPtr->getWasHighBufferOffset();
-                        (*faultInput).second->setUpdateBuffers(buff, lowBufOff, highBufOff);
-                        (*faultInput).second->configured = true;
-                        std::cout << "INFO: Fault Input for " << digitalChannelPtr->name << " configured!" << std::endl;
-                    }
+            if (!digitalChannelPtr->configured) {
+                uint32_t appCardId = digitalChannelPtr->cardId;
+                DbApplicationCardMap::iterator applicationCardIt = applicationCards->find(appCardId);
+                if (applicationCardIt != applicationCards->end())
+                {
+                    DbApplicationCardPtr aPtr = (*applicationCardIt).second;
+                    std::vector<uint8_t>* buff = aPtr->getFwUpdateBuffer();
+                    size_t                lowBufOff = aPtr->getWasLowBufferOffset();
+                    size_t                highBufOff = aPtr->getWasHighBufferOffset();
+                    digitalChannelPtr->setUpdateBuffers(buff, lowBufOff, highBufOff);
+                    digitalChannelPtr->configured = true;
+                    std::cout << "INFO: Digital Channel " << digitalChannelPtr->name << " configured!" << std::endl;
                 }
             }
         }
@@ -1257,11 +1256,10 @@ void MpsDb::writeFirmwareConfiguration(bool enableTimeout)
         std::cout << " AppCardId " << (*card).second->id; // TEMP - breaks at second card since doesnt have any channels
         (*card).second->writeConfiguration(enableTimeout);
         
-        // TODO - Temporarily commented out to test writeConfiguration for all app cards
-        // Firmware::getInstance().writeConfig((*card).second->number, fastConfigurationBuffer +
-        //     (*card).second->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
-        //     APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
-        // i++;
+        Firmware::getInstance().writeConfig((*card).second->number, fastConfigurationBuffer +
+            (*card).second->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
+            APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
+        i++;
     }
 
     // If the app timeout were set to enable, write the configuration to FW

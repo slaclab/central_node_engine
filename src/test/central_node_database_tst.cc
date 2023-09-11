@@ -27,6 +27,7 @@ static void usage(const char *nm) {
 }
 
 int main(int argc, char **argv) {
+  /* TODO: If want to use this database test, comment out the 4 threads in the central_node_database.cc*/
   YAML::Node doc;
   bool loaded = false;
   bool dump = false;
@@ -70,7 +71,6 @@ int main(int argc, char **argv) {
       std::cout << "CALL MpsDb::load\n"; // temp
       mpsDb->load(fileName);
       std::cout << "CALL MpsDb::configure\n"; // temp
-      // TEMPORARILY COMMENTED OUT
       mpsDb->configure();
     } catch (DbException &e) {
       std::cerr << e.what() << std::endl;

@@ -266,6 +266,7 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   uint32_t auto_reset;
   uint32_t evaluation;
   uint32_t cardId; // FK to DbApplicationCard
+  uint32_t faultValue; // Determined during configuration loading
   
   // Channel input value must be read from the Central Node Firmware
   uint32_t wasLowBit;
@@ -276,6 +277,9 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   // Latched value
   uint32_t latchedValue;
 
+  // Count 'was high'=0 & 'was low'=0
+  uint32_t invalidValueCount;
+
   // Faults from these channels are bypassed when ignored==true
   bool ignored;
   bool faultedOffline; //true when app card has app timeout
@@ -284,6 +288,8 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   // Fault inputs and fault states built after the config is loaded
   DbFaultInputMapPtr faultInputs; 
   DbFaultStateMapPtr faultStates;
+
+  bool configured;
 
   /**
    * These fields get populated when the database is loaded, they are

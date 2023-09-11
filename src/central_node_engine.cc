@@ -381,9 +381,7 @@ void Engine::evaluateFaults()
                 }
                 else
                 {
-                    inputValue = (*input).second->latchedValue; // TODO - Should this be (*input).second->digitalChannel->latchedValue instead? 
-                                                                // Because faultInput update functions were replaced by digitalChannel
-
+                    inputValue = (*input).second->digitalChannel->latchedValue; 
                 }
             }
             else
@@ -400,8 +398,6 @@ void Engine::evaluateFaults()
                 << ", input value " << inputValue << std::dec << " bit pos "
                 << (*input).second->bitPosition);
         }
-        // TODO: Current dilemna - deciding if need to update digitalChannel value here (for sake of showing value from output). 
-        // problem is do not want to loop over dig channel again. Although value is already updated in inputUpdate thread.
         (*fault).second->update(faultValue);
         (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
         (*fault).second->faultedDisplay = false; // Clear the fault - in case it was faulted before
@@ -518,7 +514,7 @@ bool Engine::evaluateIgnoreConditions()
         //         }
         //         else
         //         {
-        //             if ((*ignoreCondition).second->analogDevice) // TODO: Confirm
+        //             if ((*ignoreCondition).second->analogDevice) 
         //             {
         //                 LOG_TRACE("ENGINE",  "Ignoring analog device [" << (*ignoreCondition).second->deviceId << "]"
         //                     << ", state=" << (*condition).second->state);

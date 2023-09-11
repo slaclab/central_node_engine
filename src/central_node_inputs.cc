@@ -66,21 +66,17 @@ void DbApplicationCardInput::setUpdateBuffers(std::vector<uint8_t>* bufPtr, cons
 // This should update the value from the data read from the central node firmware
 void DbDigitalChannel::update(uint32_t v) {
 
-  // TODO - temporarily commented out until ready to replace with faultInput
-
   previousValue = value;
   value = v;
 
-  // // Latch new value if this is a fault
-  // if (v == faultValue) {
-  //   latchedValue = faultValue;
-  // }
+  // Latch new value if this is a fault
+  if (v == faultValue) {
+    latchedValue = faultValue;
+  }
 }
 
 // Update its value from the applicationUpdateBuffer
 void DbDigitalChannel::update() {
-
-  // TODO - temporarily commented out until ready to replace with faultInput
 
   uint32_t wasLow;
   uint32_t wasHigh;
@@ -273,22 +269,14 @@ void DbApplicationCard::configureUpdateBuffers() {
         << "without inputs (eval=" << (*digitalChannel).second->evaluation << ")";
         throw(DbException(errorStream.str()));
       }
-
-      if ((*digitalChannel).second->faultInputs) {
-        for (DbFaultInputMap::iterator faultInput = (*digitalChannel).second->faultInputs->begin();
-            faultInput != (*digitalChannel).second->faultInputs->end(); ++faultInput) {
-          //	std::cout << "D" << (*faultInput).second->id << " ";
-          //	(*faultInput).second->setUpdateBuffer(applicationUpdateBuffer);
-          uint32_t cardId = (*digitalChannel).second->cardId;
-          if (cardId == number) {
-            (*faultInput).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
-            (*faultInput).second->configured = true;
-          }
-          else {
-            (*faultInput).second->configured = false;
-            std::cout << "INFO: Fault Input for " << (*digitalChannel).second->name << " not in this application card.  Configure later..." << std::endl;
-          }
-        }
+      uint32_t cardId = (*digitalChannel).second->cardId;
+      if (cardId == number) {
+        (*digitalChannel).second->setUpdateBuffers(fwUpdateBuffer, wasLowBufferOffset, wasHighBufferOffset);
+        (*digitalChannel).second->configured = true;
+      }
+      else {
+        (*digitalChannel).second->configured = false;
+        std::cout << "INFO: Digital Channel " << (*digitalChannel).second->name << " not in this application card.  Configure later..." << std::endl;
       }
     }
   }

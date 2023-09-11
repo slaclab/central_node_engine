@@ -81,7 +81,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
 
 DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999),
             z_name(""), o_name(""), monitored_pv(""), debounce(0),
-            alarm_state(0), z_location(0), auto_reset(0) {
+            invalidValueCount(0), alarm_state(0), z_location(0), auto_reset(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChannel) {
@@ -103,6 +103,7 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   else {
     os << "eval=slow : ";
   }
+  os << "faultValue=" << digitalChannel->faultValue << " : ";
 
   os << "value=" << std::hex << digitalChannel->value << std::dec << " : ";
   os   << "modeActive=" << digitalChannel->modeActive;
