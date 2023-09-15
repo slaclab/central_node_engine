@@ -45,6 +45,7 @@ DbLinkNode::DbLinkNode() : DbEntry(), rxPgp(999), lnType(999), lnId(999), crateI
 
 std::ostream & operator<<(std::ostream &os, DbLinkNode * const linkNode) {
   os << "id[" << linkNode->id << "]; "
+     << "ln_id[" << linkNode->lnId << "]; "
      << "location[" << linkNode->location << "]; "
      << "group_link[" << linkNode->groupLink << "]; "
      << "rx_pgp[" << linkNode->rxPgp << "]; "
