@@ -117,7 +117,7 @@ class EngineTest {
 	  return 1;
 	}
 	try {
-	  Engine::getInstance()._mpsDb->faultInputs->at(deviceId)->update(deviceValue);
+	  // Engine::getInstance()._mpsDb->faultInputs->at(deviceId)->update(deviceValue); // TODO: temp comment out until updated to digital channel
 	} catch (std::exception &e) {
 	  std::cerr << "ERROR: invalid device input index of " << deviceId << std::endl;
 	  return -1;

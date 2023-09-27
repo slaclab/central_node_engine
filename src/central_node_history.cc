@@ -50,7 +50,7 @@ int History::log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32
   message.oldValue = oldValue;
   message.newValue = newValue;
   message.type = type;
-  message.aux = aux;
+  message.aux = aux; // aux is optional, set to 0 if not needed
 
   return add(message);
 }
@@ -59,24 +59,16 @@ int History::logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_
   return log(FaultStateType, id, oldValue, newValue, allowedClass);
 }
 
-int History::logMitigation(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass) {
-  return log(MitigationType, id, oldValue, newValue, allowedClass);
+int History::logDigitalChannel(uint32_t id, uint32_t oldValue, uint32_t newValue) {
+  return log(DigitalChannelType, id, oldValue, newValue, 0);
 }
 
-int History::logDeviceInput(uint32_t id, uint32_t oldValue, uint32_t newValue) {
-  return log(DeviceInputType, id, oldValue, newValue, 0);
-}
-
-int History::logAnalogDevice(uint32_t id, uint32_t oldValue, uint32_t newValue) {
-  return log(AnalogDeviceType, id, oldValue, newValue, 0);
+int History::logAnalogChannel(uint32_t id, uint32_t oldValue, uint32_t newValue) {
+  return log(AnalogChannelType, id, oldValue, newValue, 0);
 }
 
 int History::logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue, uint16_t index) {
   return log(BypassStateType, id, oldValue, newValue, index);
-}
-
-int History::logBypassValue(uint32_t id, uint32_t oldValue, uint32_t newValue) {
-  return log(BypassValueType, id, oldValue, newValue, 0);
 }
 
 int History::add(Message &message) {

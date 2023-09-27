@@ -7,10 +7,8 @@
 enum HistoryMessageType {
   FaultStateType = 1, // Fault change state (Faulted/Not Faulted)
   BypassStateType,    // Bypass expired/crated/cancelled
-  BypassValueType,    // Bypass value changed
-  MitigationType,     // Change in allowed beam class for mitigation device
-  DeviceInputType,    // Change in digital input
-  AnalogDeviceType,   // Change in analog device threshold status
+  DigitalChannelType, // Change in digital channel
+  AnalogChannelType,   // Change in analog device threshold status
 };
 
 typedef struct {

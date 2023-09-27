@@ -41,13 +41,10 @@ class History {
   void stopSenderThread();
 
   int log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);
-
   int logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass);
-  int logMitigation(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass);
-  int logDeviceInput(uint32_t id, uint32_t oldValue, uint32_t newValue);
-  int logAnalogDevice(uint32_t id, uint32_t oldValue, uint32_t newValue);
+  int logDigitalChannel(uint32_t id, uint32_t oldValue, uint32_t newValue);
+  int logAnalogChannel(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue, uint16_t index);
-  int logBypassValue(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int add(Message &message);
   int send(Message &message);
   int sendFront();

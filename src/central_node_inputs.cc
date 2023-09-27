@@ -119,7 +119,7 @@ void DbDigitalChannel::update() {
     }
 
     if (previousValue != value) {
-      History::getInstance().logDeviceInput(id, previousValue, value);
+      History::getInstance().logDigitalChannel(id, previousValue, value);
     }
   }
   else {
@@ -242,7 +242,7 @@ void DbAnalogChannel::update() {
     //    std::cout << name << ": " <<  value << std::endl;
 
     if (previousValue != value) {
-      History::getInstance().logAnalogDevice(id, previousValue, value);
+      History::getInstance().logAnalogChannel(id, previousValue, value);
     }
   }
   else {

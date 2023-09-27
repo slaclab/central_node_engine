@@ -193,7 +193,7 @@ class BypassTest {
 	  return 1;
 	}
 	*/
-	Engine::getInstance()._mpsDb->faultInputs->at(deviceId)->update(deviceValue);
+	// Engine::getInstance()._mpsDb->faultInputs->at(deviceId)->update(deviceValue);  // TODO: temp comment out until updated to digital channel
       }
     }
 
