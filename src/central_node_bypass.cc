@@ -391,6 +391,8 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
   newEntry.second = bypass;
 
   // This handles case #3 - cancel bypass
+  // TODO - Change the parameters for logging bypass state
+    // fault_id, new_state_id, expiration time in secs
   if (bypassUntil == 0) {
     if (bypass->type == BYPASS_ANALOG) {
       History::getInstance().logBypassState(bypass->deviceId,

@@ -341,7 +341,6 @@ bool Engine::setAllowedBeamClass()
 void Engine::evaluateFaults()
 {
     _evaluateFaultsTimer.start();
-
     bool faulted = false;
 
     for (DbDigitalChannelMap::iterator channel = _mpsDb->digitalChannels->begin();
@@ -422,7 +421,7 @@ void Engine::evaluateFaults()
                 (*fault).second->faulted = true; // Set fault faulted field
                 faulted = true; // Signal that at least one state is faulted
                 for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
-                    allowed != (*state).second->allowedClasses->end() || (*fault).second->faultedDisplay == true;
+                    allowed != (*state).second->allowedClasses->end();
                     ++allowed) {
                   if ((*allowed).second->beamClass->number < _highestBeamClass->number) {
                     (*fault).second->faultedDisplay = true; // Set fault faulted field
@@ -432,7 +431,7 @@ void Engine::evaluateFaults()
                       << (*state).second->name
                       << ", value=" << (*state).second->value << ")");
                   }
-                }            
+                }
             }
             else
             {
@@ -448,7 +447,7 @@ void Engine::evaluateFaults()
                 << faultValue << " (Default) fault state="
                 << (*fault).second->defaultFaultState->name);
         }
-    }
+    }       
     _evaluateFaultsTimer.tick();
     _evaluateFaultsTimer.stop();
 }
@@ -690,7 +689,6 @@ int Engine::checkFaults()
 
     // must first get updated input values
     _checkFaultTime.start();
-
     LOG_TRACE("ENGINE", "Checking faults");
     bool reload = false;
     bool appReload = false;

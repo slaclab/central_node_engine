@@ -34,8 +34,8 @@ std::ostream & operator<<(std::ostream &os, DbCrate * const crate) {
      << "crateId[" << crate->crateId << "]; "
      << "slots[" << crate->numSlots << "]; "
      << "location[" << crate->location << "]; "
-     << "rack[" << crate->rack << "]; "
-     << "elevation[" << crate->elevation << "]; "
+     << "rack[" << crate->rack << "]; " << std::endl
+     << TAB_8 << "elevation[" << crate->elevation << "]; "
      << "area[" << crate->area << "]; "
      << "node[" << crate->node << "]";
   return os;
@@ -48,8 +48,8 @@ std::ostream & operator<<(std::ostream &os, DbLinkNode * const linkNode) {
      << "ln_id[" << linkNode->lnId << "]; "
      << "location[" << linkNode->location << "]; "
      << "group_link[" << linkNode->groupLink << "]; "
-     << "rx_pgp[" << linkNode->rxPgp << "]; "
-     << "ln_type[" << linkNode->lnType << "]; "
+     << "rx_pgp[" << linkNode->rxPgp << "]; " << std::endl
+     << TAB_8 << "ln_type[" << linkNode->lnType << "]; "
      << "crateId[" << linkNode->crateId << "]; "
      << "groupId[" << linkNode->groupId << "]";
   return os;
@@ -74,14 +74,14 @@ std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
   os << "id[" << appType->id << "]; "
      << "numIntegrators[" << appType->numIntegrators << "]; "
      << "analogChannelCount[" << appType->analogChannelCount << "]; "
-     << "digitalChannelCount[" << appType->digitalChannelCount << "]; "
-     << "softwareChannelCount[" << appType->softwareChannelCount << "]; "
+     << "digitalChannelCount[" << appType->digitalChannelCount << "]; " << std::endl
+     << TAB_8 << "softwareChannelCount[" << appType->softwareChannelCount << "]; "
      << "name[" << appType->name << "]";
   return os;
 }
 
 DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999),
-            z_name(""), o_name(""), monitored_pv(""), debounce(0),
+            z_name(""), o_name(""), debounce(0),
             invalidValueCount(0), alarm_state(0), z_location(0), auto_reset(0) {
 }
 
@@ -89,13 +89,12 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   os << "id[" << digitalChannel->id << "]; "
      << "name[" << digitalChannel->name << "]; "
      << "cardId[" << digitalChannel->cardId << "]; "
-     << "number[" << digitalChannel->number << "]; "
-     << "z_name[" << digitalChannel->z_name << "]; "
+     << "number[" << digitalChannel->number << "]; " << std::endl
+     << TAB_8 << "z_name[" << digitalChannel->z_name << "]; " 
      << "o_name[" << digitalChannel->o_name << "]; "
-     << "monitored_pv[" << digitalChannel->monitored_pv << "]; "
      << "debounce[" << digitalChannel->debounce << "]; "
-     << "alarm_state[" << digitalChannel->alarm_state << "]; "
-     << "z_location[" << digitalChannel->z_location << "]; "
+     << "alarm_state[" << digitalChannel->alarm_state << "]; " << std::endl
+     << TAB_8 << "z_location[" << digitalChannel->z_location << "]; " 
      << "auto_reset[" << digitalChannel->auto_reset << "]; ";
 
   if (digitalChannel->evaluation == FAST_EVALUATION) {
@@ -104,9 +103,8 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   else {
     os << "eval=slow : ";
   }
-  os << "faultValue=" << digitalChannel->faultValue << " : ";
-
-  os << "value=" << std::hex << digitalChannel->value << std::dec << " : ";
+  os << "faultValue=" << digitalChannel->faultValue << " : " << std::endl;
+  os << TAB_8 << "value=" << std::hex << digitalChannel->value << std::dec << " : ";
   os   << "modeActive=" << digitalChannel->modeActive;
 
   if (digitalChannel->ignored) {
@@ -117,18 +115,17 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   }
   os << std::endl;
 
- os << " + Fault Inputs:" << std::endl;
+ os << TAB_4 << "+ Fault Inputs:" << std::endl;
   for (DbFaultInputMap::iterator faultInput = digitalChannel->faultInputs->begin();
        faultInput != digitalChannel->faultInputs->end(); ++faultInput) {
-    os << " * " << (*faultInput).second;
-    os << std::endl;
+    os << TAB_4 << "  - " << (*faultInput).second << std::endl;
   }
 
-  os << " + States:" << std::endl;
+  os << TAB_4 << "+ States:" << std::endl;
 
   for (DbFaultStateMap::iterator state = digitalChannel->faultStates->begin();
        state != digitalChannel->faultStates->end(); ++state) {
-    os << "   - " << (*state).second << std::endl;
+    os << TAB_4 << "  - " << (*state).second << std::endl;
   }
 
 
@@ -175,15 +172,15 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
      << "name[" << analogChannel->name << "]; "
      << "cardId[" << analogChannel->cardId << "]; "
      << "number[" << analogChannel->number << "]; "
-     << "offset[" << analogChannel->offset << "]; "
-     << "slope[" << analogChannel->slope << "]; "
+     << "offset[" << analogChannel->offset << "]; " << std::endl
+     << TAB_8 << "slope[" << analogChannel->slope << "]; "
      << "egu[" << analogChannel->egu << "]; "
      << "integrator[" << analogChannel->integrator << "]; "
      << "gain_bay[" << analogChannel->gain_bay << "]; "
-     << "gain_channel[" << analogChannel->gain_channel << "]; "
-     << "z_location[" << analogChannel->z_location << "]; "
+     << "gain_channel[" << analogChannel->gain_channel << "]; " << std::endl
+     << TAB_8 << "z_location[" << analogChannel->z_location << "]; "
      << "auto_reset[" << analogChannel->auto_reset << "]; "
-     << "evaluation[" << analogChannel->evaluation << "];";
+     << "evaluation[" << analogChannel->evaluation << "]; ";
 
   if (analogChannel->evaluation == FAST_EVALUATION) {
     os << "eval=fast : ";
@@ -192,16 +189,16 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
     os << "eval=slow : ";
   }
 
-  os << "value=0x" << std::hex << analogChannel->value << std::dec << " : "
+  os << std::endl << TAB_8 << "value=0x" << std::hex << analogChannel->value << std::dec << " : "
      << "latchedValue=0x" << std::hex << analogChannel->latchedValue << std::dec << " : "
-     << "modeActive=" << analogChannel->modeActive << " : " << std::endl;
+     << "modeActive=" << analogChannel->modeActive << " : ";
   if (analogChannel->ignored) {
     os << "  ignored=YES";
   }
   else {
     os << "  ignored=no";
   }
-  os << " [";
+  os << std::endl << TAB_8 << " [";
   for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
     if (analogChannel->ignoredIntegrator[i]) {
       os << "I";
@@ -223,30 +220,30 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
       }
       os << std::dec;
     }
-    os << std::endl;
-    os << "  powerClasses=";
+    os << std::endl << TAB_8 << "powerClasses=";
     for (uint32_t i = 0; i < integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE; ++i) {
       os << analogChannel->fastPowerClass[i];
       if (i < (integratorsPerChannel * ANALOG_CHANNEL_INTEGRATORS_SIZE) - 1) {
 	      os << ", ";
       }
+      if ((i+1) % 18 == 0) { os << std::endl << TAB_8; }
     }
   }
 
   os << std::endl;
 
- os << " + Fault Inputs:" << std::endl;
+ os << TAB_4 << "+ Fault Inputs:" << std::endl;
   for (DbFaultInputMap::iterator faultInput = analogChannel->faultInputs->begin();
        faultInput != analogChannel->faultInputs->end(); ++faultInput) {
-    os << " * " << (*faultInput).second;
+    os << TAB_4 << "  - " << (*faultInput).second;
     os << std::endl;
   }
 
-  os << " + States:" << std::endl;
+  os << TAB_4 << "+ States:" << std::endl;
 
   for (DbFaultStateMap::iterator state = analogChannel->faultStates->begin();
        state != analogChannel->faultStates->end(); ++state) {
-    os << "   - " << (*state).second << std::endl;
+    os << TAB_4 << "  - " << (*state).second << std::endl;
   }
 
   return os;
@@ -286,30 +283,29 @@ ApplicationUpdateBufferBitSetHalf* DbApplicationCard::getWasHighBuffer()
 std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
   os << "App: " << appCard->applicationType->name << std::endl
      << "  id[" << appCard->id << "]; "
-     << "applicationTypeId[" << appCard->applicationTypeId << "]; "
      << "crateId[" << appCard->crateId << "]; "
      << "slotNumber[" << appCard->slotNumber << "]; "
      << "online[" << appCard->online << "]; "
-     << "active[" << appCard->active << "]; "
-     << "modeActive[" << appCard->modeActive << "]; "
+     << "active[" << appCard->active << "]; " << std::endl
+     << TAB_8 << "modeActive[" << appCard->modeActive << "]; "
      << "hasInputs[" << appCard->hasInputs << "]" << std::endl;
 
   if (appCard->digitalChannels) {
-    os << "  DigitalChannels:" << std::endl;
+    os << TAB_4 << "DigitalChannels:" << std::endl;
     for (DbDigitalChannelMap::iterator digitalChannel = appCard->digitalChannels->begin();
 	 digitalChannel != appCard->digitalChannels->end(); ++digitalChannel) {
-      os << " * " << (*digitalChannel).second->name << " [id=" << (*digitalChannel).second->id << "]" << std::endl;
+      os << TAB_8 << "- " << (*digitalChannel).second->name << " [id=" << (*digitalChannel).second->id << "]" << std::endl;
     }
   }
   else if (appCard->analogChannels) {
-    os << "  AnalogChannels:" << std::endl;
+    os << TAB_4 << "AnalogChannels:" << std::endl;
     for (DbAnalogChannelMap::iterator analogChannel = appCard->analogChannels->begin();
 	 analogChannel != appCard->analogChannels->end(); ++analogChannel) {
-      os << " * " << (*analogChannel).second->name << " [id=" << (*analogChannel).second->id << "]" << std::endl;
+      os << TAB_8 << "- " << (*analogChannel).second->name << " [id=" << (*analogChannel).second->id << "]" << std::endl;
     }
   }
   else {
-    os << " - no devices (?)" << std::endl;
+    os << TAB_4 << " - no devices (?)" << std::endl;
   }
   return os;
 }
@@ -333,19 +329,19 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
   if (faultInput->analogChannel) os << "card[" << faultInput->analogChannel->cardId << "]; ";
   else os << "card[" << faultInput->digitalChannel->cardId << "]; ";
 
-  os << "value[" << faultInput->value << "]; wasLow[" << faultInput->wasLowBit << "]; wasHigh[" << faultInput->wasHighBit << "]; "
-     << "latchedValue[" << faultInput->latchedValue << "]";
+  os << "value[" << faultInput->value << "]; " << std::endl << TAB_8 << "wasLow[" << faultInput->wasLowBit << "]; wasHigh[" 
+     << faultInput->wasHighBit << "]; " << "latchedValue[" << faultInput->latchedValue << "]" << std::endl << TAB_8;
 
   if (faultInput->fastEvaluation) {
-    os << " [in fast device]";
+    os << " [in fast device] ";
   }
   if (faultInput->bypass) {
     if (faultInput->bypass->status == BYPASS_VALID) {
-      os << " [Bypassed to " << faultInput->bypass->value << "]";
+      os << "[Bypassed to " << faultInput->bypass->value << "] ";
     }
   }
   if (faultInput->faultState) {
-    os << " faultState[" << faultInput->faultState->id << "]";
+    os << "faultState[" << faultInput->faultState->id << "]";
   }
   return os;
 }
@@ -357,8 +353,8 @@ std::ostream & operator<<(std::ostream &os, DbBeamClass * const beamClass) {
   os << "id[" << beamClass->id << "]; "
      << "number[" << beamClass->number << "]; "
      << "name[" << beamClass->name << "]; "
-     << "integrationWindow[" << beamClass->integrationWindow << "]; "
-     << "minPeriod[" << beamClass->minPeriod << "]; "
+     << "integrationWindow[" << beamClass->integrationWindow << "]; " << std::endl
+     << TAB_8 << "minPeriod[" << beamClass->minPeriod << "]; "
      << "totalCharge[" << beamClass->totalCharge << "]";
   return os;
 }
@@ -370,9 +366,9 @@ std::ostream & operator<<(std::ostream &os, DbBeamDestination * const beamDestin
   os << "id[" << beamDestination->id << "]; "
      << "name[" << beamDestination->name << "]; "
      << "destinationMask[" << beamDestination->destinationMask << "]; "
-     << "displayOrder[" << beamDestination->displayOrder << "]";
+     << "displayOrder[" << beamDestination->displayOrder << "];" << std::endl << TAB_8;
   if (beamDestination->allowedBeamClass) {
-    os << "; Allowed[" << beamDestination->allowedBeamClass->number << "]";
+    os << "Allowed[" << beamDestination->allowedBeamClass->number << "]";
   }
   if (beamDestination->tentativeBeamClass) {
     os << "; Tentative[" << beamDestination->tentativeBeamClass->number << "]";
@@ -402,34 +398,24 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
   os << "id[" << digitalFault->id << "]; "
      << "faultId[" << digitalFault->faultId << "]; "
      << "mask[" << digitalFault->mask << "]; "
-     << "name[" << digitalFault->name << "]; "
-     << "faulted[" << digitalFault->faulted << "]; "
+     << "name[" << digitalFault->name << "]; " << std::endl
+     <<  TAB_8 << "faulted[" << digitalFault->faulted << "]; "
      << "default[" << digitalFault->defaultState << "]; "
-     << "value[" << digitalFault->value << "]";
+     << "value[" << digitalFault->value << "];" << std::endl;
 
   if (digitalFault->allowedClasses) {
-    os << " : AllowedClasses[";
+    os << TAB_8 << "AllowedClasses : ";
     unsigned int i = 1;
     for (DbAllowedClassMap::iterator it = digitalFault->allowedClasses->begin();
-	 it != digitalFault->allowedClasses->end(); ++it, ++i) {
+      it != digitalFault->allowedClasses->end(); ++it, ++i) {
       os << (*it).second->beamDestination->name << "->"
-	 << (*it).second->beamClass->name;
+	       << (*it).second->beamClass->name;
       if (i < digitalFault->allowedClasses->size()) {
-	os << ", ";
+	      os << ", ";
       }
+      if (i % 2 == 0) { os << std::endl << TAB_8; }
     }
-    os << "]";
   }
-
-  // May omit this once these Ids are used to configure the important information
-  // if (!digitalFault->mitigationIds.empty()) { 
-  //   os << " : MitigationIds[";
-  //   unsigned int i = 0;
-  //   for (; i < digitalFault->mitigationIds.size() - 1; i++) {
-  //     os << digitalFault->mitigationIds.at(i) << ", ";
-  //   }
-  //   os << digitalFault->mitigationIds.at(i) << "]";
-  // }
 
   return os;
 }
@@ -440,14 +426,14 @@ DbFault::DbFault() : DbEntry(), name(""), pv(""), faulted(true), ignored(false),
 std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
   os << "id[" << fault->id << "]; "
      << "name[" << fault->name << "]; "
-     << "value[" << fault->value << "]; "
-     << "faulted[" << fault->faulted << "]; "
+     << "value[" << fault->value << "]; " << std::endl
+     << TAB_8 << "faulted[" << fault->faulted << "]; "
      << "ignored[" << fault->ignored << "]; "
      << "evaluation[" << fault->evaluation << "]; "
-     << "pv[" << fault->pv << "]; ";
+     << "pv[" << fault->pv << "]; " << std::endl << TAB_8;
 
   if (fault->faultInputs) {
-    os << " : FaultInputs[";
+    os << "FaultInputs[";
     unsigned int i = 1;
     for (DbFaultInputMap::iterator it = fault->faultInputs->begin();
 	 it != fault->faultInputs->end(); ++it, ++i) {
@@ -464,15 +450,15 @@ std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
 	}
       }
     }
-    os << "]";
+    os << "];" << std::endl << TAB_8;
   }
 
   if (fault->faultStates) {
-    os << " : FaultStates[";
+    os << "FaultStates[";
     unsigned int i = 1;
     for (DbFaultStateMap::iterator it = fault->faultStates->begin();
 	      it != fault->faultStates->end(); ++it, ++i) {
-        os << (*it).second->name;
+        os << "[" << (*it).second->id << "]" << (*it).second->name;
         if (i < fault->faultStates->size()) {
             os << ", ";
         }

@@ -76,6 +76,7 @@ MpsDb::MpsDb(uint32_t inputUpdateTimeout)
   databaseLogger = Loggers::getLogger("DATABASE");
 #endif
 
+
   if (!_initialized) {
     _initialized = true;
 
@@ -1393,10 +1394,6 @@ int MpsDb::load(std::string yamlFileName)
         else if (nodeName == "BeamClass")
         {
             beamClasses = (*node).as<DbBeamClassMapPtr>();
-        }
-        else if (nodeName == "AllowedClass")
-        {
-            allowedClasses = (*node).as<DbAllowedClassMapPtr>();
         }
         else if (nodeName == "IgnoreCondition")
         {

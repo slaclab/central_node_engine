@@ -314,7 +314,6 @@ namespace YAML {
  	* DigitalChannel:
 	* z_name: "IS_FAULTED"
     * o_name: "IS_OK"
-    * monitored_pv: ""
     * debounce: 10
     * alarm_state: 0
     * number: 2
@@ -345,9 +344,6 @@ namespace YAML {
 
 					field = "o_name";
 					digitalChannel->o_name = (*it)[field].as<std::string>();
-
-					field = "monitored_pv";
-					digitalChannel->monitored_pv = (*it)[field].as<std::string>();
 
 					field = "debounce";
 					digitalChannel->debounce = (*it)[field].as<unsigned int>();

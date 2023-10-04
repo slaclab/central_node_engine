@@ -22,6 +22,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#define TAB_4  "    " // Used for console output formatting
+#define TAB_8  "        " 
 /**
  * DbException class
  *
@@ -257,7 +259,6 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
  public:
   std::string z_name;
   std::string o_name;
-  std::string monitored_pv;
   uint32_t debounce;
   uint32_t alarm_state;
   uint32_t number; // Channel number
