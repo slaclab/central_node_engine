@@ -123,9 +123,17 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
 
   os << TAB_4 << "+ States:" << std::endl;
 
-  for (DbFaultStateMap::iterator state = digitalChannel->faultStates->begin();
-       state != digitalChannel->faultStates->end(); ++state) {
-    os << TAB_4 << "  - " << (*state).second << std::endl;
+  for (DbFaultStateMap::iterator stateIt = digitalChannel->faultStates->begin();
+       stateIt != digitalChannel->faultStates->end(); ++stateIt) {
+        DbFaultStatePtr state = (*stateIt).second;
+        // Is verbose because we don't want to spam console with allowedClasses
+    os << TAB_4 << "  - id[" << state->id << "]; " 
+       << "faultId[" << state->faultId << "]; "
+       << "mask[" << state->mask << "]; "
+       << "name[" << state->name << "]; " << std::endl
+       <<  TAB_8 << "faulted[" << state->faulted << "]; "
+       << "default[" << state->defaultState << "]; "
+       << "value[" << state->value << "];" << std::endl;
   }
 
 
@@ -241,9 +249,17 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
 
   os << TAB_4 << "+ States:" << std::endl;
 
-  for (DbFaultStateMap::iterator state = analogChannel->faultStates->begin();
-       state != analogChannel->faultStates->end(); ++state) {
-    os << TAB_4 << "  - " << (*state).second << std::endl;
+  for (DbFaultStateMap::iterator stateIt = analogChannel->faultStates->begin();
+       stateIt != analogChannel->faultStates->end(); ++stateIt) {
+        DbFaultStatePtr state = (*stateIt).second;
+        // Is verbose because we don't want to spam console with allowedClasses
+    os << TAB_4 << "  - id[" << state->id << "]; " 
+       << "faultId[" << state->faultId << "]; "
+       << "mask[" << state->mask << "]; "
+       << "name[" << state->name << "]; " << std::endl
+       <<  TAB_8 << "faulted[" << state->faulted << "]; "
+       << "default[" << state->defaultState << "]; "
+       << "value[" << state->value << "];" << std::endl;
   }
 
   return os;
@@ -330,7 +346,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
   else os << "card[" << faultInput->digitalChannel->cardId << "]; ";
 
   os << "value[" << faultInput->value << "]; " << std::endl << TAB_8 << "wasLow[" << faultInput->wasLowBit << "]; wasHigh[" 
-     << faultInput->wasHighBit << "]; " << "latchedValue[" << faultInput->latchedValue << "]" << std::endl << TAB_8;
+     << faultInput->wasHighBit << "]; " << "latchedValue[" << faultInput->latchedValue << "]";
 
   if (faultInput->fastEvaluation) {
     os << " [in fast device] ";
@@ -339,9 +355,6 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
     if (faultInput->bypass->status == BYPASS_VALID) {
       os << "[Bypassed to " << faultInput->bypass->value << "] ";
     }
-  }
-  if (faultInput->faultState) {
-    os << "faultState[" << faultInput->faultState->id << "]";
   }
   return os;
 }

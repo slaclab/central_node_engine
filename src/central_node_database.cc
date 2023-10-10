@@ -323,8 +323,8 @@ void MpsDb::configureDigitalChannels()
         faultInputIt != faultInputs->end();
         ++faultInputIt)
     {
-        unsigned int faultInputId = (*faultInputIt).second->id;
-        DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find(faultInputId);
+        unsigned int channelId = (*faultInputIt).second->channelId;
+        DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find(channelId);
         if (digitalChannelIt != digitalChannels->end()) {
             // Add the faultInput to digitalChannel
             (*digitalChannelIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
@@ -685,28 +685,6 @@ void MpsDb::configureFaultStates()
         }
     }
 
-    // Assign the faultState to each faultInput
-    for (DbFaultInputMap::iterator it = faultInputs->begin();
-        it != faultInputs->end();
-        ++it)
-    {
-        int id = (*it).second->faultId;
-
-        DbFaultStateMap::iterator faultStateIt = faultStates->find(id);
-        if (faultStateIt == faultStates->end())
-        {
-            errorStream << "ERROR: Failed to configure database, invalid ID found for FaultState ("
-                << id << ") for FaultInput (" << (*it).second->id << ")";
-            throw(DbException(errorStream.str()));
-        }
-
-        LOG_TRACE("DATABASE", "Adding FaultInput (" << (*it).second->id << ") to "
-            " Fault (" << (*faultStateIt).second->id << ", " << (*faultStateIt).second->name
-            << ", " << (*faultStateIt).second->description << ")");
-        (*it).second->faultState = (*faultStateIt).second;
-    }
-
-    // Assign the faultStates to each digitalChannel
     for (DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->begin();
         digitalChannelIt != digitalChannels->end();
         ++digitalChannelIt)
@@ -717,30 +695,7 @@ void MpsDb::configureFaultStates()
             DbFaultStateMap *faultStates = new DbFaultStateMap();
             (*digitalChannelIt).second->faultStates = DbFaultStateMapPtr(faultStates);
         }
-        // Get faultId from faultInputs to access faultStates
-        DbFaultInputMapPtr currentFaultInputs = (*digitalChannelIt).second->faultInputs;
-        if (currentFaultInputs) {
-            
-            for (DbFaultInputMap::iterator faultInputIt = currentFaultInputs->begin();
-                faultInputIt != currentFaultInputs->end();
-                faultInputIt++)
-            {
-                unsigned int faultId = (*faultInputIt).second->faultId;
-                DbFaultStateMap::iterator faultStateIt = faultStates->find(faultId);
-                if (faultStateIt != faultStates->end()) {
-                    (*digitalChannelIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*faultStateIt).second->id,
-                    (*faultStateIt).second));
-                }
-                else {
-                    errorStream << "ERROR: Failed to configure database, invalid faultId ("
-                    << faultId << ") for FaultState (" << (*faultStateIt).second->id << ")";
-                    throw(DbException(errorStream.str()));
-                }
-            }
-        }
     }
-
-    // Assign the faultStates to each analogChannel
     for (DbAnalogChannelMap::iterator analogChannelIt = analogChannels->begin();
         analogChannelIt != analogChannels->end();
         ++analogChannelIt)
@@ -751,27 +706,39 @@ void MpsDb::configureFaultStates()
             DbFaultStateMap *faultStates = new DbFaultStateMap();
             (*analogChannelIt).second->faultStates = DbFaultStateMapPtr(faultStates);
         }
-        // Get faultId from faultInputs to access faultStates
-        DbFaultInputMapPtr currentFaultInputs = (*analogChannelIt).second->faultInputs;
-        if (currentFaultInputs) {
-            
-            for (DbFaultInputMap::iterator faultInputIt = currentFaultInputs->begin();
-                faultInputIt != currentFaultInputs->end();
-                faultInputIt++)
-            {
-                unsigned int faultId = (*faultInputIt).second->faultId;
-                DbFaultStateMap::iterator faultStateIt = faultStates->find(faultId);
-                if (faultStateIt != faultStates->end()) {
-                    (*analogChannelIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*faultStateIt).second->id,
-                    (*faultStateIt).second));
-                }
-                else {
-                    errorStream << "ERROR: Failed to configure database, invalid faultId ("
-                    << faultId << ") for FaultState (" << (*faultStateIt).second->id << ")";
-                    throw(DbException(errorStream.str()));
-                }
+    }
+
+    // Assign the faultStates to each digitalChannel and analogChannel
+    for (DbFaultStateMap::iterator faultStateIt = faultStates->begin();
+        faultStateIt != faultStates->end();
+        faultStateIt++)
+    {
+        unsigned int faultId = (*faultStateIt).second->faultId;
+        DbFaultInputMap::iterator faultInputIt = faultInputs->find(faultId);
+        if (faultInputIt != faultInputs->end()) {
+            // Add the faultState to digitalChannel
+            unsigned int channelId = (*faultInputIt).second->channelId;
+            DbDigitalChannelMap::iterator digitalChannelIt = digitalChannels->find(channelId);
+            DbAnalogChannelMap::iterator analogChannelIt = analogChannels->find(channelId);
+            if (digitalChannelIt != digitalChannels->end()) {
+                (*digitalChannelIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*faultStateIt).second->id,
+                (*faultStateIt).second));
             }
+            else if (analogChannelIt != analogChannels->end()) {
+                (*analogChannelIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*faultStateIt).second->id,
+                (*faultStateIt).second));
+            }
+            else {
+                errorStream << "ERROR: Failed to configure database, invalid channelId ("
+                << channelId << ") for faultInput (" << (*faultInputIt).second->channelId << ")";
+                throw(DbException(errorStream.str()));
+            }   
         }
+        else {
+            errorStream << "ERROR: Failed to configure database, invalid faultId ("
+            << faultId << ") for faultState (" << (*faultStateIt).second->id << ")";
+            throw(DbException(errorStream.str()));
+        }   
     }
 }
 
@@ -818,8 +785,8 @@ void MpsDb::configureAnalogChannels()
         faultInputIt != faultInputs->end();
         ++faultInputIt)
     {
-        unsigned int faultInputId = (*faultInputIt).second->id;
-        DbAnalogChannelMap::iterator analogChannelIt = analogChannels->find(faultInputId);
+        unsigned int channelId = (*faultInputIt).second->channelId;
+        DbAnalogChannelMap::iterator analogChannelIt = analogChannels->find(channelId);
         if (analogChannelIt != analogChannels->end()) {
             // Add the faultInput to analogChannel
             (*analogChannelIt).second->faultInputs->insert(std::pair<int, DbFaultInputPtr>((*faultInputIt).second->id,
@@ -1254,7 +1221,6 @@ void MpsDb::writeFirmwareConfiguration(bool enableTimeout)
         card != applicationCards->end();
         ++card)
     {
-        std::cout << " AppCardId " << (*card).second->id; // TEMP - breaks at second card since doesnt have any channels
         (*card).second->writeConfiguration(enableTimeout);
         
         Firmware::getInstance().writeConfig((*card).second->number, fastConfigurationBuffer +
@@ -1303,7 +1269,7 @@ void MpsDb::setName(std::string yamlFileName)
 /**
  * The MPS database YAML file is composed of several "tables"/"set of entries".
  * This method opens each table as a YAML::Node and loads all entry contents
- * into the MpsDb maps. Each maps uses the MPS database id as key.
+ * into the MpsDb maps. Each map uses the MPS database id as key.
  */
 int MpsDb::load(std::string yamlFileName)
 {

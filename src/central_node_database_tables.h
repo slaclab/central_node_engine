@@ -406,7 +406,6 @@ class DbFaultInput : public DbEntry, public DbApplicationCardInput {
   // A fault input may come from a digital channel or analog channel threshold fault bits
   DbAnalogChannelPtr analogChannel;
   DbDigitalChannelPtr digitalChannel;
-  DbFaultStatePtr faultState;
 
   // Device input value must be read from the Central Node Firmware
   uint32_t wasLowBit;
