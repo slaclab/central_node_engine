@@ -1216,7 +1216,6 @@ void MpsDb::writeFirmwareConfiguration(bool enableTimeout)
 {
     // Write configuration for each application in the system
     LOG_TRACE("DATABASE", "Writing config to firmware, num applications: " << applicationCards->size());
-    int i = 0;
     for (DbApplicationCardMap::iterator card = applicationCards->begin();
         card != applicationCards->end();
         ++card)
@@ -1226,7 +1225,6 @@ void MpsDb::writeFirmwareConfiguration(bool enableTimeout)
         Firmware::getInstance().writeConfig((*card).second->number, fastConfigurationBuffer +
             (*card).second->number * APPLICATION_CONFIG_BUFFER_SIZE_BYTES,
             APPLICATION_CONFIG_BUFFER_USED_SIZE_BYTES);
-        i++;
     }
 
     // If the app timeout were set to enable, write the configuration to FW

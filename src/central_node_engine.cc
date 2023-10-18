@@ -399,7 +399,6 @@ void Engine::evaluateFaults()
         }
         (*fault).second->update(faultValue);
         (*fault).second->faulted = false; // Clear the fault - in case it was faulted before
-        (*fault).second->faultedDisplay = false; // Clear the fault - in case it was faulted before
         LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue << std::dec);
 
         // Now that a Fault has a new value check if it is in the FaultStates list,
@@ -418,13 +417,13 @@ void Engine::evaluateFaults()
             if ((*state).second->value == maskedValue)
             {
                 (*state).second->faulted = true; // Set input faulted field
-                (*fault).second->faulted = true; // Set fault faulted field
+                // (*fault).second->faulted = true; // Set fault faulted field
                 faulted = true; // Signal that at least one state is faulted
                 for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
                     allowed != (*state).second->allowedClasses->end();
                     ++allowed) {
                   if ((*allowed).second->beamClass->number < _highestBeamClass->number) {
-                    (*fault).second->faultedDisplay = true; // Set fault faulted field
+                    (*fault).second->faulted = true; // Set fault faulted field
                     LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
                       << faultValue << ", masked=" << maskedValue
                       << " (fault state="

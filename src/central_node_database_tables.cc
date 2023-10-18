@@ -407,23 +407,23 @@ DbFaultState::DbFaultState() : DbEntry(), faultId(0), mask(0),
 			       defaultState(false), faulted(true), ignored(false) {
 }
 
-std::ostream & operator<<(std::ostream &os, DbFaultState * const digitalFault) {
-  os << "id[" << digitalFault->id << "]; "
-     << "faultId[" << digitalFault->faultId << "]; "
-     << "mask[" << digitalFault->mask << "]; "
-     << "name[" << digitalFault->name << "]; " << std::endl
-     <<  TAB_8 << "faulted[" << digitalFault->faulted << "]; "
-     << "default[" << digitalFault->defaultState << "]; "
-     << "value[" << digitalFault->value << "];" << std::endl;
+std::ostream & operator<<(std::ostream &os, DbFaultState * const faultState) {
+  os << "id[" << faultState->id << "]; "
+     << "faultId[" << faultState->faultId << "]; "
+     << "mask[" << faultState->mask << "]; "
+     << "name[" << faultState->name << "]; " << std::endl
+     <<  TAB_8 << "faulted[" << faultState->faulted << "]; "
+     << "default[" << faultState->defaultState << "]; "
+     << "value[" << faultState->value << "];" << std::endl;
 
-  if (digitalFault->allowedClasses) {
+  if (faultState->allowedClasses) {
     os << TAB_8 << "AllowedClasses : ";
     unsigned int i = 1;
-    for (DbAllowedClassMap::iterator it = digitalFault->allowedClasses->begin();
-      it != digitalFault->allowedClasses->end(); ++it, ++i) {
+    for (DbAllowedClassMap::iterator it = faultState->allowedClasses->begin();
+      it != faultState->allowedClasses->end(); ++it, ++i) {
       os << (*it).second->beamDestination->name << "->"
 	       << (*it).second->beamClass->name;
-      if (i < digitalFault->allowedClasses->size()) {
+      if (i < faultState->allowedClasses->size()) {
 	      os << ", ";
       }
       if (i % 2 == 0) { os << std::endl << TAB_8; }

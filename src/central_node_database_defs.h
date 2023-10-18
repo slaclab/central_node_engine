@@ -105,7 +105,7 @@ const uint32_t UPDATE_WAS_LOW_OFFSET = 0; // First 192 bits have the 'was Low' s
 const uint32_t UPDATE_WAS_HIGH_OFFSET = 192; // Last 192 bits have the 'was High' status
 const uint32_t DIGITAL_UPDATE_WAS_LOW_OFFSET = 64; // TODO: review offset // First 64 bits have the 'was Low' status
 const uint32_t DIGITAL_UPDATE_WAS_HIGH_OFFSET = 0; // TODO: review offset // Last 64 bits have the 'was High' status
-
+const uint32_t FAULT_STATE_MAX_VALUE = 17; // Maximum value of a fault state = 65536 : 17
 //
 // Each application card has an array of bits for the fast firmware
 // evaluation. The formats are different for digital and analog inputs

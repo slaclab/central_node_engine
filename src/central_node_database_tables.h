@@ -336,6 +336,7 @@ class DbApplicationCard : public DbEntry {
   bool modeActive; // True when in SC mode, false when in NC mode.
   bool hasInputs; //True if number of inputs > 0
   bool active; //True when the application card is active, mode irrelevant
+  bool bypassed; // TODO - Bypass engine should set this to true or false. But initlize to false.
 
   // Application Type Card
   DbApplicationTypePtr applicationType;
@@ -611,7 +612,6 @@ class DbFault : public DbEntry {
 
   // Configured after loading the YAML file
   bool faulted;
-  bool faultedDisplay;
   bool ignored;
   bool sendUpdate;
   bool faultedOffline; // True when app card is offline

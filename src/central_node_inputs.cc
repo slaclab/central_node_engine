@@ -328,6 +328,22 @@ bool DbApplicationCard::updateInputs() {
   else {
     active = false;
   }
+  if (bypassed) {
+    // Firmware::getInstance().setApp 3 args here
+    // 1) Add logic to write to fw only if necessary (i.e. if it was already written,
+    // and the bypass hasn't expired, then keep it the way it is.) This is because writing 
+    // continously slows down the updateInput threads
+    // 2) Add logic to update inputs to check for application card
+    // 3) Add logic to reenable setAppTimeoutEnable(true) after bypass expires 
+    //Firmware::getInstance().setAppTimeoutEnable(id, false, true)
+  }
+  // Add another if for 'is bypassed?'
+  // TODO - Write if bypass engine set flag to true
+  // then setAppTimeoutEnable(false) Theres 3 args here
+  // Add logic to not write to fw if its already bypassed and only if necessary
+  // vice versa with deleting a bypass
+
+
   if(active != oldActive) {
     reload = true;
   }
