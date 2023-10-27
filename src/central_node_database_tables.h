@@ -336,7 +336,10 @@ class DbApplicationCard : public DbEntry {
   bool modeActive; // True when in SC mode, false when in NC mode.
   bool hasInputs; //True if number of inputs > 0
   bool active; //True when the application card is active, mode irrelevant
-  bool bypassed; // TODO - Bypass engine should set this to true or false. But initlize to false.
+  bool bypassed; //Updated in updateThread - updateInputs. True when timeout enable = false. 
+  
+  // Pointer to the bypass for this app
+  InputBypassPtr bypass;
 
   // Application Type Card
   DbApplicationTypePtr applicationType;
@@ -419,7 +422,7 @@ class DbFaultInput : public DbEntry, public DbApplicationCardInput {
   // Count 'was high'=0 & 'was low'=0
   uint32_t invalidValueCount;
 
-  // Pouint32_ter to the bypass for this input
+  // Pointer to the bypass for this input
   InputBypassPtr bypass;
 
   // Set true if this input is used by a fast evaluated device (must be the only input to device)

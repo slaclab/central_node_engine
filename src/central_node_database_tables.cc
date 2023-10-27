@@ -265,7 +265,8 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
   return os;
 }
 
-DbApplicationCard::DbApplicationCard() {};
+DbApplicationCard::DbApplicationCard() : DbEntry(), number(999), slotNumber(999), bypassed(false) {
+}
 
 void DbApplicationCard::setUpdateBufferPtr(std::vector<uint8_t>* p)
 {
@@ -304,6 +305,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
      << "online[" << appCard->online << "]; "
      << "active[" << appCard->active << "]; " << std::endl
      << TAB_8 << "modeActive[" << appCard->modeActive << "]; "
+     << "bypassed[" << appCard->bypassed << "]; "
      << "hasInputs[" << appCard->hasInputs << "]" << std::endl;
 
   if (appCard->digitalChannels) {

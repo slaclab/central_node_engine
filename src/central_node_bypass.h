@@ -8,7 +8,8 @@
 
 enum BypassType {
   BYPASS_DIGITAL,
-  BYPASS_ANALOG
+  BYPASS_ANALOG,
+  BYPASS_APPLICATION
 };
 
 enum BypassStatus {
@@ -27,9 +28,11 @@ enum AnalogIntegratorIndex {
 };
 
 static const int BYPASS_DIGITAL_INDEX = 100;
+static const int BYPASS_APPLICATION_INDEX = 200;
+
 
 /**
- * Each FaultInput and AnalogChannel have a pointer to a instance of InputBypass.
+ * Each FaultInput, AnalogChannel, applicationCard have a pointer to a instance of InputBypass.
  *
  * For inputs that are evaluated in firmware the bypass must be changed in
  * the application configuration memory.
@@ -47,11 +50,14 @@ class InputBypass {
   // Index of the channel for this bypass
   uint32_t channelId;
 
+  // Bypasses work for any applicationCard by setting its timeout enable to off.
+  uint32_t appId; // Only set for applicationCard bypasses
+
   // This value is used to calculate the Fault value instead of the actual input value
   // Important: this bypass value is only used for slow evaluation.
   uint32_t value;
 
-  // Defines the input type (analog or digital)
+  // Defines the input type (analog or digital or applicationCard)
   // If digital then the faultInputId refers to a DbFaultInput entry
   // Otherwise the faultInputId refers to the DbAnalogchannel entry
   BypassType type;
@@ -59,8 +65,8 @@ class InputBypass {
   // Time in sec since 1970 when the bypass expires
   time_t until;
 
-  // Indicates if bypass is still valid or not. The 'validUntil' field is
-  // checked once a second, while the 'valid' field is used by the
+  // Indicates if bypass is still valid or not. The 'until' field is
+  // checked once a second, while the 'status' field is used by the
   // engine to check whether the bypass value or the actual input value
   // should be used.
   BypassStatus status;
