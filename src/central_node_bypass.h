@@ -82,9 +82,14 @@ class InputBypass {
   // is needed for inputs used by the fast rules
   bool configUpdate;
 
+  // Flag for logging the bypass into mps history. Set in central node engine.
+  // True when bypass->status = True and logBypassState() was called
+  // False when bypass->status = False
+  bool logged;
+
  InputBypass() : id(0), channelId(0), value(0),
     type(BYPASS_DIGITAL), until(0), status(BYPASS_EXPIRED),
-    configUpdate(false) {
+    configUpdate(false), logged(false) {
   }
 };
 

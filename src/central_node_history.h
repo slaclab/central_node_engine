@@ -44,7 +44,7 @@ class History {
   int logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass);
   int logDigitalChannel(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logAnalogChannel(uint32_t id, uint32_t oldValue, uint32_t newValue);
-  int logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue, uint16_t index);
+  int logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int add(Message &message);
   int send(Message &message);
   int sendFront();

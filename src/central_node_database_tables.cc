@@ -131,7 +131,7 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
        << "faultId[" << state->faultId << "]; "
        << "mask[" << state->mask << "]; "
        << "name[" << state->name << "]; " << std::endl
-       <<  TAB_8 << "faulted[" << state->faulted << "]; "
+       <<  TAB_8 << "active[" << state->active << "]; "
        << "default[" << state->defaultState << "]; "
        << "value[" << state->value << "];" << std::endl;
   }
@@ -257,7 +257,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
        << "faultId[" << state->faultId << "]; "
        << "mask[" << state->mask << "]; "
        << "name[" << state->name << "]; " << std::endl
-       <<  TAB_8 << "faulted[" << state->faulted << "]; "
+       <<  TAB_8 << "active[" << state->active << "]; "
        << "default[" << state->defaultState << "]; "
        << "value[" << state->value << "];" << std::endl;
   }
@@ -265,7 +265,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
   return os;
 }
 
-DbApplicationCard::DbApplicationCard() : DbEntry(), number(999), slotNumber(999), bypassed(false) {
+DbApplicationCard::DbApplicationCard() : DbEntry(), number(999), slotNumber(999), bypassed(false), ignored(false) {
 }
 
 void DbApplicationCard::setUpdateBufferPtr(std::vector<uint8_t>* p)
@@ -406,7 +406,7 @@ std::ostream & operator<<(std::ostream &os, DbAllowedClass * const allowedClass)
 }
 
 DbFaultState::DbFaultState() : DbEntry(), faultId(0), mask(0),
-			       defaultState(false), faulted(true), ignored(false) {
+			       defaultState(false), active(true), ignored(false) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbFaultState * const faultState) {
@@ -414,7 +414,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const faultState) {
      << "faultId[" << faultState->faultId << "]; "
      << "mask[" << faultState->mask << "]; "
      << "name[" << faultState->name << "]; " << std::endl
-     <<  TAB_8 << "faulted[" << faultState->faulted << "]; "
+     <<  TAB_8 << "active[" << faultState->active << "]; "
      << "default[" << faultState->defaultState << "]; "
      << "value[" << faultState->value << "];" << std::endl;
 

@@ -416,8 +416,60 @@ void Engine::evaluateFaults()
 
             if ((*state).second->value == maskedValue)
             {
-                (*state).second->faulted = true; // Set input faulted field
-                // (*fault).second->faulted = true; // Set fault faulted field
+                (*state).second->active = true; // Set input active field
+
+                // // Log the bypass if necessary
+                // // Grab current bypass from state by
+                //     // loop through the fault inputs for the active fault state, and see which
+                //     // one has a valid bypass, if no valid bypass then don't log anything
+                // for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
+                //     input != (*fault).second->faultInputs->end();
+                //     ++input) {
+                //     if ((*input).second->bypass->logged == false) {
+                //         std::cout << "1st Logged status - " << (*input).second->bypass->logged << std::endl;  // TEMP
+                //         if ((*input).second->digitalChannel && (*input).second->bypass->status == BYPASS_VALID) {
+                //             if ((*input).second->bypass->status == BYPASS_VALID) { // TEMP - combine this if statement to the above one when done testing
+                //                 History::getInstance().logBypassState((*fault).second->id,
+                //                     (*state).second->id,
+                //                     (*input).second->bypass->until);
+                //                 (*input).second->bypass->logged = true;
+                //                 std::cout << "Logged Digital fault - " << (*fault).second->id << std::endl; // TEMP 
+                //             }
+
+                //         }
+                //         // current issue - analogChannel is being unset after a bypass is set
+                //         // SOLUTION - analogChannel is NOW GONE once you bypass it because in the FW level
+                //         // What happens is the FW removes the analog channel, so the SW won't see it anymore and it is ignored.
+                //         // So you have to call this logBypassState once bypass is called and add some kind of flag
+                //         // To know when it doesnt exist that means it was bypassed
+                //         else if ((*input).second->analogChannel) { // todo: figure out analog
+                //             for (uint32_t integrator = 0; integrator < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; integrator++) {
+                //                 std::cout << "Status of analog ch " << (*input).second->analogChannel->id;   // TEMP
+                //                 std::cout << ", int " << integrator << ", ";  // TEMP
+                //                 std::cout << (*input).second->analogChannel->bypass[integrator]->status << std::endl; // TEMP
+                //                 std::cout << "Logged status - " << (*input).second->bypass->logged << std::endl;  // TEMP
+                //                 // current issue - that status is not being set to BYPASS_VALID when bypassing fault for analog
+                //                 if ((*input).second->analogChannel->bypass[integrator]->status == BYPASS_VALID &&
+                //                      (*input).second->bypass->logged == false) {
+                //                     History::getInstance().logBypassState((*fault).second->id,
+                //                         (*state).second->id,
+                //                         (*input).second->bypass->until);
+                //                     (*input).second->bypass->logged = true;
+                //                     std::cout << "Logged Analog fault - " << (*fault).second->id << std::endl; // TEMP 
+                //                 }
+                //             }
+                //         }
+                //         else { // TEMP
+                //             std::cout << "Input id " << (*input).second->id << std::endl;
+                //             std::cout << (*input).second->analogChannel << std::endl;
+                //         }
+
+                //     }
+                //     // todo: reset logged field
+                //     else if ((*input).second->bypass->status == BYPASS_EXPIRED && (*input).second->bypass->logged == true){
+                //         (*input).second->bypass->logged = false;
+                //     }
+                // }
                 faulted = true; // Signal that at least one state is faulted
                 for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
                     allowed != (*state).second->allowedClasses->end();
@@ -434,14 +486,14 @@ void Engine::evaluateFaults()
             }
             else
             {
-                (*state).second->faulted = false;
+                (*state).second->active = false;
             }
         }
 
         // If there are no faults, then enable the default - if there is one
         if (!faulted && (*fault).second->defaultFaultState)
         {
-            (*fault).second->defaultFaultState->faulted = true;
+            (*fault).second->defaultFaultState->active = true;
             LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
                 << faultValue << " (Default) fault state="
                 << (*fault).second->defaultFaultState->name);
@@ -478,13 +530,13 @@ bool Engine::evaluateIgnoreConditions()
             newConditionState = true;
 
         if ((*ignoreCondition).second->state != newConditionState) {
-          reload = true;
+          reload = true; // Set reload to true only if hasn't been reloaded already, hence why we store the state for ignoreCondition
         }
 
         (*ignoreCondition).second->state = newConditionState;
         LOG_TRACE("ENGINE",  "Ignore Condition " << (*ignoreCondition).second->name << " is " << (*ignoreCondition).second->state);
 
-        // Stop here for now - TODO: Will rework this section later to just evaluate the faults not the channels.
+        //***************** Stop here for now - TODO: Will rework this section later to just evaluate the faults not the channels.
 
         // if ((*condition).second->ignoreConditions)
         // {
@@ -603,7 +655,7 @@ void Engine::mitigate()
               state != (*fault).second->faultStates->end();
               ++state)
           {
-            if ((*state).second->faulted && !(*state).second->ignored)
+            if ((*state).second->active && !(*state).second->ignored)
             {
               LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
               << (*fault).second->value
@@ -743,7 +795,7 @@ void Engine::showFaults()
                 state != (*fault).second->faultStates->end();
                 ++state)
             {
-                if ((*state).second->faulted)
+                if ((*state).second->active && (*state).second->name != "Is Ok")
                 {
                     if (!faults)
                     {

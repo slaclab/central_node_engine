@@ -67,8 +67,8 @@ int History::logAnalogChannel(uint32_t id, uint32_t oldValue, uint32_t newValue)
   return log(AnalogChannelType, id, oldValue, newValue, 0);
 }
 
-int History::logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue, uint16_t index) {
-  return log(BypassStateType, id, oldValue, newValue, index);
+int History::logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue) {
+  return log(BypassStateType, id, oldValue, newValue, 0);
 }
 
 int History::add(Message &message) {

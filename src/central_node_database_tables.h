@@ -209,7 +209,7 @@ class DbAnalogChannel : public DbEntry, public DbApplicationCardInput {
   // and it is filled out when the database is loaded and configured
   uint32_t numChannelsCard;
 
-  // Array of pointer to bypasses, one for each threshold (max of 32 thresholds).
+  // Array of pointer to bypasses, one for each integrator (4 integrators - max of 32 thresholds).
   // The bypasses are managed by the BypassManager class, when a bypass is added or
   // expires the bypassMask for the AnalogChannel is updated.
   InputBypassPtr bypass[ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL];
@@ -337,7 +337,8 @@ class DbApplicationCard : public DbEntry {
   bool hasInputs; //True if number of inputs > 0
   bool active; //True when the application card is active, mode irrelevant
   bool bypassed; //Updated in updateThread - updateInputs. True when timeout enable = false. 
-  
+  bool ignored; // App card is ignored if there are valid ignore conditions
+
   // Pointer to the bypass for this app
   InputBypassPtr bypass;
 
@@ -595,7 +596,7 @@ class DbFaultState : public DbEntry {
   uint32_t faultId;
 
   // Configured/Used after loading the YAML file
-  bool faulted; // Evaluated based on the status of the deviceState
+  bool active; // Evaluated based on the status of the deviceState
   bool ignored; // Fault state is ignored if there are valid ignore conditions
   DbAllowedClassMapPtr allowedClasses; // Map of allowed classes (one for each beam destination) for this fault states
 
