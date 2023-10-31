@@ -1,0 +1,56 @@
+FpgaVersion         carrier
+BuildStamp          carrier
+GitHash             carrier
+SwHeartbeat         carrier?
+EvalLatchClear      Cn
+Enable              carrier
+SoftwareEnable      cn
+SoftwareClear       cn?
+SoftwareLossError   carrier?
+SoftwareLossCnt     carrier?
+SoftwareBwidthCnt   carrier?
+BeamIntTime         carrier
+BeamMinPeriod       carrier
+BeamIntCharge       carrier
+BeamFaultReason     carrier?
+BeamFaultEn         
+EvalLatchClear
+MonErrClear
+SwErrClear
+BeamFaultClr
+EvaluationSwPowerLevel
+EvaluationFwPowerLevel
+EvaluationLatchedPowerLevel
+EvaluationPowerLevel
+ConPowH
+ConPowL
+SwitchConfig
+ToErrClear
+MoConcErrClear
+MonitorReady
+MonitorRxErrCnt
+MonitorPauseCnt
+MonitorOvflCnt
+MonitorDropCnt
+MonitorConcWdErr
+MonitorConcStallErr
+MonitorConcExtRxErr0
+MonitorConcExtRxErr1
+TimeoutEnable
+TimeoutClear
+TimeoutTime
+TimeoutMask
+TimeoutErrStatus
+TimeoutErrIndex
+TimeoutMsgVer
+EvaluationEnable
+EvaluationTimeStamp
+SoftwareWdTime
+SoftwareBusy
+SoftwarePause
+SoftwareWdError
+SoftwareOvflCnt
+TimePowH
+TimePowL
+Stream0
+Stream1

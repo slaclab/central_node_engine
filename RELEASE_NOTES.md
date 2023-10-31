@@ -3,6 +3,13 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-5-1__:
+  * Fix bug with device vs logic ignore condition when the app is disabled
+
+* __central_node_engine-R4-5-0__:
+  * Simplify the Application "Active/Inactive" flag to set all ignore bits in the 
+    inactive applications
+
 * __central_node_engine-R4-4-0__:
   * Remove aomAllow flag which was used originally to manage aom permit when shutter was in.
   * Add active / inactive flag for application cards, devices, and logic to drive

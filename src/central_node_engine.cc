@@ -350,7 +350,7 @@ void Engine::evaluateFaults()
         if ((*channel).second->cardId != NO_CARD_ID &&
             (*channel).second->evaluation != NO_EVALUATION)
         {
-            (*channel).second->ignored = false;
+            (*channel).second->ignored = (*channel).second->ignored // TODO: why is this not !(modeActive) aka false when SC is on
         }
     }
 
@@ -725,7 +725,7 @@ void Engine::breakAnalogIgnore()
         if ((*channel).second->cardId != NO_CARD_ID &&
             (*channel).second->evaluation != NO_EVALUATION)
         {
-          (*channel).second->ignored = false;
+          (*channel).second->ignored = !(*channel).second->modeActive;
         }
     }
     _breakAnalogIgnoreTimer.tick();
