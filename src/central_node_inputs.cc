@@ -312,9 +312,6 @@ size_t DbApplicationCard::getWasHighBufferOffset() {
  * update each digital/analog device with the new values.
  */
 bool DbApplicationCard::updateInputs() {
-
-  bool reload = false;
-  bool oldActive = active;
   // Check if timeout status bit from firmware is on, if so set online to false
   if (Firmware::getInstance().getAppTimeoutStatus(number)) {
     online = false;
@@ -322,6 +319,50 @@ bool DbApplicationCard::updateInputs() {
   else {
     online = true;
   }
+  // 2 use cases:
+  // 1) Bypass is for human operator bypasses with the information to safely bypass an app card
+  // 2) ignore is set in the epics PV interface (through centralNodeDriver eventually to central node) 
+    // And it is used for if we SWITCH to NC, then all these app cards in SC will fault since it won't
+    // meet the 1MHz time, it'll essentially timeout. Which is why we have to set the timeout enable to false 
+    // when NC mode is on. 
+  if (bypass->status == BYPASS_VALID) { 
+    if (!bypassed) {
+      Firmware::getInstance().setAppTimeoutEnable(id, false, false); // Don't write to fw, since the active != oldactive will cause a reload ahead
+      bypassed = true;
+      std::cout << "DISABLING TIMEOUT ON APPCARD: " << id << std::endl;// TEMP
+    }
+  }
+  else {
+    if (bypassed) {
+      Firmware::getInstance().setAppTimeoutEnable(id, true, false);
+      bypassed = false;
+      std::cout << "ENABLING TIMEOUT ON APPCARD: " << id << std::endl;// TEMP
+    }
+  }
+
+  // Ignore condition check - seperate from bypass because it is not a result of human operator bypass
+  // TODO: 
+  // 1) THE INTERFACE to ignoreStatus is a digital channel like the other ignored. 
+  // 2) See if ignoreCondition needs to have an application card assigned, that can be evaluated in 
+  //    engine::evaluateIgnoreConditions() 
+  if (ignoreStatus == true) { 
+    if (!ignored) {
+        Firmware::getInstance().setAppTimeoutEnable(id, false, false); // Don't write to fw, since the active != oldactive will cause a reload ahead
+        ignored = true;
+        std::cout << "DISABLING TIMEOUT (ignore) ON APPCARD: " << id << std::endl;// TEMP
+    }
+  }
+  else {
+    if (ignored) {
+      Firmware::getInstance().setAppTimeoutEnable(id, true, false);
+      ignored = false;
+      std::cout << "ENABLING TIMEOUT (ignore) ON APPCARD: " << id << std::endl;// TEMP
+    }
+
+  }
+
+  bool reload = false;
+  bool oldActive = active;
   if (Firmware::getInstance().getAppTimeoutEnable(number)) {
     active = true;
   }
@@ -329,52 +370,8 @@ bool DbApplicationCard::updateInputs() {
     active = false;
   }
 
-  // TODO: ignore should ignore the channels BUT not SET THE BYPASS FLAG. 
-  // Because in the GUI, it checks the bypassed flag, and we dont want all the ignored cards to show up
-  // ignore should be seperate flag,
-
-  // 2 use cases:
-  // 1) Bypass is for human bypasses because an app card is known to act up because of incompatiabile errors
-  // 2) ignore is set in the epics PV interface (through centralNodeDriver eventually to central node) 
-    // And it is used for if we SWITCH to NC, then all these app cards in SC will fault since it won't
-    // meet the 1MHz time, it'll essentially timeout. Which is why we have to set the timeout enable to false 
-    // when NC mode is on. 
-    // But need to figure out the logic for setting 'reload' boolean, because after you ignore all ApplicaitonCards necessary
-    // THEN you RELOAD the FW. Otherwise if you reload FW each time, then we won't make the 360hz time.
-      // like how the ignore conditions in engine.cc work, loop through all ignoreConditions, then set the reload to true.
-    // Jeremy also mentioned: not sure yet if he wants to bypass all the channels associated with the app card you bypass
-      // he said thinking about it for a year, because the analog app cards are inconsistent with the way they bypass analog channels
-      // so don't add the bypass for channels yet. But I think for pv interface 'ignore' we want timeout and IGNORE the channels.
-      // Or we can make it an extra option to bypass all the channeks as well, but really ignoreing the channels is the same in this case
-      // Since we want to ignore the channels when we ignore the app card! But for bypass we may not necessarily want to bypass the channels
-      // because if its an app card having issues not the channels (devices), then we want to keep whatever state the channels was in, but 
-      // bypass the app card. Because 1 app card fault can remove permits and shut the beam down, when we should have the ability to bypass
-      // if we know that its acting up.
-  if (bypass->status == BYPASS_VALID) { // Write to firmware if bypass added
-    if (!bypassed) {
-      Firmware::getInstance().setAppTimeoutEnable(id, false, true); 
-      bypassed = true;
-      std::cout << "DISABLING TIMEOUT ON APPCARD: " << id << std::endl;// TEMP
-    }
-  }
-  else {
-    if (bypassed) {
-      Firmware::getInstance().setAppTimeoutEnable(id, true, true);
-      bypassed = false;
-      std::cout << "ENABLING TIMEOUT ON APPCARD: " << id << std::endl;// TEMP
-    }
-  }
-
-  // Ignore condition check - seperate from bypass because it is not a result of human operator bypass
-  if (!ignored) {
-      setAppTimeoutEnable(id, false, false); // Set enable but dont write to FW each function call
-      reload = true; // Reload the FW once in 360hz.
-      ignored = true;
-      std::cout << "DISABLING TIMEOUT (ignore) ON APPCARD: " << id << std::endl;// TEMP
-  }
-
   if(active != oldActive) {
-    reload = true; // TODO - question this is being returned to MpsDb::updateInputs() but isn't actually used?
+    reload = true;
   }
   if (digitalChannels) {
     AppCardDigitalUpdateTime.start();

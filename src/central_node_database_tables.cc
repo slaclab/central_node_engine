@@ -450,18 +450,18 @@ std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
     os << "FaultInputs[";
     unsigned int i = 1;
     for (DbFaultInputMap::iterator it = fault->faultInputs->begin();
-	 it != fault->faultInputs->end(); ++it, ++i) {
+	    it != fault->faultInputs->end(); ++it, ++i) {
       if ((*it).second->digitalChannel) {
-	os << (*it).second->digitalChannel->name;
-	if (i < fault->faultInputs->size()) {
-	  os << ", ";
-	}
+        os << (*it).second->digitalChannel->name;
+        if (i < fault->faultInputs->size()) {
+          os << ", ";
+        }
       }
       else {
-	os << (*it).second->analogChannel->name;
-	if (i < fault->faultInputs->size()) {
-	  os << ", ";
-	}
+        os << (*it).second->analogChannel->name;
+        if (i < fault->faultInputs->size()) {
+          os << ", ";
+        }
       }
     }
     os << "];" << std::endl << TAB_8;

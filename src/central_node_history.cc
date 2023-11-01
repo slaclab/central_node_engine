@@ -67,8 +67,16 @@ int History::logAnalogChannel(uint32_t id, uint32_t oldValue, uint32_t newValue)
   return log(AnalogChannelType, id, oldValue, newValue, 0);
 }
 
-int History::logBypassState(uint32_t id, uint32_t oldValue, uint32_t newValue) {
-  return log(BypassStateType, id, oldValue, newValue, 0);
+int History::logBypassDigitalFault(uint32_t id, uint32_t newValue, uint32_t bypassUntil) {
+  return log(BypassDigitalType, id, 0, newValue, bypassUntil);
+}
+
+int History::logBypassAnalogFault(uint32_t id, uint32_t bypassUntil) {
+  return log(BypassAnalogType, id, 0, 0, bypassUntil);
+}
+
+int History::logBypassApplication(uint32_t id, uint32_t bypassUntil) {
+  return log(BypassApplicationType, id, 0, 0, bypassUntil);
 }
 
 int History::add(Message &message) {

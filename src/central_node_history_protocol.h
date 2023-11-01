@@ -5,10 +5,12 @@
 #include <iostream>
 
 enum HistoryMessageType {
-  FaultStateType = 1, // Fault change state (Faulted/Not Faulted)
-  BypassStateType,    // Bypass expired/crated/cancelled
-  DigitalChannelType, // Change in digital channel
-  AnalogChannelType,   // Change in analog device threshold status
+  FaultStateType = 1,     // Fault change state (Faulted/Not Faulted)
+  BypassDigitalType,      // Bypass digital fault
+  BypassAnalogType,       // Bypass analog fault
+  BypassApplicationType,  // Bypass analog fault
+  DigitalChannelType,     // Change in digital channel
+  AnalogChannelType,      // Change in analog device threshold status
 };
 
 typedef struct {

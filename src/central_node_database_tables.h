@@ -336,7 +336,8 @@ class DbApplicationCard : public DbEntry {
   bool hasInputs; //True if number of inputs > 0
   bool active; //True when the application card is active, mode irrelevant
   bool bypassed; //Updated in updateThread - updateInputs. True when timeout enable = false. 
-  bool ignored; // App card is ignored if there are valid ignore conditions
+  bool ignored; // Determines if app card is ignored and written in the FW
+  bool ignoreStatus; // Set in PV interface if there are valid ignore conditions
 
   // Pointer to the bypass for this app
   InputBypassPtr bypass;

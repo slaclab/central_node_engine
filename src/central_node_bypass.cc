@@ -355,7 +355,7 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 /**
  * Add a new bypass to the bypassQueue. Possible scenarios are:
  *
- * 1) New bypass: the channel has no bypass in the queue, add a new one
+ * 1) New bypass: the channel/app card has no bypass in the queue, add a new one
  * with the specified until time
  *
  * 2) Change bypass: there is already a bypass in the queue, the
@@ -379,9 +379,9 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
  *    If there are entries in the queue then they will be removed
  *    the next time the bypasses are checked.
  *
- * Multiple bypass to the same channel can be added, the last one
- * to be added will be the the one that controls when the bypass
- * expires.
+ * Multiple bypass to the same channel/app card can be added, the last one
+ * to be added will be the the one that controls the bypass value
+ * and when it expires
  */
 void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
 			      uint32_t channelId, uint32_t value, time_t bypassUntil,
@@ -433,10 +433,6 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
   newEntry.first = bypassUntil;
   newEntry.second = bypass;
 
-  // This handles case #3 - cancel bypass
-  // TODO - Change the parameters for logging bypass state
-    // fault_id, new_state_id, expiration time in secs
-  // no logging if active/expired because in history if it logged as 'active' but time pass and it expires then its invalid
   if (bypassUntil == 0) {
     bypass->status = BYPASS_EXPIRED;
     bypass->until = 0;
@@ -470,10 +466,6 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
       << "type=" << bypassType << ", index=" << intIndex
       << ", until=" << bypassUntil << " sec"
       << ", now=" << now << " sec");
-      std::cout << "BYPASS New bypass for channel [" << id << "], "
-      << "type=" << bypassType << ", index=" << intIndex
-      << ", until=" << bypassUntil << " sec"
-      << ", now=" << now << " sec\n"; // TODO - TEMP
       // Check if expired bypass requires firmware configuration update
       if (bypass->configUpdate) {
 	      refreshFirmwareConfiguration = true;
@@ -489,12 +481,15 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
         // If analog/threshold bypass, change bypassMask - set threshold bit to 0 (bypassed)
         if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
           uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
-          std::cout << "bit mask: " << m << std::endl; // TEMP
           *bypassMask &= m;
           std::cout << "bypass mask2: " << *bypassMask << std::endl; // TEMP
         }
 
         bypassQueue.push(newEntry);
+      }
+      if (bypass->type == BYPASS_APPLICATION) {
+        History::getInstance().logBypassApplication(id, bypassUntil);
+        std::cout << "Logged application bypass - " << id << std::endl; // TEMP
       }
     }
   }
@@ -513,25 +508,24 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
   }
   DbFaultInputMapPtr currentFaultInputs = (*faultIt).second->faultInputs;
   DbFaultInputMap::iterator initialInputIt = currentFaultInputs->begin();
-
-  DbFaultStateMap::iterator faultState = db->faultStates->find(faultStateId);
-  if (faultState == db->faultStates->end()) {
-    errorStream << "ERROR: Failed to find faultState[" << faultStateId
-    << "] while setting bypass";
-    throw(CentralNodeException(errorStream.str()));
-  }
-  if ((*faultState).second->faultId != faultId) {
-    errorStream << "ERROR: FaultState->faultId[" << (*faultState).second->faultId
-    << "] does not match given faultId[" << faultId << "] while setting bypass";
-    throw(CentralNodeException(errorStream.str()));
-  }
-
-  uint32_t faultStateValue = (*faultState).second->value;
-  std::bitset<FAULT_STATE_MAX_VALUE> stateValue{faultStateValue};
-  std::cout << "stateValue: " << stateValue << std::endl; // TEMP
-
+  
   // Digital Fault
   if ((*initialInputIt).second->digitalChannel) {
+    DbFaultStateMap::iterator faultState = db->faultStates->find(faultStateId);
+    if (faultState == db->faultStates->end()) {
+      errorStream << "ERROR: Failed to find faultState[" << faultStateId
+      << "] while setting bypass";
+      throw(CentralNodeException(errorStream.str()));
+    }
+    if ((*faultState).second->faultId != faultId) {
+      errorStream << "ERROR: FaultState->faultId[" << (*faultState).second->faultId
+      << "] does not match given faultId[" << faultId << "] while setting bypass";
+      throw(CentralNodeException(errorStream.str()));
+    }
+
+    uint32_t faultStateValue = (*faultState).second->value;
+    std::bitset<FAULT_STATE_MAX_VALUE> stateValue{faultStateValue};
+    std::cout << "stateValue: " << stateValue << std::endl; // TEMP
     // Loop through fault inputs to get the bitPosition and channel associated with the fault
     for (DbFaultInputMap::iterator inputIt = currentFaultInputs->begin();
         inputIt != currentFaultInputs->end();
@@ -542,8 +536,9 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
       std::cout << "curBitPos: " << curBitPos << std::endl; // TEMP
       uint32_t curVal = stateValue[curBitPos];
       std::cout << "curVal: " << curVal << std::endl; // TEMP
-      Engine::getInstance().getBypassManager()->setBypass(db, BYPASS_DIGITAL, channelId,
-                                                curVal, bypassUntil);
+      setBypass(db, BYPASS_DIGITAL, channelId, curVal, bypassUntil);
+      History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
+      std::cout << "Logged Digital fault bypass - " << faultId << std::endl; // TEMP 
     }
   }
 
@@ -554,14 +549,10 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
         inputIt++) 
     {
       uint32_t channelId = (*inputIt).second->analogChannel->id;
-      uint32_t curBitPos = (*inputIt).second->bitPosition;
-      std::cout << "curBitPos: " << curBitPos << std::endl; // TEMP
-      uint32_t curVal = stateValue[curBitPos];
-      std::cout << "curVal: " << curVal << std::endl; // TEMP
       uint32_t integrator = (*inputIt).second->analogChannel->integrator;
-      std::cout << "integrator: " << integrator << std::endl; // TEMP
-      Engine::getInstance().getBypassManager()->setThresholdBypass(db, BYPASS_ANALOG, channelId,
-                                                curVal, bypassUntil, integrator);
+      setThresholdBypass(db, BYPASS_ANALOG, channelId, 0, bypassUntil, integrator);
+      History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
+      std::cout << "Logged Analog fault bypass - " << faultId << std::endl; // TEMP 
     }
   }
 
@@ -580,11 +571,13 @@ void BypassManager::printBypassQueue() {
     std::unique_lock<std::mutex> lock(mutex);
     copy = bypassQueue;
   }
+  struct tm *ptr;
+  char buf[40];
+  ptr = localtime(&now);
+  strftime(buf, 40, "%x %X", ptr);
   std::cout << "=== Bypass Queue (orded by expiration date) ===" << std::endl;
-  std::cout << "=== Current time: " << now << "(s) ===" << std::endl;
+  std::cout << "=== Current time: " << buf << " (" << now << ")(s) ===" << std::endl;
   while (!copy.empty()) {
-    struct tm *ptr;
-    char buf[40];
     ptr = localtime(&copy.top().first);
     strftime(buf, 40, "%x %X", ptr);
     if (copy.top().second->type == BYPASS_APPLICATION) {
