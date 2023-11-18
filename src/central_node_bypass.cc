@@ -340,6 +340,28 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 
         top.second->status = BYPASS_EXPIRED;
         LOG_TRACE("BYPASS", "Setting status to BYPASS_EXPIRED");
+        // if (top.second->type != BYPASS_APPLICATION) {
+        //   MpsDbPtr _mpsDb;
+        //   TODO - this seems like the best spot to set fault->bypassed to false.
+        //   Problem - No db passed in, may want to make a MpsDbPtr private variable for bypassManager
+              // And be sure to remove passing in mps db if you do. this will work because its the pointer to the DB
+              // so it will have the live data if modified somewhere else like in the engine or the database.cc.
+
+        //   // Find fault associated with the channel
+        //   // Loop through the faultInputs, and find the matching channelId, and with that faultInput, you have its ->faultId
+        //   for(DbFaultInputMap::iterator faultInputIt =)
+        //   DbFaultMap::iterator faultInputIt = db->faults->find(top.second->id);
+        //   DbFaultMap::iterator faultIt = db->faults->find((*faultInputIt).second->faultId);
+        //   if (faultIt != db->faults->end()) {
+
+        //   }
+        //   else {
+        //     errorStream << "ERROR: Failed to find fault[" << faultId
+        //     << "] while popping bypass queue";
+        //     throw(CentralNodeException(errorStream.str()));
+        //   }
+        // }
+        
       }
       return true;
     }
@@ -426,7 +448,6 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     }
     bypass = (*analogInput).second->bypass[intIndex];
     bypassMask = &(*analogInput).second->bypassMask;
-    std::cout << "bypass mask1: " << *bypassMask << std::endl; // TEMP
   }
 
   BypassQueueEntry newEntry;
@@ -482,7 +503,6 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
         if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
           uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
           *bypassMask &= m;
-          std::cout << "bypass mask2: " << *bypassMask << std::endl; // TEMP
         }
 
         bypassQueue.push(newEntry);
@@ -525,7 +545,6 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
 
     uint32_t faultStateValue = (*faultState).second->value;
     std::bitset<FAULT_STATE_MAX_VALUE> stateValue{faultStateValue};
-    std::cout << "stateValue: " << stateValue << std::endl; // TEMP
     // Loop through fault inputs to get the bitPosition and channel associated with the fault
     for (DbFaultInputMap::iterator inputIt = currentFaultInputs->begin();
         inputIt != currentFaultInputs->end();
@@ -533,13 +552,12 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
     {
       uint32_t channelId = (*inputIt).second->digitalChannel->id;
       uint32_t curBitPos = (*inputIt).second->bitPosition;
-      std::cout << "curBitPos: " << curBitPos << std::endl; // TEMP
       uint32_t curVal = stateValue[curBitPos];
-      std::cout << "curVal: " << curVal << std::endl; // TEMP
       setBypass(db, BYPASS_DIGITAL, channelId, curVal, bypassUntil);
-      History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
-      std::cout << "Logged Digital fault bypass - " << faultId << std::endl; // TEMP 
     }
+    History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
+    std::cout << "Logged Digital fault bypass - " << faultId << std::endl; // TEMP 
+    (*faultIt).second->bypassed = true;
   }
 
   // Analog Fault
@@ -551,9 +569,10 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
       uint32_t channelId = (*inputIt).second->analogChannel->id;
       uint32_t integrator = (*inputIt).second->analogChannel->integrator;
       setThresholdBypass(db, BYPASS_ANALOG, channelId, 0, bypassUntil, integrator);
-      History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
-      std::cout << "Logged Analog fault bypass - " << faultId << std::endl; // TEMP 
     }
+    History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
+    std::cout << "Logged Analog fault bypass - " << faultId << std::endl; // TEMP 
+    (*faultIt).second->bypassed = true;
   }
 
 }

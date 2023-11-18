@@ -617,6 +617,7 @@ class DbFault : public DbEntry {
   // Configured after loading the YAML file
   bool faulted;
   bool ignored;
+  bool bypassed;
   bool sendUpdate;
   bool faultedOffline; // True when app card is offline
   bool faultActive; //true when SC mode, false when NC mode

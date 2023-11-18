@@ -41,7 +41,7 @@ class History {
   void stopSenderThread();
 
   int log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);
-  int logFault(uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t allowedClass);
+  int logFault(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logDigitalChannel(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logAnalogChannel(uint32_t id, uint32_t oldValue, uint32_t newValue);
   int logBypassDigitalFault(uint32_t id, uint32_t newValue, uint32_t bypassUntil);

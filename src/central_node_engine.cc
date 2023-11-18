@@ -343,13 +343,14 @@ void Engine::evaluateFaults()
     bool faulted = false;
 
     for (DbDigitalChannelMap::iterator channel = _mpsDb->digitalChannels->begin();
-        channel != _mpsDb->digitalChannels->end(); ++channel)
+        channel != _mpsDb->digitalChannels->end(); 
+        ++channel)
     {
         // If channel has no card assigned, then it cannot be evaluated.
         if ((*channel).second->cardId != NO_CARD_ID &&
             (*channel).second->evaluation != NO_EVALUATION)
         {
-            (*channel).second->ignored = (*channel).second->modeActive; // TODO: why is this not !(modeActive) aka false when SC is on, - typo
+            (*channel).second->ignored = !(*channel).second->modeActive;
         }
     }
     // Update digital & analog Fault values and BeamDestination allowed class
@@ -359,7 +360,7 @@ void Engine::evaluateFaults()
     {
         LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
         (*fault).second->sendUpdate = 0;
-        (*fault).second->ignored = false;
+        // (*fault).second->ignored = false; may remove
         // First calculate the digital Fault value from its one or more digital fault inputs
         uint32_t faultValue = 0;
         for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
@@ -456,7 +457,6 @@ bool Engine::evaluateIgnoreConditions()
     _evaluateIgnoreConditionsTimer.start();
     bool reload = false;
     std::set<uint32_t> checkAppCardIds; // Used to check if app card needs to be ignored if all its channels are ignored
-
     // Calculate state of conditions
     for (DbIgnoreConditionMap::iterator ignoreCondition = _mpsDb->ignoreConditions->begin();
         ignoreCondition != _mpsDb->ignoreConditions->end();
@@ -464,21 +464,23 @@ bool Engine::evaluateIgnoreConditions()
     {
         DbDigitalChannelPtr channel = (*ignoreCondition).second->digitalChannel;
         DbFaultInputMap::iterator input = channel->faultInputs->begin();
+        
         // The digitalChannel of the ignoreCondition should only have 1 faultInput
         uint32_t conditionValue = 0;
         if ((*input).second->bypass->status == BYPASS_VALID)
             conditionValue = (*input).second->bypass->value;
         else
             conditionValue = (*input).second->latchedValue;
-        // 'value' is the ignore condition value that needs to be matched in order to ignore faults
+        // 'value' is the ignore condition value that needs to be matched in order to ignore fault
         bool newConditionState = false;
-        if ((*ignoreCondition).second->value == conditionValue)
+        if ((*ignoreCondition).second->value == conditionValue) {
             newConditionState = true;
-
+        }
+            
         if ((*ignoreCondition).second->state != newConditionState) {
           reload = true; // Set reload to true only if hasn't been reloaded already, hence why we store the state for ignoreCondition
+          std::cout << "Reload set to true\n"; // TEMP
         }
-
         (*ignoreCondition).second->state = newConditionState;
         LOG_TRACE("ENGINE",  "Ignore Condition " << (*ignoreCondition).second->name << " is " << (*ignoreCondition).second->state);
 
@@ -487,47 +489,53 @@ bool Engine::evaluateIgnoreConditions()
             fault != (*ignoreCondition).second->faults->end();
             fault++) 
         {
-            if (!(*fault).second->ignored) { // only evaluate ignore condition if not already ignored
-                if ((*fault).second->ignored != (*ignoreCondition).second->state) {
-                    (*fault).second->ignored = (*ignoreCondition).second->state;
-                    LOG_TRACE("ENGINE",  "Ignoring fault [" << (*fault).second->id << "]"
-                        << ", state=" << (*ignoreCondition).second->state);
-                }
+            if ((*fault).second->ignored != (*ignoreCondition).second->state) {
+                // std::cout << "current fault - " << (*fault).second->id << std::endl; // TEMP
+                // std::cout << "current fault ignore = " << (*fault).second->ignored << std::endl; // TEMP
+                // std::cout << "Setting fault ignore = " << (*ignoreCondition).second->state << std::endl; // TEMP
+                (*fault).second->ignored = (*ignoreCondition).second->state;
+                // std::cout << "after set fault ignore = " << (*fault).second->ignored << std::endl; // TEMP
+                LOG_TRACE("ENGINE",  "Ignoring fault [" << (*fault).second->id << "]"
+                    << ", state=" << (*ignoreCondition).second->state);
             }
-
+        
             // Set fault fields to match its input fields
-            for (DbFaultInputMap::iterator fault_input = (*fault).second->faultInputs->begin();
-                fault_input != (*fault).second->faultInputs->end();
-                ++fault_input)
+            for (DbFaultInputMap::iterator faultInput = (*fault).second->faultInputs->begin();
+                faultInput != (*fault).second->faultInputs->end();
+                ++faultInput)
             {
-                if ((*fault_input).second->analogChannel) {
-                    (*fault).second->faultedOffline = (*fault_input).second->analogChannel->faultedOffline;
-                    (*fault).second->faultActive = (*fault_input).second->analogChannel->modeActive;
-                    if (!(*fault_input).second->analogChannel->ignored) { // Set analog channels ignore - used when writing analog configuration
-                        if ((*fault_input).second->analogChannel->ignored != (*ignoreCondition).second->state) {
-                            (*fault_input).second->analogChannel->ignored = (*ignoreCondition).second->state;
-                            LOG_TRACE("ENGINE",  "Ignoring analog channel [" << (*fault_input).second->analogChannel->id << "]"
-                               << ", state=" << (*ignoreCondition).second->state);
-                        }
+                if ((*faultInput).second->analogChannel) {
+                    (*fault).second->faultedOffline = (*faultInput).second->analogChannel->faultedOffline;
+                    (*fault).second->faultActive = (*faultInput).second->analogChannel->modeActive;
+                    // Set analog channels ignore - used when writing analog configuration
+                    if ((*faultInput).second->analogChannel->ignored != (*ignoreCondition).second->state) {
+                        (*faultInput).second->analogChannel->ignored = (*ignoreCondition).second->state;
+                        LOG_TRACE("ENGINE",  "Ignoring analog channel [" << (*faultInput).second->analogChannel->id << "]"
+                            << ", state=" << (*ignoreCondition).second->state);
+                        // std::cout << "Set analog channel " << (*faultInput).second->analogChannel->id <<
+                            // " to " << (*ignoreCondition).second->state << std::endl; // TEMP
+                        // Add to current ignored channels
+                        // std::cout << "Analog App card check: " << (*faultInput).second->analogChannel->cardId << std::endl; // TEMP
+                        checkAppCardIds.insert((*faultInput).second->analogChannel->cardId);
                     }
-                    else { // Add to current ignored channels
-                        std::cout << "App card check: " << (*fault_input).second->analogChannel->id << std::endl; // TEMP
-                        checkAppCardIds.insert((*fault_input).second->analogChannel->id);
-                    }
+                    
                 }
                 else {
-                    (*fault).second->faultedOffline = (*fault_input).second->digitalChannel->faultedOffline;
-                    (*fault).second->faultActive = (*fault_input).second->digitalChannel->modeActive;
-                    if (!(*fault_input).second->digitalChannel->ignored) { // Set digital channels ignore - used for ignoring app cards
-                        if ((*fault_input).second->digitalChannel->ignored != (*ignoreCondition).second->state) {
-                            (*fault_input).second->digitalChannel->ignored = (*ignoreCondition).second->state;
-                            LOG_TRACE("ENGINE",  "Ignoring digital channel [" << (*fault_input).second->digitalChannel->id << "]"
-                               << ", state=" << (*ignoreCondition).second->state);
-                        }
-                    }
-                    else { // Add to current ignored channels
-                        std::cout << "App card check: " << (*fault_input).second->analogChannel->id << std::endl; // TEMP
-                        checkAppCardIds.insert((*fault_input).second->digitalChannel->id);
+                    (*fault).second->faultedOffline = (*faultInput).second->digitalChannel->faultedOffline;
+                    (*fault).second->faultActive = (*faultInput).second->digitalChannel->modeActive;
+                     // Set digital channels ignore - used for ignoring app cards
+                    if ((*faultInput).second->digitalChannel->ignored != (*ignoreCondition).second->state) {
+                        // std::cout << "original ignore value: " << (*faultInput).second->digitalChannel->ignored << std::endl; // TEMP
+                        (*faultInput).second->digitalChannel->ignored = (*ignoreCondition).second->state;
+                        LOG_TRACE("ENGINE",  "Ignoring digital channel [" << (*faultInput).second->digitalChannel->id << "]"
+                            << ", state=" << (*ignoreCondition).second->state);
+                        // std::cout << "Set digital channel " << (*faultInput).second->digitalChannel->id <<
+                            // " to " << (*ignoreCondition).second->state << std::endl; // TEMP
+                        // std::cout << "new ignore value: " << (*faultInput).second->digitalChannel->ignored << std::endl; // TEMP
+                        // Add to current ignored channels
+                        // std::cout << "Digital App card check: " << (*faultInput).second->digitalChannel->cardId << std::endl; // TEMP
+                        checkAppCardIds.insert((*faultInput).second->digitalChannel->cardId);
+                        
                     }
                 }
                 
@@ -539,23 +547,37 @@ bool Engine::evaluateIgnoreConditions()
     for (uint32_t appId : checkAppCardIds) {
         DbApplicationCardMap::iterator appCardIt = _mpsDb->applicationCards->find(appId);
         DbApplicationCardPtr appCard = (*appCardIt).second;
+        // std::cout << "\ncurrent app: " << appCard->id; // TEMP
         bool ignoreAppCard = true;
         if (appCard->analogChannels) {
             for (DbAnalogChannelMap::iterator analogChannel = appCard->analogChannels->begin();
                 analogChannel != appCard->analogChannels->end();
                 analogChannel++) {
-                if (!(*analogChannel).second->ignored) 
+                // std::cout << "ac: " << (*analogChannel).second->id << std::endl; // TEMP    
+                if (!(*analogChannel).second->ignored) {
                     ignoreAppCard = false;
+                    // std::cout << "ignore false - ac ch: " << (*analogChannel).second->id << std::endl; // TEMP
+                    // std::cout << "ignoreAppCard: " << ignoreAppCard << std::endl; // TEMP
+                    break;
+                }
             }
+            // std::cout << "ignoreAppCard: " << ignoreAppCard << std::endl; // TEMP
         }
         else {
             for (DbDigitalChannelMap::iterator digitalChannel = appCard->digitalChannels->begin();
                 digitalChannel != appCard->digitalChannels->end();
                 digitalChannel++) {
-                if (!(*digitalChannel).second->ignored) 
+                // std::cout << "dc: " << (*digitalChannel).second->id << std::endl; // TEMP
+                if (!(*digitalChannel).second->ignored) {
                     ignoreAppCard = false;
+                    // std::cout << "ignore false - dc ch: " << (*digitalChannel).second->id; // TEMP
+                    // std::cout << "ignoreAppCard: " << ignoreAppCard << std::endl; // TEMP
+                    break;
+                }
             }
+            // std::cout << "ignoreAppCard: " << ignoreAppCard << std::endl; // TEMP
         }
+        // std::cout << "ignoreAppCard final: " << ignoreAppCard << std::endl; // TEMP
         appCard->ignoreStatus = ignoreAppCard;
     }
 
@@ -575,7 +597,6 @@ void Engine::mitigate()
         uint32_t maximumClass = 100;
         uint32_t sendFaultId = (*fault).second->id;
         int32_t sendOldValue = (*fault).second->worstState;
-        uint32_t sendAllowClass = 0;
         int32_t currState = 0;
         if ((*fault).second->faulted) {
           currState = (*fault).second->displayState;
@@ -611,7 +632,6 @@ void Engine::mitigate()
                   if ((*allowed).second->beamClass->number < maximumClass) {
                     maximumClass = (*allowed).second->beamClass->number;
                     currState = (*state).second->id;
-                    sendAllowClass = (*allowed).second->id;
                   }
                 }
               }
@@ -631,8 +651,8 @@ void Engine::mitigate()
         }
         (*fault).second->displayState = currState;
         if ((*fault).second->sendUpdate) {
-          History::getInstance().logFault(sendFaultId,sendOldValue,currState,sendAllowClass);
-          std::cout << "Logged fault - " << sendFaultId << std::endl; // TEMP
+          History::getInstance().logFault(sendFaultId,sendOldValue,currState);
+        //   std::cout << "Logged fault - " << sendFaultId << std::endl; // TEMP
         }
         (*fault).second->worstState = currState;
     }
@@ -737,7 +757,7 @@ void Engine::showFaults()
 
                     std::cout << "  " << (*fault).second->name << ": " << (*state).second->name
                         << " (value=" << (*state).second->value << ", ignored="
-                        << (*state).second->ignored << ")" << std::endl;
+                        << (*fault).second->ignored << ")" << std::endl;
                 }
             }
         }

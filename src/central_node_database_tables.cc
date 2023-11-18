@@ -265,7 +265,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
   return os;
 }
 
-DbApplicationCard::DbApplicationCard() : DbEntry(), number(999), slotNumber(999), bypassed(false), ignored(false) {
+DbApplicationCard::DbApplicationCard() : DbEntry(), number(999), slotNumber(999), bypassed(false), ignored(false), ignoreStatus(false) {
 }
 
 void DbApplicationCard::setUpdateBufferPtr(std::vector<uint8_t>* p)
@@ -305,6 +305,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
      << "online[" << appCard->online << "]; "
      << "active[" << appCard->active << "]; " << std::endl
      << TAB_8 << "bypassed[" << appCard->bypassed << "]; "
+     << "ignored[" << appCard->ignored << "]; "
      << "hasInputs[" << appCard->hasInputs << "]" << std::endl;
 
   if (appCard->digitalChannels) {
@@ -343,8 +344,13 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
      << "channelId[" << faultInput->channelId << "]; "
      << "bitPosition[" << faultInput->bitPosition << "]; ";
 
-  if (faultInput->analogChannel) os << "card[" << faultInput->analogChannel->cardId << "]; ";
-  else os << "card[" << faultInput->digitalChannel->cardId << "]; ";
+  if (faultInput->analogChannel) {
+    os << "card[" << faultInput->analogChannel->cardId << "]; ";
+  } 
+  else {
+    os << "card[" << faultInput->digitalChannel->cardId << "]; ";
+  } 
+
 
   os << "value[" << faultInput->value << "]; " << std::endl << TAB_8 << "wasLow[" << faultInput->wasLowBit << "]; wasHigh[" 
      << faultInput->wasHighBit << "]; " << "latchedValue[" << faultInput->latchedValue << "]";
@@ -434,7 +440,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const faultState) {
   return os;
 }
 
-DbFault::DbFault() : DbEntry(), name(""), pv(""), faulted(true), ignored(false), evaluation(SLOW_EVALUATION), value(0) {
+DbFault::DbFault() : DbEntry(), name(""), pv(""), faulted(true), ignored(false), bypassed(false), evaluation(SLOW_EVALUATION), value(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
@@ -443,6 +449,7 @@ std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
      << "value[" << fault->value << "]; " << std::endl
      << TAB_8 << "faulted[" << fault->faulted << "]; "
      << "ignored[" << fault->ignored << "]; "
+     << "bypassed[" << fault->bypassed << "]; "
      << "evaluation[" << fault->evaluation << "]; "
      << "pv[" << fault->pv << "]; " << std::endl << TAB_8;
 
