@@ -80,6 +80,10 @@ std::ostream & operator<<(std::ostream &os, DbApplicationType * const appType) {
   return os;
 }
 
+void DbDigitalChannel::unlatch() {
+  latchedValue = value;
+}
+
 DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999),
             z_name(""), o_name(""), debounce(0),
             invalidValueCount(0), alarm_state(0), z_location(0), auto_reset(0) {
@@ -104,7 +108,8 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
     os << "eval=slow : ";
   }
   os << "faultValue=" << digitalChannel->faultValue << " : " << std::endl;
-  os << TAB_8 << "value=" << std::hex << digitalChannel->value << std::dec << " : ";
+  os << TAB_8 << "value=" << std::hex << digitalChannel->value << std::dec << " : "
+  << "latchedValue=" << digitalChannel->latchedValue << " : ";
   os   << "modeActive=" << digitalChannel->modeActive;
 
   if (digitalChannel->ignored) {
@@ -330,12 +335,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
 
 DbFaultInput::DbFaultInput() : DbEntry(), faultId(999), channelId(999),
          bitPosition(999), value(0), previousValue(0),
-				 latchedValue(0), invalidValueCount(0),
-				 fastEvaluation(false) {
-}
-
-void DbFaultInput::unlatch() {
-  latchedValue = value;
+         invalidValueCount(0), fastEvaluation(false) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
@@ -353,7 +353,7 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
 
 
   os << "value[" << faultInput->value << "]; " << std::endl << TAB_8 << "wasLow[" << faultInput->wasLowBit << "]; wasHigh[" 
-     << faultInput->wasHighBit << "]; " << "latchedValue[" << faultInput->latchedValue << "]";
+     << faultInput->wasHighBit << "]; ";
 
   if (faultInput->fastEvaluation) {
     os << " [in fast device] ";

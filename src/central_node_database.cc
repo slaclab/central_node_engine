@@ -127,9 +127,10 @@ void MpsDb::unlatchAll() {
       (*it).second->latchedValue = (*it).second->value; // Update value for all threshold bits
     }
 
-    for (DbFaultInputMap::iterator it = faultInputs->begin();
-         it != faultInputs->end(); ++it) {
+    for (DbDigitalChannelMap::iterator it = digitalChannels->begin();
+         it != digitalChannels->end(); ++it) {
       (*it).second->unlatch();
+    //  TODO - You may need to change this to (*it).second->digitalChannel->unlatch();
     }
 }
 /**

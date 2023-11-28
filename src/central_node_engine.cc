@@ -208,7 +208,7 @@ int Engine::loadConfig(std::string yamlFileName, uint32_t inputUpdateTimeout)
         // Assign bypass to each digital/analog input
         try
         {
-            _bypassManager->assignBypass(mpsDb);
+            _bypassManager->assignBypass();
         }
         catch (CentralNodeException &e)
         {
@@ -371,12 +371,19 @@ void Engine::evaluateFaults()
             int32_t inputValue = 0;
             if ((*input).second->digitalChannel)
             {
+                // Correct in the sense that digitalChannel is the one that has the latchedValue
+                // and we will not reference the faultInput->latchedValue but instead faultInput->digch->latchedValue
+                
+                // BUT what about the bypass? It seems that inputBypassPtr is kept in 
+                // analogChannel and faultInput for digitalChannel. To keep uniformity, inputBypassPtr 
+                // should also be moved to digitalChannel. Which makes more sense anyways since we are 
+                // bypassing channels not faultInputs, but think about this for a bit.
                 if ((*input).second->bypass->status == BYPASS_VALID)
                 {
                     inputValue = (*input).second->bypass->value;
                     LOG_TRACE("ENGINE", (*channel).second->name << " bypassing input value to "
                         << (*input).second->bypass->value << " (actual value is "
-                        << (*input).second->latchedValue << ")");
+                        << (*input).second->digitalChannel->latchedValue << ")");
                 }
                 else
                 {
@@ -393,6 +400,7 @@ void Engine::evaluateFaults()
             }
 
             faultValue |= (inputValue << (*input).second->bitPosition);
+            // std::cout << "Current faultValue: " << faultValue << std::endl; // TEMP
             LOG_TRACE("ENGINE", (*fault).second->name << " current value " << std::hex << faultValue
                 << ", input value " << inputValue << std::dec << " bit pos "
                 << (*input).second->bitPosition);
@@ -462,15 +470,19 @@ bool Engine::evaluateIgnoreConditions()
         ignoreCondition != _mpsDb->ignoreConditions->end();
         ++ignoreCondition)
     {
-        DbDigitalChannelPtr channel = (*ignoreCondition).second->digitalChannel;
-        DbFaultInputMap::iterator input = channel->faultInputs->begin();
+        DbDigitalChannelPtr digitalChannel = (*ignoreCondition).second->digitalChannel;
+        DbFaultInputMap::iterator input = digitalChannel->faultInputs->begin();
         
         // The digitalChannel of the ignoreCondition should only have 1 faultInput
         uint32_t conditionValue = 0;
         if ((*input).second->bypass->status == BYPASS_VALID)
             conditionValue = (*input).second->bypass->value;
         else
-            conditionValue = (*input).second->latchedValue;
+            conditionValue = (*input).second->digitalChannel->latchedValue;
+            // TODO - I BELEIVE THIS IS SUPPOSED TO BE 
+            // conditionValue = (*input).second->digitalChannel->latchedValue;
+            // If you change it, then you probably dont need to reference the faultInput anyways, it
+            // is redundant. The faultInput is used mainly to hold bitPosition and the faultId. 
         // 'value' is the ignore condition value that needs to be matched in order to ignore fault
         bool newConditionState = false;
         if ((*ignoreCondition).second->value == conditionValue) {

@@ -73,24 +73,24 @@ class BypassTest {
       // Now bypass the OTR IN limit switch to 0 and
       // OTR OUT limit switch to 1, i.e. screen is OUT
       // YAG01_OUT - NOT_OUT
-      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 1, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(BYPASS_DIGITAL, 1, /* deviceId */
 				       1 /* bypass value */, 100 /* until */, true);
       // YAG01_IN - IN
-      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 2, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(BYPASS_DIGITAL, 2, /* deviceId */
 				       0 /* bypass value */, 100 /* until*/, true);
 
       // GUN_TEMP - Fault
-      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 3, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(BYPASS_DIGITAL, 3, /* deviceId */
 				       0 /* bypass value */, 110 /* until */, true);
       // Waveguide TEMP Ok
-      Engine::getInstance()._bypassManager->setBypass(Engine::getInstance()._mpsDb, BYPASS_DIGITAL, 4, /* deviceId */
+      Engine::getInstance()._bypassManager->setBypass(BYPASS_DIGITAL, 4, /* deviceId */
 				       1 /* bypass value */, 110 /* until*/, true);
 
       // BPM01 - Threshold 0 for X (thresholdIndex = 0)
-      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 9, 0, 300, 0, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(BYPASS_ANALOG, 9, 0, 300, 0, true);
 
       // BPM02 - Threshold 0 for Y (thresholdIndex = 8)
-      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 10, 0, 300, 8, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(BYPASS_ANALOG, 10, 0, 300, 8, true);
 
       Engine::getInstance()._bypassManager->printBypassQueue();
 
@@ -102,10 +102,10 @@ class BypassTest {
   void cancelBypass() {
     try {
        // BPM01 X T0
-      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 9, 0, 0, 0, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(BYPASS_ANALOG, 9, 0, 0, 0, true);
 
        // BPM02 Y T0
-      Engine::getInstance()._bypassManager->setThresholdBypass(Engine::getInstance()._mpsDb, BYPASS_ANALOG, 10, 0, 0, 8, true);
+      Engine::getInstance()._bypassManager->setThresholdBypass(BYPASS_ANALOG, 10, 0, 0, 8, true);
     } catch (CentralNodeException &e) {
       std::cerr << e.what() << std::endl;
     }

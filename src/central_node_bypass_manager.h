@@ -35,21 +35,22 @@ class BypassManager {
   std::mutex mutex;
   bool initialized;
   static bool refreshFirmwareConfiguration;
+  MpsDbPtr _mpsDb;
 
  public:
   BypassManager();
   ~BypassManager();
   void createBypassMap(MpsDbPtr db);
-  void assignBypass(MpsDbPtr db);
+  void assignBypass();
   void checkBypassQueue(time_t testTime = 0);
-  void setThresholdBypass(MpsDbPtr db, BypassType bypassType,
+  void setThresholdBypass(BypassType bypassType,
 			  uint32_t channelId, uint32_t value, time_t bypassUntil,
 			  int thresholdIndex, bool test = false);
-  void setBypass(MpsDbPtr db, BypassType bypassType, uint32_t channelId,
+  void setBypass(BypassType bypassType, uint32_t id,
 		 uint32_t value, time_t bypassUntil, bool test = false);
   void printBypassQueue();
   bool isInitialized();
-  void bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultStateId, time_t bypassUntil);
+  void bypassFault(uint32_t faultId, uint32_t faultStateId, time_t bypassUntil);
 
   void startBypassThread();
   void stopBypassThread();

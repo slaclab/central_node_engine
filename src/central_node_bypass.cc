@@ -60,8 +60,12 @@ void BypassManager::stopBypassThread() {
  * when the engine loads its first configuration. The number and types of
  * inputs must be the same for all configurations loaded. The bypass information
  * is shared by the loaded configs.
+ * Also initializes MpsDbPtr private variable for BypassManager
  */
 void BypassManager::createBypassMap(MpsDbPtr db) {
+
+  // Set BypassManager db
+  _mpsDb = db; 
 
   LOG_TRACE("BYPASS", "Creating bypass map");
 
@@ -70,8 +74,8 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
 
   int bypassId = 0;
 
-  for (DbApplicationCardMap::iterator appCard = db->applicationCards->begin();
-      appCard != db->applicationCards->end(); appCard++) {
+  for (DbApplicationCardMap::iterator appCard = _mpsDb->applicationCards->begin();
+      appCard != _mpsDb->applicationCards->end(); appCard++) {
     InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
     bypass->appId = (*appCard).second->id;
@@ -87,8 +91,8 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
   }
 
-  for (DbFaultInputMap::iterator input = db->faultInputs->begin();
-       input != db->faultInputs->end(); ++input) {
+  for (DbFaultInputMap::iterator input = _mpsDb->faultInputs->begin();
+       input != _mpsDb->faultInputs->end(); ++input) {
     InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
     bypass->channelId = (*input).second->id;
@@ -108,8 +112,8 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
   }
 
-  for (DbAnalogChannelMap::iterator analogInput = db->analogChannels->begin();
-       analogInput != db->analogChannels->end(); ++analogInput) {
+  for (DbAnalogChannelMap::iterator analogInput = _mpsDb->analogChannels->begin();
+       analogInput != _mpsDb->analogChannels->end(); ++analogInput) {
     uint32_t integratorsPerChannel = ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL;
     // Create one InputBypass for each integrator (max of 4 integrators)
     for (uint32_t i = 0; i < integratorsPerChannel; ++i) {
@@ -141,7 +145,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
  * if there are bypasses without inputs or inputs without bypasses an exception is
  * thrown.
  */
-void BypassManager::assignBypass(MpsDbPtr db) {
+void BypassManager::assignBypass() {
 
   std::stringstream errorStream;
   LOG_TRACE("BYPASS", "Assigning bypass slots to MPS database inputs (analog/digital)");
@@ -153,8 +157,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
     int inputId = (*bypass).second->channelId;
     if ((*bypass).second->type == BYPASS_APPLICATION) {
       int appId = (*bypass).second->appId;
-      DbApplicationCardMap::iterator appCard = db->applicationCards->find(appId);
-      if (appCard == db->applicationCards->end()) {
+      DbApplicationCardMap::iterator appCard = _mpsDb->applicationCards->find(appId);
+      if (appCard == _mpsDb->applicationCards->end()) {
         errorStream << "ERROR: Failed to find applicationCard ("
 		    << appId << ") when assigning application bypass";
 	      throw(CentralNodeException(errorStream.str()));
@@ -164,8 +168,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
       }
     }
     else if ((*bypass).second->type == BYPASS_DIGITAL) {
-      DbFaultInputMap::iterator digitalInput = db->faultInputs->find(inputId);
-      if (digitalInput == db->faultInputs->end()) {
+      DbFaultInputMap::iterator digitalInput = _mpsDb->faultInputs->find(inputId);
+      if (digitalInput == _mpsDb->faultInputs->end()) {
 	      errorStream << "ERROR: Failed to find FaultInput ("
 		    << inputId << ") when assigning digital bypass";
 	      throw(CentralNodeException(errorStream.str()));
@@ -179,8 +183,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
       }
     }
     else { // BYPASS_ANALOG
-      DbAnalogChannelMap::iterator analogInput = db->analogChannels->find(inputId);
-      if (analogInput == db->analogChannels->end()) {
+      DbAnalogChannelMap::iterator analogInput = _mpsDb->analogChannels->find(inputId);
+      if (analogInput == _mpsDb->analogChannels->end()) {
       	errorStream << "ERROR: Failed to find FaultInput ("
 		    << inputId << ") when assigning analog bypass";
         throw(CentralNodeException(errorStream.str()));
@@ -196,8 +200,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   errorStream << "ERROR: Failed to find bypass for FaultInputs [";
   bool error = false;
   bool first = true;
-  for (DbFaultInputMap::iterator digitalInput = db->faultInputs->begin();
-       digitalInput != db->faultInputs->end(); ++digitalInput) {
+  for (DbFaultInputMap::iterator digitalInput = _mpsDb->faultInputs->begin();
+       digitalInput != _mpsDb->faultInputs->end(); ++digitalInput) {
     if (!(*digitalInput).second->bypass) {
       if (!first) {
 	      errorStream << ", ";
@@ -209,8 +213,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   }
   errorStream << "]; AnalogChannels [";
   first = true;
-  for (DbAnalogChannelMap::iterator analogInput = db->analogChannels->begin();
-       analogInput != db->analogChannels->end(); ++analogInput) {
+  for (DbAnalogChannelMap::iterator analogInput = _mpsDb->analogChannels->begin();
+       analogInput != _mpsDb->analogChannels->end(); ++analogInput) {
     if (!(*analogInput).second->bypass) {
       if (!first) {
 	      errorStream << ", ";
@@ -222,8 +226,8 @@ void BypassManager::assignBypass(MpsDbPtr db) {
   }
   errorStream << "]; ApplicationCards [";
   first = true;
-  for (DbApplicationCardMap::iterator appCard = db->applicationCards->begin();
-       appCard != db->applicationCards->end(); ++appCard) {
+  for (DbApplicationCardMap::iterator appCard = _mpsDb->applicationCards->begin();
+       appCard != _mpsDb->applicationCards->end(); ++appCard) {
     if (!(*appCard).second->bypass) {
       if (!first) {
 	      errorStream << ", ";
@@ -340,27 +344,21 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
 
         top.second->status = BYPASS_EXPIRED;
         LOG_TRACE("BYPASS", "Setting status to BYPASS_EXPIRED");
-        // if (top.second->type != BYPASS_APPLICATION) {
-        //   MpsDbPtr _mpsDb;
-        //   TODO - this seems like the best spot to set fault->bypassed to false.
-        //   Problem - No db passed in, may want to make a MpsDbPtr private variable for bypassManager
-              // And be sure to remove passing in mps db if you do. this will work because its the pointer to the DB
-              // so it will have the live data if modified somewhere else like in the engine or the database.cc.
-
-        //   // Find fault associated with the channel
-        //   // Loop through the faultInputs, and find the matching channelId, and with that faultInput, you have its ->faultId
-        //   for(DbFaultInputMap::iterator faultInputIt =)
-        //   DbFaultMap::iterator faultInputIt = db->faults->find(top.second->id);
-        //   DbFaultMap::iterator faultIt = db->faults->find((*faultInputIt).second->faultId);
-        //   if (faultIt != db->faults->end()) {
-
-        //   }
-        //   else {
-        //     errorStream << "ERROR: Failed to find fault[" << faultId
-        //     << "] while popping bypass queue";
-        //     throw(CentralNodeException(errorStream.str()));
-        //   }
-        // }
+        if (top.second->type != BYPASS_APPLICATION) {
+          // Reset fault->bypassed field
+          // Find fault associated with the channel
+          for (DbFaultInputMap::iterator faultInputIt = _mpsDb->faultInputs->begin();
+              faultInputIt != _mpsDb->faultInputs->end();
+              faultInputIt++) {
+              if ((*faultInputIt).second->channelId == top.second->channelId) {
+                DbFaultMap::iterator faultIt = _mpsDb->faults->find((*faultInputIt).second->faultId);
+                if (faultIt != _mpsDb->faults->end()) {
+                  (*faultIt).second->bypassed = false;
+                }
+                break;
+              }
+          }
+        }
         
       }
       return true;
@@ -405,13 +403,13 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
  * to be added will be the the one that controls the bypass value
  * and when it expires
  */
-void BypassManager::setBypass(MpsDbPtr db, BypassType bypassType,
-			      uint32_t channelId, uint32_t value, time_t bypassUntil,
+void BypassManager::setBypass(BypassType bypassType,
+			      uint32_t id, uint32_t value, time_t bypassUntil,
 			      bool test) {
-  setThresholdBypass(db, bypassType, channelId, value, bypassUntil, -1, test);
+  setThresholdBypass(bypassType, id, value, bypassUntil, -1, test);
 }
 
-void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
+void BypassManager::setThresholdBypass(BypassType bypassType,
 				       uint32_t id, uint32_t value, time_t bypassUntil,
 				       int intIndex, bool test) {
 
@@ -422,8 +420,8 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
   // Find the channel and its bypass - all channels must have a bypass assigned.
   // The assignment must be after the BypassManager is created.
   if (bypassType == BYPASS_APPLICATION) {
-    DbApplicationCardMap::iterator applicationCard = db->applicationCards->find(id);
-    if (applicationCard == db->applicationCards->end()) {
+    DbApplicationCardMap::iterator applicationCard = _mpsDb->applicationCards->find(id);
+    if (applicationCard == _mpsDb->applicationCards->end()) {
       errorStream << "ERROR: Failed to find ApplicationCard[" << id
 		  << "] while setting bypass";
       throw(CentralNodeException(errorStream.str()));
@@ -431,8 +429,9 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     bypass = (*applicationCard).second->bypass;
   }
   else if (bypassType == BYPASS_DIGITAL) {
-    DbFaultInputMap::iterator digitalInput = db->faultInputs->find(id);
-    if (digitalInput == db->faultInputs->end()) {
+    // If digital, then the id = faultInput->id not the channelId
+    DbFaultInputMap::iterator digitalInput = _mpsDb->faultInputs->find(id);
+    if (digitalInput == _mpsDb->faultInputs->end()) {
       errorStream << "ERROR: Failed to find FaultInput[" << id
 		  << "] while setting bypass";
       throw(CentralNodeException(errorStream.str()));
@@ -440,8 +439,8 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
     bypass = (*digitalInput).second->bypass;
   }
   else {
-    DbAnalogChannelMap::iterator analogInput = db->analogChannels->find(id);
-    if (analogInput == db->analogChannels->end()) {
+    DbAnalogChannelMap::iterator analogInput = _mpsDb->analogChannels->find(id);
+    if (analogInput == _mpsDb->analogChannels->end()) {
       errorStream << "ERROR: Failed to find AnalogChannel[" << id
 		  << "] while setting bypass";
       throw(CentralNodeException(errorStream.str()));
@@ -504,7 +503,7 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
           uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
           *bypassMask &= m;
         }
-
+        std::cout << "bypassEntry ch id: " << bypass->channelId << std::endl; // TEMP
         bypassQueue.push(newEntry);
       }
       if (bypass->type == BYPASS_APPLICATION) {
@@ -516,12 +515,12 @@ void BypassManager::setThresholdBypass(MpsDbPtr db, BypassType bypassType,
 }
 
 /* Function to bypass a fault to a certain fault state for X amount of time*/
-void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultStateId, time_t bypassUntil) {
+void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t bypassUntil) {
 
   // Gather the fault, faultState, and faultInput objects, and do error checks.
   std::stringstream errorStream;
-  DbFaultMap::iterator faultIt = db->faults->find(faultId);
-  if (faultIt == db->faults->end()) {
+  DbFaultMap::iterator faultIt = _mpsDb->faults->find(faultId);
+  if (faultIt == _mpsDb->faults->end()) {
     errorStream << "ERROR: Failed to find fault[" << faultId
     << "] while setting bypass";
     throw(CentralNodeException(errorStream.str()));
@@ -531,8 +530,8 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
   
   // Digital Fault
   if ((*initialInputIt).second->digitalChannel) {
-    DbFaultStateMap::iterator faultState = db->faultStates->find(faultStateId);
-    if (faultState == db->faultStates->end()) {
+    DbFaultStateMap::iterator faultState = _mpsDb->faultStates->find(faultStateId);
+    if (faultState == _mpsDb->faultStates->end()) {
       errorStream << "ERROR: Failed to find faultState[" << faultStateId
       << "] while setting bypass";
       throw(CentralNodeException(errorStream.str()));
@@ -550,10 +549,10 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
         inputIt != currentFaultInputs->end();
         inputIt++) 
     {
-      uint32_t channelId = (*inputIt).second->digitalChannel->id;
+      uint32_t faultInputId = (*inputIt).second->id;
       uint32_t curBitPos = (*inputIt).second->bitPosition;
       uint32_t curVal = stateValue[curBitPos];
-      setBypass(db, BYPASS_DIGITAL, channelId, curVal, bypassUntil);
+      setBypass(BYPASS_DIGITAL, faultInputId, curVal, bypassUntil);
     }
     History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
     std::cout << "Logged Digital fault bypass - " << faultId << std::endl; // TEMP 
@@ -568,7 +567,7 @@ void BypassManager::bypassFault(MpsDbPtr db, uint32_t faultId, uint32_t faultSta
     {
       uint32_t channelId = (*inputIt).second->analogChannel->id;
       uint32_t integrator = (*inputIt).second->analogChannel->integrator;
-      setThresholdBypass(db, BYPASS_ANALOG, channelId, 0, bypassUntil, integrator);
+      setThresholdBypass(BYPASS_ANALOG, channelId, 0, bypassUntil, integrator);
     }
     History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
     std::cout << "Logged Analog fault bypass - " << faultId << std::endl; // TEMP 

@@ -308,6 +308,7 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   // the firmware will apply the fastPowerClass/fastDestinationMask
   uint8_t fastExpectedState;
 
+  void unlatch();
   void update(uint32_t v);
   void update();
 
@@ -405,9 +406,6 @@ class DbFaultInput : public DbEntry, public DbApplicationCardInput {
   uint32_t channelId; // DbDigitalChannel or DbAnalogChannel
   uint32_t bitPosition;
 
-  // Values calculated at run time
-  uint32_t value;
-
   // A fault input may come from a digital channel or analog channel threshold fault bits
   DbAnalogChannelPtr analogChannel;
   DbDigitalChannelPtr digitalChannel;
@@ -416,9 +414,6 @@ class DbFaultInput : public DbEntry, public DbApplicationCardInput {
   uint32_t wasLowBit;
   uint32_t wasHighBit;
   uint32_t previousValue;
-
-  // Latched value
-  uint32_t latchedValue;
 
   // Count 'was high'=0 & 'was low'=0
   uint32_t invalidValueCount;
@@ -429,10 +424,6 @@ class DbFaultInput : public DbEntry, public DbApplicationCardInput {
   // Set true if this input is used by a fast evaluated device (must be the only input to device)
   bool fastEvaluation;
   bool configured;
-
-  void unlatch();
-  void update(uint32_t v);
-  void update();
 
   DbFaultInput();
 
