@@ -272,7 +272,7 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   // Channel input value must be read from the Central Node Firmware
   uint32_t wasLowBit;
   uint32_t wasHighBit;
-  uint32_t value; // calculated from the faultInput - one or zero.
+  uint32_t value;
   uint32_t previousValue;
 
   // Latched value
@@ -290,7 +290,12 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
   DbFaultInputMapPtr faultInputs; 
   DbFaultStateMapPtr faultStates;
 
+  // Set true if this input is used by a fast evaluated device (must be the only input to device)
+  bool fastEvaluation;
   bool configured;
+
+  // Pointer to the bypass for this digital channel
+  InputBypassPtr bypass;
 
   /**
    * These fields get populated when the database is loaded, they are
@@ -399,7 +404,7 @@ typedef boost::shared_ptr<DbApplicationCardMap> DbApplicationCardMapPtr;
 /**
  * DbFaultInput YAML class
  */
-class DbFaultInput : public DbEntry, public DbApplicationCardInput {
+class DbFaultInput : public DbEntry {
  public:
   // Values loaded from YAML file
   uint32_t faultId;
@@ -417,13 +422,6 @@ class DbFaultInput : public DbEntry, public DbApplicationCardInput {
 
   // Count 'was high'=0 & 'was low'=0
   uint32_t invalidValueCount;
-
-  // Pointer to the bypass for this input
-  InputBypassPtr bypass;
-
-  // Set true if this input is used by a fast evaluated device (must be the only input to device)
-  bool fastEvaluation;
-  bool configured;
 
   DbFaultInput();
 

@@ -640,7 +640,6 @@ namespace YAML {
 	  field = "fault_id";
 	  faultInput->faultId = (*it)[field].as<unsigned int>();
 
-	  faultInput->value = 0;
   	} catch(YAML::InvalidNode &e) {
 	  errorStream << "ERROR: Failed to find field " << field << " for FaultInput.";
 	  throw(DbException(errorStream.str()));

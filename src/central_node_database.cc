@@ -130,7 +130,6 @@ void MpsDb::unlatchAll() {
     for (DbDigitalChannelMap::iterator it = digitalChannels->begin();
          it != digitalChannels->end(); ++it) {
       (*it).second->unlatch();
-    //  TODO - You may need to change this to (*it).second->digitalChannel->unlatch();
     }
 }
 /**
@@ -370,12 +369,6 @@ void MpsDb::configureFaultInputs()
     
                 (*faultInputIt).second->analogChannel = (*analogChannelIt).second;
 
-                // Check if faultInput is evaluated in firmware, set fastEvaluation
-                if ((*faultInputIt).second->analogChannel->evaluation == FAST_EVALUATION) 
-                    (*faultInputIt).second->fastEvaluation = true;
-                else
-                    (*faultInputIt).second->fastEvaluation = false;
-
                 if ((*analogChannelIt).second->evaluation == FAST_EVALUATION)
                 {
                     LOG_TRACE("DATABASE", "AnalogChannel " << (*analogChannelIt).second->name
@@ -504,12 +497,6 @@ void MpsDb::configureFaultInputs()
         else
         {
             (*faultInputIt).second->digitalChannel = (*digitalChannelIt).second;
-
-            // Check if faultInput is evaluated in firmware, set fastEvaluation
-            if ((*faultInputIt).second->digitalChannel->evaluation == FAST_EVALUATION) 
-                (*faultInputIt).second->fastEvaluation = true;
-            else
-                (*faultInputIt).second->fastEvaluation = false;
 
             // If the DbDigitalChannel is set for fast evaluation, save a pointer to the
             // DbFaultInput
@@ -1394,6 +1381,7 @@ int MpsDb::load(std::string yamlFileName)
 
 /**
  * Print out the digital/analog inputs (DbFaultInput and DbAnalogChannels)
+ * This is only used in testing, Engine::showFaults() is production
  */
 void MpsDb::showFaults()
 {
@@ -1502,13 +1490,13 @@ void MpsDb::showFault(DbFaultPtr fault)
                         << "], Position[" << (*faultInput).second->bitPosition
                         << "], Bypass[";
 
-                    if (!(*faultInput).second->bypass)
+                    if (!(*faultInput).second->digitalChannel->bypass)
                     {
                         std::cout << "WARNING: NO BYPASS INFO]";
                     }
                     else
                     {
-                        if ((*faultInput).second->bypass->status == BYPASS_VALID)
+                        if ((*faultInput).second->digitalChannel->bypass->status == BYPASS_VALID)
                             std::cout << "VALID]";
                         else
                             std::cout << "EXPIRED]";

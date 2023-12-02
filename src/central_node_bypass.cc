@@ -91,18 +91,17 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
   }
 
-  for (DbFaultInputMap::iterator input = _mpsDb->faultInputs->begin();
-       input != _mpsDb->faultInputs->end(); ++input) {
+  for (DbDigitalChannelMap::iterator digitalInput = _mpsDb->digitalChannels->begin();
+       digitalInput != _mpsDb->digitalChannels->end(); ++digitalInput) {
     InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
-    bypass->channelId = (*input).second->id;
+    bypass->channelId = (*digitalInput).second->id;
     bypass->type = BYPASS_DIGITAL;
     bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
     bypass->status = BYPASS_EXPIRED;
     bypass->index = 0;
-    //    std::cout << (*input).second << std::endl;
-    if ((*input).second->fastEvaluation) {
+    if ((*digitalInput).second->evaluation == FAST_EVALUATION) {
       bypass->configUpdate = true;
     }
 
@@ -168,16 +167,16 @@ void BypassManager::assignBypass() {
       }
     }
     else if ((*bypass).second->type == BYPASS_DIGITAL) {
-      DbFaultInputMap::iterator digitalInput = _mpsDb->faultInputs->find(inputId);
-      if (digitalInput == _mpsDb->faultInputs->end()) {
-	      errorStream << "ERROR: Failed to find FaultInput ("
+      DbDigitalChannelMap::iterator digitalInput = _mpsDb->digitalChannels->find(inputId);
+      if (digitalInput == _mpsDb->digitalChannels->end()) {
+	      errorStream << "ERROR: Failed to find DigitalChannel ("
 		    << inputId << ") when assigning digital bypass";
 	      throw(CentralNodeException(errorStream.str()));
       }
       else {
         (*digitalInput).second->bypass = (*bypass).second;
         // Make sure that changes to the bypass for this digital input causes firmware reload
-        if ((*digitalInput).second->fastEvaluation) {
+        if ((*digitalInput).second->evaluation == FAST_EVALUATION) {
           (*digitalInput).second->bypass->configUpdate = true;
         }
       }
@@ -197,11 +196,11 @@ void BypassManager::assignBypass() {
   }
 
   // Now makes sure all digital/analog inputs and applicationCards have a bypass assigned.
-  errorStream << "ERROR: Failed to find bypass for FaultInputs [";
+  errorStream << "ERROR: Failed to find bypass for DigitalChannels [";
   bool error = false;
   bool first = true;
-  for (DbFaultInputMap::iterator digitalInput = _mpsDb->faultInputs->begin();
-       digitalInput != _mpsDb->faultInputs->end(); ++digitalInput) {
+  for (DbDigitalChannelMap::iterator digitalInput = _mpsDb->digitalChannels->begin();
+       digitalInput != _mpsDb->digitalChannels->end(); ++digitalInput) {
     if (!(*digitalInput).second->bypass) {
       if (!first) {
 	      errorStream << ", ";
@@ -429,10 +428,9 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
     bypass = (*applicationCard).second->bypass;
   }
   else if (bypassType == BYPASS_DIGITAL) {
-    // If digital, then the id = faultInput->id not the channelId
-    DbFaultInputMap::iterator digitalInput = _mpsDb->faultInputs->find(id);
-    if (digitalInput == _mpsDb->faultInputs->end()) {
-      errorStream << "ERROR: Failed to find FaultInput[" << id
+    DbDigitalChannelMap::iterator digitalInput = _mpsDb->digitalChannels->find(id);
+    if (digitalInput == _mpsDb->digitalChannels->end()) {
+      errorStream << "ERROR: Failed to find DigitalChannel[" << id
 		  << "] while setting bypass";
       throw(CentralNodeException(errorStream.str()));
     }
@@ -503,12 +501,10 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
           uint32_t m = ~(0xFF << (intIndex * ANALOG_CHANNEL_INTEGRATORS_SIZE)); // zero the bypassed threshold bit
           *bypassMask &= m;
         }
-        std::cout << "bypassEntry ch id: " << bypass->channelId << std::endl; // TEMP
         bypassQueue.push(newEntry);
       }
       if (bypass->type == BYPASS_APPLICATION) {
         History::getInstance().logBypassApplication(id, bypassUntil);
-        std::cout << "Logged application bypass - " << id << std::endl; // TEMP
       }
     }
   }
@@ -549,13 +545,12 @@ void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t 
         inputIt != currentFaultInputs->end();
         inputIt++) 
     {
-      uint32_t faultInputId = (*inputIt).second->id;
+      uint32_t channelId = (*inputIt).second->digitalChannel->id;
       uint32_t curBitPos = (*inputIt).second->bitPosition;
       uint32_t curVal = stateValue[curBitPos];
-      setBypass(BYPASS_DIGITAL, faultInputId, curVal, bypassUntil);
+      setBypass(BYPASS_DIGITAL, channelId, curVal, bypassUntil);
     }
     History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
-    std::cout << "Logged Digital fault bypass - " << faultId << std::endl; // TEMP 
     (*faultIt).second->bypassed = true;
   }
 
@@ -570,7 +565,6 @@ void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t 
       setThresholdBypass(BYPASS_ANALOG, channelId, 0, bypassUntil, integrator);
     }
     History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
-    std::cout << "Logged Analog fault bypass - " << faultId << std::endl; // TEMP 
     (*faultIt).second->bypassed = true;
   }
 

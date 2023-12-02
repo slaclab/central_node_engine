@@ -85,8 +85,8 @@ void DbDigitalChannel::unlatch() {
 }
 
 DbDigitalChannel::DbDigitalChannel() : DbEntry(), number(999), cardId(999),
-            z_name(""), o_name(""), debounce(0),
-            invalidValueCount(0), alarm_state(0), z_location(0), auto_reset(0) {
+            z_name(""), o_name(""), debounce(0), value(0), latchedValue(0),
+            previousValue(0), invalidValueCount(0), alarm_state(0), z_location(0), auto_reset(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChannel) {
@@ -96,9 +96,9 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
      << "number[" << digitalChannel->number << "]; " << std::endl
      << TAB_8 << "z_name[" << digitalChannel->z_name << "]; " 
      << "o_name[" << digitalChannel->o_name << "]; "
-     << "debounce[" << digitalChannel->debounce << "]; "
-     << "alarm_state[" << digitalChannel->alarm_state << "]; " << std::endl
-     << TAB_8 << "z_location[" << digitalChannel->z_location << "]; " 
+     << "debounce[" << digitalChannel->debounce << "]; " << std::endl
+     << TAB_8 << "alarm_state[" << digitalChannel->alarm_state << "]; "
+     << "z_location[" << digitalChannel->z_location << "]; " 
      << "auto_reset[" << digitalChannel->auto_reset << "]; ";
 
   if (digitalChannel->evaluation == FAST_EVALUATION) {
@@ -107,10 +107,15 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
   else {
     os << "eval=slow : ";
   }
-  os << "faultValue=" << digitalChannel->faultValue << " : " << std::endl;
-  os << TAB_8 << "value=" << std::hex << digitalChannel->value << std::dec << " : "
-  << "latchedValue=" << digitalChannel->latchedValue << " : ";
-  os   << "modeActive=" << digitalChannel->modeActive;
+  os << std::endl << TAB_8 << "wasLow=" << digitalChannel->wasLowBit << " : " 
+     << "wasHigh=" << digitalChannel->wasHighBit << " : "
+     << "value=" << std::hex << digitalChannel->value << std::dec << " : " 
+     << "latchedValue=" << std::hex << digitalChannel->latchedValue << std::dec << " : "; 
+  if (digitalChannel->bypass->status == BYPASS_VALID) {
+    os << "[Bypassed to " << std::hex << digitalChannel->bypass->value << std::dec << "] ";
+  }
+  os << std::endl << TAB_8 << "modeActive=" << digitalChannel->modeActive;
+  
 
   if (digitalChannel->ignored) {
     os << " : ignored=YES";
@@ -192,8 +197,7 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
      << "gain_bay[" << analogChannel->gain_bay << "]; "
      << "gain_channel[" << analogChannel->gain_channel << "]; " << std::endl
      << TAB_8 << "z_location[" << analogChannel->z_location << "]; "
-     << "auto_reset[" << analogChannel->auto_reset << "]; "
-     << "evaluation[" << analogChannel->evaluation << "]; ";
+     << "auto_reset[" << analogChannel->auto_reset << "]; ";
 
   if (analogChannel->evaluation == FAST_EVALUATION) {
     os << "eval=fast : ";
@@ -204,12 +208,12 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
 
   os << std::endl << TAB_8 << "value=0x" << std::hex << analogChannel->value << std::dec << " : "
      << "latchedValue=0x" << std::hex << analogChannel->latchedValue << std::dec << " : "
-     << "modeActive=" << analogChannel->modeActive << " : ";
+     << "modeActive=" << analogChannel->modeActive;
   if (analogChannel->ignored) {
-    os << "  ignored=YES";
+    os << " : ignored=YES";
   }
   else {
-    os << "  ignored=no";
+    os << " : ignored=no";
   }
   os << std::endl << TAB_8 << " [";
   for (uint32_t i = 0; i < ANALOG_CHANNEL_MAX_INTEGRATORS_PER_CHANNEL; ++i) {
@@ -334,8 +338,7 @@ std::ostream & operator<<(std::ostream &os, DbApplicationCard * const appCard) {
 }
 
 DbFaultInput::DbFaultInput() : DbEntry(), faultId(999), channelId(999),
-         bitPosition(999), value(0), previousValue(0),
-         invalidValueCount(0), fastEvaluation(false) {
+         bitPosition(999) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
@@ -350,19 +353,6 @@ std::ostream & operator<<(std::ostream &os, DbFaultInput * const faultInput) {
   else {
     os << "card[" << faultInput->digitalChannel->cardId << "]; ";
   } 
-
-
-  os << "value[" << faultInput->value << "]; " << std::endl << TAB_8 << "wasLow[" << faultInput->wasLowBit << "]; wasHigh[" 
-     << faultInput->wasHighBit << "]; ";
-
-  if (faultInput->fastEvaluation) {
-    os << " [in fast device] ";
-  }
-  if (faultInput->bypass) {
-    if (faultInput->bypass->status == BYPASS_VALID) {
-      os << "[Bypassed to " << faultInput->bypass->value << "] ";
-    }
-  }
   return os;
 }
 

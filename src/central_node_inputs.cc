@@ -329,34 +329,26 @@ bool DbApplicationCard::updateInputs() {
     if (!bypassed) {
       Firmware::getInstance().setAppTimeoutEnable(id, false, false); // Don't write to fw, since the active != oldactive will cause a reload ahead
       bypassed = true;
-      std::cout << "DISABLING TIMEOUT ON APPCARD: " << id << std::endl;// TEMP
     }
   }
   else {
     if (bypassed) {
       Firmware::getInstance().setAppTimeoutEnable(id, true, false);
       bypassed = false;
-      std::cout << "ENABLING TIMEOUT ON APPCARD: " << id << std::endl;// TEMP
     }
   }
 
   // Ignore condition check - seperate from bypass because it is not a result of human operator bypass
-  // TODO: 
-  // 1) THE INTERFACE to ignoreStatus is a digital channel like the other ignored. 
-  // 2) See if ignoreCondition needs to have an application card assigned, that can be evaluated in 
-  //    engine::evaluateIgnoreConditions() 
   if (ignoreStatus == true) { 
     if (!ignored) {
         Firmware::getInstance().setAppTimeoutEnable(id, false, false); // Don't write to fw, since the active != oldactive will cause a reload ahead
         ignored = true;
-        std::cout << "DISABLING TIMEOUT (ignore) ON APPCARD: " << id << std::endl;// TEMP
     }
   }
   else {
     if (ignored) {
       Firmware::getInstance().setAppTimeoutEnable(id, true, false);
       ignored = false;
-      std::cout << "ENABLING TIMEOUT (ignore) ON APPCARD: " << id << std::endl;// TEMP
     }
 
   }
@@ -463,7 +455,7 @@ void DbApplicationCard::writeDigitalConfiguration() {
 
         // Write the destination mask (index 4 through 19)
         // If bypass for device is valid leave destination mask set to zero - i.e. no mitigation
-        if ((*faultInput).second->bypass->status != BYPASS_VALID) {
+        if ((*faultInput).second->digitalChannel->bypass->status != BYPASS_VALID) {
           offset = DIGITAL_CHANNEL_DESTINATION_MASK_OFFSET;
           for (uint32_t i = 0; i < DESTINATION_MASK_BIT_SIZE; ++i) {
             bool bit = ((*digitalChannel).second->fastDestinationMask >> i) & 0x01;
