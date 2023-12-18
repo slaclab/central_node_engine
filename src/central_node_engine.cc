@@ -36,7 +36,7 @@ Engine::Engine()
     _unlatchTimer( "Unlatch timer",720 ),
     _setTentativeBeamClassTimer( "Set Tentative Beam Class", 720 ),
     _evaluateFaultsTimer( "evaluateFaultsTimer", 720 ),
-    _breakAnalogIgnoreTimer( "breakAnalogIgnoreTimer", 720 ),
+    _setChannelIgnoreTimer( "setChannelIgnoreTimer", 720 ),
     _evaluateIgnoreConditionsTimer( "evaluateIgnoreConditionsTimer", 720 ),
     _mitigateTimer( "mitigateTimer", 720 ),
     _setAllowedBeamClassTimer( "setAllowedBeamClassTimer", 720 ),
@@ -330,18 +330,12 @@ bool Engine::setAllowedBeamClass()
 }
 
 /**
- * First goes through the list of DigitalChannels and updates the current state.
- * Second updates the FaultStates for each Fault.
- * At the end of this method all Digital Faults will have updated values,
- * i.e. the field 'faulted' gets updated based on the current machine state.
- *
- * TODO: bypass mask and values accessed by multiple threads
+ * Set the ignored field for each analog/digital channel.
+ * Based off modeActive (True - SC, False - NC)
+ * Ignore logic is focused at the fault level, but channel ignore is needed for appCard ignores
  */
-void Engine::evaluateFaults()
-{
-    _evaluateFaultsTimer.start();
-    bool faulted = false;
-
+void Engine::setChannelIgnore() {
+    _setChannelIgnoreTimer.start();
     for (DbDigitalChannelMap::iterator channel = _mpsDb->digitalChannels->begin();
         channel != _mpsDb->digitalChannels->end(); 
         ++channel)
@@ -353,6 +347,31 @@ void Engine::evaluateFaults()
             (*channel).second->ignored = !(*channel).second->modeActive;
         }
     }
+    
+    for (DbAnalogChannelMap::iterator channel = _mpsDb->analogChannels->begin();
+        channel != _mpsDb->analogChannels->end(); ++channel)
+    {
+        // If channel has no card assigned, then it cannot be evaluated.
+        if ((*channel).second->cardId != NO_CARD_ID &&
+            (*channel).second->evaluation != NO_EVALUATION)
+        {
+          (*channel).second->ignored = !(*channel).second->modeActive;
+        }
+    }
+    _setChannelIgnoreTimer.tick();
+    _setChannelIgnoreTimer.stop();
+}
+
+/**
+ * Updates the FaultStates for each Fault based off channel values.
+ * At the end of this method all Faults will have updated values,
+ * i.e. the field 'faulted' gets updated based on the current machine state.
+ */
+void Engine::evaluateFaults()
+{
+    _evaluateFaultsTimer.start();
+    bool faulted = false;
+
     // Update digital & analog Fault values and BeamDestination allowed class
     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
         fault != _mpsDb->faults->end();
@@ -360,24 +379,15 @@ void Engine::evaluateFaults()
     {
         LOG_TRACE("ENGINE", (*fault).second->name << " updating fault values");
         (*fault).second->sendUpdate = 0;
-        // (*fault).second->ignored = false; may remove
-        // First calculate the digital Fault value from its one or more digital fault inputs
         uint32_t faultValue = 0;
         for (DbFaultInputMap::iterator input = (*fault).second->faultInputs->begin();
             input != (*fault).second->faultInputs->end();
             ++input)
         {
-            
             int32_t inputValue = 0;
             if ((*input).second->digitalChannel)
             {
-                // Correct in the sense that digitalChannel is the one that has the latchedValue
-                // and we will not reference the faultInput->latchedValue but instead faultInput->digch->latchedValue
-                
-                // BUT what about the bypass? It seems that inputBypassPtr is kept in 
-                // analogChannel and faultInput for digitalChannel. To keep uniformity, inputBypassPtr 
-                // should also be moved to digitalChannel. Which makes more sense anyways since we are 
-                // bypassing channels not faultInputs, but think about this for a bit.
+                // Calculate the digital Fault value from its one or more digital fault inputs
                 if ((*input).second->digitalChannel->bypass->status == BYPASS_VALID)
                 {
                     inputValue = (*input).second->digitalChannel->bypass->value;
@@ -389,14 +399,21 @@ void Engine::evaluateFaults()
                 {
                     inputValue = (*input).second->digitalChannel->latchedValue; 
                 }
+
+                (*fault).second->faultedOffline = (*input).second->digitalChannel->faultedOffline;
+                (*fault).second->faultActive = (*input).second->digitalChannel->modeActive;
             }
             else
             {
+                // Calculate the analog fault value from one or more analog fault inputs
                 LOG_TRACE("ENGINE", (*input).second->analogChannel->name << " bypassMask=" << std::hex <<
                     (*input).second->analogChannel->bypassMask << ", value=" <<
                     (*input).second->analogChannel->value << std::dec);
 
                 inputValue = (*input).second->analogChannel->latchedValue & (*input).second->analogChannel->bypassMask;
+
+                (*fault).second->faultedOffline = (*input).second->analogChannel->faultedOffline;
+                (*fault).second->faultActive = (*input).second->analogChannel->modeActive;
             }
 
             faultValue |= (inputValue << (*input).second->bitPosition);
@@ -506,8 +523,6 @@ bool Engine::evaluateIgnoreConditions()
                 ++faultInput)
             {
                 if ((*faultInput).second->analogChannel) {
-                    (*fault).second->faultedOffline = (*faultInput).second->analogChannel->faultedOffline;
-                    (*fault).second->faultActive = (*faultInput).second->analogChannel->modeActive;
                     // Set analog channels ignore - used when writing analog configuration
                     if ((*faultInput).second->analogChannel->ignored != (*ignoreCondition).second->state) {
                         (*faultInput).second->analogChannel->ignored = (*ignoreCondition).second->state;
@@ -518,8 +533,6 @@ bool Engine::evaluateIgnoreConditions()
                     
                 }
                 else {
-                    (*fault).second->faultedOffline = (*faultInput).second->digitalChannel->faultedOffline;
-                    (*fault).second->faultActive = (*faultInput).second->digitalChannel->modeActive;
                      // Set digital channels ignore - used for ignoring app cards
                     if ((*faultInput).second->digitalChannel->ignored != (*ignoreCondition).second->state) {
                         (*faultInput).second->digitalChannel->ignored = (*ignoreCondition).second->state;
@@ -577,13 +590,16 @@ void Engine::mitigate()
     {
         uint32_t maximumClass = 100;
         uint32_t sendFaultId = (*fault).second->id;
-        int32_t sendOldValue = (*fault).second->worstState;
+        int32_t oldState = (*fault).second->displayState;
         int32_t currState = 0;
         if ((*fault).second->faulted) {
           currState = (*fault).second->displayState;
         }
+        // If faultedOffline, then do not mitigate
         if ((*fault).second->faultedOffline) {
           currState = -1;
+          // TODO: I beleive if currState=-1 then dont log it, its a waste of cpu, cause in
+          // the history server it'll be invalid anyways, but may ask if logged offline faults have any value
         }
         else { 
           for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
@@ -595,6 +611,8 @@ void Engine::mitigate()
               LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
               << (*fault).second->value << " (fault state="
               << (*state).second->name << ", value=" << (*state).second->value << ")");
+              // TODO: should move this if statement for states->allowedClasses in initial configuration load
+              // since that is the only time allowedClasses are added for states right?
               if ((*state).second->allowedClasses)
               {
                 for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
@@ -612,58 +630,33 @@ void Engine::mitigate()
                   }
                   if ((*allowed).second->beamClass->number < maximumClass) {
                     maximumClass = (*allowed).second->beamClass->number;
-                    currState = (*state).second->id;
+                    currState = (*state).second->id;                                        
                   }
                 }
               }
               else
               {
-                LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for "
-                  << (*fault).second->name << " fault");
+                LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for state["
+                  << (*state).second->id << "]");
               }
             }
           }
         }
-        if ( currState != (*fault).second->worstState) {
+        if ( currState != (*fault).second->displayState) {
           (*fault).second->sendUpdate = true;
+          std::cout << (*fault).second->id << " sendUpdate - True\n"; // TEMP
         }
         else {
           (*fault).second->sendUpdate = false;
         }
         (*fault).second->displayState = currState;
         if ((*fault).second->sendUpdate) {
-          History::getInstance().logFault(sendFaultId,sendOldValue,currState);
+          History::getInstance().logFault(sendFaultId,oldState,currState);
         }
-        (*fault).second->worstState = currState;
     }
     _mitigateTimer.tick();
     _mitigateTimer.stop();
 }
-
-void Engine::breakAnalogIgnore()
-{
-
-    _breakAnalogIgnoreTimer.start();
-    /* 
-    Each DbAnalogChannel needs to have its ignore flag set false.  It will be set
-    based on machine condition in next function
-    DbDigitalChannel has its ignore flag set to false in evaluateFaults(), so it does
-    not need to be set here.
-    */
-    for (DbAnalogChannelMap::iterator channel = _mpsDb->analogChannels->begin();
-        channel != _mpsDb->analogChannels->end(); ++channel)
-    {
-        // If channel has no card assigned, then it cannot be evaluated.
-        if ((*channel).second->cardId != NO_CARD_ID &&
-            (*channel).second->evaluation != NO_EVALUATION)
-        {
-          (*channel).second->ignored = !(*channel).second->modeActive;
-        }
-    }
-    _breakAnalogIgnoreTimer.tick();
-    _breakAnalogIgnoreTimer.stop();
-}
-
 
 int Engine::checkFaults()
 {
@@ -679,8 +672,8 @@ int Engine::checkFaults()
         std::unique_lock<std::mutex> lock(*_mpsDb->getMutex());
         _mpsDb->clearMitigationBuffer();
         setTentativeBeamClass();
+        setChannelIgnore();
         evaluateFaults();
-        breakAnalogIgnore();
         reload = evaluateIgnoreConditions();
         mitigate();
         setAllowedBeamClass();
@@ -755,8 +748,8 @@ void Engine::showStats()
         _evaluationCycleTime.show();
         _unlatchTimer.show();
         _setTentativeBeamClassTimer.show();
+        _setChannelIgnoreTimer.show();
         _evaluateFaultsTimer.show();
-        _breakAnalogIgnoreTimer.show();
         _evaluateIgnoreConditionsTimer.show();
         _mitigateTimer.show();
         _setAllowedBeamClassTimer.show();
@@ -1052,8 +1045,8 @@ void Engine::clearMaxTimers()
     _unlatchTimer.clear();
     _evaluationCycleTime.clear();
     _setTentativeBeamClassTimer.clear();
+    _setChannelIgnoreTimer.clear();
     _evaluateFaultsTimer.clear();
-    _breakAnalogIgnoreTimer.clear();
     _evaluateIgnoreConditionsTimer.clear();
     _mitigateTimer.clear();
     _setAllowedBeamClassTimer.clear();

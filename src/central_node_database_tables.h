@@ -197,7 +197,7 @@ class DbAnalogChannel : public DbEntry, public DbApplicationCardInput {
 
   // Faults from this devices are bypassed when ignored==true
   bool ignored;
-  bool faultedOffline; //true when app card has app timeout
+  bool faultedOffline; //true when app card has app timeout (or when app card is offline)
   bool modeActive; //true when SC mode, false when NC mode
 
 
@@ -283,7 +283,7 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
 
   // Faults from these channels are bypassed when ignored==true
   bool ignored;
-  bool faultedOffline; //true when app card has app timeout
+  bool faultedOffline; //true when app card has app timeout (or when app card is offline)
   bool modeActive; //true when SC mode, false when NC mode
 
   // Fault inputs and fault states built after the config is loaded
@@ -614,8 +614,7 @@ class DbFault : public DbEntry {
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
   uint32_t oldValue; // Calculated from the list of faultInputs
-  int32_t worstState; //most restrictive device state for this fault
-  int32_t displayState;
+  int32_t displayState; //Used as a holder for a previous state, and to display state to user
   DbFaultStateMapPtr faultStates; // Map of fault states for this fault
   DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active
                                                    // the default state not necessarily is a real fault

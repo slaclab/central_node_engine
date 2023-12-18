@@ -436,7 +436,8 @@ DbFault::DbFault() : DbEntry(), name(""), pv(""), faulted(true), ignored(false),
 std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
   os << "id[" << fault->id << "]; "
      << "name[" << fault->name << "]; "
-     << "value[" << fault->value << "]; " << std::endl
+     << "value[" << fault->value << "]; "
+     << "faultedOffline[" << fault->faultedOffline << "]; " << std::endl
      << TAB_8 << "faulted[" << fault->faulted << "]; "
      << "ignored[" << fault->ignored << "]; "
      << "bypassed[" << fault->bypassed << "]; "

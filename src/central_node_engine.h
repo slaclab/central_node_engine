@@ -108,7 +108,7 @@ private:
 
     void evaluateFaults();
     bool evaluateIgnoreConditions();
-    void breakAnalogIgnore();
+    void setChannelIgnore();
 
     MpsDbPtr _mpsDb;
     BypassManagerPtr _bypassManager;
@@ -131,7 +131,7 @@ private:
     Timer<double>  _evaluationCycleTime;
     Timer<double>  _setTentativeBeamClassTimer;
     Timer<double>  _evaluateFaultsTimer;
-    Timer<double>  _breakAnalogIgnoreTimer;
+    Timer<double>  _setChannelIgnoreTimer;
     Timer<double>  _evaluateIgnoreConditionsTimer;
     Timer<double>  _mitigateTimer;
     Timer<double>  _setAllowedBeamClassTimer;
