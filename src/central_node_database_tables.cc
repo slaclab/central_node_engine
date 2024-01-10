@@ -430,19 +430,23 @@ std::ostream & operator<<(std::ostream &os, DbFaultState * const faultState) {
   return os;
 }
 
-DbFault::DbFault() : DbEntry(), name(""), pv(""), faulted(true), ignored(false), bypassed(false), evaluation(SLOW_EVALUATION), value(0) {
+DbFault::DbFault() : DbEntry(), name(""), pv(""), faulted(true), ignored(false), evaluation(SLOW_EVALUATION), value(0) {
 }
 
 std::ostream & operator<<(std::ostream &os, DbFault * const fault) {
   os << "id[" << fault->id << "]; "
      << "name[" << fault->name << "]; "
-     << "value[" << fault->value << "]; "
-     << "faultedOffline[" << fault->faultedOffline << "]; " << std::endl
-     << TAB_8 << "faulted[" << fault->faulted << "]; "
-     << "ignored[" << fault->ignored << "]; "
-     << "bypassed[" << fault->bypassed << "]; "
+     << "faultedOffline[" << fault->faultedOffline << "]; " 
+     << "faulted[" << fault->faulted << "]; " << std::endl
+     << TAB_8 << "ignored[" << fault->ignored << "]; "
      << "evaluation[" << fault->evaluation << "]; "
-     << "pv[" << fault->pv << "]; " << std::endl << TAB_8;
+     << "pv[" << fault->pv << "]; " 
+     << "value[" << fault->value << "]; ";
+
+  if (fault->bypass->status == BYPASS_VALID) {
+    os << "[Bypassed to stateId " << fault->bypass->value << "] ";
+  }
+  os << std::endl << TAB_8;
 
   if (fault->faultInputs) {
     os << "FaultInputs[";

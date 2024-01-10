@@ -593,65 +593,55 @@ void Engine::mitigate()
         int32_t oldState = (*fault).second->displayState;
         int32_t currState = 0;
         if ((*fault).second->faulted) {
-          currState = (*fault).second->displayState;
+            currState = (*fault).second->displayState;
         }
         // If faultedOffline, then do not mitigate
         if ((*fault).second->faultedOffline) {
-          currState = -1;
-          // TODO: I beleive if currState=-1 then dont log it, its a waste of cpu, cause in
-          // the history server it'll be invalid anyways, but may ask if logged offline faults have any value
+            currState = -1;
+            // TODO: Add logic to not log offline faults, but ensure fault is logged
+            // as it enters offline (add to history server)
         }
         else { 
-          for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
-              state != (*fault).second->faultStates->end();
-              ++state)
-          {
-            if ((*state).second->active)
+            for (DbFaultStateMap::iterator state = (*fault).second->faultStates->begin();
+                state != (*fault).second->faultStates->end();
+                ++state)
             {
-              LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
-              << (*fault).second->value << " (fault state="
-              << (*state).second->name << ", value=" << (*state).second->value << ")");
-              // TODO: should move this if statement for states->allowedClasses in initial configuration load
-              // since that is the only time allowedClasses are added for states right?
-              if ((*state).second->allowedClasses)
-              {
-                for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
-                     allowed != (*state).second->allowedClasses->end();
-                     ++allowed)
+                if ((*state).second->active)
                 {
-                  if ((*allowed).second->beamDestination->tentativeBeamClass->number >=
-                     (*allowed).second->beamClass->number)
-                  {
-                    if ((*fault).second->evaluation == SLOW_EVALUATION ) {
-                      if ((*fault).second->ignored == false ) {
-                        (*allowed).second->beamDestination->tentativeBeamClass = (*allowed).second->beamClass;
-                      }
+                    LOG_TRACE("ENGINE", (*fault).second->name << " is faulted value="
+                    << (*fault).second->value << " (fault state="
+                    << (*state).second->name << ", value=" << (*state).second->value << ")");
+                    for (DbAllowedClassMap::iterator allowed = (*state).second->allowedClasses->begin();
+                        allowed != (*state).second->allowedClasses->end();
+                        ++allowed)
+                    {
+                        if ((*allowed).second->beamDestination->tentativeBeamClass->number >=
+                            (*allowed).second->beamClass->number)
+                        {
+                            if ((*fault).second->evaluation == SLOW_EVALUATION ) {
+                                if ((*fault).second->ignored == false ) {
+                                    (*allowed).second->beamDestination->tentativeBeamClass = (*allowed).second->beamClass;
+                                }
+                            }
+                        }
+                        if ((*allowed).second->beamClass->number < maximumClass) {
+                            maximumClass = (*allowed).second->beamClass->number;
+                            currState = (*state).second->id;                                        
+                        }
                     }
-                  }
-                  if ((*allowed).second->beamClass->number < maximumClass) {
-                    maximumClass = (*allowed).second->beamClass->number;
-                    currState = (*state).second->id;                                        
-                  }
                 }
-              }
-              else
-              {
-                LOG_TRACE("ENGINE", "WARN: no AllowedClasses found for state["
-                  << (*state).second->id << "]");
-              }
             }
-          }
         }
-        if ( currState != (*fault).second->displayState) {
-          (*fault).second->sendUpdate = true;
-          std::cout << (*fault).second->id << " sendUpdate - True\n"; // TEMP
+        if (currState != (*fault).second->displayState) {
+            (*fault).second->sendUpdate = true;
+            std::cout << (*fault).second->id << " sendUpdate - True\n"; // TEMP
         }
         else {
-          (*fault).second->sendUpdate = false;
+            (*fault).second->sendUpdate = false;
         }
         (*fault).second->displayState = currState;
-        if ((*fault).second->sendUpdate) {
-          History::getInstance().logFault(sendFaultId,oldState,currState);
+        if ((*fault).second->sendUpdate && currState != -1) {
+            History::getInstance().logFault(sendFaultId,oldState,currState);
         }
     }
     _mitigateTimer.tick();

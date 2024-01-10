@@ -83,7 +83,6 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
     bypass->status = BYPASS_EXPIRED;
-    bypass->index = 0;
 
     bypassId++;
 
@@ -134,6 +133,22 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
       bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
     }
   }
+
+  for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+       fault != _mpsDb->faults->end(); ++fault) {
+    InputBypass *bypass = new InputBypass();
+    bypass->id = bypassId;
+    bypass->faultId = (*fault).second->id;
+    bypass->type = BYPASS_FAULT;
+    bypass->until = 0; // time is seconds since 1970, this gets set later
+    // this field will get set later when bypasses start to be monitored
+    bypass->status = BYPASS_EXPIRED;
+
+    bypassId++;
+
+    InputBypassPtr bypassPtr = InputBypassPtr(bypass);
+    bypassMap->insert(std::pair<int, InputBypassPtr>(bypassId, bypassPtr));
+  }
 }
 
 /**
@@ -181,7 +196,7 @@ void BypassManager::assignBypass() {
         }
       }
     }
-    else { // BYPASS_ANALOG
+    else if ((*bypass).second->type == BYPASS_ANALOG) { // BYPASS_ANALOG
       DbAnalogChannelMap::iterator analogInput = _mpsDb->analogChannels->find(inputId);
       if (analogInput == _mpsDb->analogChannels->end()) {
       	errorStream << "ERROR: Failed to find FaultInput ("
@@ -191,6 +206,18 @@ void BypassManager::assignBypass() {
       else {
         (*analogInput).second->bypass[(*bypass).second->index] = (*bypass).second;
         (*bypass).second->bypassMask = &((*analogInput).second->bypassMask);
+      }
+    }
+    else {
+      int faultId = (*bypass).second->faultId;
+      DbFaultMap::iterator fault = _mpsDb->faults->find(faultId);
+      if (fault == _mpsDb->faults->end()) {
+        errorStream << "ERROR: Failed to find fault ("
+		    << faultId << ") when assigning fault bypass";
+	      throw(CentralNodeException(errorStream.str()));
+      }
+      else {
+        (*fault).second->bypass = (*bypass).second;
       }
     }
   }
@@ -232,6 +259,19 @@ void BypassManager::assignBypass() {
 	      errorStream << ", ";
       }
       errorStream << (*appCard).second->id;
+      error = true;
+      first = false;
+    }
+  }
+  errorStream << "]; Faults [";
+  first = true;
+  for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
+       fault != _mpsDb->faults->end(); ++fault) {
+    if (!(*fault).second->bypass) {
+      if (!first) {
+	      errorStream << ", ";
+      }
+      errorStream << (*fault).second->id;
       error = true;
       first = false;
     }
@@ -344,7 +384,7 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
         top.second->status = BYPASS_EXPIRED;
         LOG_TRACE("BYPASS", "Setting status to BYPASS_EXPIRED");
         if (top.second->type != BYPASS_APPLICATION) {
-          // Reset fault->bypassed field
+          // Reset fault->bypass status field
           // Find fault associated with the channel
           for (DbFaultInputMap::iterator faultInputIt = _mpsDb->faultInputs->begin();
               faultInputIt != _mpsDb->faultInputs->end();
@@ -352,7 +392,7 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
               if ((*faultInputIt).second->channelId == top.second->channelId) {
                 DbFaultMap::iterator faultIt = _mpsDb->faults->find((*faultInputIt).second->faultId);
                 if (faultIt != _mpsDb->faults->end()) {
-                  (*faultIt).second->bypassed = false;
+                  (*faultIt).second->bypass->status = BYPASS_EXPIRED;
                 }
                 break;
               }
@@ -551,7 +591,6 @@ void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t 
       setBypass(BYPASS_DIGITAL, channelId, curVal, bypassUntil);
     }
     History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
-    (*faultIt).second->bypassed = true;
   }
 
   // Analog Fault
@@ -565,8 +604,10 @@ void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t 
       setThresholdBypass(BYPASS_ANALOG, channelId, 0, bypassUntil, integrator);
     }
     History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
-    (*faultIt).second->bypassed = true;
   }
+  (*faultIt).second->bypass->status = BYPASS_VALID;
+  (*faultIt).second->bypass->value = faultStateId;
+  (*faultIt).second->bypass->until = bypassUntil;
 
 }
 

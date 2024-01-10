@@ -9,7 +9,8 @@
 enum BypassType {
   BYPASS_DIGITAL,
   BYPASS_ANALOG,
-  BYPASS_APPLICATION
+  BYPASS_APPLICATION,
+  BYPASS_FAULT
 };
 
 enum BypassStatus {
@@ -32,7 +33,7 @@ static const int BYPASS_APPLICATION_INDEX = 200;
 
 
 /**
- * Each FaultInput, AnalogChannel, applicationCard have a pointer to a instance of InputBypass.
+ * Each FaultInput, AnalogChannel, applicationCard, fault have a pointer to a instance of InputBypass.
  *
  * For inputs that are evaluated in firmware the bypass must be changed in
  * the application configuration memory.
@@ -52,6 +53,9 @@ class InputBypass {
 
   // Bypasses work for any applicationCard by setting its timeout enable to off.
   uint32_t appId; // Only set for applicationCard bypasses
+
+  // Bypasses work for any fault by setting its channels values to reach a desired fault state.
+  uint32_t faultId; // Only set for fault bypasses
 
   // This value is used to calculate the Fault value instead of the actual input value
   // Important: this bypass value is only used for slow evaluation.

@@ -342,7 +342,7 @@ class DbApplicationCard : public DbEntry {
   bool hasInputs; //True if number of inputs > 0
   bool active; //True when the application card is active, mode irrelevant
   bool bypassed; //Updated in updateThread - updateInputs. True when timeout enable = false. 
-  bool ignored; // Determines if app card is ignored and written in the FW
+  bool ignored; // Determines if app card is actually ignored and written in the FW
   bool ignoreStatus; // Set in PV interface if there are valid ignore conditions
 
   // Pointer to the bypass for this app
@@ -606,7 +606,9 @@ class DbFault : public DbEntry {
   // Configured after loading the YAML file
   bool faulted;
   bool ignored;
-  bool bypassed;
+  // bool bypassed;
+  // uint32_t bypassValue; // Used to store value from asynParameters in CentralNodeIoc
+
   bool sendUpdate;
   bool faultedOffline; // True when app card is offline
   bool faultActive; //true when SC mode, false when NC mode
@@ -614,6 +616,11 @@ class DbFault : public DbEntry {
   DbFaultInputMapPtr faultInputs; // A fault may be built by several devices
   uint32_t value; // Calculated from the list of faultInputs
   uint32_t oldValue; // Calculated from the list of faultInputs
+
+// TODO: Add a bypass pointer because we want the until, issue is do we want to create all of these objects 
+// as well in bypass.cc initialization?
+  InputBypassPtr bypass;
+
   int32_t displayState; //Used as a holder for a previous state, and to display state to user
   DbFaultStateMapPtr faultStates; // Map of fault states for this fault
   DbFaultStatePtr defaultFaultState; // Default fault state if no other fault is active

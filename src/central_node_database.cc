@@ -269,7 +269,6 @@ void MpsDb::configureAllowedClasses()
     }
 
     // Iterate through the faultStates and assign the allowed classes through its vector<uint> mitigationIds
-    std::vector<unsigned int> mitigationIds;
     for (DbFaultStateMap::iterator faultStateIt = faultStates->begin();
         faultStateIt != faultStates->end(); faultStateIt++) {
         // create allowedClasses map
@@ -280,7 +279,13 @@ void MpsDb::configureAllowedClasses()
         }
 
         // iterate through the faultStateIt->mitigationIds
+        std::vector<unsigned int> mitigationIds;
         mitigationIds = (*faultStateIt).second->mitigationIds;
+        if (mitigationIds.size() < 8) {
+            errorStream <<  "ERROR: Failed to configure database, " << 
+            "less than 8 mitigation destinations found for FaultState (" << (*faultStateIt).second->id << ")";
+            throw(DbException(errorStream.str()));
+        } 
         for (unsigned int mitigationId : mitigationIds) {
             DbAllowedClassMap::iterator allowedClassIt = allowedClasses->find(mitigationId);
             if (allowedClassIt != allowedClasses->end())
