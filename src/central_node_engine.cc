@@ -411,7 +411,7 @@ void Engine::evaluateFaults()
 
             LOG_TRACE("ENGINE", (*device).second->name << " current value " << std::hex << deviceValue << std::dec);
             // Set device ignore condition to false.  It will be evaluated later
-            (*device).second->ignored = (*device).second->modeActive;
+            (*device).second->ignored = !(*device).second->modeActive;
         }
     }
 
