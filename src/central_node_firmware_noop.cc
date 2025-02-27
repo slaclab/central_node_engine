@@ -305,7 +305,7 @@ uint64_t Firmware::readUpdateStream(uint8_t *buffer, uint32_t size, uint64_t tim
   return n;
 };
 
-void Firmware::writeMitigation(uint32_t *mitigation) {
+void Firmware::writeMitigation(const std::vector<uint32_t>& mitigation) {
   uint32_t swapMitigation[2];
   swapMitigation[0] = mitigation[1];
   swapMitigation[1] = mitigation[0];
