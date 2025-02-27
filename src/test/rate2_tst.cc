@@ -8,6 +8,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <cpsw_api_user.h>
+#include <unistd.h>
 
 #define FPGA_CLK_FREQ	   (250000000u)	// Hz
 #define BW_AVERAGE_S       (1)          // Seconds
