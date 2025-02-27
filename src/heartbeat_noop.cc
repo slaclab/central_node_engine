@@ -3,8 +3,8 @@
 #ifndef FW_ENABLED
 
 #warning "Code compiled without CPSW - fake heartbeat core"
-
-HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
+template <typename BeatPolicy>
+HeartBeat<BeatPolicy>::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize )
 :
     txPeriod     ( "Time Between Heartbeats", timerBufferSize ),
     txDuration   ( "Time to send Heartbeats", timerBufferSize ),
@@ -20,8 +20,8 @@ HeartBeat::HeartBeat( Path root, const uint32_t& timeout, size_t timerBufferSize
     if( pthread_setname_np( beatThread.native_handle(), "HeartBeat" ) )
         perror( "pthread_setname_np failed for HeartBeat thread" );
 }
-
-HeartBeat::~HeartBeat()
+template<typename BeatPolicy>
+HeartBeat<BeatPolicy>::~HeartBeat()
 {
     // Stop the heartbeat thread
     run = false;
@@ -30,8 +30,8 @@ HeartBeat::~HeartBeat()
     // Print final report
     printReport();
 }
-
-void HeartBeat::printReport()
+template<typename BeatPolicy>
+void HeartBeat<BeatPolicy>::printReport()
 {
     printf( "\n" );
     printf( "HeartBeat report:\n" );
@@ -47,19 +47,19 @@ void HeartBeat::printReport()
     printf( "===============================================\n" );
     printf( "\n" );
 }
-
-void HeartBeat::setWdTime( const uint32_t& timeout )
+template<typename BeatPolicy>
+void HeartBeat<BeatPolicy>::setWdTime( const uint32_t& timeout )
 {
 }
-
-void HeartBeat::beat()
+template<typename BeatPolicy>
+void HeartBeat<BeatPolicy>::beat()
 {
     std::unique_lock<std::mutex> lock(beatMutex);
     beatReq = true;
     beatCondVar.notify_all();
 }
-
-void HeartBeat::beatWriter()
+template<typename BeatPolicy>
+void HeartBeat<BeatPolicy>::beatWriter()
 {
     std::cout << "Heartbeat writer thread started..." << std::endl;
 
