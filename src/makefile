@@ -1,59 +1,87 @@
-CENTRAL_NODE_ENGINE_DIR=.
+-include ../config.mak
 
--include $(CENTRAL_NODE_ENGINE_DIR)/defs.mak
+ifdef BR_VERSION
+	CXX	     = $(XCROSS_HOME)g++
+	TARCH    = $(BR_VERSION)-x86_64
+else
+	CXX    = g++
+	TARCH  = $(HARCH)
+endif
 
-POSTBUILD_SUBDIRS=test
+OBJDIR   = O.$(TARCH)
+SRCDIR   = .
+LIBDIR   = O.$(TARCH)
+INSTALL_DIR = ..
 
-HEADERS = central_node_bypass.h \
-        central_node_bypass_manager.h \
-        central_node_database_tables.h \
-        central_node_database.h \
-	central_node_database_defs.h \
-        central_node_engine.h \
-        central_node_exception.h \
-        central_node_yaml.h \
-        log.h \
-        log_wrapper.h \
-        time_util.h \
-        timer.h \
-        buffer.h \
-        queue.h \
-        heartbeat.h \
-        central_node_history.h \
-        central_node_history_protocol.h \
-        central_node_firmware.h
+DEPS     =
+SRCS     = $(wildcard $(SRCDIR)/*.cc)
+OBJS     = $(patsubst $(SRCDIR)/%.cc, $(OBJDIR)/%.o, $(SRCS))
+SLIB     = $(LIBDIR)/lib$(LIB_NAME).a
+DLIB     = $(LIBDIR)/lib$(LIB_NAME).so
+HEADERS  = $(wildcard $(SRCDIR)/*.h)
 
-#DOCS = doc/README.yamlDefinition doc/README.yamlDefinition.html doc/README.configData.html doc/INSTALL.html
-GENERATED_SRCS += git_version_string.h
-#GENERATED_SRCS += $(DOCS)
+TESTDIR     = test
+TESTBINDIR  = O.$(TARCH)
+TESTSRCS    = $(wildcard $(TESTDIR)/*.cc)
+TEST_TARGET = $(patsubst $(TESTDIR)/%.cc, $(TESTBINDIR)/%, $(TESTSRCS))
 
-central_node_engine_SRCS = central_node_database_tables.cc
-central_node_engine_SRCS += central_node_database.cc
-central_node_engine_SRCS += central_node_inputs.cc
-central_node_engine_SRCS += central_node_engine.cc
-central_node_engine_SRCS += central_node_bypass.cc
-central_node_engine_SRCS += central_node_firmware.cc
-central_node_engine_SRCS += central_node_firmware_noop.cc
-central_node_engine_SRCS += central_node_history.cc
-central_node_engine_SRCS += time_util.cc
-central_node_engine_SRCS += timer.cc
-central_node_engine_SRCS += heartbeat.cc
-central_node_engine_SRCS += heartbeat_noop.cc
-central_node_engine_SRCS += buffer.cc
-central_node_engine_SRCS += queue.cc
+CXXFLAGS += -g -std=c++0x -fPIC
+CXXFLAGS += $(addprefix -I,. $(CPSW_DIR)/include $(BOOST_DIR)/include $(YAML_CPP_DIR)/include) 
 
-DEP_HEADERS  = $(HEADERS)
+LIBS_EXT = $(addprefix -l,$(LIB_NAME) cpsw yaml-cpp boost_system $(TIRPC_LIBS_$(WITH_TIRPC_$(TARCH))) rt dl)
+LIBS_SYS = -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -lrt -ldl
 
-STATIC_LIBRARIES_YES+=central_node_engine
-SHARED_LIBRARIES_YES+=central_node_engine
+LDIR  = -L. 
+LDIR += -L$(CPSW_DIR)/lib
+LDIR += -L$(BOOST_DIR)/lib
+LDIR += -L$(YAML_CPP_DIR)/lib
+LDIR += -L$(TIRPC_DIR)/lib
+LDIR += -L$(LIBDIR)
 
--include $(CENTRAL_NODE_ENGINE_DIR)/rules.mak
+TIRPC_LIBS_YES = tirpc
+WITH_TIRPC_rhel9-x86_64 = YES
 
-doc/README.yamlDefinition:doc/README.yamlDefinition.in
-	awk 'BEGIN{ FS="[ \t\"]+" } /\<YAML_KEY_/{ printf("s/%s/%s/g\n", $$2, $$3); }' cpsw_yaml_keydefs.h | sed -f - $< > $@
+.PHONY: all clean insatll uninstall
 
-%.html: %
-	sed -e 's/&/\&amp/g' -e 's/</\&lt/g' -e 's/>/\&gt/g' $< | sed -e '/THECONTENT/{r /dev/stdin' -e 'd}' tmpl.html > $@
+all: $(SLIB) $(DLIB) $(TEST_TARGET)
 
-test: sub-./test@test
-	@true
+$(OBJDIR)/%.o : $(SRCDIR)/%.cc $(DEPS) | $(OBJDIR)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+$(OBJDIR):
+	@mkdir -p $@
+
+$(LIBDIR):
+	@mkdir -p $@
+
+$(SLIB): $(OBJS) | $(LIBDIR)
+	$(AR) $(ARFLAGS) $@ $^
+
+$(DLIB): LDFLAGS += -shared
+$(DLIB): $(OBJS) | $(LIBDIR)
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+$(TESTBINDIR):
+	@mkdir -p $@
+
+$(TESTBINDIR)/%: $(TESTDIR)/%.cc
+	$(CXX) -o $@ $^ -static $(CXXFLAGS) $(LDIR) $(LIBS_EXT) $(LIBS_SYS)
+
+clean:
+	$(RM) -rf $(OBJDIR)
+	$(RM) -rf $(LIBDIR) 
+	$(RM) -rf $(TESTBINDIR)
+
+install: $(SLIB) $(DLIB) $(TEST_TARGET)
+	@mkdir -p $(INSTALL_DIR)/$(TARCH)/lib
+	install -C $(SLIB) $(INSTALL_DIR)/$(TARCH)/lib/
+	install -C $(DLIB) $(INSTALL_DIR)/$(TARCH)/lib/
+	
+	@mkdir -p $(INSTALL_DIR)/$(TARCH)/include
+	install -C $(HEADERS) $(INSTALL_DIR)/$(TARCH)/include/
+
+	@mkdir -p $(INSTALL_DIR)/$(TARCH)/bin
+	install -C $(TEST_TARGET) $(INSTALL_DIR)/$(TARCH)/bin/
+
+uninstall:
+	$(RM) -rf $(INSTALL_DIR)/$(TARCH)

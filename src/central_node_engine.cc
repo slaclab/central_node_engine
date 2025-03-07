@@ -371,7 +371,7 @@ void Engine::evaluateFaults()
 {
     _evaluateFaultsTimer.start();
     bool faulted = false;
-
+    
     // Update digital & analog Fault values and BeamDestination allowed class
     for (DbFaultMap::iterator fault = _mpsDb->faults->begin();
         fault != _mpsDb->faults->end();

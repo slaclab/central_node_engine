@@ -3,6 +3,14 @@
 Release notes for the LCLS-II MPS central node engine.
 
 ## Releases:
+* __central_node_engine-R4-7-0__:
+  * Update build facility to align with other cpsw applications
+  * Upgrade to cpsw/R4.5.2
+  * Link against libtirpc on rocky9/rhel9 to fix linker errors
+
+* __central_node_engine-R4-6-0__:
+  * Fix bug with digital device vs logic ignore condition when the app is disabled
+
 * __central_node_engine-R4-5-1__:
   * Fix bug with device vs logic ignore condition when the app is disabled
 
