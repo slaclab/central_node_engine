@@ -5,6 +5,8 @@
 #include <time.h>
 #include <queue>
 #include <stdint.h>
+#include <iostream>
+#include <string.h>
 
 enum BypassType {
   BYPASS_DIGITAL,
@@ -23,9 +25,7 @@ enum AnalogIntegratorIndex {
   BPM_Y = 1,
   BPM_TMIT = 2,
   INT0 = 0,
-  INT2 = 1,
-  INT3 = 2,
-  INT4 = 3
+  INT2 = 1
 };
 
 static const int BYPASS_DIGITAL_INDEX = 100;
@@ -50,6 +50,8 @@ class InputBypass {
 
   // Index of the channel for this bypass
   uint32_t channelId;
+  // Name of the channel for this bypass
+  std::string name; 
 
   // Bypasses work for any applicationCard by setting its timeout enable to off.
   uint32_t appId; // Only set for applicationCard bypasses

@@ -79,6 +79,9 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
     bypass->appId = (*appCard).second->id;
+    std::ostringstream name;
+    name << "Application ID: " << (*appCard).second->number;
+    bypass->name = name.str();
     bypass->type = BYPASS_APPLICATION;
     bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
@@ -95,6 +98,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
     bypass->channelId = (*digitalInput).second->id;
+    bypass->name = (*digitalInput).second->name;
     bypass->type = BYPASS_DIGITAL;
     bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
@@ -118,6 +122,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
       InputBypass *bypass = new InputBypass();
       bypass->id = bypassId;
       bypass->channelId = (*analogInput).second->id;
+      bypass->name = (*analogInput).second->name;
       bypass->type = BYPASS_ANALOG;
       bypass->until = 0; // time is seconds since 1970, this gets set later
       // this field will get set later when bypasses start to be monitored
@@ -139,6 +144,7 @@ void BypassManager::createBypassMap(MpsDbPtr db) {
     InputBypass *bypass = new InputBypass();
     bypass->id = bypassId;
     bypass->faultId = (*fault).second->id;
+    bypass->name = (*fault).second->name;
     bypass->type = BYPASS_FAULT;
     bypass->until = 0; // time is seconds since 1970, this gets set later
     // this field will get set later when bypasses start to be monitored
@@ -634,10 +640,10 @@ void BypassManager::printBypassQueue() {
     ptr = localtime(&copy.top().first);
     strftime(buf, 40, "%x %X", ptr);
     if (copy.top().second->type == BYPASS_APPLICATION) {
-      std::cout << buf << " (" << copy.top().first << "): appId=" << copy.top().second->appId;
+      std::cout << buf << " (" << copy.top().first << "): " << copy.top().second->name << " Id=" << copy.top().second->appId;
     }
     else {
-      std::cout << buf << " (" << copy.top().first << "): channelId=" << copy.top().second->channelId;
+      std::cout << buf << " (" << copy.top().first << "): " << copy.top().second->name << " channelId=" << copy.top().second->channelId;
     }
     if (copy.top().second->type == BYPASS_ANALOG) {
       std::cout << " integrator " << copy.top().second->index;

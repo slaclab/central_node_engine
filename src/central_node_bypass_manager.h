@@ -45,7 +45,7 @@ class BypassManager {
   void checkBypassQueue(time_t testTime = 0);
   void setThresholdBypass(BypassType bypassType,
 			  uint32_t channelId, uint32_t value, time_t bypassUntil,
-			  int thresholdIndex, bool test = false);
+			  int intIndex, bool test = false);
   void setBypass(BypassType bypassType, uint32_t id,
 		 uint32_t value, time_t bypassUntil, bool test = false);
   void printBypassQueue();
