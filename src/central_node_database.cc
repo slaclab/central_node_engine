@@ -658,7 +658,7 @@ void MpsDb::configureFaultStates()
         }
         LOG_TRACE("DATABASE", "Adding FaultState (" << (*it).second->id << ") to "
             " Fault (" << (*faultIt).second->id << ", " << (*faultIt).second->name
-            << ", " << (*faultIt).second->description << ")");
+            << ", " << (*faultIt).second->name << ")");
         (*faultIt).second->faultStates->insert(std::pair<int, DbFaultStatePtr>((*it).second->id,
             (*it).second));
 
@@ -922,7 +922,7 @@ void MpsDb::configureApplicationCards()
             throw(DbException(errorStream.str()));
         }
         
-        LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "] config/update buffer alloc");
+        LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->applicationType->name << "] config/update buffer alloc");
 
     }
 
@@ -945,7 +945,7 @@ void MpsDb::configureApplicationCards()
             }
             // Once the map is there, add the digital channel
             aPtr->digitalChannels->insert(std::pair<int, DbDigitalChannelPtr>(digitalChannelPtr->id, digitalChannelPtr));
-            LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], DigitalChannel: " << digitalChannelPtr->name);
+            LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->applicationType->name << "], DigitalChannel: " << digitalChannelPtr->name);
         }
         else 
         {
@@ -983,7 +983,7 @@ void MpsDb::configureApplicationCards()
 
             // Once the map is there, add the analog channel
             aPtr->analogChannels->insert(std::pair<int, DbAnalogChannelPtr>(analogChannelPtr->id, analogChannelPtr));
-            LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->name << "], AnalogChannel: " << analogChannelPtr->name);
+            LOG_TRACE("DATABASE", "AppCard [" << aPtr->number << ", " << aPtr->applicationType->name << "], AnalogChannel: " << analogChannelPtr->name);
             analogChannelPtr->numChannelsCard = aPtr->applicationType->analogChannelCount;
         }
         else 
@@ -1281,12 +1281,15 @@ int MpsDb::load(std::string yamlFileName)
     catch (YAML::BadFile &e)
     {
         errorStream << "ERROR: Please check if YAML file is readable";
+        std::cout << "ERROR: Please check if YAML file is readable" << std::endl;
         throw(DbException(errorStream.str()));
     }
     catch (...)
     {
         errorStream << "ERROR: Failed to load YAML file ("
             << yamlFileName << ")";
+        std::cout << "ERROR: Failed to load YAML file ("
+            << yamlFileName << ")" << std::endl;
         throw(DbException(errorStream.str()));
     }
 
@@ -1304,8 +1307,6 @@ int MpsDb::load(std::string yamlFileName)
             throw(DbException(errorStream.str()));
         }
         std::string nodeName = s.substr(0, found);
-
-        std::cout << nodeName << std::endl; // TEMP
 
         LOG_TRACE("DATABASE", "Parsing \"" << nodeName << "\"");
 
