@@ -391,7 +391,7 @@ void Engine::evaluateFaults()
                 if ((*input).second->digitalChannel->bypass->status == BYPASS_VALID)
                 {
                     inputValue = (*input).second->digitalChannel->bypass->value;
-                    LOG_TRACE("ENGINE", (*channel).second->name << " bypassing input value to "
+                    LOG_TRACE("ENGINE", (*input).second->digitalChannel->name << " bypassing input value to "
                         << (*input).second->digitalChannel->bypass->value << " (actual value is "
                         << (*input).second->digitalChannel->latchedValue << ")");
                 }

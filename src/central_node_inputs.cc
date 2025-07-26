@@ -538,7 +538,7 @@ void DbApplicationCard::writeAnalogConfiguration() {
 	        for (uint32_t k = 0; k < POWER_CLASS_BIT_SIZE; ++k) { // for each power class bit
 	          applicationConfigBuffer->set(powerClassOffset + k,
 					      ((*analogChannel).second->fastPowerClass[j + i * ANALOG_DEVICE_NUM_THRESHOLDS] >> k) & 0x01);
-            //std::cout << "offset=" << powerClassOffset+k << ", bit=" << (((*analogChannel).second->fastPowerClass[j] >> k) & 0x01) << std::endl;
+            //std::cout << "ch=" << channelNumber << ", Thr=" << j << ", pcOffset=" << powerClassOffset << ", k=" << k <<", offset=" << powerClassOffset+k << ", fPC=" << (*analogChannel).second->fastPowerClass[j] << ", bit=" << (((*analogChannel).second->fastPowerClass[j] >> k) & 0x01) << std::endl;
 	        }
 	        powerClassOffset += POWER_CLASS_BIT_SIZE;
 	      }
