@@ -37,7 +37,7 @@ class History {
  public:
   bool enabled;
 
-  void startSenderThread(std::string serverName = "lcls-dev3", int port = 3356);
+  void startSenderThread(std::string serverName = "dev-srv09", int port = 3356);
   void stopSenderThread();
 
   int log(HistoryMessageType type, uint32_t id, uint32_t oldValue, uint32_t newValue, uint32_t aux);

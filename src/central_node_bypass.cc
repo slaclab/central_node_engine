@@ -461,7 +461,6 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
   InputBypassPtr bypass;
   std::stringstream errorStream;
   uint32_t *bypassMask = NULL;
-
   // Find the channel and its bypass - all channels must have a bypass assigned.
   // The assignment must be after the BypassManager is created.
   if (bypassType == BYPASS_APPLICATION) {
@@ -497,9 +496,14 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
   newEntry.first = bypassUntil;
   newEntry.second = bypass;
 
+  time_t now;
+  time(&now);
+
+  // If existing bypass until is 0, then it is expired
   if (bypassUntil == 0) {
     bypass->status = BYPASS_EXPIRED;
     bypass->until = 0;
+    std::cout << "id: " << id << ". New bypass->status: " << bypass->status << ". bypass->until: " << bypass->until << "\n";
 
     // If analog/threshold bypass, change bypassMask - set integrator thresholds bit to 1 (not-bypassed)
     if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
@@ -515,13 +519,14 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
     LOG_TRACE("BYPASS", "Set bypass EXPIRED for channel [" << id << "], "
 	      << "type=" << bypassType);
   }
+  // If existing bypass already is valid, then just set the new stateValue 
+  else if (bypass->status == BYPASS_VALID) {
+    bypass->value = value;
+  }
+  // Add new bypass
   else {
-    time_t now;
     if (test) {
       now = bypassUntil - 1;
-    }
-    else {
-      time(&now);
     }
 
     // This handles cases #1 and #2, for new and modified bypasses.
@@ -560,6 +565,7 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
 void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t bypassUntil) {
 
   // Gather the fault, faultState, and faultInput objects, and do error checks.
+  std::cout << "central_node_bypass: bypassFault, faultId: " << faultId << ". faultStateId: " << faultStateId << ". bypassUntil: " << bypassUntil << "\n";
   std::stringstream errorStream;
   DbFaultMap::iterator faultIt = _mpsDb->faults->find(faultId);
   if (faultIt == _mpsDb->faults->end()) {
@@ -596,7 +602,6 @@ void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t 
       uint32_t curVal = stateValue[curBitPos];
       setBypass(BYPASS_DIGITAL, channelId, curVal, bypassUntil);
     }
-    History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
   }
 
   // Analog Fault
@@ -609,12 +614,68 @@ void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t 
       uint32_t integrator = (*inputIt).second->analogChannel->integrator;
       setThresholdBypass(BYPASS_ANALOG, channelId, 0, bypassUntil, integrator);
     }
-    History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
   }
-  (*faultIt).second->bypass->status = BYPASS_VALID;
+
+  // Set bypass attributes
+  if (bypassUntil == 0) {
+    (*faultIt).second->bypass->status = BYPASS_EXPIRED;
+  }
+  else {
+    (*faultIt).second->bypass->status = BYPASS_VALID;
+    if ((*initialInputIt).second->digitalChannel) { // Only log new bypasses
+      History::getInstance().logBypassDigitalFault(faultId, faultStateId, bypassUntil);
+    }
+    else {
+      History::getInstance().logBypassAnalogFault(faultId, bypassUntil);
+    }
+  }
+
+  (*faultIt).second->bypass->until = 0;
+  std::cout << "New fault bypass->status: " << (*faultIt).second->bypass->status << ". fault bypass->until: " << (*faultIt).second->bypass->until << "\n";
+
   (*faultIt).second->bypass->value = faultStateId;
   (*faultIt).second->bypass->until = bypassUntil;
 
+}
+
+/* Function to check if a channel's fault its associated with is bypassed */
+bool BypassManager::checkFaultBypassForChannel(uint32_t channelId) {
+
+  // Gather the fault, faultState, and faultInput objects, and do error checks.
+  std::cout << "central_node_bypass: checkFaultBypassForChannel, channelId: " << channelId << "\n";
+  std::stringstream errorStream;
+  // Check both digital channels and analog channels, it can only be one of them
+
+  DbDigitalChannelMap::iterator digitalChannelIt = _mpsDb->digitalChannels->find(channelId);
+  DbAnalogChannelMap::iterator analogChannelIt; DbFaultInputMapPtr currentFaultInputs;
+  if (digitalChannelIt == _mpsDb->digitalChannels->end()) {
+    // Couldn't find digital channel, so check for analog channel
+    analogChannelIt = _mpsDb->analogChannels->find(channelId);
+    if (analogChannelIt == _mpsDb->analogChannels->end()) {
+      errorStream << "ERROR: Failed to find channel[" << channelId
+      << "] while checking if its fault inputs are bypassed";
+      throw(CentralNodeException(errorStream.str()));
+    }
+    else { // Found analog channel
+      currentFaultInputs = (*analogChannelIt).second->faultInputs;
+    }
+  }
+  else { // Found digital channel
+    currentFaultInputs = (*digitalChannelIt).second->faultInputs;
+  }
+  
+  // Loop through fault inputs to get the fault, and see if the fault is bypassed, if so then return true 
+  // (meaning a fault the channel is associated with is bypassed)
+  for (DbFaultInputMap::iterator inputIt = currentFaultInputs->begin();
+      inputIt != currentFaultInputs->end();
+      inputIt++) 
+  {
+    DbFaultMap::iterator faultIt = _mpsDb->faults->find((*inputIt).second->faultId);
+    if ((*faultIt).second->bypass->status == BYPASS_VALID) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void BypassManager::printBypassQueue() {
