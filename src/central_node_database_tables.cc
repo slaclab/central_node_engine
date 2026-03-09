@@ -131,22 +131,6 @@ std::ostream & operator<<(std::ostream &os, DbDigitalChannel * const digitalChan
     os << TAB_4 << "  - " << (*faultInput).second << std::endl;
   }
 
-  os << TAB_4 << "+ States:" << std::endl;
-
-  for (DbFaultStateMap::iterator stateIt = digitalChannel->faultStates->begin();
-       stateIt != digitalChannel->faultStates->end(); ++stateIt) {
-        DbFaultStatePtr state = (*stateIt).second;
-        // Is verbose because we don't want to spam console with allowedClasses
-    os << TAB_4 << "  - id[" << state->id << "]; " 
-       << "faultId[" << state->faultId << "]; "
-       << "mask[" << state->mask << "]; "
-       << "name[" << state->name << "]; " << std::endl
-       <<  TAB_8 << "active[" << state->active << "]; "
-       << "default[" << state->defaultState << "]; "
-       << "value[" << state->value << "];" << std::endl;
-  }
-
-
   return os;
 }
 
@@ -254,21 +238,6 @@ std::ostream & operator<<(std::ostream &os, DbAnalogChannel * const analogChanne
        faultInput != analogChannel->faultInputs->end(); ++faultInput) {
     os << TAB_4 << "  - " << (*faultInput).second;
     os << std::endl;
-  }
-
-  os << TAB_4 << "+ States:" << std::endl;
-
-  for (DbFaultStateMap::iterator stateIt = analogChannel->faultStates->begin();
-       stateIt != analogChannel->faultStates->end(); ++stateIt) {
-        DbFaultStatePtr state = (*stateIt).second;
-        // Is verbose because we don't want to spam console with allowedClasses
-    os << TAB_4 << "  - id[" << state->id << "]; " 
-       << "faultId[" << state->faultId << "]; "
-       << "mask[" << state->mask << "]; "
-       << "name[" << state->name << "]; " << std::endl
-       <<  TAB_8 << "active[" << state->active << "]; "
-       << "default[" << state->defaultState << "]; "
-       << "value[" << state->value << "];" << std::endl;
   }
 
   return os;

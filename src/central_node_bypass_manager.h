@@ -51,6 +51,7 @@ class BypassManager {
   void printBypassQueue();
   bool isInitialized();
   void bypassFault(uint32_t faultId, uint32_t faultStateId, time_t bypassUntil);
+  bool checkFaultBypassForChannel(uint32_t channelId);
 
   void startBypassThread();
   void stopBypassThread();

@@ -179,7 +179,6 @@ class DbAnalogChannel : public DbEntry, public DbApplicationCardInput {
 
   // Fault inputs and fault states built after the config is loaded
   DbFaultInputMapPtr faultInputs; 
-  DbFaultStateMapPtr faultStates;
 
   // Configured after loading the YAML file
   // Each bit represents a threshold state from the analog device
@@ -288,7 +287,6 @@ class DbDigitalChannel : public DbEntry, public DbApplicationCardInput {
 
   // Fault inputs and fault states built after the config is loaded
   DbFaultInputMapPtr faultInputs; 
-  DbFaultStateMapPtr faultStates;
 
   // Set true if this input is used by a fast evaluated device (must be the only input to device)
   bool fastEvaluation;
