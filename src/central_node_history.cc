@@ -79,6 +79,17 @@ int History::logBypassApplication(uint32_t id, uint32_t bypassUntil) {
   return log(BypassApplicationType, id, 0, 0, bypassUntil);
 }
 
+int History::logBypassExpiredFault(uint32_t id) {
+  return log(BypassExpiredFaultType, id, 0, 0, 0);
+}
+
+int History::logBypassExpiredApplicationCard(uint32_t id) {
+  return log(BypassExpiredApplicationType, id, 0, 0, 0);
+}
+
+  int logBypassExpiredFault(uint32_t id);
+  int logBypassExpiredApplicationCard(uint32_t id);
+
 int History::add(Message &message) {
   if (!enabled) {
     return 1;

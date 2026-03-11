@@ -47,6 +47,8 @@ class History {
   int logBypassDigitalFault(uint32_t id, uint32_t newValue, uint32_t bypassUntil);
   int logBypassAnalogFault(uint32_t id, uint32_t bypassUntil);
   int logBypassApplication(uint32_t id, uint32_t bypassUntil);
+  int logBypassExpiredFault(uint32_t id);
+  int logBypassExpiredApplicationCard(uint32_t id);
   int add(Message &message);
   int send(Message &message);
   int sendFront();

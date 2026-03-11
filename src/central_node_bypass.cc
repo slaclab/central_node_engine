@@ -399,10 +399,14 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
                 DbFaultMap::iterator faultIt = _mpsDb->faults->find((*faultInputIt).second->faultId);
                 if (faultIt != _mpsDb->faults->end()) {
                   (*faultIt).second->bypass->status = BYPASS_EXPIRED;
+                  History::getInstance().logBypassExpiredFault(id); // Log expired bypass to history
                 }
                 break;
               }
           }
+        }
+        if (top.second->type == BYPASS_APPLICATION) {
+          History::getInstance().logBypassExpiredApplicationCard(id); // Log expired bypass to history
         }
         
       }

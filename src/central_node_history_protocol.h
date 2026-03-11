@@ -8,9 +8,11 @@ enum HistoryMessageType {
   FaultStateType = 1,     // Fault change state (Faulted/Not Faulted)
   BypassDigitalType,      // Bypass digital fault
   BypassAnalogType,       // Bypass analog fault
-  BypassApplicationType,  // Bypass analog fault
+  BypassApplicationType,  // Bypass application card
   DigitalChannelType,     // Change in digital channel
   AnalogChannelType,      // Change in analog device threshold status
+  BypassExpiredFaultType, // Bypass expired fault
+  BypassExpiredApplicationType // Bypass expired application card
 };
 
 typedef struct {
