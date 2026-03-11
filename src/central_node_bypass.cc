@@ -399,10 +399,15 @@ bool BypassManager::checkBypassQueueTop(time_t now) {
                 DbFaultMap::iterator faultIt = _mpsDb->faults->find((*faultInputIt).second->faultId);
                 if (faultIt != _mpsDb->faults->end()) {
                   (*faultIt).second->bypass->status = BYPASS_EXPIRED;
+                  uint32_t expiredFaultId = (*faultInputIt).second->faultId;
+                  History::getInstance().logBypassExpiredFault(expiredFaultId); // Log expired bypass to history
                 }
                 break;
               }
           }
+        }
+        if (top.second->type == BYPASS_APPLICATION) {
+          History::getInstance().logBypassExpiredApplicationCard(top.second->appId); // Log expired bypass to history
         }
         
       }
@@ -503,7 +508,6 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
   if (bypassUntil == 0) {
     bypass->status = BYPASS_EXPIRED;
     bypass->until = 0;
-    std::cout << "id: " << id << ". New bypass->status: " << bypass->status << ". bypass->until: " << bypass->until << "\n";
 
     // If analog/threshold bypass, change bypassMask - set integrator thresholds bit to 1 (not-bypassed)
     if (intIndex >= 0 && bypassType == BYPASS_ANALOG && bypassMask != NULL) {
@@ -565,7 +569,6 @@ void BypassManager::setThresholdBypass(BypassType bypassType,
 void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t bypassUntil) {
 
   // Gather the fault, faultState, and faultInput objects, and do error checks.
-  std::cout << "central_node_bypass: bypassFault, faultId: " << faultId << ". faultStateId: " << faultStateId << ". bypassUntil: " << bypassUntil << "\n";
   std::stringstream errorStream;
   DbFaultMap::iterator faultIt = _mpsDb->faults->find(faultId);
   if (faultIt == _mpsDb->faults->end()) {
@@ -642,7 +645,6 @@ void BypassManager::bypassFault(uint32_t faultId, uint32_t faultStateId, time_t 
 bool BypassManager::checkFaultBypassForChannel(uint32_t channelId) {
 
   // Gather the fault, faultState, and faultInput objects, and do error checks.
-  std::cout << "central_node_bypass: checkFaultBypassForChannel, channelId: " << channelId << "\n";
   std::stringstream errorStream;
   // Check both digital channels and analog channels, it can only be one of them
 
